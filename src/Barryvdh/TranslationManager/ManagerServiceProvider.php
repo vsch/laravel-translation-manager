@@ -9,7 +9,7 @@ class ManagerServiceProvider extends ServiceProvider {
 	 *
 	 * @var bool
 	 */
-	protected $defer = false;
+	protected $defer = true;
 
 	/**
 	 * Bootstrap the application events.
@@ -19,9 +19,9 @@ class ManagerServiceProvider extends ServiceProvider {
 	public function boot()
 	{
 		$this->package('barryvdh/laravel-translation-manager');
-	}
+    }
 
-	/**
+    /**
 	 * Register the service provider.
 	 *
 	 * @return void
@@ -71,7 +71,7 @@ class ManagerServiceProvider extends ServiceProvider {
 	 */
 	public function provides()
 	{
-		return array('translation-manager',
+		return array('translation-manager', 'translator', 'translation.loader',
             'command.translation-manager.reset',
             'command.translation-manager.import',
             'command.translation-manager.find',

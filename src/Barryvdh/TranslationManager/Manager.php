@@ -26,20 +26,31 @@ class Manager
         $this->app = $app;
         $this->files = $files;
         $this->events = $events;
-        $this->config = $app['config']['laravel-translation-manager::config'];
+
+        // when instantiated from the service provider, config info is not yet loaded, trying to get it here
+        // causes a problem since none of the keys are defined.
+        $this->config = null;
+    }
+    
+    protected
+    function config()
+    {
+        return $this->config ?: $this->config = $this->app['config']['laravel-translation-manager::config'];
     }
 
     public
     function missingKey($namespace, $group, $key)
     {
-        if (!in_array($group, $this->config['exclude_groups']))
+        if (!in_array($group, $this->config()['exclude_groups']))
         {
-            Translation::firstOrCreate(array(
+            $translation = Translation::firstOrCreate(array(
                 'locale' => $this->app['config']['app.locale'],
                 'group' => $group,
                 'key' => $key,
             ));
+            return $translation;
         }
+        return null;
     }
 
     public
@@ -56,7 +67,7 @@ class Manager
                 $info = pathinfo($file);
                 $group = $info['filename'];
 
-                if (in_array($group, $this->config['exclude_groups']))
+                if (in_array($group, $this->config()['exclude_groups']))
                 {
                     continue;
                 }
@@ -204,7 +215,7 @@ class Manager
     public
     function exportTranslations($group)
     {
-        if (!in_array($group, $this->config['exclude_groups']))
+        if (!in_array($group, $this->config()['exclude_groups']))
         {
             if ($group == '*')
                 $this->exportAllTranslations();
@@ -264,11 +275,11 @@ class Manager
     {
         if ($key == null)
         {
-            return $this->config;
+            return $this->config();
         }
         else
         {
-            return $this->config[$key];
+            return $this->config()[$key];
         }
     }
 }

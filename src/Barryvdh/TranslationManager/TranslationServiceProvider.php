@@ -12,7 +12,6 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider {
      */
     public function register()
     {
-
         $this->registerLoader();
 
         $this->app->bindShared('translator', function($app)
@@ -24,7 +23,7 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider {
             // configuration so we can easily get both of these values from there.
             $locale = $app['config']['app.locale'];
 
-            $trans = new Translator($loader, $locale);
+            $trans = new \Barryvdh\TranslationManager\Translator($loader, $locale);
 
             $trans->setFallback($app['config']['app.fallback_locale']);
 
