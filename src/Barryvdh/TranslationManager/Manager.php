@@ -57,7 +57,7 @@ class Manager
      * @return null|Translation
      */
     public
-    function missingKey($namespace, $group, $key, $useLottery = true)
+    function missingKey($namespace, $group, $key, $useLottery = false)
     {
         if (!in_array($group, $this->config()['exclude_groups']) && $this->config()['log_missing_keys'])
         {
