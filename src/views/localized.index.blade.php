@@ -8,9 +8,9 @@
 @section('content')
     {{--<div style="width: 80%; margin: auto;">--}}
     <div class="col-sm-11 col-sm-offset-1">
-        <h1>@lang('translations.translation-manager')</h1>
+        <h1>@lang('laravel-translation-manager::translations.translation-manager')</h1>
 
-        <p>@lang('translations.export-warning-text')</p>
+        <p>@lang('laravel-translation-manager::translations.export-warning-text')</p>
 
         <div class="alert alert-success success-import" style="display:none;">
             <p>Done importing, processed <strong class="counter">N</strong> items! Reload this page to refresh the groups! </p>
@@ -80,16 +80,16 @@
                 @if(!empty($mismatches))
                     <div class="panel panel-primary">
                         <div class="panel-heading">
-                            <h3 class="panel-title">@lang('translations.mismatches')</h3>
+                            <h3 class="panel-title">@lang('laravel-translation-manager::translations.mismatches')</h3>
                         </div>
                         <div class="panel-body">
                             <table class="table table-condensed translation-stats" style="max-height: 300px; margin-bottom: 0; overflow: auto; display: block;">
                                 <thead>
                                     <tr>
-                                        <th class="key" width="20%">@lang('translations.key')</th>
+                                        <th class="key" width="20%">@lang('laravel-translation-manager::translations.key')</th>
                                         <th class="missing" width="20%" colspan="2">ru</th>
                                         <th class="missing" width="20%">en</th>
-                                        <th class="group" width="20%">@lang('translations.group')</th>
+                                        <th class="group" width="20%">@lang('laravel-translation-manager::translations.group')</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -121,7 +121,7 @@
                                                     id="username" data-type="textarea" data-pk="<?= $mismatch->id ?>"
                                                     data-url="<?= URL::action('Barryvdh\TranslationManager\Controller@postEdit', array($mismatch->group)) ?> ?>"
                                                     data-inputclass="editable-input"
-                                                    data-title="@lang('translations.enter-translation')"><?= htmlentities($mismatch->ru_value, ENT_QUOTES, 'UTF-8', false) ?></a>
+                                                    data-title="@lang('laravel-translation-manager::translations.enter-translation')"><?= htmlentities($mismatch->ru_value, ENT_QUOTES, 'UTF-8', false) ?></a>
                                         </td>
                                         <td width="20%" class="missing">{{$mismatch->ru}}</td>
                                         <td width="20%" class="missing">{{$mismatch->en}}</td>
@@ -137,27 +137,27 @@
                 @endif
                 <form role="form">
                     <div class="form-group">
-                        <?php $groups[''] = trans('translations.choose-group'); ?>
+                        <?php $groups[''] = trans('laravel-translation-manager::translations.choose-group'); ?>
                         <?= Form::select('group', $groups, $group, array('class' => 'form-control group-select')) ?>
                     </div>
                 </form>
                 <?php if(!$group): ?>
                 <div class="col-sm-9">
-                    <p>@lang('translations.choose-group-text')</p>
+                    <p>@lang('laravel-translation-manager::translations.choose-group-text')</p>
                 </div>
                 <div class="col-sm-3">
                     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#searchModal" style="float:right; display:inline">
-                        @lang('translations.search')
+                        @lang('laravel-translation-manager::translations.search')
                     </button>
                 </div>
                 <?php endif; ?>
 
                 <?php if($group): ?>
                 <form action="<?= action('Barryvdh\TranslationManager\Controller@postAdd', array($group)) ?>" method="POST" role="form">
-                    <textarea class="form-control" rows="3" name="keys" placeholder="@lang('translations.addkeys-placeholder')"></textarea> <br> <input type="submit"
-                            value="@lang('translations.addkeys')" class="btn btn-primary">
+                    <textarea class="form-control" rows="3" name="keys" placeholder="@lang('laravel-translation-manager::translations.addkeys-placeholder')"></textarea> <br> <input type="submit"
+                            value="@lang('laravel-translation-manager::translations.addkeys')" class="btn btn-primary">
                     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#searchModal" style="float:right; display:inline">
-                        @lang('translations.search')
+                        @lang('laravel-translation-manager::translations.search')
                     </button>
                 </form>
                 <?php endif; ?>
@@ -165,15 +165,15 @@
             <div class="col-sm-4">
                 <div class="panel panel-primary">
                     <div class="panel-heading">
-                        <h3 class="panel-title">@lang('translations.stats')</h3>
+                        <h3 class="panel-title">@lang('laravel-translation-manager::translations.stats')</h3>
                     </div>
                     <div class="panel-body">
                         <table class="table table-condensed translation-stats">
                             <thead>
                                 <tr>
-                                    <th class="missing" width="35%">@lang('translations.missing')</th>
-                                    <th class="changed" width="25%">@lang('translations.changed')</th>
-                                    <th class="group">@lang('translations.group')</th>
+                                    <th class="missing" width="35%">@lang('laravel-translation-manager::translations.missing')</th>
+                                    <th class="changed" width="25%">@lang('laravel-translation-manager::translations.changed')</th>
+                                    <th class="group">@lang('laravel-translation-manager::translations.group')</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -207,11 +207,10 @@
         <div class="row">
             <div class="col-sm-12 ">
                 <br>
-                {{-- <!-- <h4>@lang('translations.total'): {{$numTranslations}}, @lang('translations.changed'): {{$numChanged}}</h4> --> --}}
                 <table class="table table-condensed">
                     <thead>
                         <tr>
-                            <th width="20%">@lang('translations.key')</th>
+                            <th width="20%">@lang('laravel-translation-manager::translations.key')</th>
                             <?php foreach($locales as $locale): ?>
                             <th width="40%"><?= $locale ?></th>
                             <?php endforeach; ?>
@@ -231,7 +230,7 @@
                                 <a href="#edit" class="editable status-<?= $t ? $t->status : 0 ?> locale-<?= $locale ?>" data-locale="<?= $locale ?>"
                                         data-name="<?= $locale . "|" . $key ?>" id="username" data-type="textarea" data-pk="<?= $t ? $t->id : 0 ?>" data-url="<?= $editUrl ?>"
                                         data-inputclass="editable-input"
-                                        data-title="@lang('translations.enter-translation')"><?= $t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '' ?></a> <?= !$t ? '' : ($t->saved_value === $t->value ? '' : ' [' . \Barryvdh\TranslationManager\Controller::mb_renderDiffHtml($t->saved_value, $t->value) . ']') ?>
+                                        data-title="@lang('laravel-translation-manager::translations.enter-translation')"><?= $t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '' ?></a> <?= !$t ? '' : ($t->saved_value === $t->value ? '' : ' [' . \Barryvdh\TranslationManager\Controller::mb_renderDiffHtml($t->saved_value, $t->value) . ']') ?>
                             </td>
                             <?php endforeach; ?>
                             <?php if($deleteEnabled): ?>
@@ -257,14 +256,14 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                        <h4 class="modal-title" id="myModalLabel">@lang('translations.search-translations')</h4>
+                        <h4 class="modal-title" id="myModalLabel">@lang('laravel-translation-manager::translations.search-translations')</h4>
                     </div>
                     <div class="modal-body">
                         <form id="search-form" method="GET" action="<?= $searchUrl ?>" data-remote="true">
                             <div class="form-group">
                                 <div class="input-group">
                                     <input id="search-form-text" type="search" name="q" class="form-control"><span class="input-group-btn">
-                                        <button class="btn btn-default" type="submit">@lang('translations.search')</button>
+                                        <button class="btn btn-default" type="submit">@lang('laravel-translation-manager::translations.search')</button>
                                     </span>
                                 </div>
                             </div>
@@ -272,7 +271,7 @@
                         <div class="results"></div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">@lang('translations.close')</button>
+                        <button type="button" class="btn btn-default" data-dismiss="modal">@lang('laravel-translation-manager::translations.close')</button>
                     </div>
                 </div>
             </div>
