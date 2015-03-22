@@ -1,5 +1,5 @@
 <h4>Results found: <?= $numTranslations ?></h4>
-<table class="table">
+<table class="table table-condensed">
     <thead>
     <tr>
         <th width="10%">Group</th>

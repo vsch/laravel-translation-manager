@@ -1,5 +1,6 @@
 <?php namespace Barryvdh\TranslationManager;
 
+use Illuminate\Database\Query\Expression;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Events\Dispatcher;
 use Barryvdh\TranslationManager\Models\Translation;
@@ -220,7 +221,7 @@ class Manager
                     $this->files->put($path, $output);
                 }
             }
-            Translation::where('group', $group)->update(array('status' => Translation::STATUS_SAVED));
+            Translation::where('group', $group)->update(array('status' => Translation::STATUS_SAVED, new Expression('saved_value = value')));
         }
     }
 

@@ -333,7 +333,7 @@ SQL
             $value = trim((string)$value) ?: null;
 
             $translation->value = $value;
-            $translation->status = ($translation->isDirty() && $value != $translation->saved_value) ? Translation::STATUS_CHANGED : Translation::STATUS_SAVED;
+            $translation->status = (($translation->isDirty() && $value != $translation->saved_value) ? Translation::STATUS_CHANGED : Translation::STATUS_SAVED);
             $translation->save();
         }
         return array('status' => 'ok');

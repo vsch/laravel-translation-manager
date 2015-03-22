@@ -16,7 +16,7 @@ class AddOriginalColumnToLtrTranslations extends Migration
     {
         Schema::table('ltm_translations', function (Blueprint $table)
         {
-            $table->text('saved_value')->nullable();
+            $table->text('original')->nullable();
         });
     }
 
@@ -30,7 +30,7 @@ class AddOriginalColumnToLtrTranslations extends Migration
     {
         Schema::table('ltm_translations', function (Blueprint $table)
         {
-            $table->dropColumn('saved_value');
+            $table->dropColumn('original');
         });
     }
 }
