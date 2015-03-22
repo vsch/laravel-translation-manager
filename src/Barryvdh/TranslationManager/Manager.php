@@ -51,21 +51,25 @@ class Manager
 
     /**
      * @param $namespace string
-     * @param $group string
-     * @param $key string
+     * @param $group     string
+     * @param $key       string
      *
      * @return null|Translation
      */
     public
-    function missingKey($namespace, $group, $key)
+    function missingKey($namespace, $group, $key, $useLottery = true)
     {
         if (!in_array($group, $this->config()['exclude_groups']) && $this->config()['log_missing_keys'])
         {
-            $lottery = Session::get('laravel_translation_manager.lottery', '');
-            if ($lottery === '')
+            $lottery = 1;
+            if ($useLottery)
             {
-                $lottery = rand(1, $this->config()['missing_keys_lottery']);
-                Session::put('laravel_translation_manager.lottery', $lottery);
+                $lottery = Session::get('laravel_translation_manager.lottery', '');
+                if ($lottery === '')
+                {
+                    $lottery = rand(1, $this->config()['missing_keys_lottery']);
+                    Session::put('laravel_translation_manager.lottery', $lottery);
+                }
             }
 
             if ($lottery === 1)

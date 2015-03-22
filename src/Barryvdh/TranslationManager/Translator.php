@@ -43,9 +43,7 @@ class Translator extends LaravelTranslator
 
             if ($this->manager && $namespace === '*' && $group && $item && !$this->manager->excludedPageEditGroup($group))
             {
-                if (is_numeric($item)) xdebug_break();
-
-                $t = $this->manager->missingKey($namespace, $group, $item);
+                $t = $this->manager->missingKey($namespace, $group, $item, false);
                 if ($t)
                 {
                     if (is_null($t->value)) $t->value = parent::get($key, $replace, $locale);
@@ -82,7 +80,6 @@ class Translator extends LaravelTranslator
         list($namespace, $group, $item) = $this->parseKey($key);
         if ($this->manager && $namespace === '*' && $group && $item)
         {
-            if (is_numeric($key)) xdebug_break();
             $this->manager->missingKey($namespace, $group, $item);
         }
     }
