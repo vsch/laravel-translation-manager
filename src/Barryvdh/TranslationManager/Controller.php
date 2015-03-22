@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Response;
 use Barryvdh\TranslationManager\Models\Translation;
@@ -66,6 +67,19 @@ class Controller extends BaseController
     function __construct(Manager $manager)
     {
         $this->manager = $manager;
+    }
+
+    /**
+     * @return mixed
+     */
+    public static
+    function active($url)
+    {
+        $url = url($url, null, false);
+        $url = str_replace('https:', 'http:', $url);
+        $req = str_replace('https:', 'http:', Request::url());
+        $ret = ($pos = strpos($req, $url)) === 0 && (strlen($req) === strlen($url) || substr($req, strlen($url), 1) === '?' || substr($req, strlen($url), 1) === '#');
+        return $ret;
     }
 
     /**
@@ -166,7 +180,7 @@ SQL
 
         // get mismatches
         $mismatches = DB::select(<<<SQL
-SELECT DISTINCT lt.`group`, ft.*
+SELECT DISTINCT lt.`group`, lt.id, ft.*
 FROM ltm_translations lt
     JOIN
     (SELECT DISTINCT mt.`key`, BINARY mt.ru ru, BINARY mt.en en
@@ -262,7 +276,9 @@ SQL
 
         foreach ($mismatches as $mismatch)
         {
+            $mismatch->en_value = $mismatch->ru;
             $mismatch->en = self::mb_renderDiffHtml($enbases[$mismatch->key], $mismatch->en);
+            $mismatch->ru_value = $mismatch->ru;
             $mismatch->ru = self::mb_renderDiffHtml($rubases[$mismatch->key], $mismatch->ru);
         }
 
