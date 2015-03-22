@@ -301,7 +301,28 @@ SQL
     function getSearch()
     {
         $q = \Input::get('q');
-        $translations = Translation::where('key', 'like', "%$q%")->orWhere('value', 'like', "%$q%")->orderBy('group', 'asc')->orderBy('key', 'asc')->get();
+
+        if ($q === '') $translations = [];
+        else
+        {
+            if (strpos($q, '%') === false) $q = "%$q%";
+
+            //$translations = Translation::where('key', 'like', "%$q%")->orWhere('value', 'like', "%$q%")->orderBy('group', 'asc')->orderBy('key', 'asc')->get();
+
+            // need to fill-in missing locale's that match the key
+            $translations = DB::select(<<<SQL
+SELECT * FROM ltm_translations rt WHERE `key` LIKE ? OR value LIKE ?
+UNION ALL
+SELECT NULL id, 0 status, lt.locale, kt.`group`, kt.`key`, NULL value, NULL created_at, NULL updated_at, NULL source, NULL saved_value
+FROM (SELECT DISTINCT locale FROM ltm_translations) lt
+    CROSS JOIN (SELECT DISTINCT `key`, `group` FROM ltm_translations) kt
+WHERE NOT exists(SELECT * FROM ltm_translations tr WHERE tr.`key` = kt.`key` AND tr.`group` = kt.`group` AND tr.locale = lt.locale)
+      AND `key` LIKE ?
+ORDER BY `key`, `group`, locale
+SQL
+                , [$q, $q, $q,]);
+        }
+
         $numTranslations = count($translations);
 
         return \View::make('laravel-translation-manager::search')->with('translations', $translations)->with('numTranslations', $numTranslations);

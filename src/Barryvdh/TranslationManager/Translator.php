@@ -11,6 +11,9 @@ class Translator extends LaravelTranslator
     /** @var  Dispatcher */
     protected $events;
 
+    /* @var $manager Manager  */
+    protected $manager;
+
     /**
      * Translator constructor.
      */
@@ -38,16 +41,17 @@ class Translator extends LaravelTranslator
         {
             list($namespace, $group, $item) = $this->parseKey($key);
 
-            // TODO: add config to translation manager to define exclude groups for in page edit
-            if ($this->manager && $namespace === '*' && $group && $group !== 'page-titles' && $item)
+            if ($this->manager && $namespace === '*' && $group && $item && !$this->manager->excludedPageEditGroup($group))
             {
+                if (is_numeric($item)) xdebug_break();
+
                 $t = $this->manager->missingKey($namespace, $group, $item);
                 if ($t)
                 {
                     if (is_null($t->value)) $t->value = parent::get($key, $replace, $locale);
 
                     $result = '<a href="#edit" class="editable status-' . ($t ? $t->status : 0) . ' locale-' . $t->locale . '" data-locale="' . $t->locale . '"
-                        data-name="' . $t->locale . '"|" . ' . $t->key . '" id="username" data-type="textarea" data-pk="' . ($t ? $t->id : 0) . '"
+                        data-name="' . $t->locale . '|' . $t->key . '" id="username" data-type="textarea" data-pk="' . ($t ? $t->id : 0) . '"
                         data-url="' . URL::action('Barryvdh\TranslationManager\Controller@postEdit', array($t->group)) . '"
                         data-inputclass="editable-input"
                         data-title="' . parent::trans('laravel-translation-manager::translations.enter-translation') . ': [' . $t->locale . '] ' . $key . '">'
@@ -78,6 +82,7 @@ class Translator extends LaravelTranslator
         list($namespace, $group, $item) = $this->parseKey($key);
         if ($this->manager && $namespace === '*' && $group && $item)
         {
+            if (is_numeric($key)) xdebug_break();
             $this->manager->missingKey($namespace, $group, $item);
         }
     }

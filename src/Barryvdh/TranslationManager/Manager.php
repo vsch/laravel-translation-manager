@@ -6,8 +6,13 @@ use Illuminate\Events\Dispatcher;
 use Barryvdh\TranslationManager\Models\Translation;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 use Symfony\Component\Finder\Finder;
 
+/**
+ * Class Manager
+ * @package Barryvdh\TranslationManager
+ */
 class Manager
 {
 
@@ -31,7 +36,7 @@ class Manager
         // causes a problem since none of the keys are defined.
         $this->config = null;
     }
-    
+
     protected
     function config()
     {
@@ -39,16 +44,39 @@ class Manager
     }
 
     public
+    function excludedPageEditGroup($group)
+    {
+        return in_array($group, $this->config()['exclude_page_edit_groups']);
+    }
+
+    /**
+     * @param $namespace string
+     * @param $group string
+     * @param $key string
+     *
+     * @return null|Translation
+     */
+    public
     function missingKey($namespace, $group, $key)
     {
-        if (!in_array($group, $this->config()['exclude_groups']))
+        if (!in_array($group, $this->config()['exclude_groups']) && $this->config()['log_missing_keys'])
         {
-            $translation = Translation::firstOrCreate(array(
-                'locale' => $this->app['config']['app.locale'],
-                'group' => $group,
-                'key' => $key,
-            ));
-            return $translation;
+            $lottery = Session::get('laravel_translation_manager.lottery', '');
+            if ($lottery === '')
+            {
+                $lottery = rand(1, $this->config()['missing_keys_lottery']);
+                Session::put('laravel_translation_manager.lottery', $lottery);
+            }
+
+            if ($lottery === 1)
+            {
+                $translation = Translation::firstOrCreate(array(
+                    'locale' => $this->app['config']['app.locale'],
+                    'group' => $group,
+                    'key' => $key,
+                ));
+                return $translation;
+            }
         }
         return null;
     }
@@ -96,7 +124,7 @@ class Manager
                         $translation->value = $value;
                     }
 
-                    $translation->saved_value  = $value;
+                    $translation->saved_value = $value;
 
                     $translation->save();
 
@@ -180,7 +208,7 @@ class Manager
             {
                 if (!is_int($key) && strlen($key) > $max) $max = strlen($key);
             }
-            $max += (($max+2) & 3) ? 4-(($max+2) & 3): 0;
+            $max += (($max + 2) & 3) ? 4 - (($max + 2) & 3) : 0;
 
             foreach ($trans as $key => $val)
             {
