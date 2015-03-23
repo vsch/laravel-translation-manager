@@ -1,5 +1,6 @@
 <?php namespace Barryvdh\TranslationManager;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Translation\LoaderInterface;
 use Illuminate\Translation\Translator as LaravelTranslator;
@@ -80,7 +81,7 @@ class Translator extends LaravelTranslator
         list($namespace, $group, $item) = $this->parseKey($key);
         if ($this->manager && $namespace === '*' && $group && $item)
         {
-            $this->manager->missingKey($namespace, $group, $item, true);
+            $this->manager->missingKey($namespace, $group, $item, !Auth::check() || Auth::user()->useTranslatorMissingKeysLottery());
         }
     }
 }
