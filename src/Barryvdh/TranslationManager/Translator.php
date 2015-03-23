@@ -24,6 +24,12 @@ class Translator extends LaravelTranslator
         parent::__construct($loader, $locale);
     }
 
+    public
+    function inPlaceEditing()
+    {
+        return $this->getFallback() === 'dbg' && $this->getLocale() !== 'dbg';
+    }
+
     /**
      * Get the translation for the given key.
      *
@@ -81,6 +87,7 @@ class Translator extends LaravelTranslator
         list($namespace, $group, $item) = $this->parseKey($key);
         if ($this->manager && $namespace === '*' && $group && $item)
         {
+            // KLUDGE: find an independent way to hook in role validation on users
             $this->manager->missingKey($namespace, $group, $item, !Auth::check() || Auth::user()->useTranslatorMissingKeysLottery());
         }
     }

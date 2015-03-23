@@ -2,19 +2,20 @@
 
 use Illuminate\Translation\TranslationServiceProvider as BaseTranslationServiceProvider;
 
-class TranslationServiceProvider extends BaseTranslationServiceProvider {
-
+class TranslationServiceProvider extends BaseTranslationServiceProvider
+{
 
     /**
      * Register the service provider.
      *
      * @return void
      */
-    public function register()
+    public
+    function register()
     {
         $this->registerLoader();
 
-        $this->app->bindShared('translator', function($app)
+        $this->app->bindShared('translator', function ($app)
         {
             $loader = $app['translation.loader'];
 
@@ -27,14 +28,12 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider {
 
             $trans->setFallback($app['config']['app.fallback_locale']);
 
-            if($app->bound('translation-manager')){
+            if ($app->bound('translation-manager'))
+            {
                 $trans->setTranslationManager($app['translation-manager']);
             }
 
             return $trans;
         });
-
     }
-
-
 }
