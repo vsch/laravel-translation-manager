@@ -139,6 +139,17 @@ class Controller extends BaseController
         $numChanged = Translation::where('group', $group)->where('status', Translation::STATUS_CHANGED)->count();
 
         $allTranslations = Translation::where('group', $group)->orderBy('key', 'asc')->get();
+
+        if (!count($allTranslations) && $group)
+        {
+            $pos = strrpos($url = Request::url(), '/index');
+            if ($pos !== false)
+            {
+                $url = substr($url, 0, $pos);
+                return Redirect::to($url);
+            }
+        }
+
         $numTranslations = count($allTranslations);
         $translations = array();
         foreach ($allTranslations as $translation)
