@@ -264,7 +264,7 @@ class Manager
                     $this->files->put($path, $output);
                 }
             }
-            Translation::where('group', $group)->update(array('status' => Translation::STATUS_SAVED, 'saved_value' => (new Expression('value'))));
+            Translation::where('group', $group)->update(array('status' => (new Expression('isnull(value)')), 'saved_value' => (new Expression('value'))));
         }
     }
 
