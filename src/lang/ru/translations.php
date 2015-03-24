@@ -12,7 +12,7 @@ return array(
     'group'                 => 'Группа',
     'key'                   => 'Ключ',
     'locale'                => 'Язык',
-    'mismatches'            => 'Не Совподающие Переводы ',
+    'mismatches'            => 'Не Совподающие Переводы',
     'missing'               => 'Отсутствует',
     'search'                => 'Поиск',
     'search-translations'   => 'Поиск Переводов',

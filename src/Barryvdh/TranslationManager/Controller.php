@@ -377,8 +377,9 @@ SQL
                 'group' => $group,
                 'key' => $key,
             ));
-            // strip off trailing spaces and eol's
-            $value = trim((string)$value) ?: null;
+            // strip off trailing spaces and eol's and &nbsps; that seem to be added when multiple spaces are entered in the x-editable textarea
+            $value = trim(str_replace("\xc2\xa0", ' ', $value));
+            $value = $value !== '' ? $value : null;
 
             $translation->value = $value;
             $translation->status = (($translation->isDirty() && $value != $translation->saved_value) ? Translation::STATUS_CHANGED : Translation::STATUS_SAVED);
