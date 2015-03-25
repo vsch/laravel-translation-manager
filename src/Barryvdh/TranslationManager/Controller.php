@@ -416,6 +416,14 @@ SQL
     }
 
     public
+    function postDeleteAll()
+    {
+        $numFound = $this->manager->truncateTranslations();
+
+        return Response::json(array('status' => 'ok', 'counter' => (int)$numFound));
+    }
+
+    public
     function postPublish($group)
     {
         $this->manager->exportTranslations($group);

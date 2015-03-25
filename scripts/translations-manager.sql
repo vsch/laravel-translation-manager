@@ -162,4 +162,12 @@ INSERT INTO ltm_translations
     WHERE NOT exists(SELECT *
                      FROM ltm_translations tr WHERE tr.`key` = kt.`key` AND tr.`group` = kt.`group` AND tr.locale = lt.locale);
 
+# select missing page-titles and add them
+# create, delete, edit, show
+INSERT INTO ltm_translations (status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value)
+    SELECT DISTINCT 1 status, locale, 'page-titles' `group`, `key`, `value`, sysdate() created_at, sysdate() updated_at, NULL `source`, NULL saved_value
+    FROM ltm_translations lt
+    WHERE (`key` LIKE 'create-%' OR `key` LIKE 'delete-%' OR `key` LIKE 'edit-%' OR `key` LIKE 'show-%' OR `key` LIKE 'index-%') AND `group` NOT IN ('messages', 'validation', 'reminders', 'translations')
+          AND NOT exists(SELECT * FROM ltm_translations pt WHERE pt.`key` = lt.`key` AND pt.`group` = 'page-titles');
+;
 
