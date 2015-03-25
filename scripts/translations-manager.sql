@@ -171,3 +171,5 @@ INSERT INTO ltm_translations (status, locale, `group`, `key`, value, created_at,
           AND NOT exists(SELECT * FROM ltm_translations pt WHERE pt.`key` = lt.`key` AND pt.`group` = 'page-titles');
 ;
 
+
+select * from ltm_translations where `group` like '%messages';

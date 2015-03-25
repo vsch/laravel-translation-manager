@@ -12,7 +12,7 @@ class Translator extends LaravelTranslator
     /** @var  Dispatcher */
     protected $events;
 
-    /* @var $manager Manager  */
+    /* @var $manager Manager */
     protected $manager;
 
     protected $suspendInPlaceEdit;
@@ -45,6 +45,26 @@ class Translator extends LaravelTranslator
         return $this->suspendInPlaceEdit ? --$this->suspendInPlaceEdit : 0;
     }
 
+    public
+    function inPlaceEditLink($t, $withDiff = false)
+    {
+        if ($t)
+        {
+            $title = parent::get('laravel-translation-manager::messages.enter-translation');
+            if (is_null($t->value)) $t->value = ''; //$t->value = parent::get($key, $replace, $locale);
+            $result = '<a href="#edit" class="editable status-' . ($t ? $t->status : 0) . ' locale-' . $t->locale . '" data-locale="' . $t->locale . '"'
+                . 'data-name="' . $t->locale . '|' . $t->key . '" id="' . $t->locale . "-" . $t->key . '"  data-type="textarea" data-pk="' . ($t ? $t->id : 0) . '"'
+                . 'data-url="' . URL::action('Barryvdh\TranslationManager\Controller@postEdit', array($t->group)) . '"'
+                . 'data-inputclass="editable-input" data-saved_value="' . ($t ? htmlentities($t->saved_value, ENT_QUOTES, 'UTF-8', false) : '') . '"'
+                . 'data-title="' . $title . ': [' . $t->locale . '] ' . $t->group . '.' . $t->key . '">'
+                . ($t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '') . '</a> '
+                . ($withDiff ? (!$t ? '' : ($t->saved_value === $t->value ? '' : ' [' . \Barryvdh\TranslationManager\Controller::mb_renderDiffHtml($t->saved_value, $t->value) . ']')) : '');
+            return $result;
+        }
+
+        return '';
+    }
+
     /**
      * Get the translation for the given key.
      *
@@ -68,19 +88,7 @@ class Translator extends LaravelTranslator
                 if ($this->manager && $namespace === '*' && $group && $item && !$this->manager->excludedPageEditGroup($group))
                 {
                     $t = $this->manager->missingKey($namespace, $group, $item);
-                    if ($t)
-                    {
-                        if (is_null($t->value)) $t->value = ''; //$t->value = parent::get($key, $replace, $locale);
-
-                        $result = '<a href="#edit" class="editable status-' . ($t ? $t->status : 0) . ' locale-' . $t->locale . '" data-locale="' . $t->locale . '"
-                        data-name="' . $t->locale . '|' . $t->key . '" id="username" data-type="textarea" data-pk="' . ($t ? $t->id : 0) . '"
-                        data-url="' . URL::action('Barryvdh\TranslationManager\Controller@postEdit', array($t->group)) . '"
-                        data-inputclass="editable-input"
-                        data-title="' . parent::trans('laravel-translation-manager::translations.enter-translation') . ': [' . $t->locale . '] ' . $key . '">'
-                            . ($t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '') . '</a> '//. (!$t ? '' : ($t->saved_value === $t->value ? '' : ' [' . \Barryvdh\TranslationManager\Controller::mb_renderDiffHtml($t->saved_value, $t->value) . ']'));
-                        ;
-                        return $result;
-                    }
+                    return $this->inPlaceEditLink($t);
                 }
             }
         }

@@ -24,6 +24,7 @@ class Manager
     protected $events;
 
     protected $config;
+    protected $imported;
 
     public
     function __construct(Application $app, Filesystem $files, Dispatcher $events)
@@ -79,6 +80,7 @@ class Manager
                     'group' => $group,
                     'key' => $key,
                 ));
+
                 return $translation;
             }
         }
@@ -86,57 +88,85 @@ class Manager
     }
 
     public
-    function importTranslations($replace = false)
+    function importTranslationLocale($replace = false, $locale, $langPath, $namespace = null)
     {
-        $counter = 0;
-        foreach ($this->files->directories($this->app->make('path') . '/lang') as $langPath)
+        $files = $this->files->files($langPath);
+        $package = $namespace ? $namespace . '::' : '';
+        foreach ($files as $file)
         {
-            $locale = basename($langPath);
 
-            foreach ($this->files->files($langPath) as $file)
+            $info = pathinfo($file);
+            $group = $info['filename'];
+
+            if (in_array($package.$group, $this->config()['exclude_groups']))
             {
+                continue;
+            }
 
-                $info = pathinfo($file);
-                $group = $info['filename'];
+            $translations = array_dot(\Lang::getLoader()->load($locale, $group, $namespace));
+            foreach ($translations as $key => $value)
+            {
+                $value = (string)$value;
+                $translation = Translation::firstOrNew(array(
+                    'locale' => $locale,
+                    'group' => $package.$group,
+                    'key' => $key,
+                ));
 
-                if (in_array($group, $this->config()['exclude_groups']))
+                // Importing from the source, status is always saved. When it is changed by the user, then it is changed.
+                //$newStatus = ($translation->value === $value || !$translation->exists) ? Translation::STATUS_SAVED : Translation::STATUS_CHANGED;
+                $newStatus = Translation::STATUS_SAVED;
+                if ($newStatus !== (int)$translation->status)
                 {
-                    continue;
+                    $translation->status = $newStatus;
                 }
 
-                $translations = array_dot(\Lang::getLoader()->load($locale, $group));
-                foreach ($translations as $key => $value)
+                // Only replace when empty, or explicitly told so
+                if ($replace || !$translation->value)
                 {
-                    $value = (string)$value;
-                    $translation = Translation::firstOrNew(array(
-                        'locale' => $locale,
-                        'group' => $group,
-                        'key' => $key,
-                    ));
+                    $translation->value = $value;
+                }
 
-                    // Importing from the source, status is always saved. When it is changed by the user, then it is changed.
-                    //$newStatus = ($translation->value === $value || !$translation->exists) ? Translation::STATUS_SAVED : Translation::STATUS_CHANGED;
-                    $newStatus = Translation::STATUS_SAVED;
-                    if ($newStatus !== (int)$translation->status)
+                $translation->saved_value = $value;
+
+                $translation->save();
+
+                $this->imported++;
+            }
+        }
+    }
+
+    public
+    function importTranslations($replace = false, $packages = false)
+    {
+        if (!$packages) $this->imported = 0;
+
+        $langdirs = $this->files->directories($this->app->make('path') . '/lang' . ($packages ? '/packages' : ''));
+        foreach ($langdirs as $langdir)
+        {
+            $locale = basename($langdir);
+            if ($locale === 'packages' && !$packages)
+            {
+                $this->importTranslations($replace, true);
+            }
+            else
+            {
+                if ($packages)
+                {
+                    $packdirs = $this->files->directories($langdir);
+                    foreach ($packdirs as $packagedir)
                     {
-                        $translation->status = $newStatus;
+                        $package = basename($packagedir);
+                        $this->importTranslationLocale($replace, $locale, $packagedir, $package);
                     }
-
-                    // Only replace when empty, or explicitly told so
-                    if ($replace || !$translation->value)
-                    {
-                        $translation->value = $value;
-                    }
-
-                    $translation->saved_value = $value;
-
-                    $translation->save();
-
-                    $counter++;
+                }
+                else
+                {
+                    $this->importTranslationLocale($replace, $locale, $langdir);
                 }
             }
         }
-        return $counter;
+        return $this->imported;
     }
 
     public
@@ -259,7 +289,20 @@ class Manager
                 if (isset($groups[$group]))
                 {
                     $translations = $groups[$group];
-                    $path = $this->app->make('path') . '/lang/' . $locale . '/' . $group . '.php';
+
+                    if (strpos($group, '::') !== false)
+                    {
+                        // package group
+                        $packgroup = explode('::', $group, 2);
+                        $package = array_shift($packgroup);
+                        $packgroup = array_shift($packgroup);
+                        $path = $this->app->make('path') . '/lang/packages/' . $locale . '/'. $package . '/' . $packgroup . '.php';
+                    }
+                    else
+                    {
+                        $path = $this->app->make('path') . '/lang/' . $locale . '/' . $group . '.php';
+                    }
+
                     $output = "<?php\n\nreturn " . $this->formatForExport($translations) . ";\n";
                     $this->files->put($path, $output);
                 }
