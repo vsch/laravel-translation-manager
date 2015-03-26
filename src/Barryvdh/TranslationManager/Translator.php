@@ -70,15 +70,15 @@ class Translator extends LaravelTranslator
         {
             if ($withDiff && $diff === '')
             {
-                $diff = (!$t ? '' : ($t->saved_value == $t->value ? '' : ($t->saved_value === $t->value ? '' : ' [' . \Barryvdh\TranslationManager\Controller::mb_renderDiffHtml($t->saved_value, $t->value) . ']')));
+                $diff = ($t->saved_value == $t->value ? '' : ($t->saved_value === $t->value ? '' : ' [' . \Barryvdh\TranslationManager\Controller::mb_renderDiffHtml($t->saved_value, $t->value) . ']'));
             }
             $title = parent::get('laravel-translation-manager::messages.enter-translation');
 
             if (is_null($t->value)) $t->value = ''; //$t->value = parent::get($key, $replace, $locale);
-            $result = '<a href="#edit" class="editable status-' . ($t ? $t->status : 0) . ' locale-' . $t->locale . '" data-locale="' . $t->locale . '"'
-                . 'data-name="' . $t->locale . '|' . $t->key . '" id="' . $t->locale . "-" . $t->key . '"  data-type="textarea" data-pk="' . ($t ? $t->id : 0) . '"'
+            $result = '<a href="#edit" class="editable status-' . ($t->status ?: 0) . ' locale-' . $t->locale . '" data-locale="' . $t->locale . '"'
+                . 'data-name="' . $t->locale . '|' . $t->key . '" id="' . $t->locale . "-" . $t->key . '"  data-type="textarea" data-pk="' . ($t->id ?: 0) . '"'
                 . 'data-url="' . URL::action('Barryvdh\TranslationManager\Controller@postEdit', array($t->group)) . '"'
-                . 'data-inputclass="editable-input" data-saved_value="' . ($t ? htmlentities($t->saved_value, ENT_QUOTES, 'UTF-8', false) : '') . '"'
+                . 'data-inputclass="editable-input" data-saved_value="' . htmlentities($t->saved_value, ENT_QUOTES, 'UTF-8', false) . '"'
                 . 'data-title="' . $title . ': [' . $t->locale . '] ' . $t->group . '.' . $t->key . '">'
                 . ($t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '') . '</a> '
                 . $diff;

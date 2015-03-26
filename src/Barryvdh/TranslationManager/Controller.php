@@ -192,7 +192,7 @@ SQL
 
         // get mismatches
         $mismatches = DB::select(<<<SQL
-SELECT DISTINCT lt.`group`, lt.id, ft.*
+SELECT DISTINCT lt.*, ft.ru, ft.en
 FROM ltm_translations lt
     JOIN
     (SELECT DISTINCT mt.`key`, BINARY mt.ru ru, BINARY mt.en en
