@@ -66,6 +66,7 @@ class Translator extends LaravelTranslator
                 }
             }
         }
+
         if ($t)
         {
             if ($withDiff && $diff === '')
