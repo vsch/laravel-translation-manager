@@ -94,15 +94,16 @@ class Controller extends BaseController
     function mb_renderDiffHtml($from_text, $to_text, $charDiff = null)
     {
         //if ($from_text === 'Lang' && $to_text === 'Language') xdebug_break();
-        if ($from_text === $to_text) return $to_text;
+        if ($from_text == $to_text) return $to_text;
 
         $removeSpaces = false;
         if (is_null($charDiff))
         {
             $charDiff = mb_strtolower($from_text) === mb_strtolower($to_text)
                 || abs(mb_strlen($from_text) - mb_strlen($to_text)) <= 2
-                || (strpos($from_text, $to_text) !== false)
-                || (strpos($to_text, $from_text) !== false);
+                || ($from_text && $to_text
+                    && ((strpos($from_text, $to_text) !== false)
+                        || ($to_text && strpos($to_text, $from_text) !== false)));
         }
 
         if ($charDiff)
@@ -135,7 +136,7 @@ class Controller extends BaseController
             $groups->whereNotIn('group', $excludedGroups);
         }
 
-        $groups = array('' => 'Choose a group') + $groups->lists('group', 'group');
+        $groups = array('' => noEditTrans('laravel-translation-manager::messages.choose-group')) + $groups->lists('group', 'group');
         $numChanged = Translation::where('group', $group)->where('status', Translation::STATUS_CHANGED)->count();
 
         $allTranslations = Translation::where('group', $group)->orderBy('key', 'asc')->get();

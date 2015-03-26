@@ -51,14 +51,18 @@ class Manager
     }
 
     /**
-     * @param $namespace string
-     * @param $group     string
-     * @param $key       string
+     * @param      $namespace string
+     * @param      $group     string
+     * @param      $key       string
      *
-     * @return null|Translation
+     * @param null $locale
+     * @param bool $useLottery
+     * @param bool $findOrNew
+     *
+     * @return \Barryvdh\TranslationManager\Models\Translation|null
      */
     public
-    function missingKey($namespace, $group, $key, $useLottery = false, $findOrNew = false)
+    function missingKey($namespace, $group, $key, $locale = null, $useLottery = false, $findOrNew = false)
     {
         $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
 
@@ -80,7 +84,7 @@ class Manager
                 if ($findOrNew)
                 {
                     $translation = Translation::firstOrNew(array(
-                        'locale' => $this->app['config']['app.locale'],
+                        'locale' => $locale ?: $this->app['config']['app.locale'],
                         'group' => $group,
                         'key' => $key,
                     ));

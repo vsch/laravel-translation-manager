@@ -46,11 +46,34 @@ class Translator extends LaravelTranslator
     }
 
     public
-    function inPlaceEditLink($t, $withDiff = false)
+    function inPlaceEditLink($t, $withDiff = false, $key = null, $locale = null)
     {
+        $diff = '';
+        if (!$t && $key)
+        {
+            list($namespace, $group, $item) = $this->parseKey($key);
+            if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
+            {
+                $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
+                if ((!$t->exists || $t->value == '') && $namespace != '*')
+                { // get the package definition, we don't have an override
+                    $t->saved_value = parent::get($key, [], $locale);
+                    $t->status = 0;
+                    if ($withDiff)
+                    {
+                        $diff = ' [' . $t->saved_value . ']';
+                    }
+                }
+            }
+        }
         if ($t)
         {
+            if ($withDiff && $diff === '')
+            {
+                $diff = (!$t ? '' : ($t->saved_value == $t->value ? '' : ($t->saved_value === $t->value ? '' : ' [' . \Barryvdh\TranslationManager\Controller::mb_renderDiffHtml($t->saved_value, $t->value) . ']')));
+            }
             $title = parent::get('laravel-translation-manager::messages.enter-translation');
+
             if (is_null($t->value)) $t->value = ''; //$t->value = parent::get($key, $replace, $locale);
             $result = '<a href="#edit" class="editable status-' . ($t ? $t->status : 0) . ' locale-' . $t->locale . '" data-locale="' . $t->locale . '"'
                 . 'data-name="' . $t->locale . '|' . $t->key . '" id="' . $t->locale . "-" . $t->key . '"  data-type="textarea" data-pk="' . ($t ? $t->id : 0) . '"'
@@ -58,7 +81,7 @@ class Translator extends LaravelTranslator
                 . 'data-inputclass="editable-input" data-saved_value="' . ($t ? htmlentities($t->saved_value, ENT_QUOTES, 'UTF-8', false) : '') . '"'
                 . 'data-title="' . $title . ': [' . $t->locale . '] ' . $t->group . '.' . $t->key . '">'
                 . ($t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '') . '</a> '
-                . ($withDiff ? (!$t ? '' : ($t->saved_value === $t->value ? '' : ' [' . \Barryvdh\TranslationManager\Controller::mb_renderDiffHtml($t->saved_value, $t->value) . ']')) : '');
+                . $diff;
             return $result;
         }
 
@@ -66,15 +89,16 @@ class Translator extends LaravelTranslator
     }
 
     public
-    function getInPlaceEditLink($key, array $replace = array(), $locale = null){
-        list($namespace, $group, $item) = $this->parseKey($key);
-
-        if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
-        {
-            $t = $this->manager->missingKey($namespace, $group, $item);
-            return $this->inPlaceEditLink($t);
-        }
-        return '';
+    function getInPlaceEditLink($key, array $replace = array(), $locale = null, $withDiff = null)
+    {
+        return $this->inPlaceEditLink(null, $withDiff, $key, $locale);
+        //list($namespace, $group, $item) = $this->parseKey($key);
+        //
+        //if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
+        //{
+        //    $t = $this->manager->missingKey($namespace, $group, $item, $locale);
+        //}
+        //return '';
     }
 
     /**
@@ -95,20 +119,25 @@ class Translator extends LaravelTranslator
 
             if ($thisLocale[0] !== 'dbg' && $thisLocale[1] === 'dbg')
             {
-                list($namespace, $group, $item) = $this->parseKey($key);
-
-                if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
-                {
-                    $t = $this->manager->missingKey($namespace, $group, $item, false, true);
-                    return $this->inPlaceEditLink($t);
-                }
+                return $this->inPlaceEditLink(null, true, $key, $locale);
+                //list($namespace, $group, $item) = $this->parseKey($key);
+                //
+                //if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
+                //{
+                //    $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
+                //    if (!$t->exists && $namespace != '*')
+                //    { // get the package definition, we don't have an override
+                //        $t->value = $t->saved_value = parent::get($key, $replace, $locale);
+                //        $t->status = 0;
+                //    }
+                //}
             }
         }
 
         $result = parent::get($key, $replace, $locale);
         if ($result === $key)
         {
-            $this->notifyMissingKey($key);
+            $this->notifyMissingKey($key, $locale);
         }
         return $result;
     }
@@ -120,13 +149,13 @@ class Translator extends LaravelTranslator
     }
 
     protected
-    function notifyMissingKey($key)
+    function notifyMissingKey($key, $locale = null)
     {
         list($namespace, $group, $item) = $this->parseKey($key);
         if ($this->manager && $namespace === '*' && $group && $item)
         {
             // KLUDGE: find an independent way to hook in role validation on users
-            $this->manager->missingKey($namespace, $group, $item, !Auth::check() || Auth::user()->useTranslatorMissingKeysLottery());
+            $this->manager->missingKey($namespace, $group, $item, $locale, !Auth::check() || Auth::user()->useTranslatorMissingKeysLottery());
         }
     }
 }
