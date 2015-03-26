@@ -65,6 +65,18 @@ class Translator extends LaravelTranslator
         return '';
     }
 
+    public
+    function getInPlaceEditLink($key, array $replace = array(), $locale = null){
+        list($namespace, $group, $item) = $this->parseKey($key);
+
+        if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
+        {
+            $t = $this->manager->missingKey($namespace, $group, $item);
+            return $this->inPlaceEditLink($t);
+        }
+        return '';
+    }
+
     /**
      * Get the translation for the given key.
      *
@@ -85,9 +97,9 @@ class Translator extends LaravelTranslator
             {
                 list($namespace, $group, $item) = $this->parseKey($key);
 
-                if ($this->manager && $namespace === '*' && $group && $item && !$this->manager->excludedPageEditGroup($group))
+                if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
                 {
-                    $t = $this->manager->missingKey($namespace, $group, $item);
+                    $t = $this->manager->missingKey($namespace, $group, $item, false, true);
                     return $this->inPlaceEditLink($t);
                 }
             }

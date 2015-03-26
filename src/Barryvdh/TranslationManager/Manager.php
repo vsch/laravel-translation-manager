@@ -58,8 +58,10 @@ class Manager
      * @return null|Translation
      */
     public
-    function missingKey($namespace, $group, $key, $useLottery = false)
+    function missingKey($namespace, $group, $key, $useLottery = false, $findOrNew = false)
     {
+        $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
+
         if (!in_array($group, $this->config()['exclude_groups']) && $this->config()['log_missing_keys'])
         {
             $lottery = 1;
@@ -75,11 +77,22 @@ class Manager
 
             if ($lottery === 1)
             {
-                $translation = Translation::firstOrCreate(array(
-                    'locale' => $this->app['config']['app.locale'],
-                    'group' => $group,
-                    'key' => $key,
-                ));
+                if ($findOrNew)
+                {
+                    $translation = Translation::firstOrNew(array(
+                        'locale' => $this->app['config']['app.locale'],
+                        'group' => $group,
+                        'key' => $key,
+                    ));
+                }
+                else
+                {
+                    $translation = Translation::firstOrCreate(array(
+                        'locale' => $this->app['config']['app.locale'],
+                        'group' => $group,
+                        'key' => $key,
+                    ));
+                }
 
                 return $translation;
             }
@@ -98,7 +111,7 @@ class Manager
             $info = pathinfo($file);
             $group = $info['filename'];
 
-            if (in_array($package.$group, $this->config()['exclude_groups']))
+            if (in_array($package . $group, $this->config()['exclude_groups']))
             {
                 continue;
             }
@@ -109,7 +122,7 @@ class Manager
                 $value = (string)$value;
                 $translation = Translation::firstOrNew(array(
                     'locale' => $locale,
-                    'group' => $package.$group,
+                    'group' => $package . $group,
                     'key' => $key,
                 ));
 
@@ -296,7 +309,7 @@ class Manager
                         $packgroup = explode('::', $group, 2);
                         $package = array_shift($packgroup);
                         $packgroup = array_shift($packgroup);
-                        $path = $this->app->make('path') . '/lang/packages/' . $locale . '/'. $package . '/' . $packgroup . '.php';
+                        $path = $this->app->make('path') . '/lang/packages/' . $locale . '/' . $package . '/' . $packgroup . '.php';
                     }
                     else
                     {
