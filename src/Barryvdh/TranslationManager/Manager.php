@@ -69,7 +69,7 @@ class Manager
         if (!in_array($group, $this->config()['exclude_groups']) && $this->config()['log_missing_keys'])
         {
             $lottery = 1;
-            if ($useLottery)
+            if ($useLottery && $this->config()['missing_keys_lottery'] !== 1)
             {
                 $lottery = Session::get('laravel_translation_manager.lottery', '');
                 if ($lottery === '')
