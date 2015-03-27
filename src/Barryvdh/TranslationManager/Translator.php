@@ -143,6 +143,27 @@ class Translator extends LaravelTranslator
         return $result;
     }
 
+    /**
+     * Get a translation according to an integer value.
+     *
+     * @param  string  $key
+     * @param  int     $number
+     * @param  array   $replace
+     * @param  string  $locale
+     * @return string
+     */
+    public function choice($key, $number, array $replace = array(), $locale = null)
+    {
+        if ($this->inPlaceEditing())
+        {
+            return $this->get($key, $replace, $locale = $locale ?: $this->locale);
+        }
+        else
+        {
+            return parent::choice($key, $number, $replace, $locale);
+        }
+    }
+
     public
     function setTranslationManager(Manager $manager)
     {
