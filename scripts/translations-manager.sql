@@ -149,8 +149,6 @@ FROM (SELECT DISTINCT locale
 WHERE NOT exists(SELECT *
                  FROM ltm_translations tr WHERE tr.`key` = kt.`key` AND tr.`group` = kt.`group` AND tr.locale = lt.locale);
 
-
-
 # insert missing keys for other locales to reduce hit on the database for missing keys
 INSERT INTO ltm_translations
     SELECT NULL id, 0 status, lt.locale, kt.`group`, kt.`key`, NULL value, NULL created_at, NULL updated_at, NULL source, NULL saved_value
@@ -166,9 +164,30 @@ INSERT INTO ltm_translations
 INSERT INTO ltm_translations (status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value)
     SELECT DISTINCT 1 status, locale, 'page-titles' `group`, `key`, `value`, sysdate() created_at, sysdate() updated_at, NULL `source`, NULL saved_value
     FROM ltm_translations lt
-    WHERE (`key` LIKE 'create-%' OR `key` LIKE 'delete-%' OR `key` LIKE 'edit-%' OR `key` LIKE 'show-%' OR `key` LIKE 'index-%') AND `group` NOT IN ('messages', 'validation', 'reminders', 'translations')
-          AND NOT exists(SELECT * FROM ltm_translations pt WHERE pt.`key` = lt.`key` AND pt.`group` = 'page-titles');
+    WHERE (`key` LIKE 'create-%' OR `key` LIKE 'delete-%' OR `key` LIKE 'edit-%' OR `key` LIKE 'show-%' OR `key` LIKE 'index-%') AND
+          `group` NOT IN ('messages', 'validation', 'reminders', 'translations')
+          AND NOT exists(SELECT *
+                         FROM ltm_translations pt WHERE pt.`key` = lt.`key` AND pt.`group` = 'page-titles');
 ;
 
+INSERT INTO ltm_translations
+SELECT NULL id, 0 status, lt.locale, lt.`group`, concat('show',substr(lt.`key`,char_length('edit')+1)) `key`, CASE WHEN lt.locale = 'en' THEN concat('Show', substr(lt.value, char_length('Edit') + 1))
+                                                           WHEN lt.locale = 'ru' THEN concat('Показать', substr(lt.value, char_length('Редактировать') + 1))
+                                                           ELSE NULL END value,
+    NULL created_at, NULL updated_at, NULL source, NULL saved_value
+FROM ltm_translations lt
+WHERE
+    `group` = 'page-titles' AND `key` LIKE 'edit-%'
+    AND NOT EXISTS(SELECT *
+                   FROM ltm_translations tr WHERE tr.`key` = concat('show',substr(lt.`key`,char_length('edit')+1)) AND tr.`group` = lt.`group` AND tr.locale = lt.locale);
+;
 
-select * from ltm_translations where `group` like '%messages';
+INSERT INTO ltm_translations
+    SELECT NULL id, 0 status, lt.locale, kt.`group`, kt.`key`, NULL value, NULL created_at, NULL updated_at, NULL source, NULL saved_value
+    FROM (SELECT DISTINCT locale
+          FROM ltm_translations) lt
+        CROSS JOIN (SELECT DISTINCT `key`, `group`
+                    FROM ltm_translations) kt
+    WHERE NOT exists(SELECT *
+                     FROM ltm_translations tr WHERE tr.`key` = kt.`key` AND tr.`group` = kt.`group` AND tr.locale = lt.locale);
+
