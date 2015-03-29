@@ -17,6 +17,8 @@ class Translator extends LaravelTranslator
 
     protected $suspendInPlaceEdit;
 
+    protected $useDB;
+
     /**
      * Translator constructor.
      */
@@ -77,7 +79,7 @@ class Translator extends LaravelTranslator
 
             if (is_null($t->value)) $t->value = ''; //$t->value = parent::get($key, $replace, $locale);
             $result = '<a href="#edit" class="editable status-' . ($t->status ?: 0) . ' locale-' . $t->locale . '" data-locale="' . $t->locale . '"'
-                . 'data-name="' . $t->locale . '|' . $t->key . '" id="' . $t->locale . "-" . $t->key . '"  data-type="textarea" data-pk="' . ($t->id ?: 0) . '"'
+                . 'data-name="' . $t->locale . '|' . $t->key . '" id="' . $t->locale . "-" . str_replace('.','-',$t->key) . '"  data-type="textarea" data-pk="' . ($t->id ?: 0) . '"'
                 . 'data-url="' . URL::action('Barryvdh\TranslationManager\Controller@postEdit', array($t->group)) . '"'
                 . 'data-inputclass="editable-input" data-saved_value="' . htmlentities($t->saved_value, ENT_QUOTES, 'UTF-8', false) . '"'
                 . 'data-title="' . $title . ': [' . $t->locale . '] ' . $t->group . '.' . $t->key . '">'
@@ -108,11 +110,16 @@ class Translator extends LaravelTranslator
      * @param  string $key
      * @param  array  $replace
      * @param  string $locale
+     * @param  int    $useDB null - check usedb field,
+     *                       0 - don't use,
+     *                       1 - only if key is missing in files, use saved_value fallback on value,
+     *                       2 - always, use saved_value fallback on value,
+     *                       3 - always, use value (unpublished)
      *
      * @return string
      */
     public
-    function get($key, array $replace = array(), $locale = null)
+    function get($key, array $replace = array(), $locale = null, $useDB = null)
     {
         if (!$this->suspendInPlaceEdit)
         {
@@ -121,24 +128,39 @@ class Translator extends LaravelTranslator
             if ($thisLocale[0] !== 'dbg' && $thisLocale[1] === 'dbg')
             {
                 return $this->inPlaceEditLink(null, true, $key, $locale);
-                //list($namespace, $group, $item) = $this->parseKey($key);
-                //
-                //if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
-                //{
-                //    $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
-                //    if (!$t->exists && $namespace != '*')
-                //    { // get the package definition, we don't have an override
-                //        $t->value = $t->saved_value = parent::get($key, $replace, $locale);
-                //        $t->status = 0;
-                //    }
-                //}
             }
         }
+        if (is_null($useDB)) $useDB = $this->useDB;
 
-        $result = parent::get($key, $replace, $locale);
-        if ($result === $key)
+        if ($useDB >= 2)
         {
-            $this->notifyMissingKey($key, $locale);
+            list($namespace, $group, $item) = $this->parseKey($key);
+            if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
+            {
+                $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
+                $result = $useDB === 3 ? ($t->value ?: $key) : ($t->saved_value ?: ($t->value ?: $key));
+                if ($t->isDirty()) $t->save();
+            }
+        }
+        else
+        {
+            $result = parent::get($key, $replace, $locale);
+            if ($result === $key)
+            {
+                if ($useDB === 1)
+                {
+                    list($namespace, $group, $item) = $this->parseKey($key);
+                    if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
+                    {
+                        $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
+                        $result = $t->saved_value ?: ($t->value ?: $key);
+                    }
+                }
+                else
+                {
+                    $this->notifyMissingKey($key, $locale);
+                }
+            }
         }
         return $result;
     }
@@ -146,13 +168,44 @@ class Translator extends LaravelTranslator
     /**
      * Get a translation according to an integer value.
      *
-     * @param  string  $key
+     * @param  string  $id
      * @param  int     $number
-     * @param  array   $replace
+     * @param  array   $parameters
+     * @param  string  $domain
      * @param  string  $locale
      * @return string
      */
-    public function choice($key, $number, array $replace = array(), $locale = null)
+    public function transChoice($id, $number, array $parameters = array(), $domain = 'messages', $locale = null, $useDB = null)
+    {
+        return $this->choice($id, $number, $parameters, $locale, $useDB);
+    }
+
+    /**
+     * Get the translation for a given key.
+     *
+     * @param  string  $id
+     * @param  array   $parameters
+     * @param  string  $domain
+     * @param  string  $locale
+     * @return string
+     */
+    public function trans($id, array $parameters = array(), $domain = 'messages', $locale = null, $useDB = null)
+    {
+        return $this->get($id, $parameters, $locale, $useDB);
+    }
+
+    /**
+     * Get a translation according to an integer value.
+     *
+     * @param  string $key
+     * @param  int    $number
+     * @param  array  $replace
+     * @param  string $locale
+     *
+     * @return string
+     */
+    public
+    function choice($key, $number, array $replace = array(), $locale = null, $useDB = null)
     {
         if ($this->inPlaceEditing())
         {
@@ -160,7 +213,18 @@ class Translator extends LaravelTranslator
         }
         else
         {
-            return parent::choice($key, $number, $replace, $locale);
+            if (!is_null($useDB))
+            {
+                $oldUseDB = $this->useDB;
+                $this->useDB = $useDB;
+                $retVal = parent::choice($key, $number, $replace, $locale);
+                $this->useDB = $oldUseDB;
+                return $retVal;
+            }
+            else
+            {
+                return parent::choice($key, $number, $replace, $locale);
+            }
         }
     }
 
