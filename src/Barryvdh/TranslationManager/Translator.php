@@ -81,7 +81,7 @@ class Translator extends LaravelTranslator
 
             if (is_null($t->value)) $t->value = ''; //$t->value = parent::get($key, $replace, $locale);
             $result = '<a href="#edit" class="editable status-' . ($t->status ?: 0) . ' locale-' . $t->locale . '" data-locale="' . $t->locale . '"'
-                . 'data-name="' . $t->locale . '|' . $t->key . '" id="' . $t->locale . "-" . str_replace('.','-',$t->key) . '"  data-type="textarea" data-pk="' . ($t->id ?: 0) . '"'
+                . 'data-name="' . $t->locale . '|' . $t->key . '" id="' . $t->locale . "-" . str_replace('.', '-', $t->key) . '"  data-type="textarea" data-pk="' . ($t->id ?: 0) . '"'
                 . 'data-url="' . URL::action('Barryvdh\TranslationManager\Controller@postEdit', array($t->group)) . '"'
                 . 'data-inputclass="editable-input" data-saved_value="' . htmlentities($t->saved_value, ENT_QUOTES, 'UTF-8', false) . '"'
                 . 'data-title="' . $title . ': [' . $t->locale . '] ' . $t->group . '.' . $t->key . '">'
@@ -123,15 +123,11 @@ class Translator extends LaravelTranslator
     public
     function get($key, array $replace = array(), $locale = null, $useDB = null)
     {
-        if (!$this->suspendInPlaceEdit)
+        if (!$this->suspendInPlaceEdit && $this->inPlaceEditing())
         {
-            $thisLocale = $this->parseLocale($locale);
-
-            if ($thisLocale[0] !== 'dbg' && $thisLocale[1] === 'dbg')
-            {
-                return $this->inPlaceEditLink(null, true, $key, $locale);
-            }
+            return $this->inPlaceEditLink(null, true, $key, $locale);
         }
+
         if (is_null($useDB)) $useDB = $this->useDB;
 
         if ($useDB >= 2)
@@ -140,28 +136,27 @@ class Translator extends LaravelTranslator
             if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
             {
                 $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
-                $result = $useDB === 3 ? ($t->value ?: $key) : ($t->saved_value ?: ($t->value ?: $key));
+                $result = $useDB === 3 ? ($t->value ?: $key) : ($t->saved_value ?: $key);
                 if ($t->isDirty()) $t->save();
+                return $result;
             }
         }
-        else
+
+        $result = parent::get($key, $replace, $locale);
+        if ($result === $key)
         {
-            $result = parent::get($key, $replace, $locale);
-            if ($result === $key)
+            if ($useDB === 1)
             {
-                if ($useDB === 1)
+                list($namespace, $group, $item) = $this->parseKey($key);
+                if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
                 {
-                    list($namespace, $group, $item) = $this->parseKey($key);
-                    if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
-                    {
-                        $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
-                        $result = $t->saved_value ?: ($t->value ?: $key);
-                    }
+                    $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
+                    $result = $t->saved_value ?: $key;
                 }
-                else
-                {
-                    $this->notifyMissingKey($key, $locale);
-                }
+            }
+            else
+            {
+                $this->notifyMissingKey($key, $locale);
             }
         }
         return $result;
@@ -170,14 +165,16 @@ class Translator extends LaravelTranslator
     /**
      * Get a translation according to an integer value.
      *
-     * @param  string  $id
-     * @param  int     $number
-     * @param  array   $parameters
-     * @param  string  $domain
-     * @param  string  $locale
+     * @param  string $id
+     * @param  int    $number
+     * @param  array  $parameters
+     * @param  string $domain
+     * @param  string $locale
+     *
      * @return string
      */
-    public function transChoice($id, $number, array $parameters = array(), $domain = 'messages', $locale = null, $useDB = null)
+    public
+    function transChoice($id, $number, array $parameters = array(), $domain = 'messages', $locale = null, $useDB = null)
     {
         return $this->choice($id, $number, $parameters, $locale, $useDB);
     }
@@ -185,13 +182,15 @@ class Translator extends LaravelTranslator
     /**
      * Get the translation for a given key.
      *
-     * @param  string  $id
-     * @param  array   $parameters
-     * @param  string  $domain
-     * @param  string  $locale
+     * @param  string $id
+     * @param  array  $parameters
+     * @param  string $domain
+     * @param  string $locale
+     *
      * @return string
      */
-    public function trans($id, array $parameters = array(), $domain = 'messages', $locale = null, $useDB = null)
+    public
+    function trans($id, array $parameters = array(), $domain = 'messages', $locale = null, $useDB = null)
     {
         return $this->get($id, $parameters, $locale, $useDB);
     }
@@ -209,9 +208,9 @@ class Translator extends LaravelTranslator
     public
     function choice($key, $number, array $replace = array(), $locale = null, $useDB = null)
     {
-        if ($this->inPlaceEditing())
+        if (!$this->suspendInPlaceEdit && $this->inPlaceEditing())
         {
-            return $this->get($key, $replace, $locale = $locale ?: $this->locale);
+            return $this->get($key, $replace, $locale, $useDB);
         }
         else
         {
