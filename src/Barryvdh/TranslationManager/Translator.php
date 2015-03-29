@@ -48,11 +48,13 @@ class Translator extends LaravelTranslator
     }
 
     public
-    function inPlaceEditLink($t, $withDiff = false, $key = null, $locale = null)
+    function inPlaceEditLink($t, $withDiff = false, $key = null, $locale = null, $useDB = null)
     {
         $diff = '';
         if (!$t && $key)
         {
+            if (is_null($useDB)) $useDB = $this->useDB;
+
             list($namespace, $group, $item) = $this->parseKey($key);
             if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
             {
@@ -92,9 +94,9 @@ class Translator extends LaravelTranslator
     }
 
     public
-    function getInPlaceEditLink($key, array $replace = array(), $locale = null, $withDiff = null)
+    function getInPlaceEditLink($key, array $replace = array(), $locale = null, $withDiff = null, $useDB = null)
     {
-        return $this->inPlaceEditLink(null, $withDiff, $key, $locale);
+        return $this->inPlaceEditLink(null, $withDiff, $key, $locale, $useDB);
         //list($namespace, $group, $item) = $this->parseKey($key);
         //
         //if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
