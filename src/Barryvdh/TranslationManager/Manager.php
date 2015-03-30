@@ -25,13 +25,15 @@ class Manager
 
     protected $config;
     protected $imported;
+    protected $translation;
 
     public
-    function __construct(Application $app, Filesystem $files, Dispatcher $events)
+    function __construct(Application $app, Filesystem $files, Dispatcher $events, Translation $translation)
     {
         $this->app = $app;
         $this->files = $files;
         $this->events = $events;
+        $this->translation = $translation;
 
         // when instantiated from the service provider, config info is not yet loaded, trying to get it here
         // causes a problem since none of the keys are defined.
@@ -81,10 +83,11 @@ class Manager
 
             if ($lottery === 1)
             {
+                $locale = $locale ?: $this->app['config']['app.locale'];
                 if ($findOrNew)
                 {
                     $translation = Translation::firstOrNew(array(
-                        'locale' => $locale ?: $this->app['config']['app.locale'],
+                        'locale' => $locale,
                         'group' => $group,
                         'key' => $key,
                     ));
@@ -92,7 +95,7 @@ class Manager
                 else
                 {
                     $translation = Translation::firstOrCreate(array(
-                        'locale' => $this->app['config']['app.locale'],
+                        'locale' => $locale,
                         'group' => $group,
                         'key' => $key,
                     ));
@@ -105,7 +108,7 @@ class Manager
     }
 
     public
-    function importTranslationLocale($replace = false, $locale, $langPath, $namespace = null)
+    function importTranslationLocale($replace = false, $locale, $langPath, $namespace = null, $groups = null)
     {
         $files = $this->files->files($langPath);
         $package = $namespace ? $namespace . '::' : '';
@@ -115,7 +118,7 @@ class Manager
             $info = pathinfo($file);
             $group = $info['filename'];
 
-            if (in_array($package . $group, $this->config()['exclude_groups']))
+            if (in_array($package . $group, $this->config()['exclude_groups']) || ($groups && !in_array($package.$group, $groups)))
             {
                 continue;
             }
@@ -154,7 +157,7 @@ class Manager
     }
 
     public
-    function importTranslations($replace = false, $packages = false)
+    function importTranslations($replace = false, $packages = false, $groups = null)
     {
         if (!$packages) $this->imported = 0;
 
@@ -164,7 +167,7 @@ class Manager
             $locale = basename($langdir);
             if ($locale === 'packages' && !$packages)
             {
-                $this->importTranslations($replace, true);
+                $this->importTranslations($replace, true, $groups);
             }
             else
             {
@@ -174,12 +177,12 @@ class Manager
                     foreach ($packdirs as $packagedir)
                     {
                         $package = basename($packagedir);
-                        $this->importTranslationLocale($replace, $locale, $packagedir, $package);
+                        $this->importTranslationLocale($replace, $locale, $packagedir, $package, $groups);
                     }
                 }
                 else
                 {
-                    $this->importTranslationLocale($replace, $locale, $langdir);
+                    $this->importTranslationLocale($replace, $locale, $langdir, null, $groups);
                 }
             }
         }
@@ -346,9 +349,17 @@ class Manager
     }
 
     public
-    function truncateTranslations()
+    function truncateTranslations($group = '*')
     {
-        Translation::truncate();
+        xdebug_break();
+        if ($group === '*')
+        {
+            Translation::truncate();
+        }
+        else
+        {
+            DB::statement("DELETE FROM ltm_translations WHERE `group` = ?", [$group]);
+        }
     }
 
     protected

@@ -239,7 +239,7 @@ class Translator extends LaravelTranslator
     function notifyMissingKey($key, $locale = null)
     {
         list($namespace, $group, $item) = $this->parseKey($key);
-        if ($this->manager && $namespace === '*' && $group && $item)
+        if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
         {
             // KLUDGE: find an independent way to hook in role validation on users
             $this->manager->missingKey($namespace, $group, $item, $locale, !Auth::check() || Auth::user()->useTranslatorMissingKeysLottery());

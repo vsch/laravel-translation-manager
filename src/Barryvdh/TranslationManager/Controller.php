@@ -400,10 +400,10 @@ SQL
     }
 
     public
-    function postImport()
+    function postImport($group)
     {
         $replace = Input::get('replace', false);
-        $counter = $this->manager->importTranslations($replace);
+        $counter = $this->manager->importTranslations($group !== '*' ? true : $replace, false, $group === '*' ? null : [$group]);
 
         return Response::json(array('status' => 'ok', 'counter' => $counter));
     }
@@ -417,9 +417,9 @@ SQL
     }
 
     public
-    function postDeleteAll()
+    function postDeleteAll($group)
     {
-        $numFound = $this->manager->truncateTranslations();
+        $numFound = $this->manager->truncateTranslations($group);
 
         return Response::json(array('status' => 'ok', 'counter' => (int)$numFound));
     }
