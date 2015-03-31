@@ -138,7 +138,16 @@ class Translator extends LaravelTranslator
                 $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
                 $result = $useDB === 3 ? ($t->value ?: $key) : ($t->saved_value ?: $key);
                 if ($t->isDirty()) $t->save();
-                return $result;
+
+                $line = $result;
+                if (is_string($line))
+                {
+                    return $this->makeReplacements($line, $replace);
+                }
+                elseif (is_array($line) && count($line) > 0)
+                {
+                    return $line;
+                }
             }
         }
 
@@ -152,6 +161,16 @@ class Translator extends LaravelTranslator
                 {
                     $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
                     $result = $t->saved_value ?: $key;
+
+                    $line = $result;
+                    if (is_string($line))
+                    {
+                        return $this->makeReplacements($line, $replace);
+                    }
+                    elseif (is_array($line) && count($line) > 0)
+                    {
+                        return $line;
+                    }
                 }
             }
             else
