@@ -118,7 +118,7 @@ class Manager
             $info = pathinfo($file);
             $group = $info['filename'];
 
-            if (in_array($package . $group, $this->config()['exclude_groups']) || ($groups && !in_array($package.$group, $groups)))
+            if (in_array($package . $group, $this->config()['exclude_groups']) || ($groups && !in_array($package . $group, $groups)))
             {
                 continue;
             }
@@ -281,13 +281,13 @@ class Manager
         }
         else
         {
-            $trans = trim(str_replace("'", "\\'", $trans));
             if (strpos($trans, "\n") !== false)
             {
                 $text = "<<<'TEXT'\n$trans\nTEXT\n";
             }
             else
             {
+                $trans = trim(str_replace("'", "\\'", $trans));
                 $text = "'$trans'";
             }
         }
