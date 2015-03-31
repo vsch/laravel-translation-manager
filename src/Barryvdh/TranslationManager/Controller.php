@@ -3,6 +3,7 @@
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Request;
@@ -351,17 +352,66 @@ SQL
     public
     function postAdd($group)
     {
-        $keys = explode("\n", Input::get('keys'));
+        $keys = explode("\n", trim(Input::get('keys')));
+        $suffixes = explode("\n", trim(Input::get('suffixes')));
+        $group = explode('::', $group, 2);
+        $namespace = '*';
+        if (count($group) > 1) $namespace = array_shift($group);
+        $group = $group[0];
 
         foreach ($keys as $key)
         {
             $key = trim($key);
             if ($group && $key)
             {
-                $this->manager->missingKey('*', $group, $key);
+                if ($suffixes)
+                {
+                    foreach ($suffixes as $suffix)
+                    {
+                        $this->manager->missingKey($namespace, $group, $key . trim($suffix));
+                    }
+                }
+                else
+                {
+                    $this->manager->missingKey($namespace, $group, $key);
+                }
             }
         }
-        return Redirect::back();
+        //Session::flash('_old_data', Input::except('keys'));
+        return Redirect::back()->withInput();
+    }
+
+    public
+    function postDeleteKeys($group)
+    {
+        if (!in_array($group, $this->manager->getConfig('exclude_groups')) && $this->manager->getConfig('delete_enabled'))
+        {
+            $keys = explode("\n", trim(Input::get('keys')));
+            $suffixes = explode("\n", trim(Input::get('suffixes')));
+
+            if (count($suffixes) === 1 && $suffixes[0] === '') $suffixes = [];
+
+            foreach ($keys as $key)
+            {
+                $key = trim($key);
+                if ($group && $key)
+                {
+                    if ($suffixes)
+                    {
+                        foreach ($suffixes as $suffix)
+                        {
+                            Translation::where('group', $group)->where('key', $key . trim($suffix))->delete();
+                        }
+                    }
+                    else
+                    {
+                        Translation::where('group', $group)->where('key', $key)->delete();
+                    }
+                }
+            }
+            return Redirect::back()->withInput();
+        }
+        return Redirect::back()->withInput();
     }
 
     public
