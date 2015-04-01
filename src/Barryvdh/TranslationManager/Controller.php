@@ -1,6 +1,7 @@
 <?php namespace Barryvdh\TranslationManager;
 
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Session;
@@ -65,9 +66,9 @@ class Controller extends BaseController
     protected $manager;
 
     public
-    function __construct(Manager $manager)
+    function __construct()
     {
-        $this->manager = $manager;
+        $this->manager = App::make('translation-manager');
     }
 
     /**
@@ -98,7 +99,7 @@ class Controller extends BaseController
         if ($from_text == $to_text) return $to_text;
 
         $removeSpaces = false;
-        if (is_null($charDiff))
+        if ($charDiff === null)
         {
             $charDiff = mb_strtolower($from_text) === mb_strtolower($to_text)
                 || abs(mb_strlen($from_text) - mb_strlen($to_text)) <= 2

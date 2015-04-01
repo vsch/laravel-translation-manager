@@ -99,7 +99,7 @@
                                     $locale = 'ru';
                                     foreach($mismatches as $mismatch)
                                     {
-                                    if (is_null($mismatch)) break;
+                                    if ($mismatch === null) break;
 
                                     $borderTop = ' class="no-border-top"';
                                     $keyText = '';

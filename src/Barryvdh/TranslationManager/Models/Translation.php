@@ -18,6 +18,7 @@ class Translation extends Model{
 
     const STATUS_SAVED = 0;
     const STATUS_CHANGED = 1;
+    const STATUS_SAVED_CACHED = 2;
 
     protected $table = 'ltm_translations';
     protected $guarded = array('id', 'created_at', 'updated_at');

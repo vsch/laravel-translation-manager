@@ -1,6 +1,7 @@
 <?php namespace Barryvdh\TranslationManager;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Translation\LoaderInterface;
 use Illuminate\Translation\Translator as LaravelTranslator;
@@ -27,6 +28,7 @@ class Translator extends LaravelTranslator
     {
         parent::__construct($loader, $locale);
         $this->suspendInPlaceEdit = 0;
+        $this->useDB = 1;  // fill in missing keys from DB by default
     }
 
     public
@@ -53,7 +55,7 @@ class Translator extends LaravelTranslator
         $diff = '';
         if (!$t && $key)
         {
-            if (is_null($useDB)) $useDB = $this->useDB;
+            if ($useDB === null) $useDB = $this->useDB;
 
             list($namespace, $group, $item) = $this->parseKey($key);
             if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
@@ -79,7 +81,7 @@ class Translator extends LaravelTranslator
             }
             $title = parent::get('laravel-translation-manager::messages.enter-translation');
 
-            if (is_null($t->value)) $t->value = ''; //$t->value = parent::get($key, $replace, $locale);
+            if ($t->value === null) $t->value = ''; //$t->value = parent::get($key, $replace, $locale);
             $result = '<a href="#edit" class="editable status-' . ($t->status ?: 0) . ' locale-' . $t->locale . '" data-locale="' . $t->locale . '"'
                 . 'data-name="' . $t->locale . '|' . $t->key . '" id="' . $t->locale . "-" . str_replace('.', '-', $t->key) . '"  data-type="textarea" data-pk="' . ($t->id ?: 0) . '"'
                 . 'data-url="' . URL::action('Barryvdh\TranslationManager\Controller@postEdit', array($t->group)) . '"'
@@ -106,17 +108,26 @@ class Translator extends LaravelTranslator
         //return '';
     }
 
+    protected
+    function processResult($line, $replace)
+    {
+        if (is_string($line))
+        {
+            return $this->makeReplacements($line, $replace);
+        }
+        return $line;
+    }
+
     /**
      * Get the translation for the given key.
      *
      * @param  string $key
      * @param  array  $replace
      * @param  string $locale
-     * @param  int    $useDB null - check usedb field,
+     * @param  int    $useDB null - check usedb field which is set to 1 by default,
      *                       0 - don't use,
-     *                       1 - only if key is missing in files, use saved_value fallback on value,
-     *                       2 - always, use saved_value fallback on value,
-     *                       3 - always, use value (unpublished)
+     *                       1 - only if key is missing in files or saved in the translator cache, use saved_value fallback on $key,
+     *                       2 - always use value from db, (unpublished value) not cached.
      *
      * @return string
      */
@@ -128,26 +139,27 @@ class Translator extends LaravelTranslator
             return $this->inPlaceEditLink(null, true, $key, $locale);
         }
 
-        if (is_null($useDB)) $useDB = $this->useDB;
+        $cacheKey = null;
+        if ($useDB === null) $useDB = $this->useDB;
 
-        if ($useDB >= 2)
+        if ($useDB && $useDB !== 2)
+        {
+            $result = $this->manager->cachedTranslation($key, $locale ?: $this->locale());
+            if ($result)
+            {
+                return $this->processResult($result, $replace);
+            }
+        }
+
+        if ($useDB == 2)
         {
             list($namespace, $group, $item) = $this->parseKey($key);
             if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
             {
                 $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
-                $result = $useDB === 3 ? ($t->value ?: $key) : ($t->saved_value ?: $key);
+                $result = $t->value ?: $key;
                 if ($t->isDirty()) $t->save();
-
-                $line = $result;
-                if (is_string($line))
-                {
-                    return $this->makeReplacements($line, $replace);
-                }
-                elseif (is_array($line) && count($line) > 0)
-                {
-                    return $line;
-                }
+                return $this->processResult($result, $replace);
             }
         }
 
@@ -161,22 +173,12 @@ class Translator extends LaravelTranslator
                 {
                     $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
                     $result = $t->saved_value ?: $key;
-
-                    $line = $result;
-                    if (is_string($line))
-                    {
-                        return $this->makeReplacements($line, $replace);
-                    }
-                    elseif (is_array($line) && count($line) > 0)
-                    {
-                        return $line;
-                    }
+                    $this->manager->cacheTranslation($key, $result, $locale ?: $this->getLocale());
+                    return $this->processResult($result, $replace);
                 }
             }
-            else
-            {
-                $this->notifyMissingKey($key, $locale);
-            }
+
+            $this->notifyMissingKey($key, $locale);
         }
         return $result;
     }
@@ -233,7 +235,7 @@ class Translator extends LaravelTranslator
         }
         else
         {
-            if (!is_null($useDB))
+            if ($useDB !== null)
             {
                 $oldUseDB = $this->useDB;
                 $this->useDB = $useDB;
