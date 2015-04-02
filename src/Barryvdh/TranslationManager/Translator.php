@@ -173,8 +173,14 @@ class Translator extends LaravelTranslator
                 {
                     $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
                     $result = $t->saved_value ?: $key;
-                    $this->manager->cacheTranslation($key, $result, $locale ?: $this->getLocale());
-                    return $this->processResult($result, $replace);
+                    if ($t->isDirty()) $t->save();
+
+                    if ($result !== $key)
+                    {
+                        $this->manager->cacheTranslation($key, $result, $locale ?: $this->getLocale());
+                        return $this->processResult($result, $replace);
+                    }
+                    return $result;
                 }
             }
 
