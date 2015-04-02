@@ -248,14 +248,35 @@ class Manager
             }
 
             $translations = array_dot(\Lang::getLoader()->load($locale, $group, $namespace));
+
+            $dbTranslations = $this->translation->hydrateRaw(<<<SQL
+SELECT * FROM ltm_translations WHERE locale = ? AND `group` = ?
+
+SQL
+                , [$locale, $package . $group]);
+
+            $dbTransMap = [];
+            $dbTranslations->each(function ($trans) use (&$dbTransMap)
+            {
+                $dbTransMap[$trans->key] = $trans;
+            });
+
             foreach ($translations as $key => $value)
             {
                 $value = (string)$value;
-                $translation = Translation::firstOrNew(array(
-                    'locale' => $locale,
-                    'group' => $package . $group,
-                    'key' => $key,
-                ));
+
+                if (array_key_exists($key, $dbTransMap))
+                {
+                    $translation = $dbTransMap[$key];
+                }
+                else
+                {
+                    $translation = new Translation(array(
+                        'locale' => $locale,
+                        'group' => $package . $group,
+                        'key' => $key,
+                    ));
+                }
 
                 // Importing from the source, status is always saved. When it is changed by the user, then it is changed.
                 //$newStatus = ($translation->value === $value || !$translation->exists) ? Translation::STATUS_SAVED : Translation::STATUS_CHANGED;
@@ -267,15 +288,18 @@ class Manager
 
                 $translation->saved_value = $value;
 
-                $newStatus = $translation->value === $translation->saved_value ? Translation::STATUS_SAVED
-                    : $translation->status === Translation::STATUS_SAVED ? Translation::STATUS_SAVED_CACHED : Translation::STATUS_CHANGED;
+                $newStatus = ($translation->value === $translation->saved_value ? Translation::STATUS_SAVED
+                    : ($translation->status === Translation::STATUS_SAVED ? Translation::STATUS_SAVED_CACHED : Translation::STATUS_CHANGED));
 
                 if ($newStatus !== (int)$translation->status)
                 {
                     $translation->status = $newStatus;
                 }
 
-                $translation->save();
+                if (!$translation->exists || $translation->isDirty())
+                {
+                    $translation->save();
+                }
 
                 $this->imported++;
             }
@@ -446,7 +470,8 @@ SQL
 
             /* @var $translations Collection */
             $translations = $this->translation->query()->where('status', '<>', Translation::STATUS_SAVED)->get(['group', 'key', 'locale', 'saved_value']);
-            $translations->each(function ($tr){
+            $translations->each(function ($tr)
+            {
                 $this->cacheTranslation($tr->group . '.' . $tr->key, $tr->saved_value, $tr->locale);
             });
         }

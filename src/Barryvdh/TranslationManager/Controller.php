@@ -460,6 +460,16 @@ SQL
     }
 
     public
+    function getImport()
+    {
+        $replace = Input::get('replace', false);
+        $group = Input::get('group', '*');
+        $counter = $this->manager->importTranslations($group !== '*' ? true : $replace, false, $group === '*' ? null : [$group]);
+
+        return Response::json(array('status' => 'ok', 'counter' => $counter));
+    }
+
+    public
     function postFind()
     {
         $numFound = $this->manager->findTranslations();
