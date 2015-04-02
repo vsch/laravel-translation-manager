@@ -259,12 +259,6 @@ class Manager
 
                 // Importing from the source, status is always saved. When it is changed by the user, then it is changed.
                 //$newStatus = ($translation->value === $value || !$translation->exists) ? Translation::STATUS_SAVED : Translation::STATUS_CHANGED;
-                $newStatus = Translation::STATUS_SAVED;
-                if ($newStatus !== (int)$translation->status)
-                {
-                    $translation->status = $newStatus;
-                }
-
                 // Only replace when empty, or explicitly told so
                 if ($replace || !$translation->value)
                 {
@@ -272,6 +266,14 @@ class Manager
                 }
 
                 $translation->saved_value = $value;
+
+                $newStatus = $translation->value === $translation->saved_value ? Translation::STATUS_SAVED
+                    : $translation->status === Translation::STATUS_SAVED ? Translation::STATUS_SAVED_CACHED : Translation::STATUS_CHANGED;
+
+                if ($newStatus !== (int)$translation->status)
+                {
+                    $translation->status = $newStatus;
+                }
 
                 $translation->save();
 
