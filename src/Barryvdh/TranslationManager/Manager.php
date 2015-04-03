@@ -107,7 +107,7 @@ class Manager
     public
     function clearCache($groups = null)
     {
-        if (!$groups)
+        if (!$groups || $groups === '*')
         {
             $this->cache = [];
             $this->cacheIsDirty = !!$this->cachePrefix;
@@ -461,9 +461,10 @@ SQL
     }
 
     public
-    function exportTranslations($group)
+    function exportTranslations($group, $recursing = 0)
     {
-        if ($this->inDatabasePublishing())
+        $inDatabasePublishing = $this->inDatabasePublishing();
+        if ($inDatabasePublishing && ($inDatabasePublishing !== 2 || !$recursing))
         {
             if ($group && $group !== '*')
             {
@@ -471,6 +472,12 @@ SQL
 UPDATE ltm_translations SET saved_value = value, status = ? WHERE (saved_value <> value || status <> ?) AND `group` = ?
 SQL
                     , [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED, $group]);
+
+                $translations = $this->translation->query()
+                    ->where('status', '<>', Translation::STATUS_SAVED)
+                    ->where('group', '=', $group)
+                    ->get(['group', 'key', 'locale', 'saved_value']);
+
             }
             else
             {
@@ -478,21 +485,27 @@ SQL
 UPDATE ltm_translations SET saved_value = value, status = ? WHERE (saved_value <> value || status <> ?)
 SQL
                     , [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED]);
+
+                $translations = $this->translation->query()
+                    ->where('status', '<>', Translation::STATUS_SAVED)
+                    ->get(['group', 'key', 'locale', 'saved_value']);
+
             }
 
             /* @var $translations Collection */
-            $translations = $this->translation->query()->where('status', '<>', Translation::STATUS_SAVED)->get(['group', 'key', 'locale', 'saved_value']);
+            $this->clearCache($group);
             $translations->each(function ($tr)
             {
                 $this->cacheTranslation($tr->group . '.' . $tr->key, $tr->saved_value, $tr->locale);
             });
         }
-        else
+
+        if (!$inDatabasePublishing || $inDatabasePublishing === 2)
         {
             if (!in_array($group, $this->config()['exclude_groups']))
             {
                 if ($group == '*')
-                    $this->exportAllTranslations();
+                    $this->exportAllTranslations(1);
 
                 $this->clearCache($group);
 
@@ -521,20 +534,24 @@ SQL
                         $this->files->put($path, $output);
                     }
                 }
-                Translation::where('group', $group)->update(array('status' => Translation::STATUS_SAVED, 'saved_value' => (new Expression('value'))));
+
+                if (!$inDatabasePublishing)
+                {
+                    Translation::where('group', $group)->update(array('status' => Translation::STATUS_SAVED, 'saved_value' => (new Expression('value'))));
+                }
             }
         }
     }
 
     public
-    function exportAllTranslations()
+    function exportAllTranslations($recursing = 0)
     {
         $groups = Translation::whereNotNull('value')->select(DB::raw('DISTINCT `group`'))->get('group');
         $this->clearCache();
 
         foreach ($groups as $group)
         {
-            $this->exportTranslations($group->group);
+            $this->exportTranslations($group->group, $recursing);
         }
     }
 
@@ -587,6 +604,6 @@ SQL
     public
     function inDatabasePublishing()
     {
-        return array_key_exists('indatabase_publish', $this->config()) && $this->config['indatabase_publish'];
+        return array_key_exists('indatabase_publish', $this->config()) ? (int)$this->config['indatabase_publish'] : 0;
     }
 }
