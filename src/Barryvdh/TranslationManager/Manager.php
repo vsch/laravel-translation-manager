@@ -268,6 +268,7 @@ SQL
                 if (array_key_exists($key, $dbTransMap))
                 {
                     $translation = $dbTransMap[$key];
+                    unset($dbTransMap[$key]);
                 }
                 else
                 {
@@ -302,6 +303,17 @@ SQL
                 }
 
                 $this->imported++;
+            }
+
+            // now process all the new translations that are not in the files
+            foreach ($dbTransMap as $translation)
+            {
+                // mark it as saved cached or changed
+                if (((int)$translation->status) === Translation::STATUS_SAVED)
+                {
+                    $translation->status = Translation::STATUS_SAVED_CACHED;
+                    $translation->save();
+                }
             }
         }
     }
@@ -451,7 +463,7 @@ SQL
     public
     function exportTranslations($group)
     {
-        if (array_key_exists('indatabase_publish', $this->config()) && $this->config['indatabase_publish'])
+        if ($this->inDatabasePublishing())
         {
             if ($group && $group !== '*')
             {
@@ -535,7 +547,6 @@ SQL
     public
     function truncateTranslations($group = '*')
     {
-        xdebug_break();
         if ($group === '*')
         {
             Translation::truncate();
@@ -568,5 +579,14 @@ SQL
         {
             return $this->config()[$key];
         }
+    }
+
+    /**
+     * @return bool
+     */
+    public
+    function inDatabasePublishing()
+    {
+        return array_key_exists('indatabase_publish', $this->config()) && $this->config['indatabase_publish'];
     }
 }
