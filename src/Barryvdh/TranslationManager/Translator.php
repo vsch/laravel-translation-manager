@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Translation\LoaderInterface;
 use Illuminate\Translation\Translator as LaravelTranslator;
@@ -19,6 +20,7 @@ class Translator extends LaravelTranslator
     protected $suspendInPlaceEdit;
 
     protected $useDB;
+    protected $inPlaceEditing;
 
     /**
      * Translator constructor.
@@ -28,13 +30,24 @@ class Translator extends LaravelTranslator
     {
         parent::__construct($loader, $locale);
         $this->suspendInPlaceEdit = 0;
+        $this->inPlaceEditing = 0;
         $this->useDB = 1;  // fill in missing keys from DB by default
+
+        if (Session::has('laravel-translation-manager::lang_inplaceedit'))
+        {
+            $this->inPlaceEditing(Session::get('laravel-translation-manager::lang_inplaceedit'));
+        }
     }
 
     public
-    function inPlaceEditing()
+    function inPlaceEditing($inPlaceEditing = null)
     {
-        return $this->getFallback() === 'dbg' && $this->getLocale() !== 'dbg';
+        if ($inPlaceEditing !== null)
+        {
+            $this->inPlaceEditing = $inPlaceEditing;
+            Session::put('laravel-translation-manager::lang_inplaceedit', $this->inPlaceEditing);
+        }
+        return $this->inPlaceEditing;
     }
 
     public
@@ -82,10 +95,10 @@ class Translator extends LaravelTranslator
             $title = parent::get('laravel-translation-manager::messages.enter-translation');
 
             if ($t->value === null) $t->value = ''; //$t->value = parent::get($key, $replace, $locale);
-            $result = '<a href="#edit" class="editable status-' . ($t->status ?: 0) . ' locale-' . $t->locale . '" data-locale="' . $t->locale . '"'
-                . 'data-name="' . $t->locale . '|' . $t->key . '" id="' . $t->locale . "-" . str_replace('.', '-', $t->key) . '"  data-type="textarea" data-pk="' . ($t->id ?: 0) . '"'
-                . 'data-url="' . URL::action('Barryvdh\TranslationManager\Controller@postEdit', array($t->group)) . '"'
-                . 'data-inputclass="editable-input" data-saved_value="' . htmlentities($t->saved_value, ENT_QUOTES, 'UTF-8', false) . '"'
+            $result = '<a href="#edit" class="editable status-' . ($t->status ?: 0) . ' locale-' . $t->locale . '" data-locale="' . $t->locale . '" '
+                . 'data-name="' . $t->locale . '|' . $t->key . '" id="' . $t->locale . "-" . str_replace('.', '-', $t->key) . '"  data-type="textarea" data-pk="' . ($t->id ?: 0) . '" '
+                . 'data-url="' . URL::action('Barryvdh\TranslationManager\Controller@postEdit', array($t->group)) . '" '
+                . 'data-inputclass="editable-input" data-saved_value="' . htmlentities($t->saved_value, ENT_QUOTES, 'UTF-8', false) . '" '
                 . 'data-title="' . $title . ': [' . $t->locale . '] ' . $t->group . '.' . $t->key . '">'
                 . ($t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '') . '</a> '
                 . $diff;
