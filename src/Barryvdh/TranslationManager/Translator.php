@@ -1,5 +1,6 @@
 <?php namespace Barryvdh\TranslationManager;
 
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Session;
@@ -26,17 +27,22 @@ class Translator extends LaravelTranslator
      * Translator constructor.
      */
     public
-    function __construct(LoaderInterface $loader, $locale)
+    function __construct(Application $app, LoaderInterface $loader, $locale)
     {
         parent::__construct($loader, $locale);
         $this->suspendInPlaceEdit = 0;
         $this->inPlaceEditing = 0;
         $this->useDB = 1;  // fill in missing keys from DB by default
+        $this->app = $app;
 
-        if (Session::has('laravel-translation-manager::lang_inplaceedit'))
+        $translator = $this;
+        $app->booted(function () use ($app, $translator)
         {
-            $this->inPlaceEditing(Session::get('laravel-translation-manager::lang_inplaceedit'));
-        }
+            if ($app->make('session')->has('laravel-translation-manager::lang_inplaceedit'))
+            {
+                $translator->inPlaceEditing($app->make('session')->get('laravel-translation-manager::lang_inplaceedit'));
+            }
+        });
     }
 
     public
@@ -45,7 +51,7 @@ class Translator extends LaravelTranslator
         if ($inPlaceEditing !== null)
         {
             $this->inPlaceEditing = $inPlaceEditing;
-            Session::put('laravel-translation-manager::lang_inplaceedit', $this->inPlaceEditing);
+            $this->app->make('session')->put('laravel-translation-manager::lang_inplaceedit', $this->inPlaceEditing);
         }
         return $this->inPlaceEditing;
     }
