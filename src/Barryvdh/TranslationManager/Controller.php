@@ -463,6 +463,24 @@ SQL
         return array('status' => 'ok');
     }
 
+    protected static
+    function keyGroup($group, $key)
+    {
+        $parts = explode('.', $key, 2);
+        if (count($parts) === 1)
+        {
+            $tgroup = $group;
+            $tkey = $key;
+        }
+        else
+        {
+            $tgroup = $parts[0];
+            $tkey = $parts[1];
+        }
+
+        return [$tgroup, $tkey];
+    }
+
     protected
     function keyOp($group, $op = 'preview')
     {
@@ -491,7 +509,7 @@ SQL
             {
                 $errors[] = trans('laravel-translation-manager::messages.keyop-need-group');
             }
-            elseif (count($srckeys) !== count($dstkeys))
+            elseif (count($srckeys) !== count($dstkeys) && ($op === 'copy' || $op === 'move' || count($dstkeys)))
             {
                 $errors[] = trans('laravel-translation-manager::messages.keyop-count-mustmatch');
             }
@@ -501,6 +519,8 @@ SQL
             }
             else
             {
+                if (!count($dstkeys)) $dstkeys = array_fill(0, count($srckeys), null);
+
                 $keys = array_combine($srckeys, $dstkeys);
                 $hadErrors = false;
 
@@ -508,19 +528,23 @@ SQL
                 {
                     $keyerrors = [];
 
-                    if ((substr($src, 0, 1) === '*') !== (substr($dst, 0, 1) === '*'))
+                    if ($dst !== null)
                     {
-                        $keyerrors[] = trans('laravel-translation-manager::messages.keyop-wildcard-mustmatch');
-                    }
 
-                    if ((substr($src, -1, 1) === '*') !== (substr($dst, -1, 1) === '*'))
-                    {
-                        $keyerrors[] = trans('laravel-translation-manager::messages.keyop-wildcard-mustmatch');
-                    }
+                        if ((substr($src, 0, 1) === '*') !== (substr($dst, 0, 1) === '*'))
+                        {
+                            $keyerrors[] = trans('laravel-translation-manager::messages.keyop-wildcard-mustmatch');
+                        }
 
-                    if ((substr($src, 0, 1) === '*') && (substr($src, -1, 1) === '*'))
-                    {
-                        $keyerrors[] = trans('laravel-translation-manager::messages.keyop-wildcard-once');
+                        if ((substr($src, -1, 1) === '*') !== (substr($dst, -1, 1) === '*'))
+                        {
+                            $keyerrors[] = trans('laravel-translation-manager::messages.keyop-wildcard-mustmatch');
+                        }
+
+                        if ((substr($src, 0, 1) === '*') && (substr($src, -1, 1) === '*'))
+                        {
+                            $keyerrors[] = trans('laravel-translation-manager::messages.keyop-wildcard-once');
+                        }
                     }
 
                     if (!empty($keyerrors))
@@ -530,95 +554,187 @@ SQL
                         continue;
                     }
 
+                    list($srcgrp, $srckey) = self::keyGroup($group, $src);
+                    list($dstgrp, $dstkey) = $dst === null ? [null, null] : self::keyGroup($group, $dst);
+
                     if ((substr($src, 0, 1) === '*'))
                     {
-                        $rows = DB::select($sql = <<<SQL
-SELECT DISTINCT `group`, `key`, locale, id, CONCAT(SUBSTR(`key`, 1, CHAR_LENGTH(`key`)-?), ?) dst FROM ltm_translations t1
-WHERE `group` = ? AND `key` like binary ?
-AND NOT exists(SELECT * FROM ltm_translations t2 WHERE t1.`group` = t2.`group` AND t1.locale = t2.locale
-                AND t2.`key` like binary CONCAT(SUBSTR(t1.`key`, 1, CHAR_LENGTH(t1.`key`)-?), ?))
+                        if ($dst === null)
+                        {
+                            $rows = DB::select($sql = <<<SQL
+SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM ltm_translations t1
+WHERE `group` = ? AND `key` LIKE BINARY ?
 ORDER BY locale, `key`
 
 SQL
-                            , [
-                                mb_strlen($src) - 1,
-                                mb_substr($dst, 1),
-                                $group,
-                                '%' . mb_substr($src, 1),
-                                mb_strlen($src) - 1,
-                                mb_substr($dst, 1)
-                            ]);
+                                , [
+                                    $srcgrp,
+                                    '%' . mb_substr($srckey, 1),
+                                ]);
+                        }
+                        else
+                        {
+                            $rows = DB::select($sql = <<<SQL
+SELECT DISTINCT `group`, `key`, locale, id, CONCAT(SUBSTR(`key`, 1, CHAR_LENGTH(`key`)-?), ?) dst, ? dstgrp FROM ltm_translations t1
+WHERE `group` = ? AND `key` LIKE BINARY ?
+AND NOT exists(SELECT * FROM ltm_translations t2 WHERE t2.value IS NOT NULL AND t2.`group` = ? AND t1.locale = t2.locale
+                AND t2.`key` LIKE BINARY CONCAT(SUBSTR(t1.`key`, 1, CHAR_LENGTH(t1.`key`)-?), ?))
+ORDER BY locale, `key`
+
+SQL
+                                , [
+                                    mb_strlen($srckey) - 1,
+                                    mb_substr($dstkey, 1),
+                                    $dstgrp,
+                                    $srcgrp,
+                                    '%' . mb_substr($srckey, 1),
+                                    $dstgrp,
+                                    mb_strlen($srckey) - 1,
+                                    mb_substr($dstkey, 1)
+                                ]);
+                        }
                     }
                     elseif ((substr($src, -1, 1) === '*'))
                     {
-                        $rows = DB::select($sql = <<<SQL
-SELECT DISTINCT `group`, `key`, locale, id, CONCAT(?, SUBSTR(`key`, ?+1, CHAR_LENGTH(`key`)-?)) dst FROM ltm_translations t1
-WHERE `group` = ? AND `key` like binary ?
-AND NOT exists(SELECT * FROM ltm_translations t2 WHERE t1.`group` = t2.`group` AND t1.locale = t2.locale
-                AND t2.`key` like binary CONCAT(?, SUBSTR(t1.`key`, ?+1, CHAR_LENGTH(t1.`key`)-?)))
+                        if ($dst === null)
+                        {
+                            $rows = DB::select($sql = <<<SQL
+SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM ltm_translations t1
+WHERE `group` = ? AND `key` LIKE BINARY ?
 ORDER BY locale, `key`
 
 SQL
-                            , [
-                                mb_substr($dst, 0, -1),
-                                mb_strlen($src) - 1,
-                                mb_strlen($src) - 1,
-                                $group,
-                                mb_substr($src, 0, -1) . '%',
-                                mb_substr($dst, 0, -1),
-                                mb_strlen($src) - 1,
-                                mb_strlen($src) - 1
-                            ]);
+                                , [
+                                    $srcgrp,
+                                    mb_substr($srckey, 0, -1) . '%',
+                                ]);
+                        }
+                        else
+                        {
+                            $rows = DB::select($sql = <<<SQL
+SELECT DISTINCT `group`, `key`, locale, id, CONCAT(?, SUBSTR(`key`, ?+1, CHAR_LENGTH(`key`)-?)) dst, ? dstgrp FROM ltm_translations t1
+WHERE `group` = ? AND `key` LIKE BINARY ?
+AND NOT exists(SELECT * FROM ltm_translations t2 WHERE t2.value IS NOT NULL AND t2.`group` = ? AND t1.locale = t2.locale
+                AND t2.`key` LIKE BINARY CONCAT(?, SUBSTR(t1.`key`, ?+1, CHAR_LENGTH(t1.`key`)-?)))
+ORDER BY locale, `key`
+
+SQL
+                                , [
+                                    mb_substr($dstkey, 0, -1),
+                                    mb_strlen($srckey) - 1,
+                                    mb_strlen($srckey) - 1,
+                                    $dstgrp,
+                                    $srcgrp,
+                                    mb_substr($srckey, 0, -1) . '%',
+                                    $dstgrp,
+                                    mb_substr($dstkey, 0, -1),
+                                    mb_strlen($srckey) - 1,
+                                    mb_strlen($srckey) - 1
+                                ]);
+                        }
                     }
                     else
                     {
-                        $rows = DB::select($sql = <<<SQL
-SELECT DISTINCT `group`, `key`, locale, id, ? dst FROM ltm_translations t1
-WHERE `group` = ? AND `key` like binary ?
-AND NOT exists(SELECT * FROM ltm_translations t2 WHERE t1.`group` = t2.`group` AND t1.locale = t2.locale AND t2.`key` like binary ?)
+                        if ($dst === null)
+                        {
+                            $rows = DB::select($sql = <<<SQL
+SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM ltm_translations t1
+WHERE `group` = ? AND `key` LIKE BINARY ?
 ORDER BY locale, `key`
 
 SQL
-                            , [$dst, $group, $src, $dst,]);
+                                , [
+                                    $srcgrp,
+                                    $srckey,
+                                ]);
+                        }
+                        else
+                        {
+                            $rows = DB::select($sql = <<<SQL
+SELECT DISTINCT `group`, `key`, locale, id, ? dst, ? dstgrp FROM ltm_translations t1
+WHERE `group` = ? AND `key` LIKE BINARY ?
+AND NOT exists(SELECT * FROM ltm_translations t2 WHERE t2.value IS NOT NULL AND t2.`group` = ? AND t1.locale = t2.locale AND t2.`key` LIKE BINARY ?)
+ORDER BY locale, `key`
+
+SQL
+                                , [
+                                    $dstkey,
+                                    $dstgrp,
+                                    $srcgrp,
+                                    $srckey,
+                                    $dstgrp,
+                                    $dstkey,
+                                ]);
+                        }
                     }
 
                     $keymap[$src] = ['dst' => $dst, 'rows' => $rows];
                 }
 
-                if (!$hadErrors && ($op === 'copy' || $op === 'rename' || $op === 'delete'))
+                if (!$hadErrors && ($op === 'copy' || $op === 'move' || $op === 'delete'))
                 {
                     foreach ($keys as $src => $dst)
                     {
-                        if ($op === 'rename')
+                        $rows = $keymap[$src]['rows'];
+
+                        $rowids = array_reduce($rows, function ($carry, $row)
                         {
-                            $rows = $keymap[$src]['rows'];
+                            return $carry . ',' . $row->id;
+                        }, '');
+                        $rowids = substr($rowids, 1);
+
+                        list($srcgrp, $srckey) = self::keyGroup($group, $src);
+                        if ($op === 'move')
+                        {
                             foreach ($rows as $row)
                             {
-                                DB::update("UPDATE ltm_translations SET `key` = ?, status = 1 WHERE id = ?"
-                                    , [$row->dst, $row->id]);
+                                list($dstgrp, $dstkey) = self::keyGroup($row->dstgrp, $row->dst);
+                                $to_delete = DB::select(<<<SQL
+SELECT GROUP_CONCAT(id SEPARATOR ',') ids FROM ltm_translations tr
+WHERE `group` = ? AND `key` = ? AND locale = ? AND id NOT IN ($rowids)
+
+SQL
+                                    , [$dstgrp, $dstkey, $row->locale]);
+
+                                if (!empty($to_delete))
+                                {
+                                    $to_delete = $to_delete[0]->ids;
+                                    if ($to_delete) DB::delete("DELETE FROM ltm_translations WHERE id IN ($to_delete)");
+                                }
+
+                                DB::update("UPDATE ltm_translations SET `group` = ?, `key` = ?, status = 1 WHERE id = ?"
+                                    , [$dstgrp, $dstkey, $row->id]);
                             }
                         }
                         elseif ($op === 'delete')
                         {
-                            $rows = $keymap[$src]['rows'];
-                            foreach ($rows as $row)
-                            {
-                                DB::delete("DELETE from ltm_translations WHERE id = ?"
-                                    , [$row->id]);
-                            }
+                            DB::delete("DELETE FROM ltm_translations WHERE id IN ($rowids)");
                         }
                         elseif ($op === 'copy')
                         {
-                            $rows = $keymap[$src]['rows'];
                             foreach ($rows as $row)
                             {
+                                list($dstgrp, $dstkey) = self::keyGroup($row->dstgrp, $row->dst);
+                                $to_delete = DB::select(<<<SQL
+SELECT GROUP_CONCAT(id SEPARATOR ',') ids FROM ltm_translations tr
+WHERE `group` = ? AND `key` = ? AND locale = ? AND id NOT IN ($rowids)
+
+SQL
+                                    , [$dstgrp, $dstkey, $row->locale]);
+
+                                if (!empty($to_delete))
+                                {
+                                    $to_delete = $to_delete[0]->ids;
+                                    if ($to_delete) DB::delete("DELETE FROM ltm_translations WHERE id IN ($to_delete)");
+                                }
+
                                 DB::insert($sql = <<<SQL
 INSERT INTO ltm_translations
 SELECT
     NULL,
     1 status,
     locale,
-    `group`,
+    ? `group`,
     ? `key`,
     value,
     sysdate() created_at,
@@ -629,7 +745,7 @@ FROM ltm_translations t1
 WHERE id = ?
 
 SQL
-                                    , [$row->dst, $row->id]);
+                                    , [$dstgrp, $dstkey, $row->id]);
                             }
                         }
                     }
@@ -640,6 +756,7 @@ SQL
         {
             $errors[] = trans('laravel-translation-manager::messages.keyops-not-authorized');
         }
+
         $this->logSql = 0;
         return \View::make('laravel-translation-manager::keyop')
             ->with('errors', $errors)
@@ -661,15 +778,15 @@ SQL
     }
 
     public
-    function postRenameKeys($group)
+    function postMoveKeys($group)
     {
-        return $this->keyOp($group, 'rename');
+        return $this->keyOp($group, 'move');
     }
 
     public
     function postDeleteKeys($group)
     {
-        return $this->keyOp($group, 'rename');
+        return $this->keyOp($group, 'delete');
     }
 
     public
