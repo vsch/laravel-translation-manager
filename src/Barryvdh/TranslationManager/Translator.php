@@ -194,8 +194,10 @@ class Translator extends LaravelTranslator
                     $result = $t->saved_value ?: $key;
                     if ($t->isDirty()) $t->save();
 
-                    if ($result !== $key)
+                    // save in cache even if it has no value to prevent hitting the database every time just to figure it out
+                    if (true || $result !== $key)
                     {
+                        // save in cache
                         $this->manager->cacheTranslation($key, $result, $locale ?: $this->getLocale());
                         return $this->processResult($result, $replace);
                     }
