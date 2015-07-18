@@ -34,7 +34,7 @@
                     <div class="row">
                         <?php if(!isset($group)) : ?>
                         <div class="col col-sm-12">
-                            <form id="form-import" class="form-inline form-import" method="POST" action="<?= action('Barryvdh\TranslationManager\Controller@postImport') ?>"
+                            <form id="form-import" class="form-inline form-import" method="POST" action="<?= action('Vsch\TranslationManager\Controller@postImport') ?>"
                                     data-remote="true" role="form">
                                 <select name="replace" class="form-control">
                                     <option value="0">Append new translations</option>
@@ -51,9 +51,9 @@
                                 </div>
                             </form>
                         </div>
-                        <form id="form-publish" class="form-inline form-publish" method="POST" action="<?= action('Barryvdh\TranslationManager\Controller@postPublish', '*') ?>"
+                        <form id="form-publish" class="form-inline form-publish" method="POST" action="<?= action('Vsch\TranslationManager\Controller@postPublish', '*') ?>"
                                 data-remote="true" role="form"></form>
-                        <form id="form-find" class="form-inline form-find" method="POST" action="<?= action('Barryvdh\TranslationManager\Controller@postFind') ?>"
+                        <form id="form-find" class="form-inline form-find" method="POST" action="<?= action('Vsch\TranslationManager\Controller@postFind') ?>"
                                 data-remote="true" role="form"
                                 data-confirm="Are you sure you want to scan you app folder? All found translation keys will be added to the database."></form>
                         <?php endif; ?>
@@ -62,7 +62,7 @@
                     <?php if(isset($group)) : ?>
                     <div class="row">
                         <div class="col-sm-12">
-                            <form class="form-inline form-publish" method="POST" action="<?= action('Barryvdh\TranslationManager\Controller@postPublish', $group) ?>"
+                            <form class="form-inline form-publish" method="POST" action="<?= action('Vsch\TranslationManager\Controller@postPublish', $group) ?>"
                                     data-remote="true" role="form">
                                 <button type="submit" class="btn btn-info" data-disable-with="Publishing..">Publish translations
                                 </button>
@@ -112,14 +112,14 @@
                                         }
                                         $key = $mismatch->key;
                                     }
-                                    $link = action('Barryvdh\TranslationManager\Controller@getIndex', $mismatch->group) . '#' . $mismatch->key;
+                                    $link = action('Vsch\TranslationManager\Controller@getIndex', $mismatch->group) . '#' . $mismatch->key;
                                     ?>
                                     <tr{{$borderTop}}>
                                         <td width="20%" class="missing">{{$keyText}}</td>
                                         <td>
                                             <a href="#edit" class="editable status-0 locale-<?= $locale ?>" data-locale="<?= $locale ?>" data-name="<?= $locale . "|" . $key ?>"
                                                     id="username" data-type="textarea" data-pk="<?= $mismatch->id ?>"
-                                                    data-url="<?= URL::action('Barryvdh\TranslationManager\Controller@postEdit', array($mismatch->group)) ?> ?>"
+                                                    data-url="<?= URL::action('Vsch\TranslationManager\Controller@postEdit', array($mismatch->group)) ?> ?>"
                                                     data-inputclass="editable-input"
                                                     data-title="@lang('laravel-translation-manager::translations.enter-translation')"><?= htmlentities($mismatch->ru_value, ENT_QUOTES, 'UTF-8', false) ?></a>
                                         </td>
@@ -153,7 +153,7 @@
                 <?php endif; ?>
 
                 <?php if($group): ?>
-                <form action="<?= action('Barryvdh\TranslationManager\Controller@postAdd', array($group)) ?>" method="POST" role="form">
+                <form action="<?= action('Vsch\TranslationManager\Controller@postAdd', array($group)) ?>" method="POST" role="form">
                     <textarea class="form-control" rows="3" name="keys" placeholder="@lang('laravel-translation-manager::translations.addkeys-placeholder')"></textarea> <br> <input type="submit"
                             value="@lang('laravel-translation-manager::translations.addkeys')" class="btn btn-primary">
                     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#searchModal" style="float:right; display:inline">
@@ -183,15 +183,15 @@
                                         <td class="changed">{{$stat->changed ?: '&nbsp;'}}</td>
                                         @if ($stat->missing)
                                             <td class="group missing">
-                                                <a href="{{action('Barryvdh\TranslationManager\Controller@getIndex', $stat->group)}}">{{$stat->group ?: '&nbsp;'}}</a>
+                                                <a href="{{action('Vsch\TranslationManager\Controller@getIndex', $stat->group)}}">{{$stat->group ?: '&nbsp;'}}</a>
                                             </td>
                                         @elseif ($stat->changed)
                                             <td class="group changed">
-                                                <a href="{{action('Barryvdh\TranslationManager\Controller@getIndex', $stat->group)}}">{{$stat->group ?: '&nbsp;'}}</a>
+                                                <a href="{{action('Vsch\TranslationManager\Controller@getIndex', $stat->group)}}">{{$stat->group ?: '&nbsp;'}}</a>
                                             </td>
                                         @else
                                             <td class="group">
-                                                <a href="{{action('Barryvdh\TranslationManager\Controller@getIndex', $stat->group)}}">{{$stat->group ?: '&nbsp;'}}</a>
+                                                <a href="{{action('Vsch\TranslationManager\Controller@getIndex', $stat->group)}}">{{$stat->group ?: '&nbsp;'}}</a>
                                             </td>
                                         @endif
                                     </tr>
@@ -230,12 +230,12 @@
                                 <a href="#edit" class="editable status-<?= $t ? $t->status : 0 ?> locale-<?= $locale ?>" data-locale="<?= $locale ?>"
                                         data-name="<?= $locale . "|" . $key ?>" id="username" data-type="textarea" data-pk="<?= $t ? $t->id : 0 ?>" data-url="<?= $editUrl ?>"
                                         data-inputclass="editable-input"
-                                        data-title="@lang('laravel-translation-manager::translations.enter-translation')"><?= $t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '' ?></a> <?= !$t ? '' : ($t->saved_value === $t->value ? '' : ' [' . \Barryvdh\TranslationManager\Controller::mb_renderDiffHtml($t->saved_value, $t->value) . ']') ?>
+                                        data-title="@lang('laravel-translation-manager::translations.enter-translation')"><?= $t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '' ?></a> <?= !$t ? '' : ($t->saved_value === $t->value ? '' : ' [' . \Vsch\TranslationManager\Controller::mb_renderDiffHtml($t->saved_value, $t->value) . ']') ?>
                             </td>
                             <?php endforeach; ?>
                             <?php if($deleteEnabled): ?>
                             <td>
-                                <a href="<?= action('Barryvdh\TranslationManager\Controller@postDelete', [
+                                <a href="<?= action('Vsch\TranslationManager\Controller@postDelete', [
                                         $group,
                                         $key
                                 ]) ?>" class="delete-key" data-method="POST" data-remote="true">
@@ -331,7 +331,7 @@
             });
 
             $('.group-select').on('change', function () {
-                window.location.href = '<?= action('Barryvdh\TranslationManager\Controller@getIndex') ?>/' + $(this).val();
+                window.location.href = '<?= action('Vsch\TranslationManager\Controller@getIndex') ?>/' + $(this).val();
             });
 
             $('a.delete-key').on('ajax:success', function (e, data) {

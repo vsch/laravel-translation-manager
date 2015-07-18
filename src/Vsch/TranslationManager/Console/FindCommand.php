@@ -1,6 +1,6 @@
-<?php namespace Barryvdh\TranslationManager\Console;
+<?php namespace Vsch\TranslationManager\Console;
 
-use Barryvdh\TranslationManager\Manager;
+use Vsch\TranslationManager\Manager;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 
@@ -20,7 +20,7 @@ class FindCommand extends Command {
      */
     protected $description = 'Find translations in php/twig files';
 
-    /** @var  \Barryvdh\TranslationManager\Manager  */
+    /** @var  \Vsch\TranslationManager\Manager  */
     protected $manager;
 
     public function __construct(Manager $manager)

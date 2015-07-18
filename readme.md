@@ -16,26 +16,26 @@ This way, translations can be saved in git history and no overhead is introduced
 
 ## Installation
 
-Require this package in your composer.json and run composer update (or run `composer require barryvdh/laravel-translation-manager:*` directly):
+Require this package in your composer.json and run composer update (or run `composer require vsch/laravel-translation-manager:*` directly):
 
-    "barryvdh/laravel-translation-manager": "0.1.x"
+    "vsch/laravel-translation-manager": "0.1.x"
 
 After updating composer, add the ServiceProvider to the providers array in app/config/app.php
 
-    'Barryvdh\TranslationManager\ManagerServiceProvider',
+    'Vsch\TranslationManager\ManagerServiceProvider',
 
 You need to run the migrations for this package
 
-    $ php artisan migrate --package="barryvdh/laravel-translation-manager"
+    $ php artisan migrate --package="vsch/laravel-translation-manager"
 
-You need to publish the config file for this package. This will add the file `app/config/packages/barryvdh/laravel-translation-manager/config.php`, where you can configure this package.
+You need to publish the config file for this package. This will add the file `app/config/packages/vsch/laravel-translation-manager/config.php`, where you can configure this package.
 
-    $ php artisan config:publish barryvdh/laravel-translation-manager
+    $ php artisan config:publish vsch/laravel-translation-manager
 
 You have to add the Controller to your routes.php, so you can set your own url/filters.
 
     Route::group(array('before' => 'auth_admin'), function() {
-        Route::controller('translations', 'Barryvdh\TranslationManager\Controller');
+        Route::controller('translations', 'vsch\TranslationManager\Controller');
     });
 
 This example will make the translation manager available at `http://yourdomain.com/translations`
@@ -91,16 +91,15 @@ The reset command simply clears all translation in the database, so you can star
 
     $ php artisan translations:reset
 
-
-
-### Detect missing translations
+### Detect missing translations and enable in-place translation editing
 
 Most translations can be found by using the Find command (see above), but in case you have dynamic keys (variables/automatic forms etc), it can be helpful to 'listen' to the missing translations.
 To detect missing translations, we can swap the Laravel TranslationServicepProvider with a custom provider.
 In your config/app.php, comment out the original TranslationServiceProvider and add the one from this package:
 
     //'Illuminate\Translation\TranslationServiceProvider',
-    'Barryvdh\TranslationManager\TranslationServiceProvider',
+    'Vsch\TranslationManager\TranslationServiceProvider',
+    'Vsch\TranslationManager\ManagerServiceProvider',
 
 This will extend the Translator and will create a new database entry, whenever a key is not found, so you have to visit the pages that use them.
 This way it shows up in the webinterface and can be edited and later exported.

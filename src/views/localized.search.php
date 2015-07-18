@@ -15,16 +15,16 @@ use Illuminate\Support\Facades\URL;
     </thead>
     <tbody>
         <?php foreach($translations as $t): ?>
-            <?php $groupUrl = action('Barryvdh\TranslationManager\Controller@getIndex', $t->group); ?>
+            <?php $groupUrl = action('Vsch\TranslationManager\Controller@getIndex', $t->group); ?>
             <tr>
                 <td><a href="<?= $groupUrl ?>#<?= $t->key ?>"><?= $t->group ?></a></td>
                 <td><?= $t->key ?></td>
                 <td><?= $t->locale ?></td>
                 <td>
                     <a href="#edit" class="editable status-<?= $t ? $t->status : 0 ?> locale-<?= $t->locale ?>" data-locale="<?= $t->locale ?>"
-                        data-name="<?= $t->locale . "|" . $t->key ?>" id="username" data-type="textarea" data-pk="<?= $t ? $t->id : 0 ?>" data-url="<?= URL::action('Barryvdh\TranslationManager\Controller@postEdit', array($t->group)) ?>"
+                        data-name="<?= $t->locale . "|" . $t->key ?>" id="username" data-type="textarea" data-pk="<?= $t ? $t->id : 0 ?>" data-url="<?= URL::action('Vsch\TranslationManager\Controller@postEdit', array($t->group)) ?>"
                         data-inputclass="editable-input"
-                        data-title="<?=trans('laravel-translation-manager::translations.enter-translation')?>"><?= $t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '' ?></a> <?= !$t ? '' : ($t->saved_value === $t->value ? '' : ' [' . \Barryvdh\TranslationManager\Controller::mb_renderDiffHtml($t->saved_value, $t->value) . ']') ?>
+                        data-title="<?=trans('laravel-translation-manager::translations.enter-translation')?>"><?= $t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '' ?></a> <?= !$t ? '' : ($t->saved_value === $t->value ? '' : ' [' . \Vsch\TranslationManager\Controller::mb_renderDiffHtml($t->saved_value, $t->value) . ']') ?>
                 </td>
             </tr>
         <?php endforeach; ?>

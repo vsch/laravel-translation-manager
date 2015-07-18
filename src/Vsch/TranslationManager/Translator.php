@@ -1,4 +1,4 @@
-<?php namespace Barryvdh\TranslationManager;
+<?php namespace Vsch\TranslationManager;
 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
@@ -69,14 +69,21 @@ class Translator extends LaravelTranslator
     }
 
     public
-    function inPlaceEditLink($t, $withDiff = false, $key = null, $locale = null, $useDB = null)
+    function inPlaceEditLink($t, $withDiff = false, $key = null, $locale = null, $useDB = null, $group = null)
     {
         $diff = '';
         if (!$t && $key)
         {
             if ($useDB === null) $useDB = $this->useDB;
 
-            list($namespace, $group, $item) = $this->parseKey($key);
+            list($namespace, $parsed_group, $item) = $this->parseKey($key);
+            if ($group === null) $group = $parsed_group;
+            else
+            {
+                $item = substr($key, strlen("$group."));
+                if ($namespace && $namespace !== '*') $group = substr($group, strlen("$namespace::"));
+            }
+
             if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
             {
                 $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
@@ -96,14 +103,14 @@ class Translator extends LaravelTranslator
         {
             if ($withDiff && $diff === '')
             {
-                $diff = ($t->saved_value == $t->value ? '' : ($t->saved_value === $t->value ? '' : ' [' . \Barryvdh\TranslationManager\Controller::mb_renderDiffHtml($t->saved_value, $t->value) . ']'));
+                $diff = ($t->saved_value == $t->value ? '' : ($t->saved_value === $t->value ? '' : ' [' . \Vsch\TranslationManager\Controller::mb_renderDiffHtml($t->saved_value, $t->value) . ']'));
             }
             $title = parent::get('laravel-translation-manager::messages.enter-translation');
 
             if ($t->value === null) $t->value = ''; //$t->value = parent::get($key, $replace, $locale);
             $result = '<a href="#edit" class="editable status-' . ($t->status ?: 0) . ' locale-' . $t->locale . '" data-locale="' . $t->locale . '" '
                 . 'data-name="' . $t->locale . '|' . $t->key . '" id="' . $t->locale . "-" . str_replace('.', '-', $t->key) . '"  data-type="textarea" data-pk="' . ($t->id ?: 0) . '" '
-                . 'data-url="' . URL::action('Barryvdh\TranslationManager\Controller@postEdit', array($t->group)) . '" '
+                . 'data-url="' . URL::action('Vsch\TranslationManager\Controller@postEdit', array($t->group)) . '" '
                 . 'data-inputclass="editable-input" data-saved_value="' . htmlentities($t->saved_value, ENT_QUOTES, 'UTF-8', false) . '" '
                 . 'data-title="' . $title . ': [' . $t->locale . '] ' . $t->group . '.' . $t->key . '">'
                 . ($t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '') . '</a> '

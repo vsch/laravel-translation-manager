@@ -1,19 +1,19 @@
-<?php namespace Barryvdh\TranslationManager;
+<?php namespace Vsch\TranslationManager;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\Expression;
-use Illuminate\Filesystem\Filesystem;
 use Illuminate\Events\Dispatcher;
-use Barryvdh\TranslationManager\Models\Translation;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Symfony\Component\Finder\Finder;
+use Vsch\TranslationManager\Models\Translation;
 
 /**
  * Class Manager
- * @package Barryvdh\TranslationManager
+ * @package Vsch\TranslationManager
  */
 class Manager
 {
@@ -186,7 +186,7 @@ class Manager
      * @param bool $useLottery
      * @param bool $findOrNew
      *
-     * @return \Barryvdh\TranslationManager\Models\Translation|null
+     * @return \Vsch\TranslationManager\Models\Translation|null
      */
     public
     function missingKey($namespace, $group, $key, $locale = null, $useLottery = false, $findOrNew = false)
@@ -232,22 +232,52 @@ class Manager
         return null;
     }
 
+    private static
+    function calculateGroup($info, $namespace, $locale)
+    {
+        $dirname = $info["dirname"];
+        $filename = $info["filename"];
+        if ($pos = strpos($dirname, "/app/lang/$locale/"))
+        {
+            $base = substr($dirname, $pos + strlen("/app/lang/$locale/"));
+            $base = str_replace("/", ".", $base);
+        }
+        elseif ($pos = strpos($dirname, "/app/lang/packages/$locale/$namespace/"))
+        {
+            $base = substr($dirname, $pos + strlen("/app/lang/packages/$locale/$namespace/"));
+            $base = str_replace("/", ".", $base);
+        }
+        else
+        {
+            return $filename;
+        }
+        return "$base.$filename";
+    }
+
     public
     function importTranslationLocale($replace = false, $locale, $langPath, $namespace = null, $groups = null)
     {
-        $files = $this->files->files($langPath);
         $package = $namespace ? $namespace . '::' : '';
+
+        // handle nested language definition directories
+        $directories = $this->files->directories($langPath);
+        foreach ($directories as $dir)
+        {
+            $this->importTranslationLocale($replace, $locale, $dir, $namespace, $groups);
+        }
+
+        $files = $this->files->files($langPath);
         foreach ($files as $file)
         {
             $info = pathinfo($file);
-            $group = $info['filename'];
+            $group = self::calculateGroup($info, $namespace, $locale);
 
             if (in_array($package . $group, $this->config()['exclude_groups']) || ($groups && !in_array($package . $group, $groups)))
             {
                 continue;
             }
 
-            $translations = array_dot(\Lang::getLoader()->load($locale, $group, $namespace));
+            $translations = array_dot(\Lang::getLoader()->load($locale, str_replace(".", "/", $group), $namespace));
 
             $dbTranslations = $this->translation->hydrateRaw(<<<SQL
 SELECT * FROM ltm_translations WHERE locale = ? AND `group` = ?
@@ -287,6 +317,7 @@ SQL
                     $translation->value = $value;
                 }
 
+                $translation->is_deleted = 0;
                 $translation->saved_value = $value;
 
                 $newStatus = ($translation->value === $translation->saved_value ? Translation::STATUS_SAVED
@@ -461,6 +492,23 @@ SQL
     }
 
     public
+    function makeDirPath($path)
+    {
+        $directories = explode("/", $path);
+        $filename = array_pop($directories);
+        $dirpath = "/";
+        // Build path and create dirrectories if needed
+        foreach ($directories as $directory)
+        {
+            $dirpath .= $directory . "/";
+            if (!$this->files->exists($dirpath))
+            {
+                $this->files->makeDirectory($dirpath);
+            }
+        }
+    }
+
+    public
     function exportTranslations($group, $recursing = 0)
     {
         $inDatabasePublishing = $this->inDatabasePublishing();
@@ -477,7 +525,6 @@ SQL
                     ->where('status', '<>', Translation::STATUS_SAVED)
                     ->where('group', '=', $group)
                     ->get(['group', 'key', 'locale', 'saved_value']);
-
             }
             else
             {
@@ -485,11 +532,9 @@ SQL
 UPDATE ltm_translations SET saved_value = value, status = ? WHERE (saved_value <> value || status <> ?)
 SQL
                     , [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED]);
-
                 $translations = $this->translation->query()
                     ->where('status', '<>', Translation::STATUS_SAVED)
                     ->get(['group', 'key', 'locale', 'saved_value']);
-
             }
 
             /* @var $translations Collection */
@@ -507,6 +552,9 @@ SQL
                 if ($group == '*')
                     $this->exportAllTranslations(1);
 
+                $this->translation->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE is_deleted = 1 AND `group` = ?"
+                    , [$group]);
+
                 $this->clearCache($group);
 
                 $tree = $this->makeTree(Translation::where('group', $group)->whereNotNull('value')->orderby('key')->get());
@@ -516,28 +564,31 @@ SQL
                     if (isset($groups[$group]))
                     {
                         $translations = $groups[$group];
-
                         if (strpos($group, '::') !== false)
                         {
                             // package group
                             $packgroup = explode('::', $group, 2);
                             $package = array_shift($packgroup);
                             $packgroup = array_shift($packgroup);
-                            $path = $this->app->make('path') . '/lang/packages/' . $locale . '/' . $package . '/' . $packgroup . '.php';
+                            $path = $this->app->make('path') . '/lang/packages/' . $locale . '/' . $package . '/' . str_replace(".","/", $packgroup) . '.php';
                         }
                         else
                         {
-                            $path = $this->app->make('path') . '/lang/' . $locale . '/' . $group . '.php';
+                            $path = $this->app->make('path') . '/lang/' . $locale . '/' . str_replace(".","/", $group) . '.php';
                         }
 
                         $output = "<?php\n\nreturn " . $this->formatForExport($translations) . ";\n";
+                        $this->makeDirPath($path);
                         $this->files->put($path, $output);
                     }
                 }
 
                 if (!$inDatabasePublishing)
                 {
-                    Translation::where('group', $group)->update(array('status' => Translation::STATUS_SAVED, 'saved_value' => (new Expression('value'))));
+                    Translation::where('group', $group)->update(array(
+                        'status' => Translation::STATUS_SAVED,
+                        'saved_value' => (new Expression('value'))
+                    ));
                 }
             }
         }
@@ -570,7 +621,7 @@ SQL
         }
         else
         {
-            DB::statement("DELETE FROM ltm_translations WHERE `group` = ?", [$group]);
+            $this->translation->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE `group` = ?", [$group]);
         }
     }
 

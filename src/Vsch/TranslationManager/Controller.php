@@ -1,16 +1,16 @@
-<?php namespace Barryvdh\TranslationManager;
+<?php namespace Vsch\TranslationManager;
 
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Input;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Request;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Facades\Response;
-use Barryvdh\TranslationManager\Models\Translation;
+use Vsch\TranslationManager\Models\Translation;
 
 include_once(__DIR__ . '/../../../scripts/finediff.php');
 
@@ -62,7 +62,7 @@ if (!function_exists('mb_unsplit'))
 
 class Controller extends BaseController
 {
-    /** @var \Barryvdh\TranslationManager\Manager */
+    /** @var \Vsch\TranslationManager\Manager */
     protected $manager;
     protected $sqltraces;
     protected $logSql;
@@ -154,7 +154,31 @@ class Controller extends BaseController
         $groups = array('' => noEditTrans('laravel-translation-manager::messages.choose-group')) + $groups->lists('group', 'group');
         $numChanged = Translation::where('group', $group)->where('status', Translation::STATUS_CHANGED)->count();
 
-        $allTranslations = Translation::where('group', $group)->orderBy('key', 'asc')->get();
+        // to allow proper handling of nested directory structure we need to copy the keys for the group for all missing
+        // translations, otherwise we don't know what the group and key looks like.
+        //$allTranslations = Translation::where('group', $group)->orderBy('key', 'asc')->get();
+        $allTranslations = Translation::hydrateRaw(<<<SQL
+SELECT * FROM ltm_translations WHERE `group` = ?
+UNION ALL
+SELECT DISTINCT
+    NULL id,
+    NULL status,
+    locale,
+    `group`,
+    `key`,
+    NULL value,
+    NULL created_at,
+    NULL updated_at,
+    NULL source,
+    NULL saved_value,
+    NULL is_deleted
+FROM
+(SELECT * FROM (SELECT DISTINCT locale FROM ltm_translations) lcs
+    CROSS JOIN (SELECT DISTINCT `group`, `key` FROM ltm_translations WHERE `group` = ?) grp) m
+WHERE NOT EXISTS(SELECT * FROM ltm_translations t WHERE t.locale = m.locale AND t.`group` = m.`group` AND t.`key` = m.`key`)
+ORDER BY `key` ASC
+SQL
+            , [$group, $group]);
 
         if (!count($allTranslations) && $group)
         {
@@ -174,18 +198,18 @@ class Controller extends BaseController
         }
 
         $stats = DB::select(<<<SQL
-SELECT (mx.total_keys - lcs.total) missing, lcs.changed, lcs.locale, lcs.`group`
+SELECT (mx.total_keys - lcs.total) missing, lcs.changed, lcs.deleted, lcs.locale, lcs.`group`
 FROM
-    (SELECT sum(total) total, sum(changed) changed, `group`, locale
+    (SELECT sum(total) total, sum(changed) changed, sum(deleted) deleted, `group`, locale
      FROM
-         (SELECT count(value) total, sum(status) changed, `group`, locale FROM ltm_translations lt GROUP BY `group`, locale
+         (SELECT count(value) total, sum(status) changed, sum(is_deleted) deleted, `group`, locale FROM ltm_translations lt GROUP BY `group`, locale
           UNION ALL
-          SELECT DISTINCT 0, 0, `group`, locale FROM (SELECT DISTINCT locale FROM ltm_translations) lc
+          SELECT DISTINCT 0, 0, 0, `group`, locale FROM (SELECT DISTINCT locale FROM ltm_translations) lc
               CROSS JOIN (SELECT DISTINCT `group` FROM ltm_translations) lg) a
      GROUP BY `group`, locale) lcs
     JOIN (SELECT count(DISTINCT `key`) total_keys, `group` FROM ltm_translations GROUP BY `group`) mx
         ON lcs.`group` = mx.`group`
-WHERE lcs.total < mx.total_keys OR lcs.changed > 0
+WHERE lcs.total < mx.total_keys OR lcs.changed > 0 OR lcs.deleted > 0
 SQL
         );
 
@@ -198,11 +222,14 @@ SQL
                 $item = $summary[$stat->group] = new \stdClass();
                 $item->missing = '';
                 $item->changed = '';
+                $item->deleted = '';
                 $item->group = $stat->group;
             }
+
             $item = $summary[$stat->group];
             if ($stat->missing) $item->missing .= $stat->locale . ":" . $stat->missing . " ";
             if ($stat->changed) $item->changed .= $stat->locale . ":" . $stat->changed . " ";
+            if ($stat->deleted) $item->deleted .= $stat->locale . ":" . $stat->deleted . " ";
         }
 
         // get mismatches
@@ -340,7 +367,7 @@ SQL
             $translations = DB::select(<<<SQL
 SELECT * FROM ltm_translations rt WHERE `key` LIKE ? OR value LIKE ?
 UNION ALL
-SELECT NULL id, 0 status, lt.locale, kt.`group`, kt.`key`, NULL value, NULL created_at, NULL updated_at, NULL source, NULL saved_value
+SELECT NULL id, 0 status, lt.locale, kt.`group`, kt.`key`, NULL value, NULL created_at, NULL updated_at, NULL source, NULL saved_value, NULL is_deleted
 FROM (SELECT DISTINCT locale FROM ltm_translations) lt
     CROSS JOIN (SELECT DISTINCT `key`, `group` FROM ltm_translations) kt
 WHERE NOT exists(SELECT * FROM ltm_translations tr WHERE tr.`key` = kt.`key` AND tr.`group` = kt.`group` AND tr.locale = lt.locale)
@@ -414,12 +441,20 @@ SQL
                     {
                         foreach ($suffixes as $suffix)
                         {
-                            Translation::where('group', $group)->where('key', $key . trim($suffix))->delete();
+                            //Translation::where('group', $group)->where('key', $key . trim($suffix))->delete();
+                            $result = DB::update(<<<SQL
+UPDATE ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
+SQL
+                                , [$group, $key . trim($suffix)]);
                         }
                     }
                     else
                     {
-                        Translation::where('group', $group)->where('key', $key)->delete();
+                        //Translation::where('group', $group)->where('key', $key)->delete();
+                        $result = DB::update(<<<SQL
+UPDATE ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
+SQL
+                            , [$group, $key]);
                     }
                 }
             }
@@ -458,7 +493,25 @@ SQL
     {
         if (!in_array($group, $this->manager->getConfig('exclude_groups')) && $this->manager->getConfig('delete_enabled'))
         {
-            Translation::where('group', $group)->where('key', $key)->delete();
+            //Translation::where('group', $group)->where('key', $key)->delete();
+            $result = DB::update(<<<SQL
+UPDATE ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
+SQL
+                , [$group, $key]);
+        }
+        return array('status' => 'ok');
+    }
+
+    public
+    function postUndelete($group, $key)
+    {
+        if (!in_array($group, $this->manager->getConfig('exclude_groups')) && $this->manager->getConfig('delete_enabled'))
+        {
+            //Translation::where('group', $group)->where('key', $key)->delete();
+            $result = DB::update(<<<SQL
+UPDATE ltm_translations SET is_deleted = 0 WHERE is_deleted = 1 AND `group` = ? AND `key` = ?
+SQL
+                , [$group, $key]);
         }
         return array('status' => 'ok');
     }
@@ -699,7 +752,11 @@ SQL
                                 if (!empty($to_delete))
                                 {
                                     $to_delete = $to_delete[0]->ids;
-                                    if ($to_delete) DB::delete("DELETE FROM ltm_translations WHERE id IN ($to_delete)");
+                                    if ($to_delete)
+                                    {
+                                        //DB::delete("DELETE FROM ltm_translations WHERE id IN ($to_delete)");
+                                        DB::update("UPDATE ltm_translations SET is_deleted = 1 WHERE id IN ($to_delete)");
+                                    }
                                 }
 
                                 DB::update("UPDATE ltm_translations SET `group` = ?, `key` = ?, status = 1 WHERE id = ?"
@@ -708,7 +765,8 @@ SQL
                         }
                         elseif ($op === 'delete')
                         {
-                            DB::delete("DELETE FROM ltm_translations WHERE id IN ($rowids)");
+                            //DB::delete("DELETE FROM ltm_translations WHERE id IN ($rowids)");
+                            DB::update("UPDATE ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND id IN ($rowids)");
                         }
                         elseif ($op === 'copy')
                         {
@@ -725,7 +783,11 @@ SQL
                                 if (!empty($to_delete))
                                 {
                                     $to_delete = $to_delete[0]->ids;
-                                    if ($to_delete) DB::delete("DELETE FROM ltm_translations WHERE id IN ($to_delete)");
+                                    if ($to_delete)
+                                    {
+                                        //DB::delete("DELETE FROM ltm_translations WHERE id IN ($to_delete)");
+                                        DB::update("UPDATE ltm_translations SET is_deleted = 1 WHERE id IN ($to_delete)");
+                                    }
                                 }
 
                                 DB::insert($sql = <<<SQL
@@ -799,6 +861,7 @@ SQL
     function postImport($group)
     {
         $replace = Input::get('replace', false);
+        if ($replace == 2) $this->manager->truncateTranslations($group);
         $counter = $this->manager->importTranslations($group !== '*' ? true : $replace, false, $group === '*' ? null : [$group]);
 
         return Response::json(array('status' => 'ok', 'counter' => $counter));

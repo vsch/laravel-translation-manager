@@ -1,4 +1,4 @@
-<?php namespace Barryvdh\TranslationManager;
+<?php namespace Vsch\TranslationManager;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -20,7 +20,7 @@ class ManagerServiceProvider extends ServiceProvider
     public
     function boot()
     {
-        $this->package('barryvdh/laravel-translation-manager');
+        $this->package('vsch/laravel-translation-manager');
     }
 
     /**
@@ -33,8 +33,8 @@ class ManagerServiceProvider extends ServiceProvider
     {
         $this->app['translation-manager'] = $this->app->share(function ($app)
         {
-            /* @var $manager \Barryvdh\TranslationManager\Manager */
-            $manager = $app->make('Barryvdh\TranslationManager\Manager');
+            /* @var $manager \Vsch\TranslationManager\Manager */
+            $manager = $app->make('Vsch\TranslationManager\Manager');
 
             return $manager;
         });

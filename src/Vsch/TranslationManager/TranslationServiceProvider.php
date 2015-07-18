@@ -1,4 +1,4 @@
-<?php namespace Barryvdh\TranslationManager;
+<?php namespace Vsch\TranslationManager;
 
 use Illuminate\Translation\TranslationServiceProvider as BaseTranslationServiceProvider;
 
@@ -24,7 +24,7 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider
             // configuration so we can easily get both of these values from there.
             $locale = $app['config']['app.locale'];
 
-            $trans = new \Barryvdh\TranslationManager\Translator($app, $loader, $locale);
+            $trans = new \Vsch\TranslationManager\Translator($app, $loader, $locale);
 
             $trans->setFallback($app['config']['app.fallback_locale']);
 

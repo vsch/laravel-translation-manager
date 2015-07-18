@@ -1,6 +1,6 @@
-<?php namespace Barryvdh\TranslationManager\Console;
+<?php namespace Vsch\TranslationManager\Console;
 
-use Barryvdh\TranslationManager\Manager;
+use Vsch\TranslationManager\Manager;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 
@@ -20,7 +20,7 @@ class ImportCommand extends Command {
      */
     protected $description = 'Import translations from the PHP sources';
 
-    /** @var  \Barryvdh\TranslationManager\Manager  */
+    /** @var  \Vsch\TranslationManager\Manager  */
     protected $manager;
 
     public function __construct(Manager $manager)

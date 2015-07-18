@@ -1,9 +1,13 @@
 {
-    "name": "barryvdh/laravel-translation-manager",
+    "name": "vsch/laravel-translation-manager",
     "description": "Manage Laravel Translations",
     "keywords": ["laravel", "translations", "translator"],
     "license": "MIT",
     "authors": [
+        {
+            "name": "Vladimir Schneider",
+            "email": "vladimir.schneider@gmail.com"
+        },
         {
             "name": "Barry vd. Heuvel",
             "email": "barryvdh@gmail.com"
@@ -16,12 +20,13 @@
         "symfony/finder": "~2.3"
     },
     "autoload": {
+        "psr-0": {
+            "Vsch\\TranslationManager\\": "gorhill/p-hp-fine-diff/src",
+            "Vsch\\TranslationManager\\": "src/"
+        },
         "classmap": [
             "src/migrations"
-        ],
-        "psr-0": {
-            "Barryvdh\\TranslationManager\\": "src/"
-        }
+        ]
     },
     "minimum-stability": "stable"
 }
