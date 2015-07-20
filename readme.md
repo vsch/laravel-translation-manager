@@ -1,18 +1,44 @@
 ## Laravel Translation Manager
 
-This is a package to manage Laravel translation files.
-It does not replace the Translation system, only import/export the php files to a database and make them editable through a webinterface.
+Note that this package is originally based on an excellent barryvdh/laravel-translation-manager package but heavily reworked to add [New Features](#NewFeatures):
+
+This is a package to manage Laravel translation files. It does not replace the Translation system but augments it with:
+
+- import/export the php files to a database
+- make translations editable through a web interface.
+- allow in-database translations to override the ones in the language files. Used to update translations on server clusters where updating translation files is not possible (like AWS EC2) or would cause server code to be out of sync.
+
 The workflow would be:
 
-    - Import translations: Read all translation files and save them in the database
-    - Find all translations in php/twig sources
-    - Optionally: Listen to missing translation with the custom Translator
-    - Translate all keys through the webinterface
-    - Export: Write all translations back to the translation files.
+- Import translations: Read all translation files and save them in the database
+- Find all translations in php/twig sources
+- Optionally: Listen to missing translation with the custom Translator
+- Translate all keys through the webinterface
+- Export: Write all translations back to the translation files or cache if in production environment where writing of files is not an option.
 
 This way, translations can be saved in git history and no overhead is introduced in production.
 
 ![Screenshot](http://i.imgur.com/4th2krf.png)
+
+<a id="NewFeatures"></a>
+#### New Features
+
+- translation manager web-interface is localized. Current version has English and Russian.
+- allows in-database translations to override the translations in files.
+- publishing translations on production systems run where updating translation files would only update a single server, can be configured to use the cache for serving up the modified translations
+- Translation service can be put into 'in place edit' mode that enables editing of translations where they appear on the page.
+  - this eliminates the need to peruse code to find the translation group/key combination that is used for the resulting string and then looking for it in the translation files or in the web interface. Simply enable in-place editign mode and click on the string you wish to edit.
+  - This may require some editing of view files to handle: string values that should not be links because they are not shown or are used for HTML attribute values, `<button>` contents that don't display links and other edge cases.
+- changes to database translations that have not been published show a difference between previously published/imported translations and current unpublished changes.
+- soft delete of translations that are not physically deleted from the database until translations are published.
+- translation page has a dash board view showing all unpublished changes, missing translations and deleted translations.
+- handling of translation files in nested directories under `lang/` and package translations under `lang/packages` to allow managing package translation overrides.
+- missing translation key logging that can be used in a production environment by setting 1 of N sessions to actually log missing translations. Since checking for missing translation requires hitting the database for every translation, it can be a heavy load on the DB server. This configuration setting allows randomly selecting 1 of N user sessions to be marked as checking for missing translations allowing the benefit of finding missing translations while reducing the load burden on the server.
+- in place edit mode inside the search dialog to allow editing of translation in the search result.
+- extra buttons added to the bootstrap x-edit component for frequent operations:
+  - change case of translation or selection within translation: lowercase, first cap
+  - create plural forms for use in `choice()`, currently English is automatically created and Russian will do its best by using Yandex translator to derrive the plural forms.
+
 
 ## Installation
 
@@ -91,15 +117,16 @@ The reset command simply clears all translation in the database, so you can star
 
     $ php artisan translations:reset
 
-### Detect missing translations and enable in-place translation editing
+### Detect missing translations, use in database translation ovrrides, enable in-place translation editing
 
 Most translations can be found by using the Find command (see above), but in case you have dynamic keys (variables/automatic forms etc), it can be helpful to 'listen' to the missing translations.
 To detect missing translations, we can swap the Laravel TranslationServicepProvider with a custom provider.
 In your config/app.php, comment out the original TranslationServiceProvider and add the one from this package:
 
+```php
     //'Illuminate\Translation\TranslationServiceProvider',
     'Vsch\TranslationManager\TranslationServiceProvider',
-    'Vsch\TranslationManager\ManagerServiceProvider',
+```
 
 This will extend the Translator and will create a new database entry, whenever a key is not found, so you have to visit the pages that use them.
 This way it shows up in the webinterface and can be edited and later exported.
@@ -109,7 +136,7 @@ You shouldn't use this in production, just in production to translate your views
 
 This package is still very alpha. Few thinks that are on the todo-list:
 
-    - Add locales/groups via webinterface
-    - Improve webinterface (more selection/filtering, behavior of popup after save etc)
-    - Seed existing languages (https://github.com/caouecs/Laravel4-lang)
-    - Suggestions are welcome :)
+- Add locales/groups via webinterface
+- Improve webinterface (more selection/filtering, behavior of popup after save etc)
+- Seed existing languages (https://github.com/caouecs/Laravel4-lang)
+- Suggestions are welcome :)
