@@ -20,6 +20,9 @@
         "psr-0": {
             "Vsch\\TranslationManager\\": "src"
         },
+        "files": [
+            "src/Vsch/Support/helpers.php"
+        ],
         "classmap": [
             "src/migrations"
         ]

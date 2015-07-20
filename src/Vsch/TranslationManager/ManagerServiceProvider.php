@@ -2,8 +2,6 @@
 
 use Illuminate\Support\ServiceProvider;
 
-include_once __DIR__ . "/../../../scripts/helpers.php";
-
 class ManagerServiceProvider extends ServiceProvider
 {
 

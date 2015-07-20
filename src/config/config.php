@@ -27,12 +27,6 @@ return array(
 	 * This is useful for groups that are used exclusively for non-display strings like page titles and emails
 	 *
 	 * @type array
-	 *
-	 *    array(
-	 *        'page-titles',
-	 *        'reminders',
-	 *        'validation',
-	 *    )
 	 */
 	'exclude_page_edit_groups' => array(
 		'page-titles',
