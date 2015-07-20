@@ -71,7 +71,7 @@ class Manager
     {
         if ($this->cachePrefix === null)
         {
-            if (in_array('cache_prefix', $this->config()))
+            if (array_key_exists('cache_prefix', $this->config()))
             {
                 $this->cachePrefix = $this->config()['cache_prefix'];
             }

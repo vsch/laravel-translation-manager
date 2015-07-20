@@ -340,6 +340,7 @@ SQL
         return \View::make('laravel-translation-manager::index')
             ->with('translations', $translations)
             ->with('locales', $locales)
+            ->with('currLang', \Lang::getLocale())
             ->with('groups', $groups)
             ->with('group', $group)
             ->with('numTranslations', $numTranslations)
