@@ -22,7 +22,6 @@
     },
     "autoload": {
         "psr-0": {
-            "Vsch\\TranslationManager\\": "gorhill/p-hp-fine-diff/src",
             "Vsch\\TranslationManager\\": "src"
         },
         "classmap": [

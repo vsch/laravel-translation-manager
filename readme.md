@@ -60,9 +60,8 @@ You need to publish the config file for this package. This will add the file `ap
 
 You have to add the Controller to your routes.php, so you can set your own url/filters.
 
-    Route::group(array('before' => 'auth_admin'), function() {
-        Route::controller('translations', 'vsch\TranslationManager\Controller');
-    });
+    Route::get('translations/keyop/{group}', 'Vsch\TranslationManager\Controller@getKeyop');
+    Route::controller('translations', 'Vsch\TranslationManager\Controller');
 
 This example will make the translation manager available at `http://yourdomain.com/translations`
 
