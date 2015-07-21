@@ -46,9 +46,15 @@ Require this package in your composer.json and run composer update (or run `comp
 
     "vsch/laravel-translation-manager": "0.1.x"
 
-After updating composer, add the ServiceProvider to the providers array in app/config/app.php
+After updating composer, add the ServiceProviders to the providers array in app/config/app.php
 
+```php
+    //'Illuminate\Translation\TranslationServiceProvider',
+    'Vsch\TranslationManager\TranslationServiceProvider',
     'Vsch\TranslationManager\ManagerServiceProvider',
+```
+
+The TranslationServiceProvider is an extension to the standard functionality and is required in order for the web interface to work.
 
 You need to run the migrations for this package
 
@@ -57,6 +63,10 @@ You need to run the migrations for this package
 You need to publish the config file for this package. This will add the file `app/config/packages/vsch/laravel-translation-manager/config.php`, where you can configure this package.
 
     $ php artisan config:publish vsch/laravel-translation-manager
+
+You need to publish the assets used by the translation manager web interface. This will add the assets to `public/packages/vsch/laravel-translation-manager`
+
+    $ php artisan asset:publish vsch/laravel-translation-manager
 
 You have to add the Controller to your routes.php, so you can set your own url/filters.
 
@@ -115,21 +125,6 @@ The clean command will search for all translation that are NULL and delete them,
 The reset command simply clears all translation in the database, so you can start fresh (by a new import). Make sure to export your work if needed before doing this.
 
     $ php artisan translations:reset
-
-### Detect missing translations, use in database translation ovrrides, enable in-place translation editing
-
-Most translations can be found by using the Find command (see above), but in case you have dynamic keys (variables/automatic forms etc), it can be helpful to 'listen' to the missing translations.
-To detect missing translations, we can swap the Laravel TranslationServicepProvider with a custom provider.
-In your config/app.php, comment out the original TranslationServiceProvider and add the one from this package:
-
-```php
-    //'Illuminate\Translation\TranslationServiceProvider',
-    'Vsch\TranslationManager\TranslationServiceProvider',
-```
-
-This will extend the Translator and will create a new database entry, whenever a key is not found, so you have to visit the pages that use them.
-This way it shows up in the webinterface and can be edited and later exported.
-You shouldn't use this in production, just in production to translate your views, then just switch back.
 
 ## TODO
 

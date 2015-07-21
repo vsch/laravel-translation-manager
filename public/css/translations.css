@@ -1,84 +1,84 @@
-.vsch_editable-click,
-a.vsch_editable-click,
-a.vsch_editable-click:hover {
+.editable-click,
+a.editable-click,
+a.editable-click:hover {
     text-decoration: none;
     border-bottom: dashed 1px #0088cc;
 }
 
-.translation-manager .vsch_editable-click,
-.translation-manager a.vsch_editable-click,
-.translation-manager a.vsch_editable-click:hover {
+.translation-manager .editable-click,
+.translation-manager a.editable-click,
+.translation-manager a.editable-click:hover {
     text-decoration: none;
     border-bottom: none;
 }
 
-h1 .vsch_editable-click, h1 a.vsch_editable-click, h1 a.vsch_editable-click:hover {
-    text-decoration: none;
-    border-bottom: none;
-    border-bottom: dashed 1px #0088cc;
-}
-
-h2 .vsch_editable-click, h2 a.vsch_editable-click, h2 a.vsch_editable-click:hover {
+h1 .editable-click, h1 a.editable-click, h1 a.editable-click:hover {
     text-decoration: none;
     border-bottom: none;
     border-bottom: dashed 1px #0088cc;
 }
 
-h3 .vsch_editable-click, h3 a.vsch_editable-click, h3 a.vsch_editable-click:hover {
+h2 .editable-click, h2 a.editable-click, h2 a.editable-click:hover {
     text-decoration: none;
     border-bottom: none;
     border-bottom: dashed 1px #0088cc;
 }
 
-h4 .vsch_editable-click, h4 a.vsch_editable-click, h4 a.vsch_editable-click:hover {
+h3 .editable-click, h3 a.editable-click, h3 a.editable-click:hover {
     text-decoration: none;
     border-bottom: none;
     border-bottom: dashed 1px #0088cc;
 }
 
-h5 .vsch_editable-click, h5 a.vsch_editable-click, h5 a.vsch_editable-click:hover {
+h4 .editable-click, h4 a.editable-click, h4 a.editable-click:hover {
     text-decoration: none;
     border-bottom: none;
     border-bottom: dashed 1px #0088cc;
 }
 
-h6 .vsch_editable-click, h6 a.vsch_editable-click, h6 a.vsch_editable-click:hover {
+h5 .editable-click, h5 a.editable-click, h5 a.editable-click:hover {
     text-decoration: none;
     border-bottom: none;
     border-bottom: dashed 1px #0088cc;
 }
 
-.translation-manager h1 .vsch_editable-click, h1 a.vsch_editable-click, h1 a.vsch_editable-click:hover {
+h6 .editable-click, h6 a.editable-click, h6 a.editable-click:hover {
+    text-decoration: none;
+    border-bottom: none;
+    border-bottom: dashed 1px #0088cc;
+}
+
+.translation-manager h1 .editable-click, h1 a.editable-click, h1 a.editable-click:hover {
     text-decoration: none;
     border-bottom: none;
     border-bottom: dashed 1px #FF00cc !important;
 }
 
-.translation-manager h2 .vsch_editable-click, h2 a.vsch_editable-click, h2 a.vsch_editable-click:hover {
+.translation-manager h2 .editable-click, h2 a.editable-click, h2 a.editable-click:hover {
     text-decoration: none;
     border-bottom: none;
     border-bottom: dashed 1px #FF00cc !important;
 }
 
-.translation-manager h3 .vsch_editable-click, h3 a.vsch_editable-click, h3 a.vsch_editable-click:hover {
+.translation-manager h3 .editable-click, h3 a.editable-click, h3 a.editable-click:hover {
     text-decoration: none;
     border-bottom: none;
     border-bottom: dashed 1px #FF00cc !important;
 }
 
-.translation-manager h4 .vsch_editable-click, h4 a.vsch_editable-click, h4 a.vsch_editable-click:hover {
+.translation-manager h4 .editable-click, h4 a.editable-click, h4 a.editable-click:hover {
     text-decoration: none;
     border-bottom: none;
     border-bottom: dashed 1px #FF00cc !important;
 }
 
-.translation-manager h5 .vsch_editable-click, h5 a.vsch_editable-click, h5 a.vsch_editable-click:hover {
+.translation-manager h5 .editable-click, h5 a.editable-click, h5 a.editable-click:hover {
     text-decoration: none;
     border-bottom: none;
     border-bottom: dashed 1px #FF00cc !important;
 }
 
-.translation-manager h6 .vsch_editable-click, h6 a.vsch_editable-click, h6 a.vsch_editable-click:hover {
+.translation-manager h6 .editable-click, h6 a.editable-click, h6 a.editable-click:hover {
     text-decoration: none;
     border-bottom: none;
     border-bottom: dashed 1px #FF00cc !important;
@@ -118,22 +118,22 @@ h6 .vsch_editable-click, h6 a.vsch_editable-click, h6 a.vsch_editable-click:hove
     color: #00A030;
 }
 
-textarea.vsch_editable-input {
+textarea.editable-input {
     width: 600px !important;
     display: block !important;
 }
 
-.vsch_editable-container.vsch_editable-inline {
+.editable-container.editable-inline {
     display: block !important;
     width: 400px !important;
 }
 
-.vsch_editable-container .vsch_editable-error-block {
+.editable-container .editable-error-block {
     display: block !important;
     max-width: 600px !important;
 }
 
-.vsch_editable-buttons .vsch_editable-translate {
+.editable-buttons .editable-translate {
     margin-left: 1px;
 }
 
