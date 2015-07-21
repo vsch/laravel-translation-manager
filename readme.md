@@ -64,7 +64,7 @@ This package was developed as part of a rush project on which translation manage
 
     This example will make the translation manager available at `http://yourdomain.com/translations`
 
-8. <a id="step7"></a>TranslationManager uses the vsch/user_privilege_mapper package that creates a mapping layer between your User model implementation and the need to test user privileges without knowing the implementation. You need to name privileges for the UserPrivilegeMapper via the Laravel macro mechanism. This should be done in the initialization files. A good place is the filters.php file, add the following if your User model has is_admin and is_editor attributes to identify users that have Admin and Editor privileges:
+8. <a id="step8"></a>TranslationManager uses the vsch/user_privilege_mapper package that creates a mapping layer between your User model implementation and the need to test user privileges without knowing the implementation. You need to name privileges for the UserPrivilegeMapper via the Laravel macro mechanism. This should be done in the initialization files. A good place is the filters.php file, add the following if your User model has is_admin and is_editor attributes to identify users that have Admin and Editor privileges:
 
         UserCan::macro("admin_translations", function ()
         {
@@ -81,7 +81,7 @@ This package was developed as part of a rush project on which translation manage
 
 ## Configuration
 
-The config file comments provide a description for each field. Note that when `admin_enabled` option is set to false then translation management is limited to editing existing translations all other operations have to be done through the command line. Ideally, this option needs to be dynamic based on user privileges so that translators cannot delete translations or administer translations but admins can. See [step 7](#step7) above.
+The config file comments provide a description for each field. Note that when `admin_enabled` option is set to false then translation management is limited to editing existing translations all other operations have to be done through the command line. Ideally, this option needs to be dynamic based on user privileges so that translators cannot delete translations or administer translations but admins can. See [step 8](#step8) above.
 
 ## Modifying the default View
 
