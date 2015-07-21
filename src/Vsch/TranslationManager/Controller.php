@@ -339,6 +339,7 @@ SQL
         // returned result set lists group key ru, en columns for the locale translations, ru has different values for same values in en
         return \View::make('laravel-translation-manager::index')
             ->with('translations', $translations)
+            ->with('yandex_key', $this->manager->getConfig('yandex_translator_key'))
             ->with('locales', $locales)
             ->with('currLang', \Lang::getLocale())
             ->with('groups', $groups)

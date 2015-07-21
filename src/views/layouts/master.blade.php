@@ -33,6 +33,7 @@
 <script src="/packages/vsch/laravel-translation-manager/js/translations.js"></script>
 <script>
     var CLIP_TEXT; // we store translation copy/paste here
+    var YANDEX_TRANSLATOR_KEY = '{{isset($yandex_key) ? $yandex_key : ''}}';
 </script>@yield('body-bottom')
 </body>
 </html>

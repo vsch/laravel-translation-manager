@@ -5,6 +5,7 @@
 var translate;
 var CLIP_TEXT;
 var MISSMATCHED_QUOTES_MESSAGE;
+var YANDEX_TRANSLATOR_KEY;
 
 function swapInClass(elem, toAdd, toRemove) {
     'use strict';
@@ -60,7 +61,7 @@ $(document).ready(function () {
             };
 
         var jqxhr = $.getJSON("https://translate.yandex.net/api/v1.5/tr.json/translate", {
-                key: 'trnsl.1.1.20150324T022104Z.0818b74e36297c45.296e95bfcb0ce2c99d796c9f38c5ecc42f8d4e0a',
+                key: YANDEX_TRANSLATOR_KEY,
                 lang: fromLoc + '-' + toLoc,
                 text: fromText
             },

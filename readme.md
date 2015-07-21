@@ -1,6 +1,6 @@
 ## Laravel Translation Manager
 
-Note that this package is originally based on Barry vd. Heuvel's <barryvdh@gmail.com> excellent **barryvdh/laravel-translation-manager** package but heavily reworked to add [New Features](#NewFeatures):
+Note that this package is originally based on Barry vd. Heuvel's <barryvdh@gmail.com> excellent **barryvdh/laravel-translation-manager** package but heavily reworked to add [New Features](#NewFeatures).
 
 This is a package to manage Laravel translation files. It does not replace the Translation system but augments it with:
 

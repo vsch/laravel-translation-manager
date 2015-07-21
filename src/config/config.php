@@ -54,4 +54,15 @@ return array(
 	 *
 	 */
 	'missing_keys_lottery' => 100, // 1 in 100 of users will have the missing translation keys logged.
+
+	/**
+	 * used to provide the Yandex key for use in automatic Yandex translations
+	 *
+	 * @type string     Yandex translation key
+	 *
+	 * This key is free to obtain and use but is required to enable Yandex translations.
+	 *
+	 */
+
+	'yandex_translator_key' => '',
 );
