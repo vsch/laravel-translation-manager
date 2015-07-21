@@ -162,7 +162,8 @@ These features were added to the original barryvdh/laravel-translation-manager p
   - simulated copy/paste buttons. Work only if the page is not reloaded and only within the translation edit dialog.
 - exported language files are formatted to align `=>` for a given level, making it easier to deal with these files manually if needed.
 
-## TODO
+<a id="ToDo"></a>
+## To Do List
 
 This package is still very much in development although it is successfully being used to manage translations. Here is a list of to do's and limitations:
 
