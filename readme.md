@@ -63,6 +63,28 @@ The TranslationServiceProvider is an extension to the standard functionality and
 
 This example will make the translation manager available at `http://yourdomain.com/translations`
 
+## Configuration
+
+The config file comments provide a description for each field. Note that when `delete_enabled` option is set to false then translation management is limited to editing existing translations. All other operations are disabled. This option needs to be dynamic based on user privileges so that translators cannot delete translations but admins can. This can be changed in the index.blade.php code on the first test for $deleteEnabled variable. This should be done in a copy of the package view files as described below.
+
+## Modifying the default View
+
+To create your own custom version of the index.blade.php copy this file from the `vendor/vsch/laravel-translation-manager/src/views/` directory to `app/views/packages/vsch/laravel-translation-manager` directory. The package view directory also contains a `layouts/master.blade.php` file for a default layout. The intent is for you to provide your own master layout that the index.blade.php will extend. The only thing to keep from the provided master layout is the style sheets included at the top of the file and the script tags at the bottom before the `</body>` tag.
+
+To customize $deleteEnabled option based on user privileges so that translators cannot delete translations but admins can, change the following line in your copy of the index.blade.php file from:
+
+```php
+    @if($deleteEnabled)
+```
+
+to:
+
+```php
+    @if($deleteEnabled = ($deleteEnabled && addYourCodeOrFunctionHere))
+```
+That will set this option for the rest of the page and you can decide who can and cannot delete, import, publish translations.
+
+
 ## Web interface
 
 When you have imported your translation (via buttons or command), you can view them in the web interface (on the url you defined the with the controller).

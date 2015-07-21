@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
     <link href="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.0/bootstrap3-editable/css/bootstrap-editable.css" rel="stylesheet"/>@yield('head')
     <link href="/packages/vsch/laravel-translation-manager/css/translations.css" rel="stylesheet">
+    @yield('head')
     {{--<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->--}}
     <!--[if lt IE 9]>
     <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
@@ -34,6 +35,7 @@
 <script>
     var CLIP_TEXT; // we store translation copy/paste here
     var YANDEX_TRANSLATOR_KEY = '{{isset($yandex_key) ? $yandex_key : ''}}';
-</script>@yield('body-bottom')
+</script>
+@yield('body-bottom')
 </body>
 </html>
