@@ -84,7 +84,7 @@ class Translator extends LaravelTranslator
                 if ($namespace && $namespace !== '*') $group = substr($group, strlen("$namespace::"));
             }
 
-            if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
+            if ($this->manager && $group && $item && (!$this->manager->excludedPageEditGroup($group) || $withDiff))
             {
                 $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
                 if ((!$t->exists || $t->value == '') && $namespace != '*')

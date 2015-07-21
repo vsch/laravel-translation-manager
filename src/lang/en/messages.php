@@ -50,6 +50,7 @@ TEXT
     'import-all-done'           => 'Done importing, processed <strong>:count</strong> items. Reload this page to refresh the groups.',
     'import-done-head'          => 'Done importing, processed',
     'import-done-tail'          => 'items. Reload this page to refresh the groups.',
+    'import-fresh'              => 'Delete All then Import',
     'import-group'              => 'Import',
     'import-group-done'         => 'Done importing group <strong>:group</strong>, processed <strong>:count</strong> items. Reload this page to refresh translations.',
     'import-groups'             => 'Import all',
