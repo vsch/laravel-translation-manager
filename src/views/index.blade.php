@@ -44,7 +44,7 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-12">
-                        @if($deleteEnabled = ($user && $user->is_admin))
+                        @if($deleteEnabled)
                             <div class="row">
                                 <div class="col-sm-12">
                                     <form id="form-import-all" class="form-import-all" method="POST"

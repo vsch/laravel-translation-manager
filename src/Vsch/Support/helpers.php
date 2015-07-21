@@ -172,3 +172,19 @@ if (!function_exists('inPlaceEditing'))
     }
 }
 
+if (!function_exists('formSubmit'))
+{
+    function formSubmit($value = null, $options = array())
+    {
+        if (inPlaceEditing())
+        {
+            $innerText = preg_match('/^\s*<a\s*[^>]*>([^<]*)<\/a>\s*$/', $value, $matches) ? $matches[1] : $value;
+            if ($innerText !== $value)
+            {
+                return Form::submit($innerText, $options) . "[$value]";
+            }
+        }
+        return Form::submit($value, $options);
+    }
+}
+
