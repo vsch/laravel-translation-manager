@@ -164,7 +164,7 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-12">
-                        @if(!empty($mismatches))
+                        @if(false && !empty($mismatches))
                             <div class="row">
                                 <div class="col-sm-12">
                                     <div class="panel panel-primary">

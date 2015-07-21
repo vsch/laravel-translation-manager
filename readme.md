@@ -20,13 +20,17 @@ This way, translations can be saved in git history and no overhead is introduced
 
 ![Translator Page ](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_main.png)
 
+## Current Limitations
+
+This package was developed as part of a rush project on which translation management was desperately needed but not budgeted into the schedule. Having started with the `barryvdh/laravel-translation-manager` and needing extra features to make my life easier I decided to add a few of the features and hacked them into place to get a working version fast but have not yet refactored these for human consumption or ease of maintenance. I am in the process of doing this as time permits. I will be addressing these limitations in the near future or sooner if someone contacts me with a request to prioritize the clean-up of a specific area. See [To Do List](#ToDo)
+
 ## Installation
 
-Require this package in your composer.json and run composer update (or run `composer require vsch/laravel-translation-manager:*` directly):
+1. Require this package in your composer.json and run composer update (or run `composer require vsch/laravel-translation-manager:*` directly):
 
     "vsch/laravel-translation-manager": "0.1.x"
 
-After updating composer, add the ServiceProviders to the providers array in app/config/app.php
+2. After updating composer, add the ServiceProviders to the providers array in app/config/app.php
 
 ```php
     //'Illuminate\Translation\TranslationServiceProvider',
@@ -34,30 +38,32 @@ After updating composer, add the ServiceProviders to the providers array in app/
     'Vsch\TranslationManager\ManagerServiceProvider',
 ```
 
-The TranslationServiceProvider is an extension to the standard functionality and is required in order for the web interface to work.
+The TranslationServiceProvider is an extension to the standard functionality and is required in order for the web interface to work properly. It is backward compatible with the existing Translator since it is a subclass of it and only overrides implementation for new features.
 
-You need to run the migrations for this package
+3. You need to run the migrations for this package
 
     $ php artisan migrate --package="vsch/laravel-translation-manager"
 
-You need to publish the config file for this package. This will add the file `app/config/packages/vsch/laravel-translation-manager/config.php`, where you can configure this package.
+4. You need to publish the config file for this package. This will add the files `app/config/packages/vsch/laravel-translation-manager/config.php` and `app/config/packages/vsch/laravel-translation-manager/local/config.php`, where you can configure this package.
 
     $ php artisan config:publish vsch/laravel-translation-manager
 
-You need to publish the assets used by the translation manager web interface. This will add the assets to `public/packages/vsch/laravel-translation-manager`
+5. You need to publish the web assets used by the translation manager web interface. This will add the assets to `public/packages/vsch/laravel-translation-manager`
 
     $ php artisan asset:publish vsch/laravel-translation-manager
 
-You have to add the Controller to your routes.php, so you can set your own url/filters.
+6. You have to add the Controller to your routes.php, so you can set your own url/filters.
 
-    Route::get('translations/keyop/{group}', 'Vsch\TranslationManager\Controller@getKeyop');
-    Route::controller('translations', 'Vsch\TranslationManager\Controller');
+```php
+    Route::group(array('before' => 'auth'), function ()
+    {
+        Route::controller('translations', 'Vsch\TranslationManager\Controller');
+    });
+```
 
 This example will make the translation manager available at `http://yourdomain.com/translations`
 
-## Usage
-
-### Web interface
+## Web interface
 
 When you have imported your translation (via buttons or command), you can view them in the web interface (on the url you defined the with the controller).
 You can click on a translation and an edit field will popup. All translations are saved when the edit dialog is closed unless it is closed with the cancel button. Clicking anywhere on the page outside the edit dialog will save the current changes.
@@ -65,6 +71,7 @@ When a translation is not yet created in a different locale, you can also just e
 
 Using the buttons on the web interface, you can import/export the translations. For publishing translations, make sure your application can write to the language directory or optionally configure it to do in-database publishing using the cache by adding:
 
+## Artisan Commands
 
 You can also use the commands below.
 
@@ -127,14 +134,19 @@ These features were added to the original barryvdh/laravel-translation-manager p
 - extra buttons added to the bootstrap x-edit component for frequent operations:
   - change case of translation or selection within translation: lowercase, first cap
   - create plural forms for use in `choice()`, currently English is automatically created and Russian will do its best by using Yandex translator to derive the plural forms.
+  - recall translation text from last saved or last published.
+  - simulated copy/paste buttons. Work only if the page is not reloaded and only within the translation edit dialog.
 - exported language files are formatted to align `=>` for a given level, making it easier to deal with these files manually if needed.
-
 
 ## TODO
 
-This package is still very alpha. Few thinks that are on the todo-list:
+This package is still very much in development although it is successfully being used to manage translations. Here is a list of to do's and limitations:
 
-- Add locales/groups via webinterface
-- Improve webinterface (more selection/filtering, behavior of popup after save etc)
-- Seed existing languages (https://github.com/caouecs/Laravel4-lang)
-- Suggestions are welcome :)
+- MySQL DB is assumed for queries in those places where Eloquent was too cumbersome or too inefficient. I will be refactoring all DB access that bypasses Eloquent into a TranslationRepository interface class so that new DB access will only need to create a new repository implementation class for a specific DB interface.
+- Yandex assisted translations are only implemented for Russian, although Yandex does support other languages. This will be addressed to use all other available options.
+- Google translate was not used since it has no free option. However it is a simple change in the translator.js file to handle alternate translation engines.
+- Mismatched translations dashboard view assumes that English version of the translations is always correct and it is other languages that should have the same translations for different group/key combinations whose English text matches. For example if English messages.test1 = 'Test' and messages.test2 = 'Test' then for other languages the translations for these two keys will be flagged as a mismatch if they are not the same. This was a idiosyncrasy of the project for which this module was developed and if you find it useful then edit the index.blade.php file and change `@if(false && !empty($mismatches))` to `@if(true && !empty($mismatches))` on the line that precedes the mismatched dashboard `<div>`.
+- key operations that allow creating new keys and also keys permuted by suffixes, moving, copying, deleting keys are a bit of a kludge. I am planning to rework the web interface to make these cleaner. However, if you desperately need these to save a lot of typing and editing, the current version will do the trick.
+- Create a Laravel 5 compatible branch.
+
+- Suggestions and priority requests are welcome. :)
