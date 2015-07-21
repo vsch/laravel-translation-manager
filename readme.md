@@ -1,4 +1,4 @@
-## Laravel Translation Manager
+# Laravel Translation Manager
 
 Note that this package is originally based on Barry vd. Heuvel's <barryvdh@gmail.com> excellent **barryvdh/laravel-translation-manager** package but heavily reworked to add [New Features](#NewFeatures).
 
@@ -19,26 +19,6 @@ The workflow would be:
 This way, translations can be saved in git history and no overhead is introduced in production.
 
 ![Translator Page ](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_main.png)
-
-<a id="NewFeatures"></a>
-#### New Features
-
-- translation manager web-interface is localized. Current version has English and Russian.
-- allows in-database translations to override the translations in files.
-- publishing translations on production systems run where updating translation files would only update a single server, can be configured to use the cache for serving up the modified translations
-- Translation service can be put into 'in place edit' mode that enables editing of translations where they appear on the page.
-  - this eliminates the need to peruse code to find the translation group/key combination that is used for the resulting string and then looking for it in the translation files or in the web interface. Simply enable in-place editign mode and click on the string you wish to edit.
-  - This may require some editing of view files to handle: string values that should not be links because they are not shown or are used for HTML attribute values, `<button>` contents that don't display links and other edge cases.
-- changes to database translations that have not been published show a difference between previously published/imported translations and current unpublished changes.
-- soft delete of translations that are not physically deleted from the database until translations are published.
-- translation page has a dash board view showing all unpublished changes, missing translations and deleted translations.
-- handling of translation files in nested directories under `lang/` and package translations under `lang/packages` to allow managing package translation overrides.
-- missing translation key logging that can be used in a production environment by setting 1 of N sessions to actually log missing translations. Since checking for missing translation requires hitting the database for every translation, it can be a heavy load on the DB server. This configuration setting allows randomly selecting 1 of N user sessions to be marked as checking for missing translations allowing the benefit of finding missing translations while reducing the load burden on the server.
-- in place edit mode inside the search dialog to allow editing of translation in the search result.
-- extra buttons added to the bootstrap x-edit component for frequent operations:
-  - change case of translation or selection within translation: lowercase, first cap
-  - create plural forms for use in `choice()`, currently English is automatically created and Russian will do its best by using Yandex translator to derrive the plural forms.
-
 
 ## Installation
 
@@ -79,11 +59,12 @@ This example will make the translation manager available at `http://yourdomain.c
 
 ### Web interface
 
-When you have imported your translation (via buttons or command), you can view them in the webinterface (on the url you defined the with the controller).
-You can click on a translation and an edit field will popup. Just click save and it is saved :)
+When you have imported your translation (via buttons or command), you can view them in the web interface (on the url you defined the with the controller).
+You can click on a translation and an edit field will popup. All translations are saved when the edit dialog is closed unless it is closed with the cancel button. Clicking anywhere on the page outside the edit dialog will save the current changes.
 When a translation is not yet created in a different locale, you can also just edit it to create it.
 
-Using the buttons on the webinterface, you can import/export the translations. For publishing translations, make sure your application can write to the language directory.
+Using the buttons on the web interface, you can import/export the translations. For publishing translations, make sure your application can write to the language directory or optionally configure it to do in-database publishing using the cache by adding:
+
 
 You can also use the commands below.
 
@@ -100,7 +81,7 @@ add the `--replace` (or `-R`) option: `php artisan translations:import --replace
 
 The Find command/button will look search for all php/twig files in the app directory, to see if they contain translation functions, and will try to extract the group/item names.
 The found keys will be added to the database, so they can be easily translated.
-This can be done through the webinterface, or via an Artisan command.
+This can be done through the web interface, or via an Artisan command.
 
     $ php artisan translations:find
 
@@ -125,6 +106,29 @@ The clean command will search for all translation that are NULL and delete them,
 The reset command simply clears all translation in the database, so you can start fresh (by a new import). Make sure to export your work if needed before doing this.
 
     $ php artisan translations:reset
+
+<a id="NewFeatures"></a>
+## New Features
+
+These features were added to the original barryvdh/laravel-translation-manager package.
+
+- translation manager web-interface is localized. Current version has English and Russian. Others can be easily added by adding package translation overrides in `app/lang/packages/{locale}/laravel-translation-manager/messages.php` files. If message.php files are added for en and ru locales then their contents will override the language files included in the package.
+- allows in-database translations to override the translations in files.
+- publishing translations on production systems run where updating translation files would only update a single server, can be configured to use the cache for serving up the modified translations
+- Translation service can be put into 'in place edit' mode that enables editing of translations where they appear on the page.
+  - this eliminates the need to peruse code to find the translation group/key combination that is used for the resulting string and then looking for it in the translation files or in the web interface. Simply enable in-place editign mode and click on the string you wish to edit.
+  - This may require some editing of view files to handle: string values that should not be links because they are not shown or are used for HTML attribute values, `<button>` contents that don't display links and other edge cases.
+- changes to database translations that have not been published show a difference between previously published/imported translations and current unpublished changes.
+- soft delete of translations that are not physically deleted from the database until translations are published.
+- translation page has a dash board view showing all unpublished changes, missing translations and deleted translations.
+- handling of translation files in nested directories under `lang/` and package translations under `lang/packages` to allow managing package translation overrides.
+- missing translation key logging that can be used in a production environment by setting 1 of N sessions to actually log missing translations. Since checking for missing translation requires hitting the database for every translation, it can be a heavy load on the DB server. This configuration setting allows randomly selecting 1 of N user sessions to be marked as checking for missing translations allowing the benefit of finding missing translations while reducing the load burden on the server.
+- in place edit mode inside the search dialog to allow editing of translation in the search result.
+- extra buttons added to the bootstrap x-edit component for frequent operations:
+  - change case of translation or selection within translation: lowercase, first cap
+  - create plural forms for use in `choice()`, currently English is automatically created and Russian will do its best by using Yandex translator to derive the plural forms.
+- exported language files are formatted to align `=>` for a given level, making it easier to deal with these files manually if needed.
+
 
 ## TODO
 
