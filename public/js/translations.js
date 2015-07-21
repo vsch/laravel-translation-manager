@@ -143,7 +143,7 @@ $(document).ready(function () {
         '&nbsp;<button type="button" class="editable-cancel btn btn-sm btn-danger"><i class="glyphicon glyphicon-remove"></i></button>' +
         '&nbsp;&nbsp;<button id="x-translate" type="button" class="editable-translate btn btn-sm btn-warning hidden"><i class="glyphicon glyphicon-share-alt"></i></button>' +
         '<button id="x-nodash" type="button" class="editable-translate btn btn-sm btn-warning hidden">⚛➦Ab</button>' +
-        '&nbsp;&nbsp;<button id="x-plurals" type="button" class="editable-translate btn btn-sm btn-warning">|</i></button>' +
+        '&nbsp;&nbsp;<button id="x-plurals" type="button" class="editable-translate btn btn-sm btn-warning hidden">|</i></button>' +
         '&nbsp;&nbsp;<button id="x-capitalize" type="button" class="editable-translate btn btn-sm btn-info">ab➦Ab</button>' +
         '<button id="x-lowercase" type="button" class="editable-translate btn btn-sm btn-info">AB➦ab</button>' +
         '&nbsp;&nbsp;<button id="x-copy" type="button" class="editable-translate btn btn-sm btn-primary"><i class="glyphicon glyphicon-copy"></i></button>' +
@@ -341,7 +341,7 @@ $(document).ready(function () {
                     elemRow.addClass('editing');
                 }
 
-                if (elemXtrans.length && dstElem.length) {
+                if (elemXtrans.length && dstElem.length && YANDEX_TRANSLATOR_KEY !== '') {
                     if (srcLoc !== '') {
                         srcElem = elemRow.find('#' + srcId.replace(/\./, '-')).first();
                         if (srcElem.length) {
@@ -387,21 +387,24 @@ $(document).ready(function () {
                     }));
                 }
                 if (elemXplurals.length) {
-                    elemXplurals.on('click', xfull(dstElem, function () {
-                        var val;
-                        if (dstLoc === 'ru') {
-                            val = this + '|' + this + '|' + this;
-                        }
-                        else {
-                            if (this === '') {
-                                val = value.singularize() + '|' + value.pluralize();
+                    if (dstLoc === 'en' || YANDEX_TRANSLATOR_KEY !== '') {
+                        elemXplurals.removeClass('hidden');
+                        elemXplurals.on('click', xfull(dstElem, function () {
+                            var val;
+                            if (dstLoc === 'ru') {
+                                val = this + '|' + this + '|' + this;
                             }
                             else {
-                                val = this.singularize() + '|' + this.pluralize();
+                                if (this === '') {
+                                    val = value.singularize() + '|' + value.pluralize();
+                                }
+                                else {
+                                    val = this.singularize() + '|' + this.pluralize();
+                                }
                             }
-                        }
-                        return val.toLocaleLowerCase();
-                    }));
+                            return val.toLocaleLowerCase();
+                        }));
+                    }
                 }
             });
         });

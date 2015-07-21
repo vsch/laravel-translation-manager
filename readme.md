@@ -114,7 +114,7 @@ These features were added to the original barryvdh/laravel-translation-manager p
 
 - translation manager web-interface is localized. Current version has English and Russian. Others can be easily added by adding package translation overrides in `app/lang/packages/{locale}/laravel-translation-manager/messages.php` files. If message.php files are added for en and ru locales then their contents will override the language files included in the package.
 - allows in-database translations to override the translations in files.
-- publishing translations on production systems run where updating translation files would only update a single server, can be configured to use the cache for serving up the modified translations
+- publishing translations on production systems where updating translation files would only update a single server, can be configured to use the cache for serving up the modified translations. This allows translations to be updated live without having to redeploy a new version of the language files.
 - Translation service can be put into 'in place edit' mode that enables editing of translations where they appear on the page.
   - this eliminates the need to peruse code to find the translation group/key combination that is used for the resulting string and then looking for it in the translation files or in the web interface. Simply enable in-place editign mode and click on the string you wish to edit.
   - This may require some editing of view files to handle: string values that should not be links because they are not shown or are used for HTML attribute values, `<button>` contents that don't display links and other edge cases.

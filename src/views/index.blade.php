@@ -474,6 +474,7 @@
                             </div>
                         </div>
                     </div>
+                    @if($yandex_key)
                     <div class="panel panel-default">
                         <div class="panel-heading" role="tab" id="headingThree">
                             <?= ifEditTrans('laravel-translation-manager::messages.translation-ops') ?>
@@ -510,6 +511,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
