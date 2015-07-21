@@ -8,7 +8,7 @@ return array(
      *
      * @type boolean
      */
-    'delete_enabled' => true,
+    'admin_enabled' => true,
     /**
      * determines whether missing keys are logged
      * @type boolean

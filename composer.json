@@ -14,6 +14,7 @@
         "illuminate/support": "~4.1",
         "illuminate/translation": "~4.1",
         "doctrine/dbal": "~2.3",
+        "vsch/user-privilege-mapper": "~1.0",
         "symfony/finder": "~2.3"
     },
     "autoload": {

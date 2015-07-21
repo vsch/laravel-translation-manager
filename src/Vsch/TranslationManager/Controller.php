@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Vsch\TranslationManager\Models\Translation;
+use Vsch\UserPrivilegeMapper\Facade\Privilege as UserCan;
 
 include_once(__DIR__ . '/../../../scripts/finediff.php');
 
@@ -232,8 +233,13 @@ SQL
             if ($stat->deleted) $item->deleted .= $stat->locale . ":" . $stat->deleted . " ";
         }
 
-        // get mismatches
-        $mismatches = DB::select(<<<SQL
+        $mismatches = null;
+        $mismatchEnabled = $this->manager->getConfig('mismatch_enabled');
+
+        if ($mismatchEnabled)
+        {
+            // get mismatches
+            $mismatches = DB::select(<<<SQL
 SELECT DISTINCT lt.*, ft.ru, ft.en
 FROM ltm_translations lt
     JOIN
@@ -257,83 +263,84 @@ FROM ltm_translations lt
         ON (lt.locale = 'ru' AND lt.value LIKE BINARY ft.ru) AND lt.`key` = ft.key
 ORDER BY `key`, `group`
 SQL
-        );
+            );
 
-        $key = '';
-        $rus = [];
-        $ens = [];
-        $rubases = [];      // by key
-        $enbases = [];    // by key
-        $extra = new \stdClass();
-        $extra->key = '';
-        $mismatches[] = $extra;
-        foreach ($mismatches as $mismatch)
-        {
-            if ($mismatch->key !== $key)
+            $key = '';
+            $rus = [];
+            $ens = [];
+            $rubases = [];      // by key
+            $enbases = [];    // by key
+            $extra = new \stdClass();
+            $extra->key = '';
+            $mismatches[] = $extra;
+            foreach ($mismatches as $mismatch)
             {
-                if ($key)
+                if ($mismatch->key !== $key)
                 {
-                    // process diff for key
-                    $txtru = '';
-                    $txten = '';
-                    if (count($ens) > 1)
+                    if ($key)
                     {
-                        $maxen = 0;
-                        foreach ($ens as $en => $cnt)
+                        // process diff for key
+                        $txtru = '';
+                        $txten = '';
+                        if (count($ens) > 1)
                         {
-                            if ($maxen < $cnt)
+                            $maxen = 0;
+                            foreach ($ens as $en => $cnt)
                             {
-                                $maxen = $cnt;
-                                $txten = $en;
+                                if ($maxen < $cnt)
+                                {
+                                    $maxen = $cnt;
+                                    $txten = $en;
+                                }
                             }
+                            $enbases[$key] = $txten;
                         }
-                        $enbases[$key] = $txten;
-                    }
-                    else
-                    {
-                        $txten = array_keys($ens)[0];
-                        $enbases[$key] = $txten;
-                    }
-                    if (count($rus) > 1)
-                    {
-                        $maxru = 0;
-                        foreach ($rus as $ru => $cnt)
+                        else
                         {
-                            if ($maxru < $cnt)
-                            {
-                                $maxru = $cnt;
-                                $txtru = $ru;
-                            }
+                            $txten = array_keys($ens)[0];
+                            $enbases[$key] = $txten;
                         }
-                        $rubases[$key] = $txtru;
+                        if (count($rus) > 1)
+                        {
+                            $maxru = 0;
+                            foreach ($rus as $ru => $cnt)
+                            {
+                                if ($maxru < $cnt)
+                                {
+                                    $maxru = $cnt;
+                                    $txtru = $ru;
+                                }
+                            }
+                            $rubases[$key] = $txtru;
+                        }
+                        else
+                        {
+                            $txtru = array_keys($rus)[0];
+                            $rubases[$key] = $txtru;
+                        }
                     }
-                    else
-                    {
-                        $txtru = array_keys($rus)[0];
-                        $rubases[$key] = $txtru;
-                    }
+                    $key = $mismatch->key;
+                    $rus = [];
+                    $ens = [];
                 }
-                $key = $mismatch->key;
-                $rus = [];
-                $ens = [];
+
+                if ($mismatch->key === '') break;
+
+                if (!isset($ens[$mismatch->en])) $ens[$mismatch->en] = 1;
+                else $ens[$mismatch->en]++;
+                if (!isset($rus[$mismatch->ru])) $rus[$mismatch->ru] = 1;
+                else $rus[$mismatch->ru]++;
             }
 
-            if ($mismatch->key === '') break;
+            array_splice($mismatches, count($mismatches) - 1, 1);
 
-            if (!isset($ens[$mismatch->en])) $ens[$mismatch->en] = 1;
-            else $ens[$mismatch->en]++;
-            if (!isset($rus[$mismatch->ru])) $rus[$mismatch->ru] = 1;
-            else $rus[$mismatch->ru]++;
-        }
-
-        array_splice($mismatches, count($mismatches) - 1, 1);
-
-        foreach ($mismatches as $mismatch)
-        {
-            $mismatch->en_value = $mismatch->ru;
-            $mismatch->en = self::mb_renderDiffHtml($enbases[$mismatch->key], $mismatch->en);
-            $mismatch->ru_value = $mismatch->ru;
-            $mismatch->ru = self::mb_renderDiffHtml($rubases[$mismatch->key], $mismatch->ru);
+            foreach ($mismatches as $mismatch)
+            {
+                $mismatch->en_value = $mismatch->ru;
+                $mismatch->en = self::mb_renderDiffHtml($enbases[$mismatch->key], $mismatch->en);
+                $mismatch->ru_value = $mismatch->ru;
+                $mismatch->ru = self::mb_renderDiffHtml($rubases[$mismatch->key], $mismatch->ru);
+            }
         }
 
         // returned result set lists group key ru, en columns for the locale translations, ru has different values for same values in en
@@ -348,7 +355,8 @@ SQL
             ->with('numChanged', $numChanged)
             ->with('editUrl', URL::action(get_class($this) . '@postEdit', array($group)))
             ->with('searchUrl', URL::action(get_class($this) . '@getSearch'))
-            ->with('deleteEnabled', $this->manager->getConfig('delete_enabled'))
+            ->with('adminEnabled', $this->manager->getConfig('admin_enabled') && UserCan::admin_translations())
+            ->with('mismatchEnabled', $mismatchEnabled)
             ->with('stats', $summary)
             ->with('mismatches', $mismatches);
     }

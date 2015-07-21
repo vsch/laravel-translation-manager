@@ -3,11 +3,19 @@
 return array(
 
     /**
-     * Enable deletion of translations
+     * Enable management of translations beyond just editing and command line manipulations
      *
      * @type boolean
      */
-    'delete_enabled' => true,
+    'admin_enabled' => true,
+
+    /**
+     * Enable mismatch dashboard
+     *
+     * @type boolean
+     */
+    'mismatch_enabled' => true,
+
     /**
      * Exclude specific groups from Laravel Translation Manager.
      * This is useful if, for example, you want to avoid editing the official Laravel language files.
@@ -19,6 +27,7 @@ return array(
         //'reminders',
         //'validation',
     ),
+
     /**
      * Exclude specific groups from Laravel Translation Manager in page edit mode.
      * This is useful for groups that are used exclusively for non-display strings like page titles and emails
@@ -30,11 +39,13 @@ return array(
         //'reminders',
         //'validation',
     ),
+
     /**
      * determines whether missing keys are logged
      * @type boolean
      */
     'log_missing_keys' => false,
+
     /**
      * determines one out of how many user sessions will have a chance to log missing keys
      * since the operation hits the database for every missing key you can limit this by setting a
@@ -58,6 +69,7 @@ return array(
      *
      */
     'cache_prefix' => 'translation-manager',
+
     /**
      * @type int        0 - as usual, write out files and set status for translations to SAVED,
      *
@@ -74,6 +86,7 @@ return array(
      *                  on one system does no good to the rest of the cluster.
      */
     'indatabase_publish' => 1,
+
     /**
      * used to provide the Yandex key for use in automatic Yandex translations
      *

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Translation\LoaderInterface;
 use Illuminate\Translation\Translator as LaravelTranslator;
 use Illuminate\Events\Dispatcher;
+use Vsch\UserPrivilegeMapper\Facade\Privilege as UserCan;
 
 class Translator extends LaravelTranslator
 {
@@ -296,8 +297,7 @@ class Translator extends LaravelTranslator
         list($namespace, $group, $item) = $this->parseKey($key);
         if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
         {
-            // KLUDGE: find an independent way to hook in role validation on users
-            $this->manager->missingKey($namespace, $group, $item, $locale, !Auth::check() || Auth::user()->useTranslatorMissingKeysLottery());
+            $this->manager->missingKey($namespace, $group, $item, $locale, !UserCan::bypass_translations_lottery());
         }
     }
 }

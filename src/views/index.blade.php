@@ -44,7 +44,7 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-12">
-                        @if($deleteEnabled)
+                        @if($adminEnabled)
                             <div class="row">
                                 <div class="col-sm-12">
                                     <form id="form-import-all" class="form-import-all" method="POST"
@@ -100,7 +100,7 @@
                                             <?= Form::select('group', $groups, $group, array('form' => 'form-select', 'class' => 'group-select form-control')) ?>
                                         </div>
                                     </div>
-                                    <?php if ($deleteEnabled): ?>
+                                    <?php if ($adminEnabled): ?>
                                     <div class="col-sm-6">
                                         <?php if ($group): ?>
                                         <button type="submit" form="form-publish-group" class="btn btn-sm btn-info input-control"
@@ -164,7 +164,7 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-12">
-                        @if(false && !empty($mismatches))
+                        @if($mismatchEnabled && !empty($mismatches))
                             <div class="row">
                                 <div class="col-sm-12">
                                     <div class="panel panel-primary">
@@ -385,19 +385,18 @@
                                         Key Ops Form
                                     -->
                                     <div id="wildcard-keyops-results" class="results"></div>
-                                    <br>
                                     {{ Form::open(['id' => 'form-keyops', 'data-remote'=>"true", 'method' => 'POST', 'action' => ['Vsch\TranslationManager\Controller@postPreviewKeys', $group]]) }}
                                     <div class="row">
                                         <div class="col-sm-6">
                                             <label for="srckeys">@lang('laravel-translation-manager::messages.srckeys'):</label>
                                             <?= ifEditTrans('laravel-translation-manager::messages.srckeys-placeholder') ?>
-                                            {{ Form::textarea('srckeys', Input::old('srckeys'), ['class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
+                                            {{ Form::textarea('srckeys', Input::old('srckeys'), ['id' => 'srckeys', 'class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
                                                     'placeholder'=>noEditTrans('laravel-translation-manager::messages.srckeys-placeholder')]) }}
                                         </div>
                                         <div class="col-sm-6">
                                             <label for="dstkeys">@lang('laravel-translation-manager::messages.dstkeys'):</label>
                                             <?= ifEditTrans('laravel-translation-manager::messages.dstkeys-placeholder') ?>
-                                            {{ Form::textarea('dstkeys', Input::old('dstkeys'), ['class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
+                                            {{ Form::textarea('dstkeys', Input::old('dstkeys'), ['id' => 'dstkeys', 'class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
                                                     'placeholder'=> noEditTrans('laravel-translation-manager::messages.dstkeys-placeholder')]) }}
                                         </div>
                                     </div>
@@ -439,25 +438,21 @@
                                     </script>
                                     <div class="row">
                                         <div class="col-sm-6">
-                                            <?= ifEditTrans('laravel-translation-manager::messages.copykeys'); ?>
-                                            <button class="btn btn-sm btn-primary" onclick="postCopyKeys(event)">
-                                                <?= noEditTrans('laravel-translation-manager::messages.copykeys') ?>
-                                            </button>
                                             <?= ifEditTrans('laravel-translation-manager::messages.clearsrckeys') ?>
                                             <button class="btn btn-sm btn-primary"
-                                                    onclick="clearSrcKeys(event)"><?= noEditTrans('laravel-translation-manager::messages.clearsrckeys') ?></button>
+                                                    onclick="clearSrcKeys(event)"> <?= noEditTrans('laravel-translation-manager::messages.clearsrckeys') ?></button>
                                             <div class="input-group" style="float:right; display:inline">
-                                                <?= ifEditTrans('laravel-translation-manager::messages.deletekeys') ?>
-                                                <button class="btn btn-sm btn-danger" onclick="postDeleteKeys(event)">
-                                                    <?= noEditTrans('laravel-translation-manager::messages.deletekeys') ?>
+                                                <?= formSubmit(trans('laravel-translation-manager::messages.preview'), [
+                                                        'class' => "btn btn-sm btn-primary",
+                                                        'onclick' => 'postPreviewKeys(event)'
+                                                ]) ?>
+                                                <?= ifEditTrans('laravel-translation-manager::messages.copykeys'); ?>
+                                                <button class="btn btn-sm btn-primary" onclick="postCopyKeys(event)">
+                                                    <?= noEditTrans('laravel-translation-manager::messages.copykeys') ?>
                                                 </button>
                                             </div>
                                         </div>
                                         <div class="col-sm-6">
-                                            <?= formSubmit(trans('laravel-translation-manager::messages.preview'), [
-                                                    'class' => "btn btn-sm btn-primary",
-                                                    'onclick' => 'postPreviewKeys(event)'
-                                            ]) ?>
                                             <?= ifEditTrans('laravel-translation-manager::messages.cleardstkeys') ?>
                                             <button class="btn btn-sm btn-primary"
                                                     onclick="clearDstKeys(event)"><?= noEditTrans('laravel-translation-manager::messages.cleardstkeys') ?></button>
@@ -465,6 +460,10 @@
                                                 <?= ifEditTrans('laravel-translation-manager::messages.movekeys') ?>
                                                 <button class="btn btn-sm btn-warning" onclick="postMoveKeys(event)">
                                                     <?= noEditTrans('laravel-translation-manager::messages.movekeys') ?>
+                                                </button>
+                                                <?= ifEditTrans('laravel-translation-manager::messages.deletekeys') ?>
+                                                <button class="btn btn-sm btn-danger" onclick="postDeleteKeys(event)">
+                                                    <?= noEditTrans('laravel-translation-manager::messages.deletekeys') ?>
                                                 </button>
                                             </div>
                                         </div>
@@ -525,7 +524,7 @@
                             <?php foreach($locales as $locale): ?>
                             <th width="40%"><?= $locale ?></th>
                             <?php endforeach; ?>
-                            <?php if($deleteEnabled): ?>
+                            <?php if($adminEnabled): ?>
                             <th width="40%">&nbsp;</th>
                             <?php endif; ?>
                         </tr>
@@ -535,11 +534,11 @@
                         $translator = App::make('translator');
                         foreach($translations as $key => $translation)
                         {
-                        $is_deleted = 0;
-                        foreach($locales as $locale)
-                        {
-                            if (isset($translation[$locale]) && $translation[$locale]->is_deleted) $is_deleted = 1;
-                        }
+                            $is_deleted = 0;
+                            foreach($locales as $locale)
+                            {
+                                if (isset($translation[$locale]) && $translation[$locale]->is_deleted) $is_deleted = 1;
+                            }
                         ?>
                         <tr id="<?= str_replace('.', '-', $key) ?>" <?= $is_deleted ? ' class="deleted-translation"' : '' ?>>
                             <td><?= $key ?></td>
@@ -549,7 +548,7 @@
                                 <?= $translator->inPlaceEditLink(!$t ? $t : ($t->value == '' ? null : $t), true, "$group.$key", $locale, null, $group) ?>
                             </td>
                             <?php endforeach; ?>
-                            <?php if($deleteEnabled): ?>
+                            <?php if($adminEnabled): ?>
                             <td>
                                 <a href="<?= action('Vsch\TranslationManager\Controller@postUndelete', [$group, $key]) ?>" class="undelete-key <?= $is_deleted ? "" : "hidden" ?>" data-method="POST"
                                         data-remote="true">
@@ -568,7 +567,7 @@
             </div>
         </div>
         <?php endif; ?>
-                <!-- Search Modal -->
+        <!-- Search Modal -->
         <div class="modal fade" id="searchModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
@@ -617,7 +616,7 @@
 @stop
 
 @section('body-bottom')
-            <!--<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>-->
+    <!--<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>-->
     <!--<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>-->
     <script>
         jQuery(document).ready(function ($) {
@@ -723,8 +722,8 @@
                                 dst.outerWidth(src.outerWidth());
                             }
                             else if (dst.css("resize") === 'vertical') {
-                                    dst.outerHeight(src.outerHeight());
-                                }
+                                dst.outerHeight(src.outerHeight());
+                            }
 
                             if (timeout.id) {
                                 clearTimeout(timeout.id);
@@ -779,6 +778,7 @@
             var elem = $("#form-addkeys").first();
             textareaTandemResize(elem.find("textarea[name=keys]"), elem.find("textarea[name=suffixes]"), true)();
             textareaTandemResize($("#ru-text"), $("#en-text"), true)();
+            textareaTandemResize($("#srckeys"), $("#dstkeys"), true)();
         });
     </script>
 @stop

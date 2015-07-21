@@ -12,8 +12,8 @@ The workflow would be:
 
 - Import translations: Read all translation files and save them in the database
 - Find all translations in php/twig sources
-- Optionally: Listen to missing translation with the custom Translator
-- Translate all keys through the webinterface
+- Optionally: Log missing translation
+- Translate all keys through the web interface
 - Export: Write all translations back to the translation files or cache if in production environment where writing of files is not an option.
 
 This way, translations can be saved in git history and no overhead is introduced in production.
@@ -22,68 +22,70 @@ This way, translations can be saved in git history and no overhead is introduced
 
 ## Current Limitations
 
-This package was developed as part of a rush project on which translation management was desperately needed but not budgeted into the schedule. Having started with the `barryvdh/laravel-translation-manager` and needing extra features to make my life easier I decided to add a few of the features and hacked them into place to get a working version fast but have not yet refactored these for human consumption or ease of maintenance. I am in the process of doing this as time permits. I will be addressing these limitations in the near future or sooner if someone contacts me with a request to prioritize the clean-up of a specific area. See [To Do List](#ToDo)
+This package was developed as part of a rush project on which translation management was desperately needed but not budgeted into the schedule. Having started with the `barryvdh/laravel-translation-manager` and needing extra features to make my life easier I decided to add a few of the features and hacked them into place to get a working version fast but have not yet refactored these for human consumption or ease of maintenance. I am in the process of doing this. If someone contacts me with a request to prioritize the clean-up of a specific area I will do it sooner :). See [To Do List](#ToDo) for a list of to do items.
 
 ## Installation
 
 1. Require this package in your composer.json and run composer update (or run `composer require vsch/laravel-translation-manager:*` directly):
 
-    "vsch/laravel-translation-manager": "0.1.x"
+      "vsch/laravel-translation-manager": "0.2.x"
 
-2. After updating composer, add the ServiceProviders to the providers array in app/config/app.php
+2. After updating composer, add the ServiceProviders to the providers array in app/config/app.php and comment out the original TranslationServiceProvider:
 
-```php
-    //'Illuminate\Translation\TranslationServiceProvider',
-    'Vsch\TranslationManager\TranslationServiceProvider',
-    'Vsch\TranslationManager\ManagerServiceProvider',
-```
+        //'Illuminate\Translation\TranslationServiceProvider',
+        'Vsch\TranslationManager\TranslationServiceProvider',
+        'Vsch\TranslationManager\ManagerServiceProvider',
+        'Vsch\UserPrivilegeMapper\UserPrivilegeMapperServiceProvider',
 
-The TranslationServiceProvider is an extension to the standard functionality and is required in order for the web interface to work properly. It is backward compatible with the existing Translator since it is a subclass of it and only overrides implementation for new features.
+3. add the Facade to the aliases array in app/config/app.php:
 
-3. You need to run the migrations for this package
+       'UserCan' => 'Vsch\UserPrivilegeMapper\Facade\Privilege',
+
+    The TranslationServiceProvider is an extension to the standard functionality and is required in order for the web interface to work properly. It is backward compatible with the existing Translator since it is a subclass of it and only overrides implementation for new features.
+
+4. You need to run the migrations for this package:
 
     $ php artisan migrate --package="vsch/laravel-translation-manager"
 
-4. You need to publish the config file for this package. This will add the files `app/config/packages/vsch/laravel-translation-manager/config.php` and `app/config/packages/vsch/laravel-translation-manager/local/config.php`, where you can configure this package.
+5. You need to publish the config file for this package. This will add the files `app/config/packages/vsch/laravel-translation-manager/config.php` and `app/config/packages/vsch/laravel-translation-manager/local/config.php`, where you can configure this package.
 
     $ php artisan config:publish vsch/laravel-translation-manager
 
-5. You need to publish the web assets used by the translation manager web interface. This will add the assets to `public/packages/vsch/laravel-translation-manager`
+6. You need to publish the web assets used by the translation manager web interface. This will add the assets to `public/packages/vsch/laravel-translation-manager`
 
     $ php artisan asset:publish vsch/laravel-translation-manager
 
-6. You have to add the Controller to your routes.php, so you can set your own url/filters.
+7. You have to add the Controller to your routes.php, so you can set your own url/filters.
 
-```php
-    Route::group(array('before' => 'auth'), function ()
-    {
-        Route::controller('translations', 'Vsch\TranslationManager\Controller');
-    });
-```
+        Route::group(array('before' => 'auth'), function ()
+        {
+            Route::controller('translations', 'Vsch\TranslationManager\Controller');
+        });
 
-This example will make the translation manager available at `http://yourdomain.com/translations`
+    This example will make the translation manager available at `http://yourdomain.com/translations`
+
+8. <a id="step7"></a>TranslationManager uses the vsch/user_privilege_mapper package that creates a mapping layer between your User model implementation and the need to test user privileges without knowing the implementation. You need to name privileges for the UserPrivilegeMapper via the Laravel macro mechanism. This should be done in the initialization files. A good place is the filters.php file, add the following if your User model has is_admin and is_editor attributes to identify users that have Admin and Editor privileges:
+
+        UserCan::macro("admin_translations", function ()
+        {
+            return ($user = Auth::user()) && $user->is_admin;
+        });
+
+        // return false to use the translator missing key lottery, true to always check missing keys for the user
+        UserCan::macro("bypass_translations_lottery", function ()
+        {
+            return ($user = Auth::user()) && ($user->is_admin || $user->is_editor);
+        });
+
+    In this example the User model implements two attributes: is_admin and is_editor. The admin user is allowed to manage translations: import, delete, export, etc., the editor user can only edit existing translations. However, both of these users will always log missing translation keys so that any missing translations will be visible to them instead of relying on the missing key lottery settings.
 
 ## Configuration
 
-The config file comments provide a description for each field. Note that when `delete_enabled` option is set to false then translation management is limited to editing existing translations. All other operations are disabled. This option needs to be dynamic based on user privileges so that translators cannot delete translations but admins can. This can be changed in the index.blade.php code on the first test for $deleteEnabled variable. This should be done in a copy of the package view files as described below.
+The config file comments provide a description for each field. Note that when `admin_enabled` option is set to false then translation management is limited to editing existing translations all other operations have to be done through the command line. Ideally, this option needs to be dynamic based on user privileges so that translators cannot delete translations or administer translations but admins can. See [step 7](#step7) above.
 
 ## Modifying the default View
 
-To create your own custom version of the index.blade.php copy this file from the `vendor/vsch/laravel-translation-manager/src/views/` directory to `app/views/packages/vsch/laravel-translation-manager` directory. The package view directory also contains a `layouts/master.blade.php` file for a default layout. The intent is for you to provide your own master layout that the index.blade.php will extend. The only thing to keep from the provided master layout is the style sheets included at the top of the file and the script tags at the bottom before the `</body>` tag.
-
-To customize $deleteEnabled option based on user privileges so that translators cannot delete translations but admins can, change the following line in your copy of the index.blade.php file from:
-
-```php
-    @if($deleteEnabled)
-```
-
-to:
-
-```php
-    @if($deleteEnabled = ($deleteEnabled && addYourCodeOrFunctionHere))
-```
-That will set this option for the rest of the page and you can decide who can and cannot delete, import, publish translations.
-
+To create your own custom version of the index.blade.php copy this file from the `vendor/vsch/laravel-translation-manager/src/views/` directory to `app/views/packages/vsch/laravel-translation-manager` directory. The package view directory also contains a `layouts/master.blade.php` file for a default layout. The intent is for you to provide your own master layout that the index.blade.php will extend so it can match your site's style.
 
 ## Web interface
 
@@ -165,11 +167,17 @@ These features were added to the original barryvdh/laravel-translation-manager p
 This package is still very much in development although it is successfully being used to manage translations. Here is a list of to do's and limitations:
 
 - MySQL DB is assumed for queries in those places where Eloquent was too cumbersome or too inefficient. I will be refactoring all DB access that bypasses Eloquent into a TranslationRepository interface class so that new DB access will only need to create a new repository implementation class for a specific DB interface.
+
 - Yandex assisted translations are only implemented for Russian, although Yandex does support other languages. This will be addressed to use all other available options.
+
 - Google translate was not used since it has no free option. However it is a simple change in the translator.js file to handle alternate translation engines.
-- Mismatched translations dashboard view assumes that English version of the translations is always correct and it is other languages that should have the same translations for different group/key combinations whose English text matches. For example if English messages.test1 = 'Test' and messages.test2 = 'Test' then for other languages the translations for these two keys will be flagged as a mismatch if they are not the same. This was a idiosyncrasy of the project for which this module was developed and if you find it useful then edit the index.blade.php file and change `@if(false && !empty($mismatches))` to `@if(true && !empty($mismatches))` on the line that precedes the mismatched dashboard `<div>`.
+
+- Mismatched translations dashboard view assumes that English version of the translations is always correct and the other languages should have the same translations for different group/key combinations whose English texts match. For example if English messages.test1 = 'Test' and messages.test2 = 'Test' then for other languages the translations for these two keys will be flagged as a mismatch if they are not the same. This was a idiosyncrasy of the project for which this module was developed and if you find it useful then set config option `mismatch_enabled` to true to see the mismatched translations dashboard.
+
 - key operations that allow creating new keys and also keys permuted by suffixes, moving, copying, deleting keys are a bit of a kludge. I am planning to rework the web interface to make these cleaner. However, if you desperately need these to save a lot of typing and editing, the current version will do the trick.
+
 - Create a Laravel 5 compatible branch.
+
 - ability to download a zip file that contains all translation files that would be generated by publish operation. This would be useful to get an updated copy of translations from a production server if an SQL connection from local dev environment is not available.
 
 - Suggestions and priority requests are welcome. :)
