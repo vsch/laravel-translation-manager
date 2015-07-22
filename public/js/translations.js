@@ -6,6 +6,9 @@ var translate;
 var CLIP_TEXT;
 var MISSMATCHED_QUOTES_MESSAGE;
 var YANDEX_TRANSLATOR_KEY;
+var PRIMARY_LOCALE;
+var CURRENT_LOCALE;
+var TRANSLATING_LOCALE;
 
 function swapInClass(elem, toAdd, toRemove) {
     'use strict';
@@ -142,10 +145,10 @@ $(document).ready(function () {
         '<button type="submit" class="editable-submit btn btn-sm btn-success"><i class="glyphicon glyphicon-ok"></i></button>' +
         '&nbsp;<button type="button" class="editable-cancel btn btn-sm btn-danger"><i class="glyphicon glyphicon-remove"></i></button>' +
         '&nbsp;&nbsp;<button id="x-translate" type="button" class="editable-translate btn btn-sm btn-warning hidden"><i class="glyphicon glyphicon-share-alt"></i></button>' +
-        '<button id="x-nodash" type="button" class="editable-translate btn btn-sm btn-warning hidden">⚛➦Ab</button>' +
+        '<button id="x-nodash" type="button" class="editable-translate btn btn-sm btn-warning hidden">❉ <i class="glyphicon glyphicon-share-alt"></i> Ab</button>' +
         '&nbsp;&nbsp;<button id="x-plurals" type="button" class="editable-translate btn btn-sm btn-warning hidden">|</i></button>' +
-        '&nbsp;&nbsp;<button id="x-capitalize" type="button" class="editable-translate btn btn-sm btn-info">ab➦Ab</button>' +
-        '<button id="x-lowercase" type="button" class="editable-translate btn btn-sm btn-info">AB➦ab</button>' +
+        '&nbsp;&nbsp;<button id="x-capitalize" type="button" class="editable-translate btn btn-sm btn-info">ab <i class="glyphicon glyphicon-share-alt"></i> Ab</button>' +
+        '<button id="x-lowercase" type="button" class="editable-translate btn btn-sm btn-info">AB <i class="glyphicon glyphicon-share-alt"></i> ab</button>' +
         '&nbsp;&nbsp;<button id="x-copy" type="button" class="editable-translate btn btn-sm btn-primary"><i class="glyphicon glyphicon-copy"></i></button>' +
         '<button id="x-paste" type="button" class="editable-translate btn btn-sm btn-primary"><i class="glyphicon glyphicon-paste"></i></button>' +
         '&nbsp;&nbsp;<button id="x-reset-open" type="button" class="editable-translate btn btn-sm btn-success"><i class="glyphicon glyphicon-open"></i></button>' +
@@ -222,8 +225,15 @@ $(document).ready(function () {
                         pluralForms = result.split('\n', 3);
                         single = extractPluralForm(pluralForms, 0);
                         plural = extractPluralForm(pluralForms, 1);
-                        plural2 = extractPluralForm(pluralForms, 2);
-                        result = single + '|' + plural + '|' + plural2;
+
+                        if (dstLoc === 'ru') {
+                            plural2 = extractPluralForm(pluralForms, 2);
+                            result = single + '|' + plural + '|' + plural2;
+                        }
+                        else {
+                            // TODO: have to handle other plural forms for complex locales
+                            result = single + '|' + plural;
+                        }
                     }
                     dstElem.val(result);
                     dstElem.focus();
@@ -310,7 +320,7 @@ $(document).ready(function () {
                     value;
 
                 dstLoc = $(this).data('locale');
-                srcLoc = dstLoc === 'en' ? '' : 'en';
+                srcLoc = dstLoc === PRIMARY_LOCALE ? '' : PRIMARY_LOCALE;
 
                 inEditable++;
                 //window.console.log("editable shown: " + inEditable);
@@ -353,7 +363,7 @@ $(document).ready(function () {
                         }
                     }
                 }
-                if (elemXnodash.length && dstLoc === 'en') {
+                if (elemXnodash.length && dstLoc === PRIMARY_LOCALE) {
                     elemXnodash.removeClass('hidden');
                     elemXnodash.on('click', xfull(dstElem, function () {
                         return value;
@@ -387,22 +397,33 @@ $(document).ready(function () {
                     }));
                 }
                 if (elemXplurals.length) {
-                    if (dstLoc === 'en' || YANDEX_TRANSLATOR_KEY !== '') {
+                    if (dstLoc === PRIMARY_LOCALE || YANDEX_TRANSLATOR_KEY !== '') {
                         elemXplurals.removeClass('hidden');
                         elemXplurals.on('click', xfull(dstElem, function () {
-                            var val;
-                            if (dstLoc === 'ru') {
-                                val = this + '|' + this + '|' + this;
-                            }
-                            else {
-                                if (this === '') {
-                                    val = value.singularize() + '|' + value.pluralize();
+                            var val = this;
+                            if (val.indexOf('|') === -1) {
+                                switch (dstLoc) {
+                                    case 'ru' :
+                                        val = this + '|' + this + '|' + this;
+                                        break;
+
+                                    case 'en' :
+                                        if (PRIMARY_LOCALE === 'en') {
+                                            val = value.singularize() + '|' + value.pluralize();
+                                        }
+                                        else {
+                                            val = val.singularize() + '|' + val.pluralize();
+                                        }
+                                        break;
+
+                                    // TODO: add locale tests and code to create plural forms
+                                    default:
+                                        val = this + '|' + this;
+                                        break;
                                 }
-                                else {
-                                    val = this.singularize() + '|' + this.pluralize();
-                                }
+                                return val.toLocaleLowerCase();
                             }
-                            return val.toLocaleLowerCase();
+                            return val;
                         }));
                     }
                 }

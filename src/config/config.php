@@ -3,6 +3,14 @@
 return array(
 
     /**
+     * Specify the locale that is used for creating the initial translation strings. This locale is considered
+     * to be the driver of all other translations.
+     *
+     * @type string
+     */
+    'primary_locale' => 'en',
+
+    /**
      * Enable management of translations beyond just editing and command line manipulations
      *
      * @type boolean
@@ -92,7 +100,7 @@ return array(
      *
      * @type string     Yandex translation key
      *
-     * This key is free to obtain and use but is required to enable Yandex translations.
+     * This key is free to obtain and use but is required to enable Yandex translations. Visit: https://tech.yandex.com/translate/
      *
      */
 

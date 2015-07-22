@@ -11,19 +11,38 @@
                 <h1>@lang('laravel-translation-manager::messages.translation-manager')</h1>
             </div>
             <div class="col-sm-5">
-                <form class="form-inline" id="form-primary-locale" class="form-primary-locale" method="GET"
-                        action="<?= action('Vsch\TranslationManager\Controller@getPrimaryLocale') ?>">
-                    <div class="input-group-sm col-sm-7">
-                        <label for="l"><?= trans('laravel-translation-manager::messages.primary-locale') ?>:</label>
-                        <select name="l" class="form-control" value="<?= $currLang ?>" onchange="$('#form-primary-locale').submit()">
-                        @foreach($locales as $locale)
-                            <option value="<?=$locale?>"><?= $locale ?></option>
-                        @endforeach
-                        </select>
-                    </div>
-                    <div class="input-group" style="float:right; display:inline">
-                        <?= ifEditTrans('laravel-translation-manager::messages.in-place-edit') ?>
-                        <a class="btn btn-sm btn-primary" role="button" href="<?= action('Vsch\TranslationManager\Controller@getToggleInPlaceEdit') ?>"><?= noEditTrans('laravel-translation-manager::messages.in-place-edit') ?></a>
+                <br>
+                <form class="form-inline" id="form-interface-locale" class="form-interface-locale" method="GET"
+                        action="<?= action('Vsch\TranslationManager\Controller@getInterfaceLocale') ?>">
+                    <div class="row">
+                        <div class=" col-sm-4">
+                            <div class="input-group-sm">
+                                <label for="l"><?= trans('laravel-translation-manager::messages.interface-locale') ?>:</label>
+                                <select name="l" id="interface-locale" class="form-control" ?>">
+                                @foreach($locales as $locale)
+                                    <option value="<?=$locale?>"<?= $currentLocale === $locale ? ' selected="selected"' : ''?>><?= $locale ?></option>
+                                @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class=" col-sm-4">
+                            <div class="input-group-sm">
+                                <label for="t"><?= trans('laravel-translation-manager::messages.translating-locale') ?>:</label>
+                                <select name="t" id="translating-locale" class="form-control" ?>">
+                                @foreach($locales as $locale)
+                                    @if($locale !== $primaryLocale) continue;
+                                    <option value="<?=$locale?>"<?= $translatingLocale === $locale ? ' selected="selected"' : ''?>><?= $locale ?></option>
+                                    @endif
+                                @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class=" col-sm-4">
+                            <div class="input-group" style="float:right; display:inline">
+                                <?= ifEditTrans('laravel-translation-manager::messages.in-place-edit') ?>
+                                <a class="btn btn-sm btn-primary" role="button" href="<?= action('Vsch\TranslationManager\Controller@getToggleInPlaceEdit') ?>"><?= noEditTrans('laravel-translation-manager::messages.in-place-edit') ?></a>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -508,24 +527,22 @@
                             <div class="panel-body">
                                 <div class="row">
                                     <div class="col-sm-6">
-                                        <?= ifEditTrans('laravel-translation-manager::messages.en') ?>
-                                        <textarea id="en-text" class="form-control" rows="3" name="keys" style="resize: vertical;"
-                                                placeholder="<?= noEditTrans('laravel-translation-manager::messages.en') ?>"></textarea> <br>
-                                        <button id="en-ru" type="button" class="btn btn-sm btn-primary">
-                                            <?= noEditTrans('laravel-translation-manager::messages.en-ru') ?>
-                                        </button>
-                                        <?= ifEditTrans('laravel-translation-manager::messages.en-ru') ?>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <?= ifEditTrans('laravel-translation-manager::messages.ru') ?>
-                                        <textarea id="ru-text" class="form-control" rows="3" name="keys" style="resize: vertical;"
-                                                placeholder="<?= noEditTrans('laravel-translation-manager::messages.ru') ?>"></textarea> <br><span
-                                                style="float:right; display:inline">
-                                            <?= ifEditTrans('laravel-translation-manager::messages.ru-en') ?>
-                                            <button id="ru-en" type="button" class="btn btn-sm btn-primary">
-                                                <?= noEditTrans('laravel-translation-manager::messages.ru-en') ?>
+                                        <textarea id="primary-text" class="form-control" rows="3" name="keys" style="resize: vertical;"
+                                                placeholder="<?= $primaryLocale ?>"></textarea>
+                                        <br>
+                                        <span style="float:right; display:inline">
+                                            <button id="translate-primary-current" type="button" class="btn btn-sm btn-primary">
+                                                <?= $primaryLocale ?> <i class="glyphicon glyphicon-share-alt"></i> <?= $translatingLocale ?>
                                             </button>
                                         </span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <textarea id="current-text" class="form-control" rows="3" name="keys" style="resize: vertical;"
+                                                placeholder="<?= $translatingLocale ?>"></textarea>
+                                        <br>
+                                        <button id="translate-current-primary" type="button" class="btn btn-sm btn-primary">
+                                            <?= $translatingLocale ?> <i class="glyphicon glyphicon-share-alt"></i> <?= $primaryLocale ?>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -542,11 +559,12 @@
                     <thead>
                         <tr>
                             <th width="20%">@lang('laravel-translation-manager::messages.key')</th>
+                            <?php $width = 80/count($locales); ?>
                             <?php foreach($locales as $locale): ?>
-                            <th width="40%"><?= $locale ?></th>
+                            <th width="<?=$width?>%"><?= $locale ?></th>
                             <?php endforeach; ?>
                             <?php if($adminEnabled): ?>
-                            <th width="40%">&nbsp;</th>
+                            <th>&nbsp;</th>
                             <?php endif; ?>
                         </tr>
                     </thead>
@@ -640,6 +658,13 @@
     <!--<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>-->
     <!--<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>-->
     <script>
+        var CLIP_TEXT; // we store translation copy/paste here
+        var YANDEX_TRANSLATOR_KEY = '{{isset($yandex_key) ? $yandex_key : ''}}';
+        var PRIMARY_LOCALE = '{{$primaryLocale}}';
+        var CURRENT_LOCALE = '{{$currentLocale}}';
+        var TRANSLATING_LOCALE = '{{$translatingLocale}}';
+    </script>
+    <script>
         jQuery(document).ready(function ($) {
             $('.group-select').on('change', function () {
                 window.location.href = '<?= action('Vsch\TranslationManager\Controller@getIndex') ?>/' + $(this).val();
@@ -705,26 +730,34 @@
                 elem.find('.vsch_editable').vsch_editable();
             });
 
-            $('#ru-en').on('click', function () {
-                var elemFrom = $('#ru-text').first(),
+            $('#translate-current-primary').on('click', function () {
+                var elemFrom = $('#current-text').first(),
                         fromText = elemFrom[0].value;
-                translate('ru', fromText, 'en', function (text) {
-                    var elem = $('#en-text').first();
+                translate(TRANSLATING_LOCALE, fromText, PRIMARY_LOCALE, function (text) {
+                    var elem = $('#primary-text').first();
                     if (elem.length) {
                         elem.val(text);
                     }
                 });
             });
 
-            $('#en-ru').on('click', function () {
-                var elemFrom = $('#en-text').first(),
+            $('#translate-primary-current').on('click', function () {
+                var elemFrom = $('#primary-text').first(),
                         fromText = elemFrom[0].value;
-                translate('en', fromText, 'ru', function (text) {
-                    var elem = $('#ru-text').first();
+                translate(PRIMARY_LOCALE, fromText, TRANSLATING_LOCALE, function (text) {
+                    var elem = $('#current-text').first();
                     if (elem.length) {
                         elem.val(text);
                     }
                 });
+            });
+
+            $('#interface-locale').on('change', function () {
+                $('#form-interface-locale')[0].submit();
+            });
+
+            $('#translating-locale').on('change', function () {
+                $('#form-interface-locale')[0].submit();
             });
 
             function textareaTandemResize(src, dst, liveupdate) {
@@ -798,7 +831,7 @@
 
             var elem = $("#form-addkeys").first();
             textareaTandemResize(elem.find("textarea[name=keys]"), elem.find("textarea[name=suffixes]"), true)();
-            textareaTandemResize($("#ru-text"), $("#en-text"), true)();
+            textareaTandemResize($("#primary-text"), $("#current-text"), true)();
             textareaTandemResize($("#srckeys"), $("#dstkeys"), true)();
         });
     </script>

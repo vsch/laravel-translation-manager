@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="{{{$currLang}}}">
+<html lang="{{$currentLocale}}">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="author" content="Vladimir Schneider">
     <link rel="icon" href="/images/favicon.png">
-    <meta name="description" content="{{noEditTrans('page-titles.site_description')}}">{{--<!-- Bootstrap core CSS -->--}}
+    <meta name="description" content="{{noEditTrans('laravel-translation-manager::messages.translation-manager')}}">{{--<!-- Bootstrap core CSS -->--}}
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
     <link href="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.0/bootstrap3-editable/css/bootstrap-editable.css" rel="stylesheet"/>@yield('head')
@@ -32,10 +32,6 @@
 <script src="/packages/vsch/laravel-translation-manager/js/rails.min.js"></script>
 <script src="/packages/vsch/laravel-translation-manager/js/inflection.js"></script>
 <script src="/packages/vsch/laravel-translation-manager/js/translations.js"></script>
-<script>
-    var CLIP_TEXT; // we store translation copy/paste here
-    var YANDEX_TRANSLATOR_KEY = '{{isset($yandex_key) ? $yandex_key : ''}}';
-</script>
 @yield('body-bottom')
 </body>
 </html>

@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Response;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Vsch\TranslationManager\Models\Translation;
 use Vsch\UserPrivilegeMapper\Facade\Privilege as UserCan;
@@ -73,7 +72,8 @@ class Controller extends BaseController
     function __construct()
     {
         $this->manager = App::make('translation-manager');
-        \Lang::setLocale(Cookie::get('lang', \Lang::getLocale()));
+        $locale = Cookie::get('lang', \Lang::getLocale());
+        App::setLocale($locale);
 
         //$this->sqltraces = [];
         //$this->logSql = 0;
@@ -347,11 +347,16 @@ SQL
         }
 
         // returned result set lists group key ru, en columns for the locale translations, ru has different values for same values in en
+        $translatingLocale = Cookie::get('trans', (count($locales) > 1 ? $locales[1] : $locales[0]));
+        $currentLocale = \Lang::getLocale();
+        $primaryLocale = $this->manager->getConfig('primary_locale');
         return \View::make('laravel-translation-manager::index')
             ->with('translations', $translations)
             ->with('yandex_key', $this->manager->getConfig('yandex_translator_key'))
             ->with('locales', $locales)
-            ->with('currLang', \Lang::getLocale())
+            ->with('primaryLocale', $primaryLocale)
+            ->with('currentLocale', $currentLocale)
+            ->with('translatingLocale', $translatingLocale)
             ->with('groups', $groups)
             ->with('group', $group)
             ->with('numTranslations', $numTranslations)
@@ -399,8 +404,12 @@ SQL
     function loadLocales()
     {
         //Set the default locale as the first one.
-        $locales = array_merge(array(Config::get('app.locale')), Translation::groupBy('locale')->lists('locale'));
-        return array_unique($locales);
+        $currentLocale = Config::get('app.locale');
+        $primaryLocale = $this->manager->getConfig('primary_locale');
+        $translatingLocale = Cookie::get('trans', $currentLocale);
+
+        $locales = array_merge(array( $primaryLocale, $translatingLocale, $currentLocale), Translation::groupBy('locale')->lists('locale'));
+        return array_flatten(array_unique($locales));
     }
 
     public
@@ -924,11 +933,13 @@ SQL
     }
 
     public
-    function getPrimaryLocale()
+    function getInterfaceLocale()
     {
         $locale = Input::get("l");
-        \Lang::setLocale($locale);
+        $translating = Input::get("t");
+        App::setLocale($locale);
         Cookie::queue('lang', $locale, 60 * 24 * 365 * 1);
+        Cookie::queue('trans', $translating, 60 * 24 * 365 * 1);
 
         if (App::runningUnitTests()) return Redirect::to('/');
         return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
