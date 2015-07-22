@@ -156,7 +156,7 @@ The reset command simply clears all translation in the database, so you can star
 
 These features were added to the original barryvdh/laravel-translation-manager package.
 
-- translation manager web-interface is localized. Current version has English and Russian. Others can be easily added by adding package translation overrides in `app/lang/packages/{locale}/laravel-translation-manager/messages.php` files. If message.php files are added for en and ru locales then their contents will override the language files included in the package.
+- translation manager web-interface is localized. Current version has English and Russian. Others can be easily added by adding package translation overrides in `app/lang/packages/{locale}/laravel-translation-manager/messages.php` files. If messages.php files are added for en and ru locales then their contents will override the language files included in the package.
 
 - allows in-database translations to override the translations in files.
 
