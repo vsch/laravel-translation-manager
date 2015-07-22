@@ -3,6 +3,7 @@
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Redirect;
@@ -72,6 +73,8 @@ class Controller extends BaseController
     function __construct()
     {
         $this->manager = App::make('translation-manager');
+        \Lang::setLocale(Cookie::get('lang', \Lang::getLocale()));
+
         //$this->sqltraces = [];
         //$this->logSql = 0;
         //
@@ -435,7 +438,7 @@ SQL
     public
     function postDeleteSuffixedKeys($group)
     {
-        if (!in_array($group, $this->manager->getConfig('exclude_groups')) && $this->manager->getConfig('delete_enabled'))
+        if (!in_array($group, $this->manager->getConfig('exclude_groups')) && $this->manager->getConfig('admin_enabled'))
         {
             $keys = explode("\n", trim(Input::get('keys')));
             $suffixes = explode("\n", trim(Input::get('suffixes')));
@@ -501,7 +504,7 @@ SQL
     public
     function postDelete($group, $key)
     {
-        if (!in_array($group, $this->manager->getConfig('exclude_groups')) && $this->manager->getConfig('delete_enabled'))
+        if (!in_array($group, $this->manager->getConfig('exclude_groups')) && $this->manager->getConfig('admin_enabled'))
         {
             //Translation::where('group', $group)->where('key', $key)->delete();
             $result = DB::update(<<<SQL
@@ -515,7 +518,7 @@ SQL
     public
     function postUndelete($group, $key)
     {
-        if (!in_array($group, $this->manager->getConfig('exclude_groups')) && $this->manager->getConfig('delete_enabled'))
+        if (!in_array($group, $this->manager->getConfig('exclude_groups')) && $this->manager->getConfig('admin_enabled'))
         {
             //Translation::where('group', $group)->where('key', $key)->delete();
             $result = DB::update(<<<SQL
@@ -551,7 +554,7 @@ SQL
         $keymap = [];
         $this->logSql = 1;
         $this->sqltraces = [];
-        if (!in_array($group, $this->manager->getConfig('exclude_groups')) && $this->manager->getConfig('delete_enabled'))
+        if (!in_array($group, $this->manager->getConfig('exclude_groups')) && $this->manager->getConfig('admin_enabled'))
         {
             $srckeys = explode("\n", trim(Input::get('srckeys')));
             $dstkeys = explode("\n", trim(Input::get('dstkeys')));
@@ -910,4 +913,25 @@ SQL
 
         return Response::json(array('status' => 'ok'));
     }
+
+    public
+    function getToggleInPlaceEdit()
+    {
+        inPlaceEditing(!inPlaceEditing());
+
+        if (App::runningUnitTests()) return Redirect::to('/');
+        return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
+    }
+
+    public
+    function getPrimaryLocale()
+    {
+        $locale = Input::get("l");
+        \Lang::setLocale($locale);
+        Cookie::queue('lang', $locale, 60 * 24 * 365 * 1);
+
+        if (App::runningUnitTests()) return Redirect::to('/');
+        return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
+    }
+
 }

@@ -6,7 +6,28 @@
 @section('content')
     {{--<div style="width: 80%; margin: auto;">--}}
     <div class="col-sm-12 translation-manager">
-        <h1>@lang('laravel-translation-manager::messages.translation-manager')</h1>
+        <div class="row">
+            <div class="col-sm-7">
+                <h1>@lang('laravel-translation-manager::messages.translation-manager')</h1>
+            </div>
+            <div class="col-sm-5">
+                <form class="form-inline" id="form-primary-locale" class="form-primary-locale" method="GET"
+                        action="<?= action('Vsch\TranslationManager\Controller@getPrimaryLocale') ?>">
+                    <div class="input-group-sm col-sm-7">
+                        <label for="l"><?= trans('laravel-translation-manager::messages.primary-locale') ?>:</label>
+                        <select name="l" class="form-control" value="<?= $currLang ?>" onchange="$('#form-primary-locale').submit()">
+                        @foreach($locales as $locale)
+                            <option value="<?=$locale?>"><?= $locale ?></option>
+                        @endforeach
+                        </select>
+                    </div>
+                    <div class="input-group" style="float:right; display:inline">
+                        <?= ifEditTrans('laravel-translation-manager::messages.in-place-edit') ?>
+                        <a class="btn btn-sm btn-primary" role="button" href="<?= action('Vsch\TranslationManager\Controller@getToggleInPlaceEdit') ?>"><?= noEditTrans('laravel-translation-manager::messages.in-place-edit') ?></a>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <div class="row">
             <div class="col-sm-7">

@@ -14,7 +14,7 @@ return array(
      *
      * @type boolean
      */
-    'mismatch_enabled' => true,
+    'mismatch_enabled' => false,
 
     /**
      * Exclude specific groups from Laravel Translation Manager.
