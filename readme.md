@@ -35,7 +35,7 @@ If someone contacts me with a request to prioritize a specific area I will do it
 
 1. Require this package in your composer.json and run composer update (or run `composer require vsch/laravel-translation-manager:*` directly):
 
-      "vsch/laravel-translation-manager": "~1.0"
+        "vsch/laravel-translation-manager": "~1.0"
 
 2. After updating composer, add the ServiceProviders to the providers array in app/config/app.php and comment out the original TranslationServiceProvider:
 
@@ -52,15 +52,15 @@ If someone contacts me with a request to prioritize a specific area I will do it
 
 4. You need to run the migrations for this package:
 
-    $ php artisan migrate --package="vsch/laravel-translation-manager"
+        $ php artisan migrate --package="vsch/laravel-translation-manager"
 
 5. You need to publish the config file for this package. This will add the files `app/config/packages/vsch/laravel-translation-manager/config.php` and `app/config/packages/vsch/laravel-translation-manager/local/config.php`, where you can configure this package.
 
-    $ php artisan config:publish vsch/laravel-translation-manager
+        $ php artisan config:publish vsch/laravel-translation-manager
 
 6. You need to publish the web assets used by the translation manager web interface. This will add the assets to `public/packages/vsch/laravel-translation-manager`
 
-    $ php artisan asset:publish vsch/laravel-translation-manager
+        $ php artisan asset:publish vsch/laravel-translation-manager
 
 7. You have to add the Controller to your routes.php, so you can set your own url/filters.
 
@@ -116,7 +116,7 @@ You can also use the commands below.
 
 The import command will search through app/lang and load all strings in the database, so you can easily manage them.
 
-    $ php artisan translations:import
+        $ php artisan translations:import
     
 Note: By default, only new strings are added. Translations already in the DB are kept the same. If you want to replace all values with the ones from the files, 
 add the `--replace` (or `-R`) option: `php artisan translations:import --replace`
@@ -127,7 +127,7 @@ The Find command/button will look search for all php/twig files in the app direc
 The found keys will be added to the database, so they can be easily translated.
 This can be done through the web interface, or via an Artisan command.
 
-    $ php artisan translations:find
+        $ php artisan translations:find
 
 ### Export command
 
@@ -135,7 +135,7 @@ The export command will write the contents of the database back to app/lang php 
 This will overwrite existing translations and remove all comments, so make sure to backup your data before using.
 Supply the group name to define which groups you want to publish.
 
-    $ php artisan translations:export <group>
+        $ php artisan translations:export <group>
 
 For example, `php artisan translations:export reminders` when you have 2 locales (en/nl), will write to `app/lang/en/reminders.php` and `app/lang/nl/reminders.php`
 
@@ -143,13 +143,13 @@ For example, `php artisan translations:export reminders` when you have 2 locales
 
 The clean command will search for all translation that are NULL and delete them, so your interface is a bit cleaner. Note: empty translations are never exported.
 
-    $ php artisan translations:clean
+        $ php artisan translations:clean
 
 ### Reset command
 
 The reset command simply clears all translation in the database, so you can start fresh (by a new import). Make sure to export your work if needed before doing this.
 
-    $ php artisan translations:reset
+        $ php artisan translations:reset
 
 <a id="NewFeatures"></a>
 ## New Features
