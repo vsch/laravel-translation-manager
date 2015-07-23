@@ -190,6 +190,8 @@ These features were added to the original barryvdh/laravel-translation-manager p
 
 - exported language files preserve multi-line comments and doc comments and empty first level array values.
 
+- moved the delete translation icon before the translation key instead of after the last translation because for large number of locales it was impossible to know which key was going to be marked for deletion.
+
 <a id="YandexSupportedLanguages"></a>
 ## Yandex Supported languages
 <table>

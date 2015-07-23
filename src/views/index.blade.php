@@ -558,14 +558,14 @@
                 <table class="table table-condensed table-striped table-translations">
                     <thead>
                         <tr>
+                            <?php if($adminEnabled): ?>
+                            <th>&nbsp;</th>
+                            <?php endif; ?>
                             <th width="20%">@lang('laravel-translation-manager::messages.key')</th>
                             <?php $width = 80/count($locales); ?>
                             <?php foreach($locales as $locale): ?>
                             <th width="<?=$width?>%"><?= $locale ?></th>
                             <?php endforeach; ?>
-                            <?php if($adminEnabled): ?>
-                            <th>&nbsp;</th>
-                            <?php endif; ?>
                         </tr>
                     </thead>
                     <tbody>
@@ -580,13 +580,6 @@
                             }
                         ?>
                         <tr id="<?= str_replace('.', '-', $key) ?>" <?= $is_deleted ? ' class="deleted-translation"' : '' ?>>
-                            <td><?= $key ?></td>
-                            <?php foreach($locales as $locale): ?>
-                            <?php $t = isset($translation[$locale]) ? $translation[$locale] : null ?>
-                            <td>
-                                <?= $translator->inPlaceEditLink(!$t ? $t : ($t->value == '' ? null : $t), true, "$group.$key", $locale, null, $group) ?>
-                            </td>
-                            <?php endforeach; ?>
                             <?php if($adminEnabled): ?>
                             <td>
                                 <a href="<?= action('Vsch\TranslationManager\Controller@postUndelete', [$group, $key]) ?>" class="undelete-key <?= $is_deleted ? "" : "hidden" ?>" data-method="POST"
@@ -599,6 +592,13 @@
                                 </a>
                             </td>
                             <?php endif; ?>
+                            <td><?= $key ?></td>
+                            <?php foreach($locales as $locale): ?>
+                            <?php $t = isset($translation[$locale]) ? $translation[$locale] : null ?>
+                            <td>
+                                <?= $translator->inPlaceEditLink(!$t ? $t : ($t->value == '' ? null : $t), true, "$group.$key", $locale, null, $group) ?>
+                            </td>
+                            <?php endforeach; ?>
                         </tr>
                         <?php } ?>
                     </tbody>
