@@ -19,17 +19,18 @@ The workflow would be:
 
 This way, translations can be saved in git history and no overhead is introduced in production.
 
-## Current Limitations
+## Table of Contents
+- [Web Interface](#WebInterface)
+- [Limitations](#Limitations)
+- [Installation](#Installation)
+- [Configuration](#Configuration)
+- [Artisan Commands](#ArtisanCommands)
+- [New Features](#NewFeatures)
+- [Yandex Supported Languages](#YandexSupportedLanguages)
+- [To Do](#ToDo)
 
-The package has only been tested with MySQL backend. No MySQL specific syntax is being used but no other backend has been tested with the package.
-
-Translation helpers use Yandex. You can edit any locale, even if it is not supported by Yandex. However, automatic translation will not work for unsupported locales. See [Yandex Supported languages](#YandexSupportedLanguages)
-
-For other limitations, please see [To Do List](#ToDo).
-
-If someone contacts me with a request to prioritize a specific area I will do it sooner :).
-
-## Web interface
+<a id="WebInterface"></a>
+## Web Interface
 
 ![Translator Page ](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_main.png)
 
@@ -77,6 +78,18 @@ Here you can translate between the primary locale and the translating locale.
 
 ![Translation Helpers](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_translation_helpers.png)
 
+<a id="Limitations"></a>
+## Limitations
+
+The package has only been tested with MySQL backend. No MySQL specific syntax is being used but no other backend has been tested with the package.
+
+Translation helpers use Yandex. You can edit any locale, even if it is not supported by Yandex. However, automatic translation will not work for unsupported locales. See [Yandex Supported languages](#YandexSupportedLanguages)
+
+For other limitations, please see [To Do List](#ToDo).
+
+If someone contacts me with a request to prioritize a specific area I will do it sooner :).
+
+<a id="Installation"></a>
 ## Installation
 
 1. Require this package in your composer.json and run composer update (or run `composer require vsch/laravel-translation-manager:*` directly):
@@ -134,6 +147,7 @@ Here you can translate between the primary locale and the translating locale.
 
 9. Yandex assisted translations requires setting the `yandex_translator_key` to your Yandex API key in the `config.php` file, it is free. See: <https://tech.yandex.com/translate/>
 
+<a id="Configuration"></a>
 ## Configuration
 
 The config file `app/config/packages/laravel-translation-manager/config.php` has comments that provide a description for each option. Note that when `admin_enabled` is set to false then translation management is limited to editing existing translations all other operations have to be done through the command line. Ideally, this option needs to be dynamic based on user privileges so that translators cannot delete translations or administer translations but admins can. See [step 8](#step8) above.
@@ -144,6 +158,7 @@ By default the primary locale is en. The primary locale determines what language
 
 To create your own custom version of the index.blade.php copy this file from the `vendor/vsch/laravel-translation-manager/src/views/` directory to `app/views/packages/vsch/laravel-translation-manager` directory. The package view directory also contains a `layouts/master.blade.php` file for a default layout. The intent is for you to provide your own master layout that the index.blade.php will extend so it can match your site's style.
 
+<a id="ArtisanCommands"></a>
 ## Artisan Commands
 
 You can also use the commands below.
