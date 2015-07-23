@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'Добавить ключивые',
     'addkeys-placeholder'       => 'Добавляйте по одному ключу на строке без префикса группы',
     'addsuffixes'               => 'Набор Суффиксов',
@@ -36,6 +36,7 @@ TEXT
     'deleting'                  => 'Удаляю...',
     'done-publishing'           => 'Сделал публикацию переводов для группы <strong>:group</strong>.',
     'done-publishing-all'       => 'Публикация переводов для <strong>всех</strong> групп завершена.',
+    'download-zip'              => 'Скачать ZIP-Архив',
     'dst-preview'               => 'На',
     'dstkey'                    => 'На',
     'dstkeys'                   => 'На Ключи',
@@ -103,4 +104,4 @@ TEXT
     'translation-ops'           => 'Помощники Перевода',
     'translations'              => 'Переводы',
     'wildcard-keyops'           => 'Подстановочные Операции С Ключами',
-];
+);

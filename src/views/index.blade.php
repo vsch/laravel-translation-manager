@@ -73,6 +73,11 @@
                                                     <?= noEditTrans('laravel-translation-manager::messages.import-groups') ?>
                                                 </button>
                                                 <div class="input-group" style="float:right; display:inline">
+                                                    <?= ifEditTrans('laravel-translation-manager::messages.download-zip') ?>
+                                                    <a href="<?= action('Vsch\TranslationManager\Controller@getZippedTranslations', ['group' => '*']) ?>"
+                                                            role="button" class="btn btn-primary btn-sm">
+                                                        <?= noEditTrans('laravel-translation-manager::messages.download-zip') ?>
+                                                    </a>
                                                     <?= ifEditTrans('laravel-translation-manager::messages.find-in-files') ?>
                                                     <?= ifEditTrans('laravel-translation-manager::messages.searching') ?>
                                                     <button type="submit" form="form-find" class="btn btn-sm btn-warning"

@@ -953,4 +953,17 @@ SQL
         return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
     }
 
+    public
+    function getZippedTranslations($group = null)
+    {
+        $file = $this->manager->zipTranslations($group);
+
+        header('Content-Type: application/zip');
+        header('Content-Length: ' . filesize($file));
+        header('Content-Disposition: attachment; filename="Translations_' . date('Ymd-His') . '.zip"');
+        ob_clean();
+        flush();
+        readfile($file);
+        unlink($file);
+    }
 }

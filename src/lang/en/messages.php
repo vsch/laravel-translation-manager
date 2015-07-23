@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'Add Keys',
     'addkeys-placeholder'       => 'Add 1 key per line, without the group prefix',
     'addsuffixes'               => 'Set Suffixes',
@@ -36,6 +36,7 @@ TEXT
     'deleting'                  => 'Deleting...',
     'done-publishing'           => 'Done publishing the translations for group <strong>:group</strong>.',
     'done-publishing-all'       => 'Done publishing the translations for <strong>all</strong> groups.',
+    'download-zip'              => 'Download Zip',
     'dst-preview'               => 'To',
     'dstkey'                    => 'To',
     'dstkeys'                   => 'To Keys',
@@ -103,4 +104,4 @@ TEXT
     'translation-ops'           => 'Translation Helpers',
     'translations'              => 'Translations',
     'wildcard-keyops'           => 'Wildcard Key Operations',
-];
+);

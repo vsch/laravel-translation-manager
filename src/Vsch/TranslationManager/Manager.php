@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Session;
 use Symfony\Component\Finder\Finder;
 use Vsch\TranslationManager\Classes\TranslationFileRewriter;
 use Vsch\TranslationManager\Models\Translation;
+use ZipArchive;
 
 /**
  * Class Manager
@@ -32,6 +33,11 @@ class Manager
     protected $cachePrefix;
     protected $cache;
     protected $cacheIsDirty;
+
+    /**
+     * @var   \ZipArchive
+     */
+    protected $zipExporting;
 
     public
     function __construct(Application $app, Filesystem $files, Dispatcher $events, Translation $translation)
@@ -467,7 +473,7 @@ SQL
     function exportTranslations($group, $recursing = 0)
     {
         $inDatabasePublishing = $this->inDatabasePublishing();
-        if ($inDatabasePublishing && ($inDatabasePublishing !== 2 || !$recursing))
+        if ($inDatabasePublishing < 3 && $inDatabasePublishing && ($inDatabasePublishing < 2 || !$recursing))
         {
             if ($group && $group !== '*')
             {
@@ -500,7 +506,7 @@ SQL
             });
         }
 
-        if (!$inDatabasePublishing || $inDatabasePublishing === 2)
+        if (!$inDatabasePublishing || $inDatabasePublishing === 2 || $inDatabasePublishing === 3)
         {
             if (!in_array($group, $this->config()['exclude_groups']))
             {
@@ -510,7 +516,7 @@ SQL
                 $this->translation->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE is_deleted = 1 AND `group` = ?"
                     , [$group]);
 
-                $this->clearCache($group);
+                if ($inDatabasePublishing === 2) $this->clearCache($group);
 
                 $tree = $this->makeTree(Translation::where('group', $group)->whereNotNull('value')->orderby('key')->get());
                 $configRewriter = new TranslationFileRewriter();
@@ -534,10 +540,19 @@ SQL
                         }
 
                         $configRewriter->parseSource($this->files->exists($path) ? $this->files->get($path) : '');
-
                         $output = $configRewriter->formatForExport($translations, $exportOptions);
-                        $this->makeDirPath($path);
-                        $this->files->put($path, $output);
+
+                        if ($this->zipExporting)
+                        {
+                            $filePathName = substr($path, mb_strlen($this->app->make('path')) + 1);
+                            //$this->makeDirPath($filePathName);
+                            $this->zipExporting->addFromString($filePathName, $output);
+                        }
+                        else
+                        {
+                            $this->makeDirPath($path);
+                            $this->files->put($path, $output);
+                        }
                     }
                 }
 
@@ -562,6 +577,45 @@ SQL
         {
             $this->exportTranslations($group->group, $recursing);
         }
+    }
+
+    public
+    function zipTranslations($groups)
+    {
+        $zip_name = tempnam("Translations_" . time(), "zip"); // Zip name
+        $this->zipExporting = new ZipArchive();
+        $this->zipExporting->open($zip_name, ZipArchive::OVERWRITE);
+
+        if (!is_array($groups))
+        {
+            if ($groups === '*')
+            {
+                $groups = Translation::whereNotNull('value')->select(DB::raw('DISTINCT `group`'))->get('group');
+                foreach ($groups as $group)
+                {
+                    // Stuff with content
+                    $this->exportTranslations($group->group, 0);
+                }
+            }
+            else
+            {
+                // Stuff with content
+                $this->exportTranslations($groups, 0);
+            }
+        }
+        else
+        {
+            foreach ($groups as $group)
+            {
+                // Stuff with content
+                $this->exportTranslations($group, 0);
+            }
+        }
+
+        $this->zipExporting->close();
+        $this->zipExporting = null;
+
+        return $zip_name;
     }
 
     public
@@ -613,6 +667,6 @@ SQL
     public
     function inDatabasePublishing()
     {
-        return array_key_exists('indatabase_publish', $this->config()) ? (int)$this->config['indatabase_publish'] : 0;
+        return $this->zipExporting ? 3 : (array_key_exists('indatabase_publish', $this->config()) ? (int)$this->config['indatabase_publish'] : 0);
     }
 }
