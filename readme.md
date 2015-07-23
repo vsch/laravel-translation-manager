@@ -19,8 +19,6 @@ The workflow would be:
 
 This way, translations can be saved in git history and no overhead is introduced in production.
 
-![Translator Page ](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_main.png)
-
 ## Current Limitations
 
 The package has only been tested with MySQL backend. No MySQL specific syntax is being used but no other backend has been tested with the package.
@@ -30,6 +28,54 @@ Translation helpers use Yandex. You can edit any locale, even if it is not suppo
 For other limitations, please see [To Do List](#ToDo).
 
 If someone contacts me with a request to prioritize a specific area I will do it sooner :).
+
+## Web interface
+
+![Translator Page ](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_main.png)
+
+When you have imported your translation (via buttons or command), you can view them in the web interface (on the url you defined the with the controller).
+You can click on a translation and an edit field will popup. All translations are saved when the edit dialog is closed unless it is closed with the cancel button. Clicking anywhere on the page outside the edit dialog will save the current changes.
+When a translation is not yet created in a different locale, you can also just edit it to create it.
+
+Using the buttons on the web interface, you can import/export the translations. For publishing translations, make sure your application can write to the language directory or optionally configure it to do in-database publishing using the cache by adding:
+
+The web interface lets you select the locale for the web interface and also the locale that you are currently translating. This is only used to order the locale columns displayed in the translation table such that the primary locale is always listed first and the translating locale is second, followed by all the other locales.
+
+### Suffixed Key Operations & Search (panel)
+
+Click on the panel to expand it.
+
+![Suffixed Key Operations](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_suffixed_keyops.png)
+
+Enter keys you want to create/delete from the current group in the left text area, and optionally any suffixes you want to permute with the keys on the left. For example, keys: abc, def, ghi; with suffixes: 1,2,3 will create/delete: abc1, abc2, abc3, def1, def2, def3, ghi1, ghi2, ghi3.
+
+Hit the search button to see the search dialog. The database translation strings and keys will be searched for the text and the matching entries displayed. You can edit the resulting translations directly in the search dialog or alternately follow the group link to display the group translation page.
+
+![Search](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_search.png)
+
+### Wildcard Key Operations (panel)
+
+Click on the panel to expand it.
+
+Here you can copy/delete/move keys with an optional wildcard character *, but only as a suffix or a prefix. The corresponding source and destination strings must have the * use: as suffix, prefix or not used.
+
+Hitting the preview button will let you see what the patterns match and what the resulting operation will affect. Copy or Move will not affect destination keys that already exist.
+
+Example of preview/delete:
+
+![Wildcard Key Operations 1](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_wildcard_keyops1.png)
+
+Example of preview/copy/move:
+
+![Wildcard Key Operations 2](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_wildcard_keyops2.png)
+
+### Translation Helpers (panel)
+
+Click on the panel to expand it.
+
+Here you can translate between the primary locale and the translating locale.
+
+![Translation Helpers](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_translation_helpers.png)
 
 ## Installation
 
@@ -92,32 +138,11 @@ If someone contacts me with a request to prioritize a specific area I will do it
 
 The config file `app/config/packages/laravel-translation-manager/config.php` has comments that provide a description for each option. Note that when `admin_enabled` is set to false then translation management is limited to editing existing translations all other operations have to be done through the command line. Ideally, this option needs to be dynamic based on user privileges so that translators cannot delete translations or administer translations but admins can. See [step 8](#step8) above.
 
-By default it is assumed that the primary locale for all translations is en. The primary locale determines what language is used for the keys and there is shortcut button in the edit dialog when editing the primary locale text to convert the key to a default label (chage - and _ to spaces, capitalize first letter of each word). It is assumed that all the other languages will be based on the primary locale text. The primary locale text is also used as the source for the Yandex translation engine.
+By default the primary locale is en. The primary locale determines what language is used for the source text for the translate button in the edit pop-up. When editing the text for the primary locale a button in the edit pop-up allows to convert the text of the key to a default label (chage - and _ to spaces, capitalize first letter of each word).
 
 ## Modifying the default View
 
 To create your own custom version of the index.blade.php copy this file from the `vendor/vsch/laravel-translation-manager/src/views/` directory to `app/views/packages/vsch/laravel-translation-manager` directory. The package view directory also contains a `layouts/master.blade.php` file for a default layout. The intent is for you to provide your own master layout that the index.blade.php will extend so it can match your site's style.
-
-## Web interface
-
-When you have imported your translation (via buttons or command), you can view them in the web interface (on the url you defined the with the controller).
-You can click on a translation and an edit field will popup. All translations are saved when the edit dialog is closed unless it is closed with the cancel button. Clicking anywhere on the page outside the edit dialog will save the current changes.
-When a translation is not yet created in a different locale, you can also just edit it to create it.
-
-Using the buttons on the web interface, you can import/export the translations. For publishing translations, make sure your application can write to the language directory or optionally configure it to do in-database publishing using the cache by adding:
-
-The web interface lets you select the locale for the web interface and also the locale that you are currently translating. This is only used to order the locale columns displayed in the translation table such that the primary locale is always listed first and the translating locale is second, followed by all the other locales.
-
-### Suffixed Key Operations & Search (panel)
-
-![Translator Page ](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_suffixed_keyops.png)
-
-Enter keys you want to create/delete from the current group in the left text area, and optionally any suffixes you want to permute with the keys on the left. For example, keys: abc, def, ghi; with suffixes: 1,2,3 will create/delete: abc1, abc2, abc3, def1, def2, def3, ghi1, ghi2, ghi3.
-
-Hit the search button to see the search dialog. The database translation strings and keys will be searched for the text and the matching entries displayed. You can edit the resulting translations directly in the search dialog or alternately follow the group link to display the group translation page.
-
-![Translator Page ](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_search.png)
-
 
 ## Artisan Commands
 
@@ -205,57 +230,25 @@ These features were added to the original barryvdh/laravel-translation-manager p
 
 <a id="YandexSupportedLanguages"></a>
 ## Yandex Supported languages
+
+You can find an up to date list here: <https://tech.yandex.com/translate/doc/dg/concepts/langs-docpage/>
+
 <table>
     <thead>
-        <tr><th>Language</th><th>Locale</th></tr>
+        <tr><th>Language</th><th>Locale</th><th>Language</th><th>Locale</th><th>Language</th><th>Locale</th><th>Language</th><th>Locale</th></tr>
     </thead>
     <tbody>
-        <tr><td>Albanian</td><td>sq</td></tr>
-        <tr><td>Arabian</td><td>ar</td></tr>
-        <tr><td>Armenian</td><td>hy</td></tr>
-        <tr><td>Azeri</td><td>az</td></tr>
-        <tr><td>Belarusian</td><td>be</td></tr>
-        <tr><td>Bosnian</td><td>bs</td></tr>
-        <tr><td>Bulgarian</td><td>bg</td></tr>
-        <tr><td>Catalan</td><td>ca</td></tr>
-        <tr><td>Croatian</td><td>hr</td></tr>
-        <tr><td>Czech</td><td>cs</td></tr>
-        <tr><td>Chinese</td><td>zh</td></tr>
-        <tr><td>Danish</td><td>da</td></tr>
-        <tr><td>Dutch</td><td>nl</td></tr>
-        <tr><td>English</td><td>en</td></tr>
-        <tr><td>Estonian</td><td>et</td></tr>
-        <tr><td>Finnish</td><td>fi</td></tr>
-        <tr><td>French</td><td>fr</td></tr>
-        <tr><td>Georgian</td><td>ka</td></tr>
-        <tr><td>German</td><td>de</td></tr>
-        <tr><td>Greek</td><td>el</td></tr>
-        <tr><td>Hebrew</td><td>he</td></tr>
-        <tr><td>Hungarian</td><td>hu</td></tr>
-        <tr><td>Icelandic</td><td>is</td></tr>
-        <tr><td>Indonesian</td><td>id</td></tr>
-        <tr><td>Italian</td><td>it</td></tr>
-        <tr><td>Japanese</td><td>ja</td></tr>
-        <tr><td>Korean</td><td>ko</td></tr>
-        <tr><td>Latvian</td><td>lv</td></tr>
-        <tr><td>Lithuanian</td><td>lt</td></tr>
-        <tr><td>Macedonian</td><td>mk</td></tr>
-        <tr><td>Malay</td><td>ms</td></tr>
-        <tr><td>Maltese</td><td>mt</td></tr>
-        <tr><td>Norwegian</td><td>no</td></tr>
-        <tr><td>Polish</td><td>pl</td></tr>
-        <tr><td>Portuguese</td><td>pt</td></tr>
-        <tr><td>Romanian</td><td>ro</td></tr>
-        <tr><td>Russian</td><td>ru</td></tr>
-        <tr><td>Spanish</td><td>es</td></tr>
-        <tr><td>Serbian</td><td>sr</td></tr>
-        <tr><td>Slovak</td><td>sk</td></tr>
-        <tr><td>Slovenian</td><td>sl</td></tr>
-        <tr><td>Swedish</td><td>sv</td></tr>
-        <tr><td>Thai</td><td>th</td></tr>
-        <tr><td>Turkish</td><td>tr</td></tr>
-        <tr><td>Ukrainian</td><td>uk</td></tr>
-        <tr><td>Vietnamese</td><td>vi</td></tr>
+        <tr><td>Albanian</td><td>sq</td><td>Dutch</td><td>nl</td><td>Italian</td><td>it</td><td>Russian</td><td>ru</td></tr>
+        <tr><td>Arabian</td><td>ar</td><td>English</td><td>en</td><td>Japanese</td><td>ja</td><td>Spanish</td><td>es</td></tr>
+        <tr><td>Armenian</td><td>hy</td><td>Estonian</td><td>et</td><td>Korean</td><td>ko</td><td>Serbian</td><td>sr</td></tr>
+        <tr><td>Azeri</td><td>az</td><td>Finnish</td><td>fi</td><td>Latvian</td><td>lv</td><td>Slovak</td><td>sk</td></tr>
+        <tr><td>Belarusian</td><td>be</td><td>French</td><td>fr</td><td>Lithuanian</td><td>lt</td><td>Slovenian</td><td>sl</td></tr>
+        <tr><td>Bosnian</td><td>bs</td><td>Georgian</td><td>ka</td><td>Macedonian</td><td>mk</td><td>Swedish</td><td>sv</td></tr>
+        <tr><td>Bulgarian</td><td>bg</td><td>German</td><td>de</td><td>Malay</td><td>ms</td><td>Thai</td><td>th</td></tr>
+        <tr><td>Catalan</td><td>ca</td><td>Greek</td><td>el</td><td>Maltese</td><td>mt</td><td>Turkish</td><td>tr</td></tr>
+        <tr><td>Croatian</td><td>hr</td><td>Hebrew</td><td>he</td><td>Norwegian</td><td>no</td><td>Ukrainian</td><td>uk</td></tr>
+        <tr><td>Czech</td><td>cs</td><td>Hungarian</td><td>hu</td><td>Polish</td><td>pl</td><td>Vietnamese</td><td>vi</td></tr>
+        <tr><td>Chinese</td><td>zh</td><td>Icelandic</td><td>is</td><td>Portuguese</td><td>pt</td><td></td><td><tr><td>Danish</td><td>da</td><td>Indonesian</td><td>id</td><td>Romanian</td><td>ro</td><td></td><td></tr>
     </tbody>
 </table>
 
