@@ -43,6 +43,14 @@ class TranslationFileRewriter
     const OPT_USE_SHORT_ARRAY = 64;
     const OPT_SORT_KEYS = 128;
 
+    public static $options = array(
+        'PRESERVE_EMPTY_ARRAYS' => self::OPT_PRESERVE_EMPTY_ARRAYS,
+        'USE_QUOTES' => self::OPT_USE_QUOTES,
+        'USE_HEREDOC' => self::OPT_USE_HEREDOC,
+        'USE_SHORT_ARRAY' => self::OPT_USE_SHORT_ARRAY,
+        'SORT_KEYS' => self::OPT_SORT_KEYS,
+    );
+
     /**
      * @var array
      */
@@ -81,6 +89,21 @@ class TranslationFileRewriter
     public
     function __construct()
     {
+    }
+
+    public static
+    function optionFlags($optionNames)
+    {
+        if (!is_array($optionNames)) $optionNames = array($optionNames);
+        $options = 0;
+        foreach ($optionNames as $optionName)
+        {
+            if (array_key_exists($optionName, self::$options))
+            {
+                $options |= self::$options[$optionName];
+            }
+        }
+        return $options;
     }
 
     public static
@@ -302,18 +325,18 @@ class TranslationFileRewriter
     protected
     function wrapQuotes($str, $options = null)
     {
-        if ((($options & self::OPT_USE_HEREDOC) || !($options & self::OPT_USE_QUOTES)) && strpos($str, "\n") !== false)
+        if (($options & self::OPT_USE_HEREDOC) && strpos($str, "\n") !== false)
         {
             $text = "<<<'TEXT'\n$str\nTEXT\n";
         }
         elseif ($options & self::OPT_USE_QUOTES)
         {
-            $str = trim(str_replace(["\"", "\n"], ["\\\"", "\\\n"], $str));
+            $str = trim(mb_replace("\"", "\\\"", $str));
             $text = "\"$str\"";
         }
         else
         {
-            $str = trim(str_replace("'", "\\'", $str));
+            $str = trim(mb_replace("'", "\\'", $str));
             $text = "'$str'";
         }
         return $text;

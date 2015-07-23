@@ -18,6 +18,25 @@ return array(
     'admin_enabled' => true,
 
     /**
+     * Specify export formatting options:
+     *
+     * PRESERVE_EMPTY_ARRAYS - preserve first level translations that are empty arrays
+     * USE_QUOTES - use " instead of ' for wrapping strings
+     * USE_HEREDOC - use <<<'TEXT' for wrapping string that contain \n
+     * USE_SHORT_ARRAY - use [] instead of array() for arrays
+     * SORT_KEYS - alphabetically sort keys withing an array
+     *
+     * @type string | array
+     */
+    'export_format' => array(
+        'PRESERVE_EMPTY_ARRAYS',
+        'USE_QUOTES',
+        'USE_HEREDOC',
+        'USE_SHORT_ARRAY',
+        'SORT_KEYS',
+    ),
+
+    /**
      * Enable mismatch dashboard
      *
      * @type boolean

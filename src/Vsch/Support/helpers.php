@@ -188,3 +188,38 @@ if (!function_exists('formSubmit'))
     }
 }
 
+if (!function_exists('mb_replace'))
+{
+    function mb_replace($search, $replace, $subject, &$count = null)
+    {
+        if (!is_array($search)) $search = array($search);
+        if (!is_array($replace)) $replace = array($replace);
+        $sMax = count($search);
+        $rMax = count($replace);
+
+        $result = '';
+        $count = 0;
+        for ($s = 0; $s < $sMax; $s++)
+        {
+            $find = $search[$s];
+            $pos = 0;
+
+            while ($pos < $sMax)
+            {
+                $lastPos = $pos;
+                if (($pos = mb_strpos($subject, $find, $pos)) === false)
+                {
+                    $result .= mb_substr($subject, $lastPos);
+                    break;
+                }
+
+                $result .= mb_substr($subject, $lastPos, $pos-$lastPos);
+                if ($s < $rMax) $result .= $replace[$s];
+                $pos += mb_strlen($find);
+                $count++;
+            }
+        }
+
+        return $result;
+    }
+}

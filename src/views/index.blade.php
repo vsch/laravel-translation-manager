@@ -8,48 +8,11 @@
     <div class="col-sm-12 translation-manager">
         <div class="row">
             <div class="col-sm-7">
-                <h1>@lang('laravel-translation-manager::messages.translation-manager')</h1>
-            </div>
-            <div class="col-sm-5">
-                <br>
-                <form class="form-inline" id="form-interface-locale" class="form-interface-locale" method="GET"
-                        action="<?= action('Vsch\TranslationManager\Controller@getInterfaceLocale') ?>">
-                    <div class="row">
-                        <div class=" col-sm-4">
-                            <div class="input-group-sm">
-                                <label for="l"><?= trans('laravel-translation-manager::messages.interface-locale') ?>:</label>
-                                <select name="l" id="interface-locale" class="form-control" ?>">
-                                @foreach($locales as $locale)
-                                    <option value="<?=$locale?>"<?= $currentLocale === $locale ? ' selected="selected"' : ''?>><?= $locale ?></option>
-                                @endforeach
-                                </select>
-                            </div>
-                        </div>
-                        <div class=" col-sm-4">
-                            <div class="input-group-sm">
-                                <label for="t"><?= trans('laravel-translation-manager::messages.translating-locale') ?>:</label>
-                                <select name="t" id="translating-locale" class="form-control" ?>">
-                                @foreach($locales as $locale)
-                                    @if($locale !== $primaryLocale) continue;
-                                    <option value="<?=$locale?>"<?= $translatingLocale === $locale ? ' selected="selected"' : ''?>><?= $locale ?></option>
-                                    @endif
-                                @endforeach
-                                </select>
-                            </div>
-                        </div>
-                        <div class=" col-sm-4">
-                            <div class="input-group" style="float:right; display:inline">
-                                <?= ifEditTrans('laravel-translation-manager::messages.in-place-edit') ?>
-                                <a class="btn btn-sm btn-primary" role="button" href="<?= action('Vsch\TranslationManager\Controller@getToggleInPlaceEdit') ?>"><?= noEditTrans('laravel-translation-manager::messages.in-place-edit') ?></a>
-                            </div>
-                        </div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <h1>@lang('laravel-translation-manager::messages.translation-manager')</h1>
                     </div>
-                </form>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-sm-7">
+                </div>
                 <div class="row">
                     <div class="col-sm-12">
                         <p>@lang('laravel-translation-manager::messages.export-warning-text')</p>
@@ -202,114 +165,61 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="col-sm-5">
                 <div class="row">
                     <div class="col-sm-12">
-                        @if($mismatchEnabled && !empty($mismatches))
+                        <br>
+                        <form class="form-inline" id="form-interface-locale" class="form-interface-locale" method="GET"
+                                action="<?= action('Vsch\TranslationManager\Controller@getInterfaceLocale') ?>">
                             <div class="row">
-                                <div class="col-sm-12">
-                                    <div class="panel panel-primary">
-                                        <div class="panel-heading">
-                                            <h3 class="panel-title">@lang('laravel-translation-manager::messages.mismatches')</h3>
-                                        </div>
-                                        <div class="panel-body">
-                                            <table class="table table-condensed translation-stats" style="max-height: 300px; margin-bottom: 0; overflow: auto; display: block;">
-                                                <thead>
-                                                    <tr>
-                                                        <th class="key" width="20%">@lang('laravel-translation-manager::messages.key')</th>
-                                                        <th width="20%" colspan="2">ru</th>
-                                                        <th width="20%">en</th>
-                                                        <th class="group" width="20%">@lang('laravel-translation-manager::messages.group')</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <?php
-                                                    $key = '';
-                                                    $mismatches[] = null;
-                                                    $locale = 'ru';
-                                                    $translator = App::make('translator');
-                                                    foreach($mismatches as $mismatch)
-                                                    {
-                                                    if ($mismatch === null) break;
-
-                                                    $borderTop = ' class="no-border-top"';
-                                                    if ($key != $mismatch->key)
-                                                    {
-                                                        if ($key !== '')
-                                                        {
-                                                            $borderTop = ' class="border-top"';
-                                                        }
-                                                        $key = $mismatch->key;
-                                                        $keyText = $mismatch->key;
-                                                    }
-                                                    $link = action('Vsch\TranslationManager\Controller@getIndex', $mismatch->group) . '#' . $mismatch->key;
-                                                    $mismatch->value = $mismatch->ru_value;
-                                                    $mismatch->locale = 'ru';
-                                                    $mismatch->status = 'ru';
-                                                    ?>
-                                                    <tr{{$borderTop}}>
-                                                        <td width="20%" class="missing">{{$keyText}}</td>
-                                                        <td>
-                                                            <?= $translator->inPlaceEditLink($mismatch, false) ?>
-                                                        </td>
-                                                        <td width="20%" class="missing">{{$mismatch->ru}}</td>
-                                                        <td width="20%" class="missing">{{$mismatch->en}}</td>
-                                                        <td width="20%" class="group missing"><a href="{{$link}}">{{$mismatch->group}}</a></td>
-                                                    </tr>
-                                                    <?php
-                                                    }
-                                                    ?>
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                <div class=" col-sm-4">
+                                    <div class="input-group-sm">
+                                        <label for="l"><?= trans('laravel-translation-manager::messages.interface-locale') ?>:</label>
+                                        <select name="l" id="interface-locale" class="form-control" ?>">
+                                        @foreach($locales as $locale)
+                                            <option value="<?=$locale?>"<?= $currentLocale === $locale ? ' selected="selected"' : ''?>><?= $locale ?></option>
+                                        @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class=" col-sm-4">
+                                    <div class="input-group-sm">
+                                        <label for="t"><?= trans('laravel-translation-manager::messages.translating-locale') ?>:</label>
+                                        <select name="t" id="translating-locale" class="form-control" ?>">
+                                        @foreach($locales as $locale)
+                                            @if($locale !== $primaryLocale) continue;
+                                            <option value="<?=$locale?>"<?= $translatingLocale === $locale ? ' selected="selected"' : ''?>><?= $locale ?></option>
+                                            @endif
+                                        @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class=" col-sm-4">
+                                    <div class="input-group" style="float:right; display:inline">
+                                        <?= ifEditTrans('laravel-translation-manager::messages.in-place-edit') ?>
+                                        <a class="btn btn-sm btn-primary" role="button" href="<?= action('Vsch\TranslationManager\Controller@getToggleInPlaceEdit') ?>"><?= noEditTrans('laravel-translation-manager::messages.in-place-edit') ?></a>
                                     </div>
                                 </div>
                             </div>
-                        @endif
+                        </form>
                     </div>
                 </div>
             </div>
-            <div class="col-sm-5">
-                <div class="panel panel-primary">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">@lang('laravel-translation-manager::messages.stats')</h3>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="row">
+                    <div class="col-sm-12">
+                        @include('laravel-translation-manager::dashboard')
                     </div>
-                    <div class="panel-body">
-                        <table class="table table-condensed translation-stats">
-                            <thead>
-                                <tr>
-                                    <th class="deleted" width="20%">@lang('laravel-translation-manager::messages.deleted')</th>
-                                    <th class="missing" width="20%">@lang('laravel-translation-manager::messages.missing')</th>
-                                    <th class="changed" width="20%">@lang('laravel-translation-manager::messages.changed')</th>
-                                    <th class="group">@lang('laravel-translation-manager::messages.group')</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($stats as $stat)
-                                    <tr>
-                                        <td class="deleted">{{$stat->deleted ?: '&nbsp;'}}</td>
-                                        <td class="missing">{{$stat->missing ?: '&nbsp;'}}</td>
-                                        <td class="changed">{{$stat->changed ?: '&nbsp;'}}</td>
-                                        @if ($stat->deleted)
-                                            <td class="group deleted">
-                                                <a href="{{action('Vsch\TranslationManager\Controller@getIndex', $stat->group)}}">{{$stat->group ?: '&nbsp;'}}</a>
-                                            </td>
-                                        @elseif ($stat->missing)
-                                            <td class="group missing">
-                                                <a href="{{action('Vsch\TranslationManager\Controller@getIndex', $stat->group)}}">{{$stat->group ?: '&nbsp;'}}</a>
-                                            </td>
-                                        @elseif ($stat->changed)
-                                            <td class="group changed">
-                                                <a href="{{action('Vsch\TranslationManager\Controller@getIndex', $stat->group)}}">{{$stat->group ?: '&nbsp;'}}</a>
-                                            </td>
-                                        @else
-                                            <td class="group">
-                                                <a href="{{action('Vsch\TranslationManager\Controller@getIndex', $stat->group)}}">{{$stat->group ?: '&nbsp;'}}</a>
-                                            </td>
-                                        @endif
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        @if($mismatchEnabled && !empty($mismatches))
+                            @include('laravel-translation-manager::mismatched')
+                        @endif
                     </div>
                 </div>
             </div>

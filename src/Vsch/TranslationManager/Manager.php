@@ -514,7 +514,7 @@ SQL
 
                 $tree = $this->makeTree(Translation::where('group', $group)->whereNotNull('value')->orderby('key')->get());
                 $configRewriter = new TranslationFileRewriter();
-
+                $exportOptions = array_key_exists('export_format', $this->config()) ? TranslationFileRewriter::optionFlags($this->config()['export_format']) : null;
                 foreach ($tree as $locale => $groups)
                 {
                     if (isset($groups[$group]))
@@ -535,7 +535,7 @@ SQL
 
                         $configRewriter->parseSource($this->files->exists($path) ? $this->files->get($path) : '');
 
-                        $output = $configRewriter->formatForExport($translations, /*TranslationFileRewriter::OPT_SORT_KEYS | TranslationFileRewriter::OPT_USE_QUOTES |*/ TranslationFileRewriter::OPT_USE_SHORT_ARRAY | TranslationFileRewriter::OPT_PRESERVE_EMPTY_ARRAYS);
+                        $output = $configRewriter->formatForExport($translations, $exportOptions);
                         $this->makeDirPath($path);
                         $this->files->put($path, $output);
                     }

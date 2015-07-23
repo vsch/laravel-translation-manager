@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Add Keys',
     'addkeys-placeholder'       => 'Add 1 key per line, without the group prefix',
     'addsuffixes'               => 'Set Suffixes',
@@ -43,7 +43,7 @@ TEXT
     'en'                        => 'English',
     'en-ru'                     => 'Yandex en➟ru',
     'enter-translation'         => 'Enter translation',
-    'export-warning-text'       => 'Warning, translations are not visible until they are processed by your web-admin.',
+    'export-warning-text'       => 'Warning, translations are not visible until they are published by your administrator.',
     'find-in-files'             => 'Add References',
     'group'                     => 'Group',
     'import-add'                => 'Only add new translations',
@@ -97,10 +97,10 @@ TEXT
     'suffixed-keyops'           => 'Suffixed Key Operations & Search',
     'suffixes'                  => 'Suffixes',
     'total'                     => 'Total',
-    'translating-locale'        => 'Translating',
+    'translating-locale'        => 'Translate',
     'translation'               => 'Translation',
     'translation-manager'       => 'Translation Manager',
     'translation-ops'           => 'Translation Helpers',
     'translations'              => 'Translations',
     'wildcard-keyops'           => 'Wildcard Key Operations',
-);
+];
