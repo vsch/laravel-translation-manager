@@ -1,0 +1,70 @@
+<?php
+
+return [
+    // add local config overrides to translator manager configuration here
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validation Language Lines
+    |--------------------------------------------------------------------------
+    |
+    | The following language lines contain the default error messages used by
+    | the validator class. Some of these rules have multiple versions such
+    | such as the size rules. Feel free to tweak each of these messages.
+    |
+    */
+
+    'active_url'           => "Le champ :attribute n'est pas une URL valide.",
+    "between"              => array(
+        "numeric" => "La valeur de :attribute doit être comprise entre :min et :max.",
+        "array"   => "Le tableau :attribute doit avoir entre :min et :max éléments.",
+    ),
+    "accepted"             => "Le champ :attribute doit être accepté.",  // comment
+    'max'                  => [
+        "numeric" => "La valeur de :attribute ne peut être supérieure à :max.",
+    ],
+    "text"                  => <<<TXT
+Long Text with new lines
+embedded
+TXT
+    ,
+    "text2"                  => <<<'TXT'
+Long Text with new lines
+embedded
+TXT
+    ,
+    "url"                  => "Le format de l'URL de :attribute n'est pas valide.",
+
+    /*
+    |--------------------------------------------------------------------------
+    | Custom Validation Language Lines
+    |--------------------------------------------------------------------------
+    |
+    | Here you may specify custom validation messages for attributes using the
+    | convention "attribute.rule" to name the lines. This makes it quick to
+    | specify a specific custom language line for a given attribute rule.
+    |
+    */
+
+    'custom' => [
+        'attribute-name' => [
+            'rule-name' => 'custom-message',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Custom Validation Attributes
+    |--------------------------------------------------------------------------
+    |
+    | The following language lines are used to swap attribute place-holders
+    | with something more reader friendly such as E-Mail Address instead
+    | of "email". This simply helps us make messages a little cleaner.
+    |
+    */
+
+    'attributes' => [],
+
+];
+

@@ -25,6 +25,7 @@
             "src/Vsch/Support/helpers.php"
         ],
         "classmap": [
+            "src/Vsch/TranslationManager/Classes",
             "src/migrations"
         ]
     },

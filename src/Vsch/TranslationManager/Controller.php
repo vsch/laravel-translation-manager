@@ -916,6 +916,14 @@ SQL
     }
 
     public
+    function getPublish($group)
+    {
+        $this->manager->exportTranslations($group);
+
+        return Response::json(array('status' => 'ok'));
+    }
+
+    public
     function postPublish($group)
     {
         $this->manager->exportTranslations($group);

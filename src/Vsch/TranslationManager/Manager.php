@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Symfony\Component\Finder\Finder;
+use Vsch\TranslationManager\Classes\TranslationFileRewriter;
 use Vsch\TranslationManager\Models\Translation;
 
 /**
@@ -445,52 +446,6 @@ SQL
         return count($keys);
     }
 
-    protected
-    function formatForExport($trans, $indent = 0)
-    {
-        $ind = str_repeat(' ', $indent * 4);
-        $text = '';
-        if (is_array($trans))
-        {
-            $text .= "array(\n";
-            $indT = $ind . str_repeat(' ', 4);
-            $max = 0;
-            foreach ($trans as $key => $val)
-            {
-                if (!is_int($key) && strlen($key) > $max) $max = strlen($key);
-            }
-            $max += (($max + 2) & 3) ? 4 - (($max + 2) & 3) : 0;
-
-            foreach ($trans as $key => $val)
-            {
-                $val = $this->formatForExport($val, $indent + 1);
-                if (is_int($key))
-                {
-                    $text .= $indT . $val . ",\n";
-                }
-                else
-                {
-                    $pad = str_repeat(' ', $max - strlen($key));
-                    $text .= $indT . "'$key'$pad=> $val,\n";
-                }
-            }
-            $text .= $ind . ")";
-        }
-        else
-        {
-            if (strpos($trans, "\n") !== false)
-            {
-                $text = "<<<'TEXT'\n$trans\nTEXT\n";
-            }
-            else
-            {
-                $trans = trim(str_replace("'", "\\'", $trans));
-                $text = "'$trans'";
-            }
-        }
-        return $text;
-    }
-
     public
     function makeDirPath($path)
     {
@@ -558,6 +513,7 @@ SQL
                 $this->clearCache($group);
 
                 $tree = $this->makeTree(Translation::where('group', $group)->whereNotNull('value')->orderby('key')->get());
+                $configRewriter = new TranslationFileRewriter();
 
                 foreach ($tree as $locale => $groups)
                 {
@@ -570,14 +526,16 @@ SQL
                             $packgroup = explode('::', $group, 2);
                             $package = array_shift($packgroup);
                             $packgroup = array_shift($packgroup);
-                            $path = $this->app->make('path') . '/lang/packages/' . $locale . '/' . $package . '/' . str_replace(".","/", $packgroup) . '.php';
+                            $path = $this->app->make('path') . '/lang/packages/' . $locale . '/' . $package . '/' . str_replace(".", "/", $packgroup) . '.php';
                         }
                         else
                         {
-                            $path = $this->app->make('path') . '/lang/' . $locale . '/' . str_replace(".","/", $group) . '.php';
+                            $path = $this->app->make('path') . '/lang/' . $locale . '/' . str_replace(".", "/", $group) . '.php';
                         }
 
-                        $output = "<?php\n\nreturn " . $this->formatForExport($translations) . ";\n";
+                        $configRewriter->parseSource($this->files->exists($path) ? $this->files->get($path) : '');
+
+                        $output = $configRewriter->formatForExport($translations, /*TranslationFileRewriter::OPT_SORT_KEYS | TranslationFileRewriter::OPT_USE_QUOTES |*/ TranslationFileRewriter::OPT_USE_SHORT_ARRAY | TranslationFileRewriter::OPT_PRESERVE_EMPTY_ARRAYS);
                         $this->makeDirPath($path);
                         $this->files->put($path, $output);
                     }
