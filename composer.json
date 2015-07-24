@@ -21,8 +21,7 @@
     },
     "autoload": {
         "classmap": [
-            "src/Classes",
-            "database/migrations"
+            "src/Classes"
         ],
         "files": [
             "src/Support/helpers.php"
