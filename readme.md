@@ -115,11 +115,14 @@ If someone contacts me with a request to prioritize a specific area I will do it
         Vsch\UserPrivilegeMapper\UserPrivilegeMapperServiceProvider::class,
         Vsch\TranslationManager\ManagerServiceProvider::class,
         Vsch\TranslationManager\TranslationServiceProvider::class,
+        Collective\Html\HtmlServiceProvider::class,
 
     The TranslationServiceProvider is an extension to the standard functionality and is required in order for the web interface to work properly. It is backward compatible with the existing Translator since it is a subclass of it and only overrides implementation for new features.
 
 3. add the Facade to the aliases array in config/app.php:
 
+        'Form'      => Collective\Html\FormFacade::class,
+        'Html'      => Collective\Html\HtmlFacade::class,
         'UserCan'   => Vsch\UserPrivilegeMapper\Facade\Privilege::class,
 
 4. You need to publish then run the migrations for this package:
@@ -137,15 +140,15 @@ If someone contacts me with a request to prioritize a specific area I will do it
 
 7. By default the web interface of the translation manager is available at `http://yourdomain.com/translations`. You can change this in the configuration file.
 
-8. <a id="step8"></a>TranslationManager uses the vsch/user-privilege-mapper package that creates a mapping layer between your User model implementation and the need to test user privileges without knowing the implementation. You need to name privileges for the UserPrivilegeMapper via the Laravel macro mechanism. This should be done in the initialization files. A good place is the Providers/AppServiceProvider.php file, add the following to boot() function, if your User model has is_admin and is_editor attributes to identify users that have Admin and Editor privileges or just `return true` in both cases if you don't have any way of determining user privileges:
+8. <a id="step8"></a>TranslationManager uses the vsch/user-privilege-mapper package that creates a mapping layer between your User model implementation and the need to test user privileges without knowing the implementation. You need to name privileges for the UserPrivilegeMapper via the Laravel macro mechanism. This should be done in the initialization files. A good place is the app/Providers/AppServiceProvider.php file, add the following to boot() function, if your User model has is_admin and is_editor attributes to identify users that have Admin and Editor privileges or just `return true` in both cases if you don't have any way of determining user privileges:
 
-        UserCan::macro("admin_translations", function ()
+        \UserCan::macro("admin_translations", function ()
         {
             return ($user = Auth::user()) && $user->is_admin;
         });
 
         // return false to use the translator missing key lottery, true to always check missing keys for the user
-        UserCan::macro("bypass_translations_lottery", function ()
+        \UserCan::macro("bypass_translations_lottery", function ()
         {
             return ($user = Auth::user()) && ($user->is_admin || $user->is_editor);
         });
