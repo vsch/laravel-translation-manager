@@ -33,7 +33,7 @@ class Translator extends LaravelTranslator
         parent::__construct($loader, $locale);
         $this->suspendInPlaceEdit = 0;
         $this->inPlaceEditing = null;
-        $this->useDB = 0;  // fill in missing keys from DB by default
+        $this->useDB = 1;  // fill in missing keys from DB by default
         $this->app = $app;
     }
 
