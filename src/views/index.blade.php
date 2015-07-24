@@ -220,15 +220,28 @@
                             <br>
                             <div class="row">
                                 <div class=" col-sm-3">
-                                    <?= formSubmit(trans('laravel-translation-manager::messages.display-locales'), ['class' => "btn btn-sm btn-primary"]) ?>&nbsp;&nbsp;
+                                    <div class="row">
+                                        <div class=" col-sm-12">
+                                            <?= formSubmit(trans('laravel-translation-manager::messages.display-locales'), ['class' => "btn btn-sm btn-primary"]) ?>&nbsp;&nbsp;
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class=" col-sm-12">
+                                            <br>
+                                            <?= ifEditTrans('laravel-translation-manager::messages.check-all') ?>
+                                            <button id="display-locale-all" class="btn btn-sm btn-default"><?= noEditTrans('laravel-translation-manager::messages.check-all')?></button>
+                                            <?= ifEditTrans('laravel-translation-manager::messages.check-none') ?>
+                                            <button id="display-locale-none" class="btn btn-sm btn-default"><?= noEditTrans('laravel-translation-manager::messages.check-none')?></button>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class=" col-sm-9">
                                     <div class="input-group-sm">
                                     @foreach($locales as $locale)
                                         <label>
-                                            <input name="d[]" type="checkbox" value="<?=$locale?>"
+                                            <input <?= $locale !== $primaryLocale && $locale !== $translatingLocale ? ' class="display-locale" ' : '' ?> name="d[]" type="checkbox" value="<?=$locale?>"
                                                     <?= ($locale === $primaryLocale || $locale === $translatingLocale || array_key_exists($locale, $displayLocales)) ? 'checked' : '' ?>
-                                                    <?= $locale === $primaryLocale ? 'disabled="true"' : '' ?>"
+                                                    <?= $locale === $primaryLocale ? 'disabled="true"' : '' ?>
                                                     ><?= $locale ?>
                                         </label>
                                     @endforeach
@@ -623,8 +636,7 @@
         var PRIMARY_LOCALE = '{{$primaryLocale}}';
         var CURRENT_LOCALE = '{{$currentLocale}}';
         var TRANSLATING_LOCALE = '{{$translatingLocale}}';
-    </script>
-    <script>
+
         jQuery(document).ready(function ($) {
             $('.group-select').on('change', function () {
                 window.location.href = '<?= action('Vsch\TranslationManager\Controller@getIndex') ?>/' + $(this).val();
@@ -722,6 +734,16 @@
 
             $('#primary-locale').on('change', function () {
                 $('#form-interface-locale')[0].submit();
+            });
+
+            $('#display-locale-all').on('click', function (e) {
+                e.preventDefault();
+                $('.display-locale').prop('checked',true);
+            });
+
+            $('#display-locale-none').on('click', function (e) {
+                e.preventDefault();
+                $('.display-locale').prop('checked',false);
             });
 
             function textareaTandemResize(src, dst, liveupdate) {

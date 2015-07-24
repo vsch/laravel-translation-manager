@@ -11,8 +11,7 @@ return array(
     'primary_locale' => 'en',
 
     /**
-     * Specify the locale that is used for creating the initial translation strings. This locale is considered
-     * to be the driver of all other translations.
+     * Specify the prefix used for all cookies.
      *
      * @type string
      */

@@ -6,6 +6,8 @@ return array(
     'addsuffixes'               => 'Set Suffixes',
     'addsuffixes-placeholder'   => 'add each key suffixed by lines entered here',
     'changed'                   => 'Changed',
+    'check-all'                 => 'All',
+    'check-none'                => 'None',
     'choose-group'              => 'Choose a translation group',
     'choose-group-text'         => 'Choose a group to display the group translations. If no groups are visible, contact your web-admin.',
     'cleardstkeys'              => 'Clear Keys',

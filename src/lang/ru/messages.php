@@ -6,6 +6,8 @@ return array(
     'addsuffixes'               => 'Набор Суффиксов',
     'addsuffixes-placeholder'   => 'добавляй каждый ключ с суффиксом строк, указанных здесь',
     'changed'                   => 'Измененны',
+    'check-all'                 => '<i class="glyphicon glyphicon-ok"></i>',
+    'check-none'                => '<i class="glyphicon glyphicon-remove"></i>',
     'choose-group'              => 'Выберите группу переводов',
     'choose-group-text'         => 'Выберите группу переводов для редакции. Если нет групп в списке, контактируйте вашего веб-админа.',
     'cleardstkeys'              => 'Стереть Ключи',
