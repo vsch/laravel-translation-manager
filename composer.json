@@ -15,6 +15,7 @@
         "illuminate/support": "5.0.x|5.1.x",
         "illuminate/translation": "5.0.x|5.1.x",
         "doctrine/dbal": "~2.3",
+        "laravelcollective/html": "5.1.*",
         "vsch/user-privilege-mapper": "~2.0",
         "symfony/finder": "~2.3"
     },
