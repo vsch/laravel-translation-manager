@@ -1,13 +1,10 @@
 <?php namespace Vsch\TranslationManager;
 
+use Illuminate\Events\Dispatcher;
 use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Translation\LoaderInterface;
 use Illuminate\Translation\Translator as LaravelTranslator;
-use Illuminate\Events\Dispatcher;
 use Vsch\UserPrivilegeMapper\Facade\Privilege as UserCan;
 
 class Translator extends LaravelTranslator
@@ -23,6 +20,9 @@ class Translator extends LaravelTranslator
 
     protected $useDB;
     protected $inPlaceEditing;
+    protected $package;
+    protected $packagePrefix;
+    protected $cookiePrefix;
 
     /**
      * Translator constructor.
@@ -32,18 +32,9 @@ class Translator extends LaravelTranslator
     {
         parent::__construct($loader, $locale);
         $this->suspendInPlaceEdit = 0;
-        $this->inPlaceEditing = 0;
-        $this->useDB = 1;  // fill in missing keys from DB by default
+        $this->inPlaceEditing = null;
+        $this->useDB = 0;  // fill in missing keys from DB by default
         $this->app = $app;
-
-        $translator = $this;
-        $app->booted(function () use ($app, $translator)
-        {
-            if ($app->make('session')->has('laravel-translation-manager::lang_inplaceedit'))
-            {
-                $translator->inPlaceEditing($app->make('session')->get('laravel-translation-manager::lang_inplaceedit'));
-            }
-        });
     }
 
     public
@@ -52,7 +43,14 @@ class Translator extends LaravelTranslator
         if ($inPlaceEditing !== null)
         {
             $this->inPlaceEditing = $inPlaceEditing;
-            $this->app->make('session')->put('laravel-translation-manager::lang_inplaceedit', $this->inPlaceEditing);
+            $session = $this->app->make('session');
+            $session->put($this->cookiePrefix . 'lang_inplaceedit', $this->inPlaceEditing);
+        }
+
+        if ($this->inPlaceEditing === null)
+        {
+            $session = $this->app->make('session');
+            $this->inPlaceEditing = $session->get($this->cookiePrefix . 'lang_inplaceedit', 0);
         }
         return $this->inPlaceEditing;
     }
@@ -106,12 +104,12 @@ class Translator extends LaravelTranslator
             {
                 $diff = ($t->saved_value == $t->value ? '' : ($t->saved_value === $t->value ? '' : ' [' . mb_renderDiffHtml($t->saved_value, $t->value) . ']'));
             }
-            $title = parent::get('laravel-translation-manager::messages.enter-translation');
+            $title = parent::get($this->packagePrefix . 'messages.enter-translation');
 
             if ($t->value === null) $t->value = ''; //$t->value = parent::get($key, $replace, $locale);
             $result = '<a href="#edit" class="vsch_editable status-' . ($t->status ?: 0) . ' locale-' . $t->locale . '" data-locale="' . $t->locale . '" '
                 . 'data-name="' . $t->locale . '|' . $t->key . '" id="' . $t->locale . "-" . str_replace('.', '-', $t->key) . '"  data-type="textarea" data-pk="' . ($t->id ?: 0) . '" '
-                . 'data-url="' . URL::action('Vsch\TranslationManager\Controller@postEdit', array($t->group)) . '" '
+                . 'data-url="' . URL::action('\Vsch\TranslationManager\Controller@postEdit', array($t->group)) . '" '
                 . 'data-inputclass="editable-input" data-saved_value="' . htmlentities($t->saved_value, ENT_QUOTES, 'UTF-8', false) . '" '
                 . 'data-title="' . $title . ': [' . $t->locale . '] ' . $t->group . '.' . $t->key . '">'
                 . ($t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '') . '</a> '
@@ -153,7 +151,8 @@ class Translator extends LaravelTranslator
      * @param  string $locale
      * @param  int    $useDB null - check usedb field which is set to 1 by default,
      *                       0 - don't use,
-     *                       1 - only if key is missing in files or saved in the translator cache, use saved_value fallback on $key,
+     *                       1 - only if key is missing in files or saved in the translator cache, use saved_value
+     *                       fallback on $key,
      *                       2 - always use value from db, (unpublished value) not cached.
      *
      * @return string
@@ -289,6 +288,9 @@ class Translator extends LaravelTranslator
     function setTranslationManager(Manager $manager)
     {
         $this->manager = $manager;
+        $this->package = \Vsch\TranslationManager\ManagerServiceProvider::PACKAGE;
+        $this->packagePrefix = $this->package . '::';
+        $this->cookiePrefix = $this->manager->getConfig('persistent_prefix', $this->packagePrefix);
     }
 
     protected

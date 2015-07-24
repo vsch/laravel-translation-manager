@@ -1,6 +1,7 @@
 @extends('laravel-translation-manager::layouts.master')
 
 @section('head')
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
 @stop
 
 @section('content')
@@ -51,7 +52,8 @@
                             <div class="row">
                                 <div class="col-sm-12">
                                     <form id="form-import-all" class="form-import-all" method="POST"
-                                            action="<?= action('Vsch\TranslationManager\Controller@postImport', ['group' => '*']) ?>" data-remote="true" role="form">
+                                            action="<?= action('\Vsch\TranslationManager\Controller@postImport', ['group' => '*']) ?>" data-remote="true" role="form">
+                                        <input type="hidden" name="_token" value="<?php echo csrf_token(); ?>">
                                         <div class="row">
                                             <div class="col-sm-6">
                                                 <?= ifEditTrans('laravel-translation-manager::messages.import-add') ?>
@@ -74,7 +76,7 @@
                                                 </button>
                                                 <div class="input-group" style="float:right; display:inline">
                                                     <?= ifEditTrans('laravel-translation-manager::messages.download-zip') ?>
-                                                    <a href="<?= action('Vsch\TranslationManager\Controller@getZippedTranslations', ['group' => '*']) ?>"
+                                                    <a href="<?= action('\Vsch\TranslationManager\Controller@getZippedTranslations', ['group' => '*']) ?>"
                                                             role="button" class="btn btn-primary btn-sm">
                                                         <?= noEditTrans('laravel-translation-manager::messages.download-zip') ?>
                                                     </a>
@@ -89,8 +91,8 @@
                                         </div>
                                     </form>
                                     <?= ifEditTrans('laravel-translation-manager::messages.confirm-find') ?>
-                                    <form id="form-find" class="form-inline form-find" method="POST" action="<?= action('Vsch\TranslationManager\Controller@postFind') ?>"
-                                            data-remote="true" role="form" data-confirm="<?= noEditTrans('laravel-translation-manager::messages.confirm-find') ?>"></form>
+                                    <form id="form-find" class="form-inline form-find" method="POST" action="<?= action('\Vsch\TranslationManager\Controller@postFind') ?>"
+                                            data-remote="true" role="form" data-confirm="<?= noEditTrans('laravel-translation-manager::messages.confirm-find') ?>"><input type="hidden" name="_token" value="<?php echo csrf_token(); ?>"></form>
                                 </div>
                             </div>
                         @endif
@@ -141,15 +143,15 @@
                                     <?php endif; ?>
                                     <?= ifEditTrans('laravel-translation-manager::messages.confirm-delete') ?>
                                     <form id="form-delete-group" class="form-inline form-delete-group" method="POST"
-                                            action="<?= action('Vsch\TranslationManager\Controller@postDeleteAll', $group) ?>" data-remote="true" role="form"
-                                            data-confirm="<?= noEditTrans('laravel-translation-manager::messages.confirm-delete', ['group' => $group]) ?>"></form>
+                                            action="<?= action('\Vsch\TranslationManager\Controller@postDeleteAll', $group) ?>" data-remote="true" role="form"
+                                            data-confirm="<?= noEditTrans('laravel-translation-manager::messages.confirm-delete', ['group' => $group]) ?>"><input type="hidden" name="_token" value="<?php echo csrf_token(); ?>"></form>
                                     <form id="form-import" class="form-inline form-import" method="POST"
-                                            action="<?= action('Vsch\TranslationManager\Controller@postImport', $group) ?>" data-remote="true" role="form"></form>
+                                            action="<?= action('\Vsch\TranslationManager\Controller@postImport', $group) ?>" data-remote="true" role="form"><input type="hidden" name="_token" value="<?php echo csrf_token(); ?>"></form>
                                     <form role="form" class="form" id="form-select"></form>
                                     <form id="form-publish-group" class="form-inline form-publish-group" method="POST"
-                                            action="<?= action('Vsch\TranslationManager\Controller@postPublish', $group) ?>" data-remote="true" role="form"></form>
+                                            action="<?= action('\Vsch\TranslationManager\Controller@postPublish', $group) ?>" data-remote="true" role="form"><input type="hidden" name="_token" value="<?php echo csrf_token(); ?>"></form>
                                     <form id="form-publish-all" class="form-inline form-publish-all" method="POST"
-                                            action="<?= action('Vsch\TranslationManager\Controller@postPublish', '*') ?>" data-remote="true" role="form"></form>
+                                            action="<?= action('\Vsch\TranslationManager\Controller@postPublish', '*') ?>" data-remote="true" role="form"><input type="hidden" name="_token" value="<?php echo csrf_token(); ?>"></form>
                                 </div>
                             </div>
                         </div>
@@ -176,7 +178,8 @@
                     <div class="col-sm-12">
                         <br>
                         <form class="form-inline" id="form-interface-locale" class="form-interface-locale" method="GET"
-                                action="<?= action('Vsch\TranslationManager\Controller@getInterfaceLocale') ?>">
+                                action="<?= action('\Vsch\TranslationManager\Controller@getInterfaceLocale') ?>">
+                            <input type="hidden" name="_token" value="<?php echo csrf_token(); ?>">
                             <div class="row">
                                 <div class=" col-sm-3">
                                     <div class="input-group-sm">
@@ -213,7 +216,7 @@
                                 <div class=" col-sm-3">
                                     <div class="input-group" style="float:right; display:inline">
                                         <?= ifEditTrans('laravel-translation-manager::messages.in-place-edit') ?>
-                                        <a class="btn btn-sm btn-primary" role="button" href="<?= action('Vsch\TranslationManager\Controller@getToggleInPlaceEdit') ?>"><?= noEditTrans('laravel-translation-manager::messages.in-place-edit') ?></a>
+                                        <a class="btn btn-sm btn-primary" role="button" href="<?= action('\Vsch\TranslationManager\Controller@getToggleInPlaceEdit') ?>"><?= noEditTrans('laravel-translation-manager::messages.in-place-edit') ?></a>
                                     </div>
                                 </div>
                             </div>
@@ -273,7 +276,7 @@
         <?= ifEditTrans('laravel-translation-manager::messages.enter-translation') ?>
         <?= ifEditTrans('laravel-translation-manager::messages.missmatched-quotes') ?>
         <script>
-            var MISSMATCHED_QUOTES_MESSAGE = "{{noEditTrans(('laravel-translation-manager::messages.missmatched-quotes'))}}";
+            var MISSMATCHED_QUOTES_MESSAGE = "{!!noEditTrans(('laravel-translation-manager::messages.missmatched-quotes'))!!}";
         </script>
 
         <?php if($group): ?>
@@ -293,24 +296,24 @@
                             <div class="panel-body">
                                 <!-- Add Keys Form -->
                                 <div class="col-sm-12">
-                                    {{ Form::open(['id' => 'form-addkeys', 'method' => 'POST', 'action' => ['Vsch\TranslationManager\Controller@postAdd', $group]]) }}
+                                    {!! Form::open(['id' => 'form-addkeys', 'method' => 'POST', 'action' => ['\Vsch\TranslationManager\Controller@postAdd', $group]]) !!}
                                     <div class="row">
                                         <div class="col-sm-6">
                                             <label for="keys">@lang('laravel-translation-manager::messages.keys'):</label>
                                             <?= ifEditTrans('laravel-translation-manager::messages.addkeys-placeholder') ?>
-                                            {{ Form::textarea('keys', Input::old('keys'), ['class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
-                                                    'placeholder'=>noEditTrans('laravel-translation-manager::messages.addkeys-placeholder')]) }}
+                                            {!! Form::textarea('keys', Input::old('keys'), ['class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
+                                                    'placeholder'=>noEditTrans('laravel-translation-manager::messages.addkeys-placeholder')]) !!}
                                         </div>
                                         <div class="col-sm-6">
                                             <label for="suffixes">@lang('laravel-translation-manager::messages.suffixes'):</label>
                                             <?= ifEditTrans('laravel-translation-manager::messages.addsuffixes-placeholder') ?>
-                                            {{ Form::textarea('suffixes', Input::old('suffixes'), ['class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
-                                                    'placeholder'=> noEditTrans('laravel-translation-manager::messages.addsuffixes-placeholder')]) }}
+                                            {!! Form::textarea('suffixes', Input::old('suffixes'), ['class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
+                                                    'placeholder'=> noEditTrans('laravel-translation-manager::messages.addsuffixes-placeholder')]) !!}
                                         </div>
                                     </div>
                                     <br>
                                     <script>
-                                        var currentGroup = '{{{$group}}}';
+                                        var currentGroup = '{{$group}}';
                                         function addStandardSuffixes(event) {
                                             event.preventDefault();
                                             $("#form-addkeys").first().find("textarea[name='suffixes']")[0].value = "-type\n-header\n-heading\n-description\n-footer" + (currentGroup === 'systemmessage-texts' ? '\n-footing' : '');
@@ -326,7 +329,7 @@
                                         function postDeleteSuffixedKeys(event) {
                                             event.preventDefault();
                                             var elem = $("#form-addkeys").first();
-                                            elem[0].action = "{{action('Vsch\TranslationManager\Controller@postDeleteSuffixedKeys', $group)}}";
+                                            elem[0].action = "{!!action('\Vsch\TranslationManager\Controller@postDeleteSuffixedKeys', $group)!!}";
                                             elem[0].submit();
                                         }
                                     </script>
@@ -360,7 +363,7 @@
                                             </span>
                                         </div>
                                     </div>
-                                    {{ Form::close() }}
+                                    {!! Form::close() !!}
                                 </div>
                             </div>
                         </div>
@@ -381,24 +384,24 @@
                                         Key Ops Form
                                     -->
                                     <div id="wildcard-keyops-results" class="results"></div>
-                                    {{ Form::open(['id' => 'form-keyops', 'data-remote'=>"true", 'method' => 'POST', 'action' => ['Vsch\TranslationManager\Controller@postPreviewKeys', $group]]) }}
+                                    {!! Form::open(['id' => 'form-keyops', 'data-remote'=>"true", 'method' => 'POST', 'action' => ['\Vsch\TranslationManager\Controller@postPreviewKeys', $group]]) !!}
                                     <div class="row">
                                         <div class="col-sm-6">
                                             <label for="srckeys">@lang('laravel-translation-manager::messages.srckeys'):</label>
                                             <?= ifEditTrans('laravel-translation-manager::messages.srckeys-placeholder') ?>
-                                            {{ Form::textarea('srckeys', Input::old('srckeys'), ['id' => 'srckeys', 'class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
-                                                    'placeholder'=>noEditTrans('laravel-translation-manager::messages.srckeys-placeholder')]) }}
+                                            {!! Form::textarea('srckeys', Input::old('srckeys'), ['id' => 'srckeys', 'class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
+                                                    'placeholder'=>noEditTrans('laravel-translation-manager::messages.srckeys-placeholder')]) !!}
                                         </div>
                                         <div class="col-sm-6">
                                             <label for="dstkeys">@lang('laravel-translation-manager::messages.dstkeys'):</label>
                                             <?= ifEditTrans('laravel-translation-manager::messages.dstkeys-placeholder') ?>
-                                            {{ Form::textarea('dstkeys', Input::old('dstkeys'), ['id' => 'dstkeys', 'class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
-                                                    'placeholder'=> noEditTrans('laravel-translation-manager::messages.dstkeys-placeholder')]) }}
+                                            {!! Form::textarea('dstkeys', Input::old('dstkeys'), ['id' => 'dstkeys', 'class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
+                                                    'placeholder'=> noEditTrans('laravel-translation-manager::messages.dstkeys-placeholder')]) !!}
                                         </div>
                                     </div>
                                     <br>
                                     <script>
-                                        var currentGroup = '{{{$group}}}';
+                                        var currentGroup = '{{$group}}';
                                         function clearDstKeys(event) {
                                             event.preventDefault();
                                             $("#form-keyops").first().find("textarea[name='dstkeys']")[0].value = "";
@@ -410,25 +413,25 @@
                                         function postPreviewKeys(event) {
                                             //event.preventDefault();
                                             var elem = $("#form-keyops").first();
-                                            elem[0].action = "{{action('Vsch\TranslationManager\Controller@postPreviewKeys', $group)}}";
+                                            elem[0].action = "{!!action('\Vsch\TranslationManager\Controller@postPreviewKeys', $group)!!}";
                                             //elem[0].submit();
                                         }
                                         function postMoveKeys(event) {
                                             //event.preventDefault();
                                             var elem = $("#form-keyops").first();
-                                            elem[0].action = "{{action('Vsch\TranslationManager\Controller@postMoveKeys', $group)}}";
+                                            elem[0].action = "{!!action('\Vsch\TranslationManager\Controller@postMoveKeys', $group)!!}";
                                             //elem[0].submit();
                                         }
                                         function postCopyKeys(event) {
                                             //event.preventDefault();
                                             var elem = $("#form-keyops").first();
-                                            elem[0].action = "{{action('Vsch\TranslationManager\Controller@postCopyKeys', $group)}}";
+                                            elem[0].action = "{!!action('\Vsch\TranslationManager\Controller@postCopyKeys', $group)!!}";
                                             //elem[0].submit();
                                         }
                                         function postDeleteKeys(event) {
                                             //event.preventDefault();
                                             var elem = $("#form-keyops").first();
-                                            elem[0].action = "{{action('Vsch\TranslationManager\Controller@postDeleteKeys', $group)}}";
+                                            elem[0].action = "{!!action('\Vsch\TranslationManager\Controller@postDeleteKeys', $group)!!}";
                                             //elem[0].submit();
                                         }
                                     </script>
@@ -464,7 +467,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    {{ Form::close() }}
+                                    {!! Form::close() !!}
                                 </div>
                             </div>
                         </div>
@@ -554,11 +557,11 @@
                         <tr id="<?= str_replace('.', '-', $key) ?>" <?= $is_deleted ? ' class="deleted-translation"' : '' ?>>
                             <?php if($adminEnabled): ?>
                             <td>
-                                <a href="<?= action('Vsch\TranslationManager\Controller@postUndelete', [$group, $key]) ?>" class="undelete-key <?= $is_deleted ? "" : "hidden" ?>" data-method="POST"
+                                <a href="<?= action('\Vsch\TranslationManager\Controller@postUndelete', [$group, $key]) ?>" class="undelete-key <?= $is_deleted ? "" : "hidden" ?>" data-method="POST"
                                         data-remote="true">
                                     <span class="glyphicon glyphicon-thumbs-up"></span>
                                 </a>
-                                <a href="<?= action('Vsch\TranslationManager\Controller@postDelete', [$group, $key]) ?>" class="delete-key <?= !$is_deleted ? "" : "hidden" ?>" data-method="POST"
+                                <a href="<?= action('\Vsch\TranslationManager\Controller@postDelete', [$group, $key]) ?>" class="delete-key <?= !$is_deleted ? "" : "hidden" ?>" data-method="POST"
                                         data-remote="true">
                                     <span class="glyphicon glyphicon-trash"></span>
                                 </a>
@@ -632,14 +635,33 @@
     <!--<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>-->
     <script>
         var CLIP_TEXT; // we store translation copy/paste here
-        var YANDEX_TRANSLATOR_KEY = '{{isset($yandex_key) ? $yandex_key : ''}}';
-        var PRIMARY_LOCALE = '{{$primaryLocale}}';
-        var CURRENT_LOCALE = '{{$currentLocale}}';
-        var TRANSLATING_LOCALE = '{{$translatingLocale}}';
+        var YANDEX_TRANSLATOR_KEY = '{!!isset($yandex_key) ? $yandex_key : ''!!}';
+        var PRIMARY_LOCALE = '{!!$primaryLocale!!}';
+        var CURRENT_LOCALE = '{!!$currentLocale!!}';
+        var TRANSLATING_LOCALE = '{!!$translatingLocale!!}';
 
         jQuery(document).ready(function ($) {
+            $.ajaxPrefilter(function( options ) {
+                if ( !options.crossDomain ) {
+                    options.headers = {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    };
+                }
+            });
+
+//            $.ajaxSetup({
+//                headers: {
+//                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+//                }
+//            });
+
             $('.group-select').on('change', function () {
-                window.location.href = '<?= action('Vsch\TranslationManager\Controller@getIndex') ?>/' + $(this).val();
+                var group = $(this).val();
+                if (group) {
+                    window.location.href = '<?= action('\Vsch\TranslationManager\Controller@getView') ?>/'+$(this).val();
+                } else {
+                    window.location.href = '<?= action('\Vsch\TranslationManager\Controller@getIndex') ?>';
+                }
             });
 
             $('a.delete-key').on('ajax:success', function (e, data) {

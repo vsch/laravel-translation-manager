@@ -15,7 +15,7 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider
     {
         $this->registerLoader();
 
-        $this->app->bindShared('translator', function ($app)
+        $this->app->singleton('translator', function ($app)
         {
             $loader = $app['translation.loader'];
 
@@ -28,9 +28,9 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider
 
             $trans->setFallback($app['config']['app.fallback_locale']);
 
-            if ($app->bound('translation-manager'))
+            if ($app->bound('laravel-translation-manager'))
             {
-                $trans->setTranslationManager($app['translation-manager']);
+                $trans->setTranslationManager($app['laravel-translation-manager']);
             }
 
             return $trans;

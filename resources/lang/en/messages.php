@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Add Keys',
     'addkeys-placeholder'       => 'Add 1 key per line, without the group prefix',
     'addsuffixes'               => 'Set Suffixes',
@@ -108,4 +108,4 @@ TEXT
     'translation-ops'           => 'Translation Helpers',
     'translations'              => 'Translations',
     'wildcard-keyops'           => 'Wildcard Key Operations',
-);
+];

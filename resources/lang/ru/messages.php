@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Добавить ключивые',
     'addkeys-placeholder'       => 'Добавляйте по одному ключу на строке без префикса группы',
     'addsuffixes'               => 'Набор Суффиксов',
@@ -108,4 +108,4 @@ TEXT
     'translation-ops'           => 'Помощники Перевода',
     'translations'              => 'Переводы',
     'wildcard-keyops'           => 'Подстановочные Операции С Ключами',
-);
+];

@@ -7,6 +7,7 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 use Symfony\Component\Finder\Finder;
 use Vsch\TranslationManager\Classes\TranslationFileRewriter;
@@ -33,11 +34,19 @@ class Manager
     protected $cachePrefix;
     protected $cache;
     protected $cacheIsDirty;
+    protected $cacheTransKey;
+    private $package;
 
     /**
      * @var   \ZipArchive
      */
     protected $zipExporting;
+
+    public
+    function packageName($package)
+    {
+        $this->package = $package;
+    }
 
     public
     function __construct(Application $app, Filesystem $files, Dispatcher $events, Translation $translation)
@@ -55,7 +64,7 @@ class Manager
         $this->config = null;
 
         $manager = $this;
-        $app->after(function () use ($manager)
+        Route::after(function () use ($manager)
         {
             $manager->saveCache();
         });
@@ -64,7 +73,7 @@ class Manager
     public
     function config()
     {
-        return $this->config ?: $this->config = $this->app['config']['laravel-translation-manager::config'];
+        return $this->config ?: $this->config = $this->app['config'][$this->package];
     }
 
     public
@@ -78,9 +87,10 @@ class Manager
     {
         if ($this->cachePrefix === null)
         {
-            if (array_key_exists('cache_prefix', $this->config()))
+            if (array_key_exists('persistent_prefix', $this->config()))
             {
-                $this->cachePrefix = $this->config()['cache_prefix'];
+                $this->cachePrefix = $this->config()['persistent_prefix'];
+                $this->cacheTransKey = $this->cachePrefix ? $this->cachePrefix . 'translations' : '';
             }
             else
             {
@@ -95,8 +105,8 @@ class Manager
     {
         if ($this->cache === null)
         {
-            $this->cache = $this->cachePrefix() !== '' && Cache::has($this->cachePrefix) ? Cache::get($this->cachePrefix) : [];
-            $this->cacheIsDirty = $this->cachePrefix !== '' && !Cache::has($this->cachePrefix);
+            $this->cache = $this->cachePrefix() !== '' && Cache::has($this->cacheTransKey) ? Cache::get($this->cacheTransKey) : [];
+            $this->cacheIsDirty = $this->cachePrefix !== '' && !Cache::has($this->cacheTransKey);
         }
         return $this->cache;
     }
@@ -106,7 +116,7 @@ class Manager
     {
         if ($this->cachePrefix && $this->cacheIsDirty)
         {
-            Cache::put($this->cachePrefix, $this->cache, 60 * 24 * 365);
+            Cache::put($this->cacheTransKey, $this->cache, 60 * 24 * 365);
             $this->cacheIsDirty = false;
         }
     }
@@ -205,11 +215,11 @@ class Manager
             $lottery = 1;
             if ($useLottery && $this->config()['missing_keys_lottery'] !== 1)
             {
-                $lottery = Session::get('laravel_translation_manager.lottery', '');
+                $lottery = Session::get($this->config()['persistent_prefix'] . 'lottery', '');
                 if ($lottery === '')
                 {
                     $lottery = rand(1, $this->config()['missing_keys_lottery']);
-                    Session::put('laravel_translation_manager.lottery', $lottery);
+                    Session::put($this->config()['persistent_prefix'] . 'lottery', $lottery);
                 }
             }
 
@@ -244,14 +254,14 @@ class Manager
     {
         $dirname = $info["dirname"];
         $filename = $info["filename"];
-        if ($pos = strpos($dirname, "/app/lang/$locale/"))
+        if ($pos = strpos($dirname, "/resources/lang/$locale/"))
         {
-            $base = substr($dirname, $pos + strlen("/app/lang/$locale/"));
+            $base = substr($dirname, $pos + strlen("/resources/lang/$locale/"));
             $base = str_replace("/", ".", $base);
         }
-        elseif ($pos = strpos($dirname, "/app/lang/packages/$locale/$namespace/"))
+        elseif ($pos = strpos($dirname, "/resources/vendor/$namespace/$locale/"))
         {
-            $base = substr($dirname, $pos + strlen("/app/lang/packages/$locale/$namespace/"));
+            $base = substr($dirname, $pos + strlen("/resources/vendor/$namespace/$locale/"));
             $base = str_replace("/", ".", $base);
         }
         else
@@ -366,24 +376,29 @@ SQL
             $this->clearCache($groups);
         }
 
-        $langdirs = $this->files->directories($this->app->make('path') . '/lang' . ($packages ? '/packages' : ''));
-        foreach ($langdirs as $langdir)
+        if ($packages)
         {
-            $locale = basename($langdir);
-            if ($locale === 'packages' && !$packages)
+            $packdirs = $this->files->directories($this->app->langPath() . '/vendor');
+            foreach ($packdirs as $packagedir)
             {
-                $this->importTranslations($replace, true, $groups);
-            }
-            else
-            {
-                if ($packages)
+                $package = basename($packagedir);
+                $langdirs = $this->files->directories($packagedir);
+                foreach ($langdirs as $langdir)
                 {
-                    $packdirs = $this->files->directories($langdir);
-                    foreach ($packdirs as $packagedir)
-                    {
-                        $package = basename($packagedir);
-                        $this->importTranslationLocale($replace, $locale, $packagedir, $package, $groups);
-                    }
+                    $locale = basename($langdir);
+                    $this->importTranslationLocale($replace, $locale, $langdir, $package, $groups);
+                }
+            }
+        }
+        else
+        {
+            $langdirs = $this->files->directories($this->app->langPath());
+            foreach ($langdirs as $langdir)
+            {
+                $locale = basename($langdir);
+                if ($locale === 'vendor' && !$packages)
+                {
+                    $this->importTranslations($replace, true, $groups);
                 }
                 else
                 {
@@ -532,11 +547,11 @@ SQL
                             $packgroup = explode('::', $group, 2);
                             $package = array_shift($packgroup);
                             $packgroup = array_shift($packgroup);
-                            $path = $this->app->make('path') . '/lang/packages/' . $locale . '/' . $package . '/' . str_replace(".", "/", $packgroup) . '.php';
+                            $path = $this->app->langPath() . '/vendor/' . $package . '/' . $locale . '/' . str_replace(".", "/", $packgroup) . '.php';
                         }
                         else
                         {
-                            $path = $this->app->make('path') . '/lang/' . $locale . '/' . str_replace(".", "/", $group) . '.php';
+                            $path = $this->app->langPath() . '/' . $locale . '/' . str_replace(".", "/", $group) . '.php';
                         }
 
                         $configRewriter->parseSource($this->files->exists($path) ? $this->files->get($path) : '');
@@ -544,7 +559,7 @@ SQL
 
                         if ($this->zipExporting)
                         {
-                            $filePathName = substr($path, mb_strlen($this->app->make('path')) + 1);
+                            $filePathName = substr($path, mb_strlen($this->app->langPath()) - 4);
                             //$this->makeDirPath($filePathName);
                             $this->zipExporting->addFromString($filePathName, $output);
                         }

@@ -1,6 +1,6 @@
 {
     "name": "vsch/laravel-translation-manager",
-    "description": "Manage Laravel Translations",
+    "description": "Enhanced Laravel Translation Manager",
     "keywords": ["laravel", "translations", "translator"],
     "license": "MIT",
     "authors": [
@@ -11,24 +11,24 @@
         }
     ],
     "require": {
-        "php": ">=5.3.0",
-        "illuminate/support": "~4.1",
-        "illuminate/translation": "~4.1",
+        "php": ">=5.4.0",
+        "illuminate/support": "5.0.x|5.1.x",
+        "illuminate/translation": "5.0.x|5.1.x",
         "doctrine/dbal": "~2.3",
-        "vsch/user-privilege-mapper": "~1.0",
+        "vsch/user-privilege-mapper": "~2.0",
         "symfony/finder": "~2.3"
     },
     "autoload": {
-        "psr-0": {
-            "Vsch\\TranslationManager\\": "src"
-        },
-        "files": [
-            "src/Vsch/Support/helpers.php"
-        ],
         "classmap": [
-            "src/Vsch/TranslationManager/Classes",
-            "src/migrations"
-        ]
+            "src/Classes",
+            "database/migrations"
+        ],
+        "files": [
+            "src/Support/helpers.php"
+        ],
+        "psr-4": {
+            "Vsch\\TranslationManager\\": "src/"
+        }
     },
     "minimum-stability": "stable"
 }

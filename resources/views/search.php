@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\URL;
     <tbody>
     <?php $translator = App::make('translator') ?>
     <?php foreach($translations as $t): ?>
-        <?php $groupUrl = action('Vsch\TranslationManager\Controller@getIndex', $t->group); ?>
+        <?php $groupUrl = action('\Vsch\TranslationManager\Controller@getView', $t->group); ?>
         <tr>
             <td><a href="<?= $groupUrl ?>#<?= $t->key ?>"><?= $t->group ?></a></td>
             <td><?= $t->key ?></td>

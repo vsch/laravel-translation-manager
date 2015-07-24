@@ -34,19 +34,19 @@
                             $key = $mismatch->key;
                             $keyText = $mismatch->key;
                         }
-                        $link = action('Vsch\TranslationManager\Controller@getIndex', $mismatch->group) . '#' . $mismatch->key;
+                        $link = action('\Vsch\TranslationManager\Controller@getView', $mismatch->group) . '#' . $mismatch->key;
                         $mismatch->value = $mismatch->ru_value;
                         $mismatch->locale = 'ru';
                         $mismatch->status = 'ru';
                         ?>
-                        <tr{{$borderTop}}>
-                            <td width="20%" class="missing">{{$keyText}}</td>
+                        <tr{!!$borderTop!!}>
+                            <td width="20%" class="missing">{!!$keyText!!}</td>
                             <td>
                                 <?= $translator->inPlaceEditLink($mismatch, false) ?>
                             </td>
-                            <td width="20%" class="missing">{{$mismatch->ru}}</td>
-                            <td width="20%" class="missing">{{$mismatch->en}}</td>
-                            <td width="20%" class="group missing"><a href="{{$link}}">{{$mismatch->group}}</a></td>
+                            <td width="20%" class="missing">{!!$mismatch->ru!!}</td>
+                            <td width="20%" class="missing">{!!$mismatch->en!!}</td>
+                            <td width="20%" class="group missing"><a href="{!!$link!!}">{!!$mismatch->group!!}</a></td>
                         </tr>
                         <?php
                         }

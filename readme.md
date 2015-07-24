@@ -2,6 +2,10 @@
 
 Note that this package is originally based on Barry vd. Heuvel's <barryvdh@gmail.com> excellent **barryvdh/laravel-translation-manager** package but heavily reworked to add [New Features](#NewFeatures).
 
+For Laravel 4 use the Laravel4 branch, or require: `"vsch/laravel-translation-manager": "~1.0"`
+
+For Laravel 5 use the master branch, or require: `"vsch/laravel-translation-manager": "~2.0"`
+
 This is a package to manage Laravel translation files. It does not replace the Translation system but augments it with:
 
 - import/export/download the php files to/from a database
@@ -103,43 +107,37 @@ If someone contacts me with a request to prioritize a specific area I will do it
 
 1. Require this package in your composer.json and run composer update (or run `composer require vsch/laravel-translation-manager:*` directly):
 
-        "vsch/laravel-translation-manager": "~1.0"
+        "vsch/laravel-translation-manager": "~2.0"
 
-2. After updating composer, add the ServiceProviders to the providers array in app/config/app.php and comment out the original TranslationServiceProvider:
+2. After updating composer, add the ServiceProviders to the providers array in config/app.php and comment out the original TranslationServiceProvider:
 
-        //'Illuminate\Translation\TranslationServiceProvider',
-        'Vsch\TranslationManager\TranslationServiceProvider',
-        'Vsch\TranslationManager\ManagerServiceProvider',
-        'Vsch\UserPrivilegeMapper\UserPrivilegeMapperServiceProvider',
-
-3. add the Facade to the aliases array in app/config/app.php:
-
-       'UserCan' => 'Vsch\UserPrivilegeMapper\Facade\Privilege',
+        //Illuminate\Translation\TranslationServiceProvider::class,
+        Vsch\UserPrivilegeMapper\UserPrivilegeMapperServiceProvider::class,
+        Vsch\TranslationManager\ManagerServiceProvider::class,
+        Vsch\TranslationManager\TranslationServiceProvider::class,
 
     The TranslationServiceProvider is an extension to the standard functionality and is required in order for the web interface to work properly. It is backward compatible with the existing Translator since it is a subclass of it and only overrides implementation for new features.
 
-4. You need to run the migrations for this package:
+3. add the Facade to the aliases array in config/app.php:
 
-        $ php artisan migrate --package="vsch/laravel-translation-manager"
+        'UserCan'   => Vsch\UserPrivilegeMapper\Facade\Privilege::class,
 
-5. You need to publish the config file for this package. This will add the files `app/config/packages/vsch/laravel-translation-manager/config.php` and `app/config/packages/vsch/laravel-translation-manager/local/config.php`, where you can configure this package.
+4. You need to publish then run the migrations for this package:
 
-        $ php artisan config:publish vsch/laravel-translation-manager
+        $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=migrations
+        $ php artisan migrate
 
-6. You need to publish the web assets used by the translation manager web interface. This will add the assets to `public/packages/vsch/laravel-translation-manager`
+5. You need to publish the config file for this package. This will add the file `config/laravel-translation-manager.php`
 
-        $ php artisan asset:publish vsch/laravel-translation-manager
+        $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=config
 
-7. You have to add the Controller to your routes.php, so you can set your own url/filters.
+6. You need to publish the web assets used by the translation manager web interface. This will add the assets to `public/vendor/laravel-translation-manager`
 
-        Route::group(array('before' => 'auth'), function ()
-        {
-            Route::controller('translations', 'Vsch\TranslationManager\Controller');
-        });
+        $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=public
 
-    This example will make the translation manager available at `http://yourdomain.com/translations`
+7. By default the web interface of the translation manager is available at `http://yourdomain.com/translations`. You can change this in the configuration file.
 
-8. <a id="step8"></a>TranslationManager uses the vsch/user-privilege-mapper package that creates a mapping layer between your User model implementation and the need to test user privileges without knowing the implementation. You need to name privileges for the UserPrivilegeMapper via the Laravel macro mechanism. This should be done in the initialization files. A good place is the filters.php file, add the following if your User model has is_admin and is_editor attributes to identify users that have Admin and Editor privileges:
+8. <a id="step8"></a>TranslationManager uses the vsch/user-privilege-mapper package that creates a mapping layer between your User model implementation and the need to test user privileges without knowing the implementation. You need to name privileges for the UserPrivilegeMapper via the Laravel macro mechanism. This should be done in the initialization files. A good place is the Providers/AppServiceProvider.php file, add the following to boot() function, if your User model has is_admin and is_editor attributes to identify users that have Admin and Editor privileges or just `return true` in both cases if you don't have any way of determining user privileges:
 
         UserCan::macro("admin_translations", function ()
         {
@@ -288,7 +286,5 @@ This package is still in development although it is successfully being used to m
 - only Yandex assisted translations are implemented. Google translate was not used since it has no free option. However it is a simple change in the translator.js file to handle alternate translation engines. I will be making a configurable item in the future.
 
 - key operations that allow creating new keys and also keys permuted by suffixes, moving, copying, deleting keys are a bit of a kludge. I am planning to rework the web interface to make these cleaner. However, if you desperately need these to save a lot of typing and editing, the current version will do the trick.
-
-- Create a Laravel 5 compatible branch.
 
 Suggestions and priority requests are welcome. :)
