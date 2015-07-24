@@ -199,11 +199,12 @@ if (!function_exists('mb_replace'))
 
         $result = '';
         $count = 0;
+        $len = mb_strlen($subject);
+
         for ($s = 0; $s < $sMax; $s++)
         {
             $find = $search[$s];
             $pos = 0;
-            $len = mb_strlen($find);
 
             while ($pos < $len)
             {
