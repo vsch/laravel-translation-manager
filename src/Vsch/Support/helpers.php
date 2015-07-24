@@ -203,8 +203,9 @@ if (!function_exists('mb_replace'))
         {
             $find = $search[$s];
             $pos = 0;
+            $len = mb_strlen($find);
 
-            while ($pos < $sMax)
+            while ($pos < $len)
             {
                 $lastPos = $pos;
                 if (($pos = mb_strpos($subject, $find, $pos)) === false)
