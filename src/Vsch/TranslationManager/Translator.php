@@ -104,7 +104,7 @@ class Translator extends LaravelTranslator
         {
             if ($withDiff && $diff === '')
             {
-                $diff = ($t->saved_value == $t->value ? '' : ($t->saved_value === $t->value ? '' : ' [' . \Vsch\TranslationManager\Controller::mb_renderDiffHtml($t->saved_value, $t->value) . ']'));
+                $diff = ($t->saved_value == $t->value ? '' : ($t->saved_value === $t->value ? '' : ' [' . mb_renderDiffHtml($t->saved_value, $t->value) . ']'));
             }
             $title = parent::get('laravel-translation-manager::messages.enter-translation');
 
