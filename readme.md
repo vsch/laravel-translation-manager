@@ -2,6 +2,10 @@
 
 Note that this package is originally based on Barry vd. Heuvel's <barryvdh@gmail.com> excellent **barryvdh/laravel-translation-manager** package but heavily reworked to add [New Features](#NewFeatures).
 
+For Laravel 4 use the Laravel4 branch, or require: `"vsch/laravel-translation-manager": "~1.0"`
+
+For Laravel 5 use the master branch, or require: `"vsch/laravel-translation-manager": "~2.0"`
+
 This is a package to manage Laravel translation files. It does not replace the Translation system but augments it with:
 
 - import/export/download the php files to/from a database
@@ -33,7 +37,7 @@ This way, translations can be saved in git history and no overhead is introduced
 <a id="WebInterface"></a>
 ## Web Interface
 
-![Translator Page ](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_main.png)
+![Translator Page ](https://raw.githubusercontent.com/vsch/laravel-translation-manager/laravel4/images/ScreenShot_main.png)
 
 When you have imported your translation (via buttons or command), you can view them in the web interface (on the url you defined the with the controller).
 You can click on a translation and an edit field will popup. All translations are saved when the edit dialog is closed unless it is closed with the cancel button. Clicking anywhere on the page outside the edit dialog will save the current changes.
@@ -55,13 +59,13 @@ If you do not copy the package language files then all translation edit links wi
 
 Click on the panel to expand it.
 
-![Suffixed Key Operations](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_suffixed_keyops.png)
+![Suffixed Key Operations](https://raw.githubusercontent.com/vsch/laravel-translation-manager/laravel4/images/ScreenShot_suffixed_keyops.png)
 
 Enter keys you want to create/delete from the current group in the left text area, and optionally any suffixes you want to permute with the keys on the left. For example, keys: abc, def, ghi; with suffixes: 1,2,3 will create/delete: abc1, abc2, abc3, def1, def2, def3, ghi1, ghi2, ghi3.
 
 Hit the search button to see the search dialog. The database translation strings and keys will be searched for the text and the matching entries displayed. You can edit the resulting translations directly in the search dialog or alternately follow the group link to display the group translation page.
 
-![Search](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_search.png)
+![Search](https://raw.githubusercontent.com/vsch/laravel-translation-manager/laravel4/images/ScreenShot_search.png)
 
 ### Wildcard Key Operations (panel)
 
@@ -73,11 +77,11 @@ Hitting the preview button will let you see what the patterns match and what the
 
 Example of preview/delete:
 
-![Wildcard Key Operations 1](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_wildcard_keyops1.png)
+![Wildcard Key Operations 1](https://raw.githubusercontent.com/vsch/laravel-translation-manager/laravel4/images/ScreenShot_wildcard_keyops1.png)
 
 Example of preview/copy/move:
 
-![Wildcard Key Operations 2](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_wildcard_keyops2.png)
+![Wildcard Key Operations 2](https://raw.githubusercontent.com/vsch/laravel-translation-manager/laravel4/images/ScreenShot_wildcard_keyops2.png)
 
 ### Translation Helpers (panel)
 
@@ -85,7 +89,7 @@ Click on the panel to expand it.
 
 Here you can translate between the primary locale and the translating locale.
 
-![Translation Helpers](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_translation_helpers.png)
+![Translation Helpers](https://raw.githubusercontent.com/vsch/laravel-translation-manager/laravel4/images/ScreenShot_translation_helpers.png)
 
 <a id="Limitations"></a>
 ## Limitations
@@ -288,7 +292,5 @@ This package is still in development although it is successfully being used to m
 - only Yandex assisted translations are implemented. Google translate was not used since it has no free option. However it is a simple change in the translator.js file to handle alternate translation engines. I will be making a configurable item in the future.
 
 - key operations that allow creating new keys and also keys permuted by suffixes, moving, copying, deleting keys are a bit of a kludge. I am planning to rework the web interface to make these cleaner. However, if you desperately need these to save a lot of typing and editing, the current version will do the trick.
-
-- Create a Laravel 5 compatible branch.
 
 Suggestions and priority requests are welcome. :)
