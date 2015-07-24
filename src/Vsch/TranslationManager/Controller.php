@@ -15,65 +15,42 @@ use Vsch\UserPrivilegeMapper\Facade\Privilege as UserCan;
 
 include_once(__DIR__ . '/../../../scripts/finediff.php');
 
-if (!function_exists('mb_chunk_split'))
-{
-    function mb_chunk_split($body, $chunklen = 76, $end = "\r\n")
-    {
-        $split = '';
-        $pos = 0;
-        $len = mb_strlen($body);
-        while ($pos < $len)
-        {
-            $split .= mb_substr($body, $pos, $chunklen) . $end;
-            $pos += $chunklen;
-        }
-        return $split;
-    }
-}
-
-if (!function_exists('mb_unsplit'))
-{
-    function mb_unsplit($body, $end = "\r\n")
-    {
-        $split = '';
-        $pos = 0;
-        $len = mb_strlen($body);
-        $skip = mb_strlen($end);
-        while ($pos < $len)
-        {
-            $next = strpos($body, $end, $pos);
-            if ($next === false)
-            {
-                $split .= mb_substr($body, $pos);
-                break;
-            }
-
-            $split .= mb_substr($body, $pos, $next - $pos);
-            $pos = $next + $skip;
-            if (mb_substr($body, $pos, $skip) === $end)
-            {
-                // keep the second
-                $split .= mb_substr($body, $pos, $skip);
-                $pos += $skip;
-            }
-        }
-        return $split;
-    }
-}
-
 class Controller extends BaseController
 {
     /** @var \Vsch\TranslationManager\Manager */
     protected $manager;
+    private $cookiePrefix;
     protected $sqltraces;
     protected $logSql;
+    private $primaryLocale;
+    private $translatingLocale;
+    private $displayLocales;
+    private $locales;
+
+    const COOKIE_LANG_LOCALE = 'lang';
+    const COOKIE_TRANS_LOCALE = 'trans';
+    const COOKIE_PRIM_LOCALE = 'prim';
+    const COOKIE_DISP_LOCALES = 'disp';
 
     public
     function __construct()
     {
         $this->manager = App::make('translation-manager');
-        $locale = Cookie::get('lang', \Lang::getLocale());
+        $this->cookiePrefix = $this->manager->getConfig('cookie_prefix','laravel-translation-manager::');
+        $locale = Cookie::get($this->cookieName(self::COOKIE_LANG_LOCALE), \Lang::getLocale());
         App::setLocale($locale);
+        $this->primaryLocale = Cookie::get($this->cookieName(self::COOKIE_PRIM_LOCALE), $this->manager->getConfig('primary_locale','en'));
+
+        $this->locales = $this->loadLocales();
+        $this->translatingLocale = Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE));
+        if (!$this->translatingLocale)
+        {
+            $this->translatingLocale = count($this->locales) > 1 ? $this->locales[1] : $this->locales[0];
+            Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $this->translatingLocale, 60 * 24 * 365 * 1);
+        }
+
+        $this->displayLocales = Cookie::has($this->cookieName(self::COOKIE_DISP_LOCALES)) ? Cookie::get($this->cookieName(self::COOKIE_DISP_LOCALES)) : implode(',', array_slice($this->locales,0,5));
+        $this->displayLocales .= ($this->displayLocales ? ',' : '') . $this->primaryLocale . ',' . $this->translatingLocale;
 
         //$this->sqltraces = [];
         //$this->logSql = 0;
@@ -86,6 +63,12 @@ class Controller extends BaseController
         //        $thisController->sqltraces[] = ['query' => $query, 'bindings' => $bindings, 'time' => $time];
         //    }
         //});
+    }
+
+    public
+    function cookieName($cookie)
+    {
+        return $this->cookiePrefix.$cookie;
     }
 
     /**
@@ -101,53 +84,14 @@ class Controller extends BaseController
         return $ret;
     }
 
-    /**
-     * @param      $from_text
-     * @param      $to_text
-     *
-     * @param bool $charDiff
-     *
-     * @return array
-     */
-    public static
-    function mb_renderDiffHtml($from_text, $to_text, $charDiff = null)
-    {
-        //if ($from_text === 'Lang' && $to_text === 'Language') xdebug_break();
-        if ($from_text == $to_text) return $to_text;
-
-        $removeSpaces = false;
-        if ($charDiff === null)
-        {
-            $charDiff = mb_strtolower($from_text) === mb_strtolower($to_text)
-                || abs(mb_strlen($from_text) - mb_strlen($to_text)) <= 2
-                || ($from_text && $to_text
-                    && ((strpos($from_text, $to_text) !== false)
-                        || ($to_text && strpos($to_text, $from_text) !== false)));
-        }
-
-        if ($charDiff)
-        {
-            //use word diff but space all entities so that we get char diff
-            $removeSpaces = true;
-            $from_text = mb_chunk_split($from_text, 1, ' ');
-            $to_text = mb_chunk_split($to_text, 1, ' ');
-        }
-        $from_text = mb_convert_encoding($from_text, 'HTML-ENTITIES', 'UTF-8');
-        $to_text = mb_convert_encoding($to_text, 'HTML-ENTITIES', 'UTF-8');
-        $opcodes = \FineDiff::getDiffOpcodes($from_text, $to_text, \FineDiff::$wordGranularity);
-        $diff = \FineDiff::renderDiffToHTMLFromOpcodes($from_text, $opcodes);
-        $diff = mb_convert_encoding($diff, 'UTF-8', 'HTML-ENTITIES');
-        if ($removeSpaces)
-        {
-            $diff = mb_unsplit($diff, ' ');
-        }
-        return $diff;
-    }
-
     public
     function getIndex($group = null)
     {
-        $locales = $this->loadLocales();
+        $locales = $this->locales;
+        $currentLocale = \Lang::getLocale();
+        $primaryLocale = $this->primaryLocale;
+        $translatingLocale = $this->translatingLocale;
+
         $groups = Translation::groupBy('group');
         $excludedGroups = $this->manager->getConfig('exclude_groups');
         if ($excludedGroups)
@@ -161,8 +105,9 @@ class Controller extends BaseController
         // to allow proper handling of nested directory structure we need to copy the keys for the group for all missing
         // translations, otherwise we don't know what the group and key looks like.
         //$allTranslations = Translation::where('group', $group)->orderBy('key', 'asc')->get();
-        $allTranslations = Translation::hydrateRaw(<<<SQL
-SELECT * FROM ltm_translations WHERE `group` = ?
+        $displayWhere = $this->displayLocales ? ' AND locale IN (\'' . implode("','", explode(',',$this->displayLocales)) . "')" : '';
+        $allTranslations = Translation::hydrateRaw($sql = <<<SQL
+SELECT * FROM ltm_translations WHERE `group` = ? $displayWhere
 UNION ALL
 SELECT DISTINCT
     NULL id,
@@ -177,8 +122,8 @@ SELECT DISTINCT
     NULL saved_value,
     NULL is_deleted
 FROM
-(SELECT * FROM (SELECT DISTINCT locale FROM ltm_translations) lcs
-    CROSS JOIN (SELECT DISTINCT `group`, `key` FROM ltm_translations WHERE `group` = ?) grp) m
+(SELECT * FROM (SELECT DISTINCT locale FROM ltm_translations WHERE 1=1 $displayWhere) lcs
+    CROSS JOIN (SELECT DISTINCT `group`, `key` FROM ltm_translations WHERE `group` = ? $displayWhere) grp) m
 WHERE NOT EXISTS(SELECT * FROM ltm_translations t WHERE t.locale = m.locale AND t.`group` = m.`group` AND t.`key` = m.`key`)
 ORDER BY `key` ASC
 SQL
@@ -206,12 +151,12 @@ SELECT (mx.total_keys - lcs.total) missing, lcs.changed, lcs.deleted, lcs.locale
 FROM
     (SELECT sum(total) total, sum(changed) changed, sum(deleted) deleted, `group`, locale
      FROM
-         (SELECT count(value) total, sum(status) changed, sum(is_deleted) deleted, `group`, locale FROM ltm_translations lt GROUP BY `group`, locale
+         (SELECT count(value) total, sum(status) changed, sum(is_deleted) deleted, `group`, locale FROM ltm_translations lt WHERE 1=1 $displayWhere GROUP BY `group`, locale
           UNION ALL
-          SELECT DISTINCT 0, 0, 0, `group`, locale FROM (SELECT DISTINCT locale FROM ltm_translations) lc
+          SELECT DISTINCT 0, 0, 0, `group`, locale FROM (SELECT DISTINCT locale FROM ltm_translations WHERE 1=1 $displayWhere) lc
               CROSS JOIN (SELECT DISTINCT `group` FROM ltm_translations) lg) a
      GROUP BY `group`, locale) lcs
-    JOIN (SELECT count(DISTINCT `key`) total_keys, `group` FROM ltm_translations GROUP BY `group`) mx
+    JOIN (SELECT count(DISTINCT `key`) total_keys, `group` FROM ltm_translations WHERE 1=1 $displayWhere GROUP BY `group`) mx
         ON lcs.`group` = mx.`group`
 WHERE lcs.total < mx.total_keys OR lcs.changed > 0 OR lcs.deleted > 0
 SQL
@@ -242,28 +187,29 @@ SQL
         if ($mismatchEnabled)
         {
             // get mismatches
+            // TODO: change hard-coded en and ru to $primaryLocale and $translatingLocale
             $mismatches = DB::select(<<<SQL
 SELECT DISTINCT lt.*, ft.ru, ft.en
-FROM ltm_translations lt
+FROM (SELECT * FROM ltm_translations WHERE 1=1 $displayWhere) lt
     JOIN
     (SELECT DISTINCT mt.`key`, BINARY mt.ru ru, BINARY mt.en en
-     FROM (SELECT lt.`group`, lt.`key`, group_concat(CASE lt.locale WHEN 'en' THEN VALUE ELSE NULL END) en, group_concat(CASE lt.locale WHEN 'ru' THEN VALUE ELSE NULL END) ru
-           FROM (SELECT value, `group`, `key`, locale FROM ltm_translations
+     FROM (SELECT lt.`group`, lt.`key`, group_concat(CASE lt.locale WHEN '$primaryLocale' THEN VALUE ELSE NULL END) en, group_concat(CASE lt.locale WHEN '$translatingLocale' THEN VALUE ELSE NULL END) ru
+           FROM (SELECT value, `group`, `key`, locale FROM ltm_translations WHERE 1=1 $displayWhere
                  UNION ALL
-                 SELECT NULL, `group`, `key`, locale FROM ((SELECT DISTINCT locale FROM ltm_translations) lc
-                     CROSS JOIN (SELECT DISTINCT `group`, `key` FROM ltm_translations) lg)
+                 SELECT NULL, `group`, `key`, locale FROM ((SELECT DISTINCT locale FROM ltm_translations WHERE 1=1 $displayWhere) lc
+                     CROSS JOIN (SELECT DISTINCT `group`, `key` FROM ltm_translations WHERE 1=1 $displayWhere) lg)
                 ) lt
            GROUP BY `group`, `key`) mt
-         JOIN (SELECT lt.`group`, lt.`key`, group_concat(CASE lt.locale WHEN 'en' THEN VALUE ELSE NULL END) en, group_concat(CASE lt.locale WHEN 'ru' THEN VALUE ELSE NULL END) ru
-               FROM (SELECT value, `group`, `key`, locale FROM ltm_translations
+         JOIN (SELECT lt.`group`, lt.`key`, group_concat(CASE lt.locale WHEN '$primaryLocale' THEN VALUE ELSE NULL END) en, group_concat(CASE lt.locale WHEN '$translatingLocale' THEN VALUE ELSE NULL END) ru
+               FROM (SELECT value, `group`, `key`, locale FROM ltm_translations WHERE 1=1 $displayWhere
                      UNION ALL
-                     SELECT NULL, `group`, `key`, locale FROM ((SELECT DISTINCT locale FROM ltm_translations) lc
-                         CROSS JOIN (SELECT DISTINCT `group`, `key` FROM ltm_translations) lg)
+                     SELECT NULL, `group`, `key`, locale FROM ((SELECT DISTINCT locale FROM ltm_translations WHERE 1=1 $displayWhere) lc
+                         CROSS JOIN (SELECT DISTINCT `group`, `key` FROM ltm_translations WHERE 1=1 $displayWhere) lg)
                     ) lt
                GROUP BY `group`, `key`) ht ON mt.`key` = ht.`key`
      WHERE (mt.ru NOT LIKE BINARY ht.ru AND mt.en LIKE BINARY ht.en) OR (mt.ru LIKE BINARY ht.ru AND mt.en NOT LIKE BINARY ht.en)
     ) ft
-        ON (lt.locale = 'ru' AND lt.value LIKE BINARY ft.ru) AND lt.`key` = ft.key
+        ON (lt.locale = '$translatingLocale' AND lt.value LIKE BINARY ft.ru) AND lt.`key` = ft.key
 ORDER BY `key`, `group`
 SQL
             );
@@ -340,16 +286,16 @@ SQL
             foreach ($mismatches as $mismatch)
             {
                 $mismatch->en_value = $mismatch->ru;
-                $mismatch->en = self::mb_renderDiffHtml($enbases[$mismatch->key], $mismatch->en);
+                $mismatch->en = mb_renderDiffHtml($enbases[$mismatch->key], $mismatch->en);
                 $mismatch->ru_value = $mismatch->ru;
-                $mismatch->ru = self::mb_renderDiffHtml($rubases[$mismatch->key], $mismatch->ru);
+                $mismatch->ru = mb_renderDiffHtml($rubases[$mismatch->key], $mismatch->ru);
             }
         }
 
         // returned result set lists group key ru, en columns for the locale translations, ru has different values for same values in en
-        $translatingLocale = Cookie::get('trans', (count($locales) > 1 ? $locales[1] : $locales[0]));
-        $currentLocale = \Lang::getLocale();
-        $primaryLocale = $this->manager->getConfig('primary_locale');
+        $displayLocales = explode(',', $this->displayLocales);
+        $displayLocales = array_combine($displayLocales, $displayLocales);
+
         return \View::make('laravel-translation-manager::index')
             ->with('translations', $translations)
             ->with('yandex_key', $this->manager->getConfig('yandex_translator_key'))
@@ -357,6 +303,7 @@ SQL
             ->with('primaryLocale', $primaryLocale)
             ->with('currentLocale', $currentLocale)
             ->with('translatingLocale', $translatingLocale)
+            ->with('displayLocales', $displayLocales)
             ->with('groups', $groups)
             ->with('group', $group)
             ->with('numTranslations', $numTranslations)
@@ -377,6 +324,8 @@ SQL
         if ($q === '') $translations = [];
         else
         {
+            $displayWhere = $this->displayLocales ? ' AND locale IN (\'' . implode("','", explode(',',$this->displayLocales)) . "')" : '';
+
             if (strpos($q, '%') === false) $q = "%$q%";
 
             //$translations = Translation::where('key', 'like', "%$q%")->orWhere('value', 'like', "%$q%")->orderBy('group', 'asc')->orderBy('key', 'asc')->get();
@@ -405,8 +354,8 @@ SQL
     {
         //Set the default locale as the first one.
         $currentLocale = Config::get('app.locale');
-        $primaryLocale = $this->manager->getConfig('primary_locale');
-        $translatingLocale = Cookie::get('trans', $currentLocale);
+        $primaryLocale = $this->primaryLocale;
+        $translatingLocale = Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE), $currentLocale);
 
         $locales = array_merge(array( $primaryLocale, $translatingLocale, $currentLocale), Translation::groupBy('locale')->lists('locale'));
         return array_flatten(array_unique($locales));
@@ -563,6 +512,7 @@ SQL
         $keymap = [];
         $this->logSql = 1;
         $this->sqltraces = [];
+
         if (!in_array($group, $this->manager->getConfig('exclude_groups')) && $this->manager->getConfig('admin_enabled'))
         {
             $srckeys = explode("\n", trim(Input::get('srckeys')));
@@ -945,9 +895,15 @@ SQL
     {
         $locale = Input::get("l");
         $translating = Input::get("t");
+        $primary = Input::get("p");
+        $displayLocales = Input::get("d");
+        $display = implode(',', $displayLocales ?: []);
+
         App::setLocale($locale);
-        Cookie::queue('lang', $locale, 60 * 24 * 365 * 1);
-        Cookie::queue('trans', $translating, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_LANG_LOCALE), $locale, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $translating, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $primary, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_DISP_LOCALES), $display, 60 * 24 * 365 * 1);
 
         if (App::runningUnitTests()) return Redirect::to('/');
         return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');

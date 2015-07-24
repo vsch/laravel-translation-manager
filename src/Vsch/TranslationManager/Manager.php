@@ -516,7 +516,7 @@ SQL
                 $this->translation->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE is_deleted = 1 AND `group` = ?"
                     , [$group]);
 
-                if ($inDatabasePublishing === 2) $this->clearCache($group);
+                if ($inDatabasePublishing !== 3) $this->clearCache($group);
 
                 $tree = $this->makeTree(Translation::where('group', $group)->whereNotNull('value')->orderby('key')->get());
                 $configRewriter = new TranslationFileRewriter();

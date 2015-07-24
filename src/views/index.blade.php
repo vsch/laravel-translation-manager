@@ -178,9 +178,9 @@
                         <form class="form-inline" id="form-interface-locale" class="form-interface-locale" method="GET"
                                 action="<?= action('Vsch\TranslationManager\Controller@getInterfaceLocale') ?>">
                             <div class="row">
-                                <div class=" col-sm-4">
+                                <div class=" col-sm-3">
                                     <div class="input-group-sm">
-                                        <label for="l"><?= trans('laravel-translation-manager::messages.interface-locale') ?>:</label>
+                                        <label for="interface-locale"><?= trans('laravel-translation-manager::messages.interface-locale') ?>:</label>
                                         <select name="l" id="interface-locale" class="form-control" ?>">
                                         @foreach($locales as $locale)
                                             <option value="<?=$locale?>"<?= $currentLocale === $locale ? ' selected="selected"' : ''?>><?= $locale ?></option>
@@ -188,9 +188,9 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class=" col-sm-4">
+                                <div class=" col-sm-3">
                                     <div class="input-group-sm">
-                                        <label for="t"><?= trans('laravel-translation-manager::messages.translating-locale') ?>:</label>
+                                        <label for="translating-locale"><?= trans('laravel-translation-manager::messages.translating-locale') ?>:</label>
                                         <select name="t" id="translating-locale" class="form-control" ?>">
                                         @foreach($locales as $locale)
                                             @if($locale !== $primaryLocale) continue;
@@ -200,10 +200,38 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class=" col-sm-4">
+                                <div class=" col-sm-3">
+                                    <div class="input-group-sm">
+                                        <label for="primary-locale"><?= trans('laravel-translation-manager::messages.primary-locale') ?>:</label>
+                                        <select name="p" id="primary-locale" class="form-control" ?>">
+                                        @foreach($locales as $locale)
+                                            <option value="<?=$locale?>"<?= $primaryLocale === $locale ? ' selected="selected"' : ''?>><?= $locale ?></option>
+                                        @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class=" col-sm-3">
                                     <div class="input-group" style="float:right; display:inline">
                                         <?= ifEditTrans('laravel-translation-manager::messages.in-place-edit') ?>
                                         <a class="btn btn-sm btn-primary" role="button" href="<?= action('Vsch\TranslationManager\Controller@getToggleInPlaceEdit') ?>"><?= noEditTrans('laravel-translation-manager::messages.in-place-edit') ?></a>
+                                    </div>
+                                </div>
+                            </div>
+                            <br>
+                            <div class="row">
+                                <div class=" col-sm-3">
+                                    <?= formSubmit(trans('laravel-translation-manager::messages.display-locales'), ['class' => "btn btn-sm btn-primary"]) ?>&nbsp;&nbsp;
+                                </div>
+                                <div class=" col-sm-9">
+                                    <div class="input-group-sm">
+                                    @foreach($locales as $locale)
+                                        <label>
+                                            <input name="d[]" type="checkbox" value="<?=$locale?>"
+                                                    <?= ($locale === $primaryLocale || $locale === $translatingLocale || array_key_exists($locale, $displayLocales)) ? 'checked' : '' ?>
+                                                    <?= $locale === $primaryLocale ? 'disabled="true"' : '' ?>"
+                                                    ><?= $locale ?>
+                                        </label>
+                                    @endforeach
                                     </div>
                                 </div>
                             </div>
@@ -474,12 +502,27 @@
                     <thead>
                         <tr>
                             <?php if($adminEnabled): ?>
-                            <th>&nbsp;</th>
+                            <th width="1%">&nbsp;</th>
                             <?php endif; ?>
                             <th width="20%">@lang('laravel-translation-manager::messages.key')</th>
-                            <?php $width = 80/count($locales); ?>
+                            <?php
+                                $setWidth = count($displayLocales);
+                                if ($setWidth > 2) {
+                                    $mainWidth = 30;
+                                }
+                                else
+                                {
+                                    $mainWidth = 40;
+                                }
+                                $col = 0;
+                            ?>
                             <?php foreach($locales as $locale): ?>
-                            <th width="<?=$width?>%"><?= $locale ?></th>
+                                <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
+                                <?php if ($col < 2): ?>
+                                <th width="<?=$mainWidth?>%"><?= $locale ?></th>
+                                <?php else: ?>
+                                <th><?= $locale ?></th>
+                                <?php endif; $col++; ?>
                             <?php endforeach; ?>
                         </tr>
                     </thead>
@@ -491,6 +534,7 @@
                             $is_deleted = 0;
                             foreach($locales as $locale)
                             {
+                                if (!array_key_exists($locale, $displayLocales)) continue;
                                 if (isset($translation[$locale]) && $translation[$locale]->is_deleted) $is_deleted = 1;
                             }
                         ?>
@@ -509,6 +553,7 @@
                             <?php endif; ?>
                             <td><?= $key ?></td>
                             <?php foreach($locales as $locale): ?>
+                            <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
                             <?php $t = isset($translation[$locale]) ? $translation[$locale] : null ?>
                             <td>
                                 <?= $translator->inPlaceEditLink(!$t ? $t : ($t->value == '' ? null : $t), true, "$group.$key", $locale, null, $group) ?>
@@ -672,6 +717,10 @@
             });
 
             $('#translating-locale').on('change', function () {
+                $('#form-interface-locale')[0].submit();
+            });
+
+            $('#primary-locale').on('change', function () {
                 $('#form-interface-locale')[0].submit();
             });
 

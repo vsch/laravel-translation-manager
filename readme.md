@@ -41,7 +41,9 @@ When a translation is not yet created in a different locale, you can also just e
 
 Using the buttons on the web interface, you can import/export the translations. For publishing translations, make sure your application can write to the language directory or optionally configure it to do in-database publishing using the cache by adding:
 
-The web interface lets you select the locale for the web interface and also the locale that you are currently translating. This is only used to order the locale columns displayed in the translation table such that the primary locale is always listed first and the translating locale is second, followed by all the other locales.
+The web interface lets you select the locale for the web interface and also the locale that you are currently translating and the primary locale. This is only used to order the locale columns displayed in the translation table such that the primary locale is always listed first and the translating locale is second, followed by all the other locales.
+
+You can select which additional locales to display on the page by checking the locales clicking on the 'Working Set' button to apply your selection.
 
 ### In Place Edit
 
@@ -250,6 +252,8 @@ These features were added to the original barryvdh/laravel-translation-manager p
 
 - moved the delete translation icon before the translation key instead of after the last translation because for large number of locales it was impossible to know which key was going to be marked for deletion.
 
+- added working locale set to limit number of locales displayed on the page and to reduce page load time.
+
 <a id="YandexSupportedLanguages"></a>
 ## Yandex Supported languages
 
@@ -283,12 +287,8 @@ This package is still in development although it is successfully being used to m
 
 - only Yandex assisted translations are implemented. Google translate was not used since it has no free option. However it is a simple change in the translator.js file to handle alternate translation engines. I will be making a configurable item in the future.
 
-- Mismatched translations dashboard view assumes that English version of the translations is always correct and the other languages should have the same translations for different group/key combinations whose English texts match. For example if English messages.test1 = 'Test' and messages.test2 = 'Test' then for other languages the translations for these two keys will be flagged as a mismatch if they are not the same. This was an idiosyncrasy of the project for which this module was developed and if you find it useful then set config option `mismatch_enabled` to true to see the mismatched translations dashboard.
-
 - key operations that allow creating new keys and also keys permuted by suffixes, moving, copying, deleting keys are a bit of a kludge. I am planning to rework the web interface to make these cleaner. However, if you desperately need these to save a lot of typing and editing, the current version will do the trick.
 
 - Create a Laravel 5 compatible branch.
-
-- web interface needs a way of limiting which locales get loaded and displayed for systems that have a lot of supported locales with a lot of translations, otherwise the resulting page load time is too long. It would be best to limit number of active locales to a user selectable list. Then use this list to limit all processing including the dashboard view.
 
 Suggestions and priority requests are welcome. :)

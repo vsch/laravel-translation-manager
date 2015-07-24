@@ -11,6 +11,14 @@ return array(
     'primary_locale' => 'en',
 
     /**
+     * Specify the locale that is used for creating the initial translation strings. This locale is considered
+     * to be the driver of all other translations.
+     *
+     * @type string
+     */
+    'cookie_prefix' => 'laravel-translation-manager::',
+
+    /**
      * Enable management of translations beyond just editing and command line manipulations
      *
      * @type boolean

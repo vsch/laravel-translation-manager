@@ -213,7 +213,7 @@ if (!function_exists('mb_replace'))
                     break;
                 }
 
-                $result .= mb_substr($subject, $lastPos, $pos-$lastPos);
+                $result .= mb_substr($subject, $lastPos, $pos - $lastPos);
                 if ($s < $rMax) $result .= $replace[$s];
                 $pos += mb_strlen($find);
                 $count++;
@@ -223,3 +223,96 @@ if (!function_exists('mb_replace'))
         return $result;
     }
 }
+
+if (!function_exists('mb_chunk_split'))
+{
+    function mb_chunk_split($body, $chunklen = 76, $end = "\r\n")
+    {
+        $split = '';
+        $pos = 0;
+        $len = mb_strlen($body);
+        while ($pos < $len)
+        {
+            $split .= mb_substr($body, $pos, $chunklen) . $end;
+            $pos += $chunklen;
+        }
+        return $split;
+    }
+}
+
+if (!function_exists('mb_unsplit'))
+{
+    function mb_unsplit($body, $end = "\r\n")
+    {
+        $split = '';
+        $pos = 0;
+        $len = mb_strlen($body);
+        $skip = mb_strlen($end);
+        while ($pos < $len)
+        {
+            $next = strpos($body, $end, $pos);
+            if ($next === false)
+            {
+                $split .= mb_substr($body, $pos);
+                break;
+            }
+
+            $split .= mb_substr($body, $pos, $next - $pos);
+            $pos = $next + $skip;
+            if (mb_substr($body, $pos, $skip) === $end)
+            {
+                // keep the second
+                $split .= mb_substr($body, $pos, $skip);
+                $pos += $skip;
+            }
+        }
+        return $split;
+    }
+}
+
+if (!function_exists('mb_renderDiffHtml'))
+{
+
+    /**
+     * @param      $from_text
+     * @param      $to_text
+     *
+     * @param bool $charDiff
+     *
+     * @return array
+     */
+    function mb_renderDiffHtml($from_text, $to_text, $charDiff = null)
+    {
+        //if ($from_text === 'Lang' && $to_text === 'Language') xdebug_break();
+        if ($from_text == $to_text) return $to_text;
+
+        $removeSpaces = false;
+        if ($charDiff === null)
+        {
+            $charDiff = mb_strtolower($from_text) === mb_strtolower($to_text)
+                || abs(mb_strlen($from_text) - mb_strlen($to_text)) <= 2
+                || ($from_text && $to_text
+                    && ((strpos($from_text, $to_text) !== false)
+                        || ($to_text && strpos($to_text, $from_text) !== false)));
+        }
+
+        if ($charDiff)
+        {
+            //use word diff but space all entities so that we get char diff
+            $removeSpaces = true;
+            $from_text = mb_chunk_split($from_text, 1, ' ');
+            $to_text = mb_chunk_split($to_text, 1, ' ');
+        }
+        $from_text = mb_convert_encoding($from_text, 'HTML-ENTITIES', 'UTF-8');
+        $to_text = mb_convert_encoding($to_text, 'HTML-ENTITIES', 'UTF-8');
+        $opcodes = \FineDiff::getDiffOpcodes($from_text, $to_text, \FineDiff::$wordGranularity);
+        $diff = \FineDiff::renderDiffToHTMLFromOpcodes($from_text, $opcodes);
+        $diff = mb_convert_encoding($diff, 'UTF-8', 'HTML-ENTITIES');
+        if ($removeSpaces)
+        {
+            $diff = mb_unsplit($diff, ' ');
+        }
+        return $diff;
+    }
+}
+
