@@ -1,7 +1,7 @@
 @extends('laravel-translation-manager::layouts.master')
 
 @section('head')
-    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <meta name="csrf-token" content="{{ csrf_token() }}"/>
 @stop
 
 @section('content')
@@ -103,7 +103,7 @@
                         @endif
                     </div>
                 </div>
-                <br>
+                <div style="min-height: 10px"></div>
 
                 <div class="row">
                     <div class="col-sm-12">
@@ -167,7 +167,7 @@
                                 </div>
                             </div>
                         </div>
-                        <br>
+                        <div style="min-height: 10px"></div>
 
                         <div class="row">
                             <?php if(!$group): ?>
@@ -179,15 +179,17 @@
                                         data-target="#searchModal" style="float:right; display:inline">
                                     <?= noEditTrans('laravel-translation-manager::messages.search') ?>
                                 </button><?= ifEditTrans('laravel-translation-manager::messages.search') ?>
-                            </div><?php endif; ?>
+                            </div>
+                            <?php endif; ?>
                         </div>
+                        <div style="min-height: 10px"></div>
                     </div>
                 </div>
             </div>
             <div class="col-sm-5">
                 <div class="row">
                     <div class="col-sm-12">
-                        <br>
+                        <div style="min-height: 10px"></div>
 
                         <form class="form-inline" id="form-interface-locale" class="form-interface-locale" method="GET"
                                 action="<?= action('\Vsch\TranslationManager\Controller@getInterfaceLocale') ?>">
@@ -234,7 +236,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <br>
+                            <div style="min-height: 10px"></div>
 
                             <div class="row">
                                 <div class=" col-sm-3">
@@ -245,7 +247,8 @@
                                     </div>
                                     <div class="row">
                                         <div class=" col-sm-12">
-                                            <br><?= ifEditTrans('laravel-translation-manager::messages.check-all') ?>
+                                            <div style="min-height: 10px"></div>
+                                            <?= ifEditTrans('laravel-translation-manager::messages.check-all') ?>
                                             <button id="display-locale-all"
                                                     class="btn btn-sm btn-default"><?= noEditTrans('laravel-translation-manager::messages.check-all')?></button><?= ifEditTrans('laravel-translation-manager::messages.check-none') ?>
                                             <button id="display-locale-none"
@@ -322,7 +325,7 @@
                                                     'placeholder'=> noEditTrans('laravel-translation-manager::messages.addsuffixes-placeholder')]) !!}
                                         </div>
                                     </div>
-                                    <br>
+                                    <div style="min-height: 10px"></div>
                                     <script>
                                         var currentGroup = '{{$group}}';
                                         function addStandardSuffixes(event) {
@@ -410,7 +413,7 @@
                                                     'placeholder'=> noEditTrans('laravel-translation-manager::messages.dstkeys-placeholder')]) !!}
                                         </div>
                                     </div>
-                                    <br>
+                                    <div style="min-height: 10px"></div>
                                     <script>
                                         var currentGroup = '{{$group}}';
                                         function clearDstKeys(event) {
@@ -498,7 +501,8 @@
                                         <div class="col-sm-6">
                                         <textarea id="primary-text" class="form-control" rows="3" name="keys"
                                                 style="resize: vertical;"
-                                                placeholder="<?= $primaryLocale ?>"></textarea> <br>
+                                                placeholder="<?= $primaryLocale ?>"></textarea>
+                                            <div style="min-height: 10px"></div>
                                         <span style="float:right; display:inline">
                                             <button id="translate-primary-current" type="button"
                                                     class="btn btn-sm btn-primary">
@@ -510,7 +514,8 @@
                                         <div class="col-sm-6">
                                         <textarea id="current-text" class="form-control" rows="3" name="keys"
                                                 style="resize: vertical;"
-                                                placeholder="<?= $translatingLocale ?>"></textarea> <br>
+                                                placeholder="<?= $translatingLocale ?>"></textarea>
+                                            <div style="min-height: 10px"></div>
                                             <button id="translate-current-primary" type="button"
                                                     class="btn btn-sm btn-primary">
                                                 <?= $translatingLocale ?> <i
@@ -527,7 +532,7 @@
         </div>
         <div class="row">
             <div class="col-sm-12 ">
-                <br>
+                <div style="min-height: 10px"></div>
                 <table class="table table-condensed table-striped table-translations">
                     <thead>
                         <tr>
@@ -552,10 +557,11 @@
                             <th width="<?=$mainWidth?>%"><?= $locale ?>
                                 <div class="input-group" style="float:right; display:inline">
                                     <?= ifEditTrans('laravel-translation-manager::messages.auto-translate-disabled') ?>
-                                    <?= ifEditTrans('laravel-translation-manager::messages.auto-translate') ?>
-                                    <a class="btn btn-sm btn-primary" id="auto-translate" role="button" data-disable-with="<?=noEditTrans('laravel-translation-manager::messages.auto-translate-disabled')?>"
-                                        href="#') ?>"><?= noEditTrans('laravel-translation-manager::messages.auto-translate') ?></a>
-                            </div>
+                                    <?= ifEditTrans('laravel-translation-manager::messages.auto-translate') ?><a
+                                            class="btn btn-sm btn-primary" id="auto-translate" role="button"
+                                            data-disable-with="<?=noEditTrans('laravel-translation-manager::messages.auto-translate-disabled')?>"
+                                            href="#') ?>"><?= noEditTrans('laravel-translation-manager::messages.auto-translate') ?></a>
+                                </div>
                             </th><?php else: ?>
                             <th width="<?=$mainWidth?>%"><?= $locale ?></th><?php endif;?>
                             <?php else: ?>
@@ -660,8 +666,9 @@
         </div>
     </div>
 
-@stop
-@section('body-bottom')
+    @stop
+
+    @section('body-bottom')
     <!--<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>-->
     <!--<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>-->
     <script>
@@ -875,7 +882,7 @@
                     if (autoTranslate.length) {
                         progCurrent++;
                         translateNext(autoTranslate.pop());
-                        elemButton.attr('disabled','disabled');
+                        elemButton.attr('disabled', 'disabled');
                         elemButton.text(btnAlt + ' ' + progCurrent + ' / ' + progTotal);
                     }
                     else {
@@ -888,6 +895,7 @@
                 for (i = 0; i < 4; i++) {
                     fireTranslate();
                 }
+
             });
 
             function textareaTandemResize(src, dst, liveupdate) {
