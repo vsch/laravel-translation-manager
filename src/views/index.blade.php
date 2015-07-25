@@ -846,7 +846,10 @@
                 };
 
                 // start the chain of translations
-                fireTranslate();
+                for (i = 0; i < 4; i++) {
+                    fireTranslate();
+                }
+
             });
 
             function textareaTandemResize(src, dst, liveupdate) {
