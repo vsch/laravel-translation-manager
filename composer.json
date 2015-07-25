@@ -30,5 +30,14 @@
             "src/migrations"
         ]
     },
+    "scripts": {
+        "post-install-cmd": [
+        ],
+        "post-update-cmd": [
+            "php artisan asset:publish vsch/laravel-translation-manager"
+        ],
+        "post-create-project-cmd": [
+        ]
+    },
     "minimum-stability": "stable"
 }

@@ -369,6 +369,6 @@ Suggestions and priority requests are welcome. :)
 <a id="History"></a>
 ## History and Origins
 
-This package was originally based on Barry vd. Heuvel's <barryvdh@gmail.com> excellent **barryvdh/laravel-translation-manager** package.
+This package was originally based on Barry vd. Heuvel's excellent **barryvdh/laravel-translation-manager** package.
 
 I was creating an English/Russian site on a tight schedule and managing translations was a serious burden. When I saw Barry's package, I instantly decided that it was a must have. Right away I could see that it needed some features to make it into serious translator's workhorse. The code base diverged very quickly and I decided to publish it as a separate package so that others can experience the joy of creating localized sites without the pain, blood, sweat nor tears.
