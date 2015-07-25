@@ -531,11 +531,20 @@
                             ?>
                             <?php foreach($locales as $locale): ?>
                                 <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
-                                <?php if ($col < 2): ?>
-                                <th width="<?=$mainWidth?>%"><?= $locale ?></th>
-                                <?php else: ?>
-                                <th><?= $locale ?></th>
-                                <?php endif; $col++; ?>
+                            <?php if ($col < 2): ?>
+                            <?php if ($col === 1 && isset($yandex_key) && $yandex_key): ?>
+                            <th width="<?=$mainWidth?>%"><?= $locale ?>
+                                <div class="input-group" style="float:right; display:inline">
+                                    <?= ifEditTrans('laravel-translation-manager::messages.auto-translate-disabled') ?>
+                                    <?= ifEditTrans('laravel-translation-manager::messages.auto-translate') ?>
+                                    <a class="btn btn-sm btn-primary" id="auto-translate" role="button" data-disable-with="<?=noEditTrans('laravel-translation-manager::messages.auto-translate-disabled')?>"
+                                        href="#') ?>"><?= noEditTrans('laravel-translation-manager::messages.auto-translate') ?></a>
+                                </div>
+                            </th>
+                            <?php else: ?>
+                            <th width="<?=$mainWidth?>%"><?= $locale ?></th><?php endif;?>
+                            <?php else: ?>
+                            <th><?= $locale ?></th><?php endif; $col++; ?>
                             <?php endforeach; ?>
                         </tr>
                     </thead>
@@ -568,7 +577,7 @@
                             <?php foreach($locales as $locale): ?>
                             <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
                             <?php $t = isset($translation[$locale]) ? $translation[$locale] : null ?>
-                            <td>
+                            <td <?= $locale === $translatingLocale ? 'class="auto-translatable"' : '' ?>>
                                 <?= $translator->inPlaceEditLink(!$t ? $t : ($t->value == '' ? null : $t), true, "$group.$key", $locale, null, $group) ?>
                             </td>
                             <?php endforeach; ?>
@@ -636,6 +645,7 @@
         var PRIMARY_LOCALE = '{{$primaryLocale}}';
         var CURRENT_LOCALE = '{{$currentLocale}}';
         var TRANSLATING_LOCALE = '{{$translatingLocale}}';
+        var xtranslateText;
 
         jQuery(document).ready(function ($) {
             $('.group-select').on('change', function () {
@@ -705,7 +715,7 @@
             $('#translate-current-primary').on('click', function () {
                 var elemFrom = $('#current-text').first(),
                         fromText = elemFrom[0].value;
-                translate(TRANSLATING_LOCALE, fromText, PRIMARY_LOCALE, function (text) {
+                xtranslateService(TRANSLATING_LOCALE, fromText, PRIMARY_LOCALE, function (text) {
                     var elem = $('#primary-text').first();
                     if (elem.length) {
                         elem.val(text);
@@ -716,7 +726,7 @@
             $('#translate-primary-current').on('click', function () {
                 var elemFrom = $('#primary-text').first(),
                         fromText = elemFrom[0].value;
-                translate(PRIMARY_LOCALE, fromText, TRANSLATING_LOCALE, function (text) {
+                xtranslateService(PRIMARY_LOCALE, fromText, TRANSLATING_LOCALE, function (text) {
                     var elem = $('#current-text').first();
                     if (elem.length) {
                         elem.val(text);
@@ -746,6 +756,99 @@
                 $('.display-locale').prop('checked',false);
             });
 
+            var elemButton = $('#auto-translate');
+            elemButton.on('click', function (e) {
+                e.preventDefault();
+                var autoTranslate = [], elemProgress = $('#auto-progress').first(), progTotal, progCurrent, btnText = elemButton.text(), btnAlt = elemButton.data('disable-with');
+
+                // step through all the definitions in the second column and auto translate empty ones
+                // here we make a log of assumptons about where the data is.
+                // we assume that the source is the child element immediately preceeding this one and it is a <td> containing
+                // <a> containing the source text
+                $(".auto-translatable").each(function () {
+                    var row = $(this).parent().find(".vsch_editable");
+                    if (row.length > 1) {
+                        var srcElem = $(row[0]),
+                                dstElem = $(row[1]);
+
+                        if (dstElem.length) {
+                            if (dstElem.hasClass('editable-empty') && !srcElem.hasClass('editable-empty')) {
+                                var dataName = dstElem.data('name'),
+                                        dataUrl = dstElem.data('url'),
+                                        srcText = srcElem.text();
+
+                                autoTranslate.push({
+                                    srcText: srcText,
+                                    dataUrl: dataUrl,
+                                    dataName: dataName,
+                                    dstElem: dstElem
+                                });
+                            }
+                        }
+                    }
+                });
+
+                progTotal = autoTranslate.length;
+                progCurrent = 0;
+
+                // we could process all the keys in parallel but we will do it one at a time
+                var fireTranslate, translateNext = function (t) {
+                    xtranslateText(xtranslateService, PRIMARY_LOCALE, t.srcText, TRANSLATING_LOCALE, function (text, trans) {
+                        if (text !== "") {
+
+                            var jqxhr = $.ajax({
+                                type: 'POST',
+                                url: t.dataUrl,
+                                data: {'name': t.dataName, 'value': text},
+                                success: function (json) {
+                                    if (json.status === 'ok') {
+                                        // now can update the element and fire off the next translation
+                                        t.dstElem.removeClass('editable-empty');
+                                        t.dstElem.addClass('status-1');
+                                        t.dstElem.text(text);
+                                    }
+                                    else {
+                                        elemButton.removeAttr('disabled');
+                                        elemButton.text(btnText);
+                                    }
+                                },
+                                encode: true
+                            });
+
+                            jqxhr.done(function () {
+                                fireTranslate();
+                            });
+
+                            jqxhr.fail(function () {
+                                elemButton.removeAttr('disabled');
+                                elemButton.text(btnText);
+                            });
+                        }
+                        else {
+                            elemButton.removeAttr('disabled');
+                            elemButton.text(btnText);
+                        }
+                    });
+
+                };
+
+                fireTranslate = function () {
+                    if (autoTranslate.length) {
+                        progCurrent++;
+                        translateNext(autoTranslate.pop());
+                        elemButton.attr('disabled','disabled');
+                        elemButton.text(btnAlt + ' ' + progCurrent + ' / ' + progTotal);
+                    }
+                    else {
+                        elemButton.removeAttr('disabled');
+                        elemButton.text(btnText);
+                    }
+                };
+
+                // start the chain of translations
+                fireTranslate();
+            });
+
             function textareaTandemResize(src, dst, liveupdate) {
                 return function () {
                     var srcTimeout = {id: null},
@@ -758,11 +861,15 @@
                                 dst.outerWidth(src.outerWidth());
                                 dst.outerHeight(src.outerHeight());
                             }
-                            else if (dst.css("resize") === 'horizontal') {
-                                dst.outerWidth(src.outerWidth());
-                            }
-                            else if (dst.css("resize") === 'vertical') {
-                                dst.outerHeight(src.outerHeight());
+                            else {
+                                if (dst.css("resize") === 'horizontal') {
+                                    dst.outerWidth(src.outerWidth());
+                                }
+                                else {
+                                    if (dst.css("resize") === 'vertical') {
+                                        dst.outerHeight(src.outerHeight());
+                                    }
+                                }
                             }
 
                             if (timeout.id) {
@@ -786,12 +893,14 @@
                                 }
                                 srcTimeout.id = setTimeout(resizeEvent(src, dst, srcTimeout), 1000 / 30);
                             }
-                            else if (e.target === dst[0]) {
-                                if (dstTimeout.id) {
-                                    clearTimeout(dstTimeout.id);
-                                    dstTimeout.id = null;
+                            else {
+                                if (e.target === dst[0]) {
+                                    if (dstTimeout.id) {
+                                        clearTimeout(dstTimeout.id);
+                                        dstTimeout.id = null;
+                                    }
+                                    dstTimeout.id = setTimeout(resizeEvent(dst, src, dstTimeout), 1000 / 30);
                                 }
-                                dstTimeout.id = setTimeout(resizeEvent(dst, src, dstTimeout), 1000 / 30);
                             }
                         });
                     }
@@ -808,8 +917,10 @@
                         if (e.target === src[0]) {
                             resizeEvent(src, dst, srcTimeout)();
                         }
-                        else if (e.target === dst[0]) {
-                            resizeEvent(dst, src, dstTimeout)();
+                        else {
+                            if (e.target === dst[0]) {
+                                resizeEvent(dst, src, dstTimeout)();
+                            }
                         }
                     });
                 };
