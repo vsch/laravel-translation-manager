@@ -96,7 +96,7 @@
                         @endif
                     </div>
                 </div>
-                <br>
+                <div style="min-height: 10px"></div>
                 <div class="row">
                     <div class="col-sm-12">
                         <div class="row">
@@ -153,7 +153,7 @@
                                 </div>
                             </div>
                         </div>
-                        <br>
+                        <div style="min-height: 10px"></div>
 
                         <div class="row">
                             <?php if(!$group): ?>
@@ -168,13 +168,14 @@
                             </div>
                             <?php endif; ?>
                         </div>
+                        <div style="min-height: 10px"></div>
                     </div>
                 </div>
             </div>
             <div class="col-sm-5">
                 <div class="row">
                     <div class="col-sm-12">
-                        <br>
+                        <div style="min-height: 10px"></div>
                         <form class="form-inline" id="form-interface-locale" class="form-interface-locale" method="GET"
                                 action="<?= action('Vsch\TranslationManager\Controller@getInterfaceLocale') ?>">
                             <div class="row">
@@ -217,7 +218,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <br>
+                            <div style="min-height: 10px"></div>
                             <div class="row">
                                 <div class=" col-sm-3">
                                     <div class="row">
@@ -227,7 +228,7 @@
                                     </div>
                                     <div class="row">
                                         <div class=" col-sm-12">
-                                            <br>
+                                            <div style="min-height: 10px"></div>
                                             <?= ifEditTrans('laravel-translation-manager::messages.check-all') ?>
                                             <button id="display-locale-all" class="btn btn-sm btn-default"><?= noEditTrans('laravel-translation-manager::messages.check-all')?></button>
                                             <?= ifEditTrans('laravel-translation-manager::messages.check-none') ?>
@@ -308,7 +309,7 @@
                                                     'placeholder'=> noEditTrans('laravel-translation-manager::messages.addsuffixes-placeholder')]) }}
                                         </div>
                                     </div>
-                                    <br>
+                                    <div style="min-height: 10px"></div>
                                     <script>
                                         var currentGroup = '{{{$group}}}';
                                         function addStandardSuffixes(event) {
@@ -396,7 +397,7 @@
                                                     'placeholder'=> noEditTrans('laravel-translation-manager::messages.dstkeys-placeholder')]) }}
                                         </div>
                                     </div>
-                                    <br>
+                                    <div style="min-height: 10px"></div>
                                     <script>
                                         var currentGroup = '{{{$group}}}';
                                         function clearDstKeys(event) {
@@ -485,7 +486,7 @@
                                     <div class="col-sm-6">
                                         <textarea id="primary-text" class="form-control" rows="3" name="keys" style="resize: vertical;"
                                                 placeholder="<?= $primaryLocale ?>"></textarea>
-                                        <br>
+                                        <div style="min-height: 10px"></div>
                                         <span style="float:right; display:inline">
                                             <button id="translate-primary-current" type="button" class="btn btn-sm btn-primary">
                                                 <?= $primaryLocale ?> <i class="glyphicon glyphicon-share-alt"></i> <?= $translatingLocale ?>
@@ -495,7 +496,7 @@
                                     <div class="col-sm-6">
                                         <textarea id="current-text" class="form-control" rows="3" name="keys" style="resize: vertical;"
                                                 placeholder="<?= $translatingLocale ?>"></textarea>
-                                        <br>
+                                        <div style="min-height: 10px"></div>
                                         <button id="translate-current-primary" type="button" class="btn btn-sm btn-primary">
                                             <?= $translatingLocale ?> <i class="glyphicon glyphicon-share-alt"></i> <?= $primaryLocale ?>
                                         </button>
@@ -510,7 +511,7 @@
         </div>
         <div class="row">
             <div class="col-sm-12 ">
-                <br>
+                <div style="min-height: 10px"></div>
                 <table class="table table-condensed table-striped table-translations">
                     <thead>
                         <tr>
