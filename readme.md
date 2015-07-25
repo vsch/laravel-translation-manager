@@ -167,6 +167,30 @@ If someone contacts me with a request to prioritize a specific area I will do it
 
         "vsch/laravel-translation-manager": "~1.0"
 
+	- if you are not going to be customizing the web interface it is highly recommended that you add automatic asset publishing for this package after upgrade in your project's composer.json:
+	
+			"php artisan asset:publish vsch/laravel-translation-manager",
+
+	Otherwise a future update, that needs new assets, will not work properly. composer does not run post-update scripts of packages.
+	
+	Here is a full scripts section of a standard Laravel 4.2 project composer.json should look like after the change.
+	
+		    "scripts": {
+		        "post-install-cmd": [
+		            "php artisan clear-compiled",
+		            "php artisan optimize"
+		        ],
+		        "post-update-cmd": [
+		            "php artisan clear-compiled",
+		            "php artisan asset:publish vsch/laravel-translation-manager",
+		            "php artisan optimize"
+		        ],
+		        "post-create-project-cmd": [
+		            "php artisan key:generate"
+		        ]
+		    },
+
+
 2. After updating composer, add the ServiceProviders to the providers array in app/config/app.php and comment out the original TranslationServiceProvider:
 
         //'Illuminate\Translation\TranslationServiceProvider',
