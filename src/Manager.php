@@ -487,6 +487,16 @@ SQL
     public
     function exportTranslations($group, $recursing = 0)
     {
+        if ($group && $group !== '*')
+        {
+            $this->translation->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE is_deleted = 1");
+        }
+        elseif (!$recursing)
+        {
+            $this->translation->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE is_deleted = 1 AND `group` = ?"
+                , [$group]);
+        }
+
         $inDatabasePublishing = $this->inDatabasePublishing();
         if ($inDatabasePublishing < 3 && $inDatabasePublishing && ($inDatabasePublishing < 2 || !$recursing))
         {
@@ -527,9 +537,6 @@ SQL
             {
                 if ($group == '*')
                     $this->exportAllTranslations(1);
-
-                $this->translation->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE is_deleted = 1 AND `group` = ?"
-                    , [$group]);
 
                 if ($inDatabasePublishing !== 3) $this->clearCache($group);
 

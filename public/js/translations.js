@@ -2,13 +2,14 @@
 /**
  * Created by vlad on 15-02-10.
  */
-var translate;
 var CLIP_TEXT;
 var MISSMATCHED_QUOTES_MESSAGE;
 var YANDEX_TRANSLATOR_KEY;
 var PRIMARY_LOCALE;
 var CURRENT_LOCALE;
 var TRANSLATING_LOCALE;
+var xtranslateText;
+var xtranslateService;
 
 function swapInClass(elem, toAdd, toRemove) {
     'use strict';
@@ -39,59 +40,111 @@ String.prototype.toLocaleCapitalCase = function () {
     });
 };
 
+function translateYandex(fromLoc, fromText, toLoc, onTranslate) {
+    var ERR_OK = 200,
+        ERR_KEY_INVALID = 401,
+        ERR_KEY_BLOCKED = 402,
+        ERR_DAILY_REQ_LIMIT_EXCEEDED = 403,
+        ERR_DAILY_CHAR_LIMIT_EXCEEDED = 404,
+        ERR_TEXT_TOO_LONG = 413,
+        ERR_UNPROCESSABLE_TEXT = 422,
+        ERR_LANG_NOT_SUPPORTED = 501,
+        errCodes = {
+            200: 'Operation completed successfully.',
+            401: 'Invalid API key.',
+            402: 'This API key has been blocked.',
+            403: 'You have reached the daily limit for requests (including calls of the detect method).',
+            404: 'You have reached the daily limit for the volume of translated text (including calls of the detect method).',
+            413: 'The text size exceeds the maximum.',
+            422: 'The text could not be translated.',
+            501: 'The specified translation direction is not supported.'
+        };
+
+    var jqxhr = $.getJSON("https://translate.yandex.net/api/v1.5/tr.json/translate", {
+            key: YANDEX_TRANSLATOR_KEY,
+            lang: fromLoc + '-' + toLoc,
+            text: fromText
+        },
+        function (json) {
+            if (json.code === ERR_OK) {
+                onTranslate(json.text.join("\n"));
+            }
+            else {
+                window.console.log("Yandex API: " + json.code + ': ' + errCodes[json.code] + "\n");
+            }
+        });
+
+    jqxhr.done(function () {
+    });
+
+    jqxhr.fail(function () {
+    });
+}
+
+function startsWithWord2(word1, word2, prefix) {
+    return word2.toLocaleLowerCase().indexOf(prefix) === 0 && word1.toLocaleLowerCase().indexOf(prefix) !== 0;
+}
+
+function extractSecondWord(text) {
+    var word1, word2, pos = text.indexOf(' ');
+
+    if (pos !== -1) {
+        word1 = text.substr(0, pos);
+        word2 = text.substr(pos + 1);
+        if (startsWithWord2(word1, word2, 'од') || startsWithWord2(word1, word2, 'дв') || startsWithWord2(word1, word2, 'пя')) {
+            text = word1;
+        } else {
+            text = word2;
+        }
+    }
+    return text;
+}
+
+function extractPluralForm(pluralForms, index) {
+    if (pluralForms.length > index) {
+        return extractSecondWord(pluralForms[index]);
+    }
+    return '';
+}
+
+xtranslateService = translateYandex;
+xtranslateText = function (translator, srcLoc, srcText, dstLoc, processText) {
+    var pos, single, plural, havePlural, src = srcText;
+    if ((pos = srcText.indexOf('|')) !== -1) {
+        // have pluralization
+        single = srcText.substr(0, pos);
+        plural = srcText.substr(pos + 1);
+        src = 'one ' + single + '\ntwo ' + plural + '\nfive ' + plural;
+        havePlural = true;
+    }
+    translator(srcLoc, src, dstLoc, function (text) {
+        var single, plural, plural2, pluralForms, result = text, trans;
+        if (havePlural) {
+            trans = text.replace(/$\s*/mg, '|');
+            if (trans.substr(trans.length - 1, 1) === '|') {
+                trans = trans.substr(0, trans.length - 1);
+            }
+
+            pluralForms = result.split('\n', 3);
+            single = extractPluralForm(pluralForms, 0);
+            plural = extractPluralForm(pluralForms, 1);
+
+            if (dstLoc === 'ru') {
+                plural2 = extractPluralForm(pluralForms, 2);
+                result = single + '|' + plural + '|' + plural2;
+            }
+            else {
+                // TODO: have to handle other plural forms for complex locales
+                result = single + '|' + plural;
+            }
+        }
+        processText(result, trans);
+    });
+};
+
 $(document).ready(function () {
     'use strict';
     var elem;
-
-    translate = function (fromLoc, fromText, toLoc, onTranslate) {
-        var ERR_OK = 200,
-            ERR_KEY_INVALID = 401,
-            ERR_KEY_BLOCKED = 402,
-            ERR_DAILY_REQ_LIMIT_EXCEEDED = 403,
-            ERR_DAILY_CHAR_LIMIT_EXCEEDED = 404,
-            ERR_TEXT_TOO_LONG = 413,
-            ERR_UNPROCESSABLE_TEXT = 422,
-            ERR_LANG_NOT_SUPPORTED = 501,
-            errCodes = {
-                200: 'Operation completed successfully.',
-                401: 'Invalid API key.',
-                402: 'This API key has been blocked.',
-                403: 'You have reached the daily limit for requests (including calls of the detect method).',
-                404: 'You have reached the daily limit for the volume of translated text (including calls of the detect method).',
-                413: 'The text size exceeds the maximum.',
-                422: 'The text could not be translated.',
-                501: 'The specified translation direction is not supported.'
-            };
-
-        var jqxhr = $.getJSON("https://translate.yandex.net/api/v1.5/tr.json/translate", {
-                key: YANDEX_TRANSLATOR_KEY,
-                lang: fromLoc + '-' + toLoc,
-                text: fromText
-            },
-            function (json) {
-                var sample = {
-                    code: 200,
-                    lang: "en-ru",
-                    text: [
-                        "Быть или не быть?",
-                        "Вот в чем вопрос."
-                    ]
-                };
-
-                if (json.code === ERR_OK) {
-                    onTranslate(json.text.join("\n"));
-                }
-                else {
-                    window.console.log("Yandex API: " + json.code + ': ' + errCodes[json.code] + "\n");
-                }
-            });
-
-        jqxhr.done(function () {
-        });
-
-        jqxhr.fail(function () {
-        });
-    };
 
     function validateXEdit(value) {
         // check for open or mismatched quotes in href=  and src=, attributes if any
@@ -175,65 +228,13 @@ $(document).ready(function () {
         }
     }
 
-    function startsWithWord2(word1, word2, prefix) {
-        return word2.toLocaleLowerCase().indexOf(prefix) === 0 && word1.toLocaleLowerCase().indexOf(prefix) !== 0;
-    }
-
-    function extractSecondWord(text) {
-        var word1, word2, pos = text.indexOf(' ');
-
-        if (pos !== -1) {
-            word1 = text.substr(0, pos);
-            word2 = text.substr(pos + 1);
-            if (startsWithWord2(word1, word2, 'од') || startsWithWord2(word1, word2, 'дв') || startsWithWord2(word1, word2, 'пя')) {
-                text = word1;
-            } else {
-                text = word2;
-            }
-        }
-        return text;
-    }
-
-    function extractPluralForm(pluralForms, index) {
-        if (pluralForms.length > index) {
-            return extractSecondWord(pluralForms[index]);
-        }
-        return '';
-    }
-
     var srcText, srcLoc, dstLoc, dstElem, elemRow, inEditable = 0,
         xtranslate = function (srcLoc, srcText, dstLoc, dstElem, errElem) {
             return function () {
-                var pos, single, plural, havePlural, src = srcText;
-                if ((pos = srcText.indexOf('|')) !== -1) {
-                    // have pluralization
-                    single = srcText.substr(0, pos);
-                    plural = srcText.substr(pos + 1);
-                    src = 'one ' + single + '\ntwo ' + plural + '\nfive ' + plural;
-                    havePlural = true;
-                }
-                translate(srcLoc, src, dstLoc, function (text) {
-                    var single, plural, plural2, pluralForms, result = text;
-                    if (havePlural) {
-                        var trans = text.replace(/$\s*/mg, '|');
-                        if (trans.substr(trans.length - 1, 1) === '|') {
-                            trans = trans.substr(0, trans.length - 1);
-                        }
+                xtranslateText(xtranslateService, srcLoc, srcText, dstLoc, function (result, trans) {
+                    if (trans) {
                         errElem.html(trans);
                         errElem.css('display', 'block');
-                        //errElem.css('max-width', '1000px');
-                        pluralForms = result.split('\n', 3);
-                        single = extractPluralForm(pluralForms, 0);
-                        plural = extractPluralForm(pluralForms, 1);
-
-                        if (dstLoc === 'ru') {
-                            plural2 = extractPluralForm(pluralForms, 2);
-                            result = single + '|' + plural + '|' + plural2;
-                        }
-                        else {
-                            // TODO: have to handle other plural forms for complex locales
-                            result = single + '|' + plural;
-                        }
                     }
                     dstElem.val(result);
                     dstElem.focus();
