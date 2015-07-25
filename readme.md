@@ -288,7 +288,7 @@ The reset command clears all translation in the database, so you can start fresh
 <a id="NewFeatures"></a>
 ## New Features
 
-These features were added since the code diverged from the original barryvdh/laravel-translation-manager package:
+These features were added since the code diverged from the original `barryvdh/laravel-translation-manager` package:
 
 - translation manager web-interface is now fully localized. Current version has English and Russian locales. Others can be easily added by adding package translation overrides in `app/lang/vendor/laravel-translation-manager/{locale}/messages.php` files and generating a pull request so that they could be incorporated into the package.
 
@@ -363,7 +363,7 @@ This package is still in development although it is successfully being used to m
 
 - MySQL DB is assumed for queries in those places where Eloquent was too cumbersome or too inefficient. I will be refactoring all DB access that bypasses Eloquent into a TranslationRepository interface class so that new DB access will only need to create a new repository implementation class for a specific DB interface.
 
-- only Yandex assisted translations are implemented. Google translate was not used since it has no free option. However it is a simple change in the translator.js file to handle alternate translation engines. I will be making a configurable item in the future.
+- only Yandex assisted translations are implemented. Google translate was not used since it has no free option. However it is a simple change in the `translator.js` file to handle alternate translation engines. I will be making a configurable item in the future.
 
 - key operations that allow creating new keys and also keys permuted by suffixes, moving, copying, deleting keys are a bit of a kludge. I am planning to rework the web interface to make these cleaner. However, if you desperately need these to save a lot of typing and editing, the current version will do the trick.
 
@@ -372,6 +372,6 @@ Suggestions and priority requests are welcome. :)
 <a id="History"></a>
 ## History and Origins
 
-This package was originally based on Barry vd. Heuvel's <barryvdh@gmail.com> excellent **barryvdh/laravel-translation-manager** package. 
+This package was originally based on Barry vd. Heuvel's excellent **barryvdh/laravel-translation-manager** package. 
 
 I was creating an English/Russian site on a tight schedule and managing translations was a serious burden. When I saw Barry's package, I instantly decided that it was a must have. Right away I could see that it needed some features to make it into serious translator's workhorse. The code base diverged very quickly and I decided to publish it as a separate package so that others can experience the joy of creating localized sites without the pain, blood, sweat nor tears.
