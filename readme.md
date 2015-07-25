@@ -118,7 +118,9 @@ Click on the panel to expand it.
 
 Enter keys you want to create/delete from the current group in the left text area, and optionally any suffixes you want to permute with the keys on the left. For example, keys: abc, def, ghi; with suffixes: 1,2,3 will create/delete: abc1, abc2, abc3, def1, def2, def3, ghi1, ghi2, ghi3.
 
-Hit the search button to see the search dialog. The database translation strings and keys will be searched for the text and the matching entries displayed. You can edit the resulting translations directly in the search dialog or alternately follow the group link to display the group translation page.
+The search button displays the search dialog which will display translation strings and keys that contain the text being searched. You can use the '%' wildcard character in the search text to give you finer control, if you don't provide one the text you enter will be surrounded by '%'.
+
+You can edit the resulting translations directly in the search dialog results table or follow the group link to display the group's translation page.
 
 ![Search](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_search.png)
 
@@ -330,7 +332,7 @@ These features were added since the code diverged from the original barryvdh/lar
 - added a working set of locales to limit number of locales displayed on the page to reduce clutter and page load time.
 
 <a id="YandexSupportedLanguages"></a>
-## Yandex Translation Supported languages
+## Yandex Translation Supported Languages
 
 You can find an up to date list here: <https://tech.yandex.com/translate/doc/dg/concepts/langs-docpage/>
 
