@@ -72,11 +72,13 @@
                                                         data-disable-with="<?= noEditTrans('laravel-translation-manager::messages.loading') ?>">
                                                     <?= noEditTrans('laravel-translation-manager::messages.import-groups') ?>
                                                 </button>
+                                                <?= ifEditTrans('laravel-translation-manager::messages.zip-all') ?>
+                                                <a href="<?= action('Vsch\TranslationManager\Controller@getZippedTranslations', ['group' => '*']) ?>"
                                                 <div class="input-group" style="float:right; display:inline">
                                                     <?= ifEditTrans('laravel-translation-manager::messages.download-zip') ?>
                                                     <a href="<?= action('Vsch\TranslationManager\Controller@getZippedTranslations', ['group' => '*']) ?>"
                                                             role="button" class="btn btn-primary btn-sm">
-                                                        <?= noEditTrans('laravel-translation-manager::messages.download-zip') ?>
+                                                    <?= noEditTrans('laravel-translation-manager::messages.zip-all') ?>
                                                     </a>
                                                     <?= ifEditTrans('laravel-translation-manager::messages.find-in-files') ?>
                                                     <?= ifEditTrans('laravel-translation-manager::messages.searching') ?>
@@ -115,6 +117,11 @@
                                                 data-disable-with="<?= noEditTrans('laravel-translation-manager::messages.publishing') ?>">
                                             <?= noEditTrans('laravel-translation-manager::messages.publish') ?>
                                         </button>
+                                        <?= ifEditTrans('laravel-translation-manager::messages.zip-group') ?>
+                                        <a href="<?= action('Vsch\TranslationManager\Controller@getZippedTranslations', ['group' => $group]) ?>"
+                                                role="button" class="btn btn-primary btn-sm">
+                                            <?= noEditTrans('laravel-translation-manager::messages.zip-group') ?>
+                                        </a>
                                         <?php endif; ?>
                                         <div class="input-group" style="float:right; display:inline">
                                             <?php if ($group): ?>

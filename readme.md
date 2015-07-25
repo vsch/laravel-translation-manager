@@ -8,6 +8,13 @@ This package is used to comfortably manage, view, edit and translate Laravel lan
 
 > - For Laravel 5.1 use the master branch, or require: `"vsch/laravel-translation-manager": "~2.0"`
 
+&nbsp;
+> Initial Localizations Added
+
+> Only en and ru locales were manually verified. All others are there as a starter set and were automatically generated  via Yandex by using the new Auto Translate feature in the web interface.
+
+> Any help in cleaning them up would be greatly appreciated. 
+
 <a id="Screenshot"></a>
 #### Screenshot
 
