@@ -599,9 +599,7 @@
                             <td <?= $locale === $translatingLocale ? 'class="auto-translatable"' : '' ?>>
                                 <?= $translator->inPlaceEditLink(!$t ? $t : ($t->value == '' ? null : $t), true, "$group.$key", $locale, null, $group) ?>
                             </td><?php endforeach; ?>
-                            <?php endforeach; ?>
-                        </tr>
-                        <?php } ?>
+                        </tr><?php } ?>
                     </tbody>
                 </table>
             </div>
