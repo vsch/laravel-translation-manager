@@ -33,11 +33,19 @@ class Manager
     protected $cachePrefix;
     protected $cache;
     protected $cacheIsDirty;
+    protected $cacheTransKey;
+    private $package;
 
     /**
      * @var   \ZipArchive
      */
     protected $zipExporting;
+
+    public
+    function packageName($package)
+    {
+        $this->package = $package;
+    }
 
     public
     function __construct(Application $app, Filesystem $files, Dispatcher $events, Translation $translation)
@@ -64,7 +72,7 @@ class Manager
     public
     function config()
     {
-        return $this->config ?: $this->config = $this->app['config']['laravel-translation-manager::config'];
+        return $this->config ?: $this->config = $this->app['config'][$this->package.'::config'];
     }
 
     public
@@ -78,9 +86,10 @@ class Manager
     {
         if ($this->cachePrefix === null)
         {
-            if (array_key_exists('cache_prefix', $this->config()))
+            if (array_key_exists('persistent_prefix', $this->config()))
             {
-                $this->cachePrefix = $this->config()['cache_prefix'];
+                $this->cachePrefix = $this->config()['persistent_prefix'];
+                $this->cacheTransKey = $this->cachePrefix ? $this->cachePrefix . 'translations' : '';
             }
             else
             {
@@ -95,8 +104,8 @@ class Manager
     {
         if ($this->cache === null)
         {
-            $this->cache = $this->cachePrefix() !== '' && Cache::has($this->cachePrefix) ? Cache::get($this->cachePrefix) : [];
-            $this->cacheIsDirty = $this->cachePrefix !== '' && !Cache::has($this->cachePrefix);
+            $this->cache = $this->cachePrefix() !== '' && Cache::has($this->cacheTransKey) ? Cache::get($this->cacheTransKey) : [];
+            $this->cacheIsDirty = $this->cachePrefix !== '' && !Cache::has($this->cacheTransKey);
         }
         return $this->cache;
     }
@@ -106,7 +115,7 @@ class Manager
     {
         if ($this->cachePrefix && $this->cacheIsDirty)
         {
-            Cache::put($this->cachePrefix, $this->cache, 60 * 24 * 365);
+            Cache::put($this->cacheTransKey, $this->cache, 60 * 24 * 365);
             $this->cacheIsDirty = false;
         }
     }
@@ -205,11 +214,11 @@ class Manager
             $lottery = 1;
             if ($useLottery && $this->config()['missing_keys_lottery'] !== 1)
             {
-                $lottery = Session::get('laravel_translation_manager.lottery', '');
+                $lottery = Session::get($this->config()['persistent_prefix'] . 'lottery', '');
                 if ($lottery === '')
                 {
                     $lottery = rand(1, $this->config()['missing_keys_lottery']);
-                    Session::put('laravel_translation_manager.lottery', $lottery);
+                    Session::put($this->config()['persistent_prefix'] . 'lottery', $lottery);
                 }
             }
 

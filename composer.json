@@ -1,6 +1,6 @@
 {
     "name": "vsch/laravel-translation-manager",
-    "description": "Manage Laravel Translations",
+    "description": "Enhanced Laravel Translation Manager",
     "keywords": ["laravel", "translations", "translator"],
     "license": "MIT",
     "authors": [

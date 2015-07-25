@@ -11,11 +11,11 @@ return array(
     'primary_locale' => 'en',
 
     /**
-     * Specify the prefix used for all cookies.
+     * Specify the prefix used for all cookies, session data and cache persistence.
      *
      * @type string
      */
-    'cookie_prefix' => 'laravel-translation-manager::',
+    'persistent_prefix' => 'laravel-translation-manager::',
 
     /**
      * Enable management of translations beyond just editing and command line manipulations
@@ -37,7 +37,7 @@ return array(
      */
     'export_format' => array(
         'PRESERVE_EMPTY_ARRAYS',
-        'USE_QUOTES',
+        //'USE_QUOTES',
         'USE_HEREDOC',
         'USE_SHORT_ARRAY',
         'SORT_KEYS',
@@ -96,15 +96,6 @@ return array(
     'missing_keys_lottery' => 100, // 1 in 100 of users will have the missing translation keys logged.
 
     /**
-     * used to cache db translations that are used in the application.
-     *
-     * @type string     key used to cache saved values for keys that don't match translation files
-     *                  format [prefix]["locale:key"]
-     *
-     */
-    'cache_prefix' => 'translation-manager',
-
-    /**
      * @type int        0 - as usual, write out files and set status for translations to SAVED,
      *
      *                  1 - on publish will only copy value to saved_value in the database and set the status to SAVED_CACHED
@@ -119,7 +110,7 @@ return array(
      *                  to be used by clustered systems where the translation files are determined at deployment and publishing
      *                  on one system does no good to the rest of the cluster.
      */
-    'indatabase_publish' => 1,
+    'indatabase_publish' => 0,
 
     /**
      * used to provide the Yandex key for use in automatic Yandex translations

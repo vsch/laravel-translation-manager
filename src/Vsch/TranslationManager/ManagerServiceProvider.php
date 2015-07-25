@@ -4,6 +4,7 @@ use Illuminate\Support\ServiceProvider;
 
 class ManagerServiceProvider extends ServiceProvider
 {
+    const PACKAGE = 'laravel-translation-manager';
 
     /**
      * Indicates if loading of the provider is deferred.
@@ -12,16 +13,6 @@ class ManagerServiceProvider extends ServiceProvider
      */
     protected $defer = false;
 
-    /**
-     * Bootstrap the application events.
-     *
-     * @return void
-     */
-    public
-    function boot()
-    {
-        $this->package('vsch/laravel-translation-manager');
-    }
 
     /**
      * Register the service provider.
@@ -31,43 +22,55 @@ class ManagerServiceProvider extends ServiceProvider
     public
     function register()
     {
-        $this->app['translation-manager'] = $this->app->share(function ($app)
+        $this->app[self::PACKAGE] = $this->app->share(function ($app)
         {
             /* @var $manager \Vsch\TranslationManager\Manager */
             $manager = $app->make('Vsch\TranslationManager\Manager');
+            $manager->packageName(self::PACKAGE);
 
             return $manager;
         });
 
         $this->app['command.translation-manager.reset'] = $this->app->share(function ($app)
         {
-            return new Console\ResetCommand($app['translation-manager']);
+            return new Console\ResetCommand($app[self::PACKAGE]);
         });
         $this->commands('command.translation-manager.reset');
 
         $this->app['command.translation-manager.import'] = $this->app->share(function ($app)
         {
-            return new Console\ImportCommand($app['translation-manager']);
+            return new Console\ImportCommand($app[self::PACKAGE]);
         });
         $this->commands('command.translation-manager.import');
 
         $this->app['command.translation-manager.find'] = $this->app->share(function ($app)
         {
-            return new Console\FindCommand($app['translation-manager']);
+            return new Console\FindCommand($app[self::PACKAGE]);
         });
         $this->commands('command.translation-manager.find');
 
         $this->app['command.translation-manager.export'] = $this->app->share(function ($app)
         {
-            return new Console\ExportCommand($app['translation-manager']);
+            return new Console\ExportCommand($app[self::PACKAGE]);
         });
         $this->commands('command.translation-manager.export');
 
         $this->app['command.translation-manager.clean'] = $this->app->share(function ($app)
         {
-            return new Console\CleanCommand($app['translation-manager']);
+            return new Console\CleanCommand($app[self::PACKAGE]);
         });
         $this->commands('command.translation-manager.clean');
+    }
+
+    /**
+     * Bootstrap the application events.
+     *
+     * @return void
+     */
+    public
+    function boot()
+    {
+        $this->package('vsch/'.self::PACKAGE);
     }
 
     /**
@@ -79,7 +82,7 @@ class ManagerServiceProvider extends ServiceProvider
     function provides()
     {
         return array(
-            'translation-manager',
+            self::PACKAGE,
             'translator',
             'translation.loader',
             'command.translation-manager.reset',
@@ -89,4 +92,5 @@ class ManagerServiceProvider extends ServiceProvider
             'command.translation-manager.clean'
         );
     }
+
 }
