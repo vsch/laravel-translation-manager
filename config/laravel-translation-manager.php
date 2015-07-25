@@ -91,7 +91,7 @@ return array(
      * determines whether missing keys are logged
      * @type boolean
      */
-    'log_missing_keys' => true,
+    'log_missing_keys' => false,
 
     /**
      * determines one out of how many user sessions will have a chance to log missing keys
