@@ -93,13 +93,21 @@ All changes to translations are done via this pop-up. It has convenience buttons
 4. Generate plural forms for use in `\Lang::choice()`. When editing the primary locale will convert the translation key text to singular|plural. When editing any other locales will simply duplicate the entered text separated by | for manual editing.
 
 5. Capitalize every word
+
 6. Lowercase all text
+
 7. Copy text (simulated clipboard copy, value preserved as long as the page is not replaced).
+
 8. Paste text that was copied with 7.
+
 9. Restore text to what it was when the pop-up was opened.
+
 10. Restore text to last published or last imported value.
-11. Title shows: [locale] group.key that is being edited. Useful in in place edit mode to find the translation id on the page.
+
+11. Title shows: [locale] group.key that is being edited. Useful in 'in place edit' mode to find the translation id of some text on the page.
+
 12. Text editing area.
+
 13. Translate primary text to locale currently being edited. The button text shows {primary locale}->{editing locale}. The locale being edited can be any locale displayed on the page, does not have to be the one selected in the Translate locale selection. See 3. for details.
 
 ### Suffixed Key Operations & Search (panel)
@@ -120,7 +128,7 @@ Click on the panel to expand it.
 
 Here you can copy/delete/move keys with an optional wildcard character *, but only as a suffix or a prefix. The corresponding source and destination strings must have the * use: as suffix, prefix or not used.
 
-Hitting the preview button will let you see what the patterns match and what the resulting operation will affect. Copy or Move will not affect destination keys that already exist.
+The preview button will let you see what the patterns match and what the resulting operation will affect. Copy or Move will not affect destination keys that already exist.
 
 Example of preview/delete:
 
@@ -202,7 +210,7 @@ If someone contacts me with a request to prioritize a specific area I will do it
 
     In this example the User model implements two attributes: is_admin and is_editor. The admin user is allowed to manage translations: import, delete, export, etc., the editor user can only edit existing translations. However, both of these users will always log missing translation keys so that any missing translations will be visible to them instead of relying on the missing key lottery settings.
 
-9. Yandex assisted translations requires setting the `yandex_translator_key` to your Yandex API key in the `config.php` file, it is free. See: <https://tech.yandex.com/translate/>
+9. Yandex assisted translations requires setting the `yandex_translator_key` to your Yandex API key in the `config/laravel-translation-manager.php` file, it is free to get and use. See: <https://tech.yandex.com/translate/>
 
 10. <a id="step10"></a>If you want to override the Translation Manager web interface translations or add another locale you will need to publish the language files to your project by executing:
 
@@ -210,7 +218,7 @@ If someone contacts me with a request to prioritize a specific area I will do it
 
 	This will copy the translations to your project and allow you to view/edit them in the translation manager web interface.
 
-11. <a id="step11"></a>If you want to customize views for the Translation Manager web interface you will need to publish the vies to your project by executing:
+11. <a id="step11"></a>If you want to customize views for the Translation Manager web interface you will need to publish the views to your project by executing:
 
         $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=views
 
@@ -219,9 +227,9 @@ If someone contacts me with a request to prioritize a specific area I will do it
 <a id="Configuration"></a>
 ## Configuration
 
-The config file `app/config/packages/laravel-translation-manager/config.php` has comments that provide a description for each option. Note that when `admin_enabled` is set to false then translation management is limited to editing existing translations all other operations have to be done through the command line. Ideally, this option needs to be dynamic based on user privileges so that translators cannot delete translations or administer translations but admins can. See [step 8](#step8) above.
+The config file `app/config/packages/laravel-translation-manager/config.php` has comments that provide a description for each option. Note that when `admin_enabled` is set to `false` then translation management is limited to editing existing translations all other operations have to be done through the command line. Ideally, this option needs to be dynamic based on user privileges so that translators cannot delete translations or administer translations but admins can. See [step 8](#step8) above.
 
-By default the primary locale is en. The primary locale determines what language is used for the source text for the translate button in the edit pop-up. When editing the text for the primary locale a button in the edit pop-up allows to convert the text of the key to a default label (chage - and _ to spaces, capitalize first letter of each word).
+By default the primary locale is `en`. The primary locale determines what language is used for the source text for the translate button in the edit pop-up. When editing the text for the primary locale a button in the edit pop-up allows you to convert the text of the key to a default value (change . - _ to spaces, capitalize first letter of each word) that way you can generate descent placeholder text to continue development and replace it with more meaningful value later.
 
 <a id="ModifyingViews"></a>
 ## Modifying the default Views
@@ -235,7 +243,7 @@ You can also use the commands below.
 
 ### Import command
 
-The import command will search through app/lang and load all strings in the database, so you can easily manage them.
+The import command will load all translations in the `resources/lang` directory.
 
         $ php artisan translations:import
     
@@ -244,7 +252,8 @@ add the `--replace` (or `-R`) option: `php artisan translations:import --replace
 
 ### Find translations in source
 
-The Find command/button will look search for all php/twig files in the app directory, to see if they contain translation functions, and will try to extract the group/item names.
+The Find command and the web interface 'Add References' button will search for all php/twig files in the app directory for translation functions. It will do its best to extract the group/item names. If you have a lot of dynamically generated keys expect some false positives to show up in the database that you will need to delete via the web interface.
+
 The found keys will be added to the database, so they can be easily translated.
 This can be done through the web interface, or via an Artisan command.
 
@@ -254,34 +263,35 @@ This can be done through the web interface, or via an Artisan command.
 
 The export command will write the contents of the database back to app/lang php files.
 This will overwrite existing translations and remove all comments, so make sure to backup your data before using.
+
 Supply the group name to define which groups you want to publish.
 
         $ php artisan translations:export <group>
 
-For example, `php artisan translations:export reminders` when you have 2 locales (en/nl), will write to `app/lang/en/reminders.php` and `app/lang/nl/reminders.php`
+For example, `php artisan translations:export reminders` when you have 2 locales (en/nl), will write to `resources/lang/en/reminders.php` and `resources/lang/nl/reminders.php`
 
 ### Clean command
 
-The clean command will search for all translation that are NULL and delete them, so your interface is a bit cleaner. Note: empty translations are never exported.
+The clean command will search for all translation that are NULL and delete them, so your interface is a bit cleaner. Empty translations are never exported to language files.
 
         $ php artisan translations:clean
 
 ### Reset command
 
-The reset command simply clears all translation in the database, so you can start fresh (by a new import). Make sure to export your work if needed before doing this.
+The reset command clears all translation in the database, so you can start fresh (by a new import). Make sure to export your work or download a zip archive of it, to make sure you don't irretrievably blow away your or someone else's work.
 
         $ php artisan translations:reset
 
 <a id="NewFeatures"></a>
 ## New Features
 
-These features were added to the original barryvdh/laravel-translation-manager package.
+These features were added since the code diverged from the original barryvdh/laravel-translation-manager package:
 
 - translation manager web-interface is now fully localized. Current version has English and Russian locales. Others can be easily added by adding package translation overrides in `app/lang/vendor/laravel-translation-manager/{locale}/messages.php` files and generating a pull request so that they could be incorporated into the package.
 
 - import was optimized to work well, even when connecting to a remote database server.
 
-- exported language files are formatted to align `=>` for a given level, making it easier to deal with these files manually if needed.
+- exported language files are formatted to align `=>` for a given level of keys, making it easier to deal with these files manually if needed.
 
 - exported language files preserve multi-line comments, doc comments and empty first level array values.
 
@@ -359,6 +369,6 @@ Suggestions and priority requests are welcome. :)
 <a id="History"></a>
 ## History and Origins
 
-his package was originally based on Barry vd. Heuvel's <barryvdh@gmail.com> excellent **barryvdh/laravel-translation-manager** package. 
+This package was originally based on Barry vd. Heuvel's <barryvdh@gmail.com> excellent **barryvdh/laravel-translation-manager** package. 
 
-I was creating an English/Russian site on a tight schedule and managing translations was a serious burden. When I saw Barry's package, I instantly decided that it was a mush have. Right away I could see that it needed some features to make it into serious translator's workhorse. The code base diverged very quickly and I decided to publish it as a separate package so that others can experience the joy of creating localized sites without the pain, blood, sweat and tears.
+I was creating an English/Russian site on a tight schedule and managing translations was a serious burden. When I saw Barry's package, I instantly decided that it was a mush have. Right away I could see that it needed some features to make it into serious translator's workhorse. The code base diverged very quickly and I decided to publish it as a separate package so that others can experience the joy of creating localized sites without the pain, blood, sweat nor tears.
