@@ -599,7 +599,9 @@
                             <td <?= $locale === $translatingLocale ? 'class="auto-translatable"' : '' ?>>
                                 <?= $translator->inPlaceEditLink(!$t ? $t : ($t->value == '' ? null : $t), true, "$group.$key", $locale, null, $group) ?>
                             </td><?php endforeach; ?>
-                        </tr><?php } ?>
+                            <?php endforeach; ?>
+                        </tr>
+                        <?php } ?>
                     </tbody>
                 </table>
             </div>
@@ -661,7 +663,8 @@
     </div>
 
 @stop
-@section('body-bottom')<!--<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>-->
+@section('body-bottom')
+    <!--<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>-->
     <!--<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>-->
     <script>
         // @formatter:on
