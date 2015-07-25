@@ -77,12 +77,13 @@
                                                         data-disable-with="<?= noEditTrans('laravel-translation-manager::messages.loading') ?>">
                                                     <?= noEditTrans('laravel-translation-manager::messages.import-groups') ?>
                                                 </button>
+                                                <?= ifEditTrans('laravel-translation-manager::messages.zip-all') ?>
+                                                <a href="<?= action('\Vsch\TranslationManager\Controller@getZippedTranslations', ['group' => '*']) ?>"
+                                                        role="button" class="btn btn-primary btn-sm">
+                                                    <?= noEditTrans('laravel-translation-manager::messages.zip-all') ?>
+                                                </a>
                                                 <div class="input-group" style="float:right; display:inline">
-                                                    <?= ifEditTrans('laravel-translation-manager::messages.download-zip') ?>
-                                                    <a href="<?= action('\Vsch\TranslationManager\Controller@getZippedTranslations', ['group' => '*']) ?>"
-                                                            role="button" class="btn btn-primary btn-sm">
-                                                        <?= noEditTrans('laravel-translation-manager::messages.download-zip') ?>
-                                                    </a><?= ifEditTrans('laravel-translation-manager::messages.find-in-files') ?>
+                                                    <?= ifEditTrans('laravel-translation-manager::messages.find-in-files') ?>
                                                     <?= ifEditTrans('laravel-translation-manager::messages.searching') ?>
                                                     <button type="submit" form="form-find"
                                                             class="btn btn-sm btn-warning"
@@ -125,7 +126,13 @@
                                                 class="btn btn-sm btn-info input-control"
                                                 data-disable-with="<?= noEditTrans('laravel-translation-manager::messages.publishing') ?>">
                                             <?= noEditTrans('laravel-translation-manager::messages.publish') ?>
-                                        </button><?php endif; ?>
+                                        </button>
+                                        <?= ifEditTrans('laravel-translation-manager::messages.zip-group') ?>
+                                        <a href="<?= action('\Vsch\TranslationManager\Controller@getZippedTranslations', ['group' => $group]) ?>"
+                                                role="button" class="btn btn-primary btn-sm">
+                                            <?= noEditTrans('laravel-translation-manager::messages.zip-group') ?>
+                                        </a>
+                                        <?php endif; ?>
                                         <div class="input-group" style="float:right; display:inline">
                                             <?php if ($group): ?>
                                             <button type="submit" form="form-import" class="btn btn-sm btn-success"
@@ -144,7 +151,8 @@
                                                 <?= noEditTrans('laravel-translation-manager::messages.publish-all') ?>
                                             </button><?= ifEditTrans('laravel-translation-manager::messages.publish-all') ?>
                                         </div>
-                                    </div><?php endif; ?>
+                                    </div>
+                                    <?php endif; ?>
                                     <?= ifEditTrans('laravel-translation-manager::messages.confirm-delete') ?>
                                     <form id="form-delete-group" class="form-inline form-delete-group" method="POST"
                                             action="<?= action('\Vsch\TranslationManager\Controller@postDeleteAll', $group) ?>"

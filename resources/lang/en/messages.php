@@ -41,7 +41,6 @@ TEXT
     'display-locales'           => 'Working Set',
     'done-publishing'           => 'Done publishing the translations for group <strong>:group</strong>.',
     'done-publishing-all'       => 'Done publishing the translations for <strong>all</strong> groups.',
-    'download-zip'              => 'Download Zip',
     'dst-preview'               => 'To',
     'dstkey'                    => 'To',
     'dstkeys'                   => 'To Keys',
@@ -106,4 +105,6 @@ TEXT
     'translation-ops'           => 'Translation Helpers',
     'translations'              => 'Translations',
     'wildcard-keyops'           => 'Wildcard Key Operations',
+    'zip-all'                   => 'Zip All',
+    'zip-group'                 => 'Zip Group',
 ];

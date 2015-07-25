@@ -41,7 +41,6 @@ TEXT
     'display-locales'           => 'Робочий Набір',
     'done-publishing'           => 'Зробити публікацію перекладів для групи <сильний>група</strong>.',
     'done-publishing-all'       => 'Зроблено публікувати переклади <strong>всі</сильні> групи.',
-    'download-zip'              => 'Завантажити ZIP-Архів',
     'dst-preview'               => 'До',
     'dstkey'                    => 'До',
     'dstkeys'                   => 'Для Ключів',
@@ -106,4 +105,6 @@ TEXT
     'translation-ops'           => 'Переклад Помічників',
     'translations'              => 'Переклади',
     'wildcard-keyops'           => 'Символи Операції З Ключами',
+    'zip-all'                   => 'Zip Всі',
+    'zip-group'                 => 'Групування ЗІП',
 ];

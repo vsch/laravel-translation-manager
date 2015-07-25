@@ -41,7 +41,6 @@ TEXT
     'display-locales'           => 'Jeu De Travail',
     'done-publishing'           => 'Fait de la publication de la traduction de groupe <strong>:groupe</strong>.',
     'done-publishing-all'       => 'Fait de la publication de la traduction de <strong>tous</strong> groupes.',
-    'download-zip'              => 'Télécharger Le Zip',
     'dst-preview'               => 'À',
     'dstkey'                    => 'À',
     'dstkeys'                   => 'À Clés',
@@ -106,4 +105,6 @@ TEXT
     'translation-ops'           => 'Traduction Aides',
     'translations'              => 'Traductions',
     'wildcard-keyops'           => 'Générique Opérations Des Clés',
+    'zip-all'                   => 'Zip Tous',
+    'zip-group'                 => 'Zip Groupe',
 ];
