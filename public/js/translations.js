@@ -298,7 +298,8 @@ $(document).ready(function () {
                 elem.editable({placement: 'top'});
             }
 
-            elem.editable().on('hidden', function (e, reason) {
+            elem.editable().off('hidden');
+            elem.editable().on('hidden.vsch', function (e, reason) {
                 var locale = $(this).data('locale');
                 if (reason === 'save') {
                     $(this).removeClass('status-0').addClass('status-1');
@@ -313,7 +314,8 @@ $(document).ready(function () {
                 //window.console.log("editable hidden: " + inEditable);
             });
 
-            elem.editable().on('shown', function (e, editable) {
+            elem.editable().off('shown');
+            elem.editable().on('shown.vsch', function (e, editable) {
                 var key, srcId, elemXerr, elemXtrans, elemXcap, elemXlow, elemXnodash, elemXcopy, elemXpaste, elemXresetopen, elemXresetsaved, elemXplurals, srcElem,
                     savedValue = $(this).data('saved_value'), openedValue,
                     dstId = $(this).attr('id'),

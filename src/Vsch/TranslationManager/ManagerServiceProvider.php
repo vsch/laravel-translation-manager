@@ -1,5 +1,6 @@
 <?php namespace Vsch\TranslationManager;
 
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 
 class ManagerServiceProvider extends ServiceProvider
@@ -71,6 +72,13 @@ class ManagerServiceProvider extends ServiceProvider
     function boot()
     {
         $this->package('vsch/'.self::PACKAGE);
+        
+        if ($root = Config::get(self::PACKAGE . '::config.web_root')) {
+            $before = Config::get(self::PACKAGE . '::config.web_route_before');
+            $controller = 'Vsch\TranslationManager\Controller';
+
+            include __DIR__.'/../../routes.php';
+        }
     }
 
     /**

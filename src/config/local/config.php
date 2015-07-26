@@ -39,4 +39,5 @@ return array(
      */
 
     //'yandex_translator_key' => '',
+
 );

@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Add 1 key per line, without the group prefix',
     'addsuffixes'               => 'Set Suffixes',
     'addsuffixes-placeholder'   => 'add each key suffixed by lines entered here',
+    'auto-fill'                 => 'Auto Fill',
+    'auto-fill-disabled'        => 'Filling...',
     'auto-translate'            => 'Auto Translate',
     'auto-translate-disabled'   => 'Translating',
     'changed'                   => 'Changed',

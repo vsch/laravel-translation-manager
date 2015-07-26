@@ -223,14 +223,7 @@ If someone contacts me with a request to prioritize a specific area I will do it
 
         $ php artisan asset:publish vsch/laravel-translation-manager
 
-7. You have to add the Controller to your routes.php, so you can set your own url/filters.
-
-        Route::group(array('before' => 'auth'), function ()
-        {
-            Route::controller('translations', 'Vsch\TranslationManager\Controller');
-        });
-
-    This example will make the translation manager available at `http://yourdomain.com/translations`
+7. You no longer need to add the Controller to your routes.php, this is done by the TranslationManagerServiceProvider in boot(). However if you want to change the before filter or the prefix then you should edit the config values 'web_root' and 'web_root_before' entries. The default root is 'translations'. This will make the translation manager available at `http://yourdomain.com/translations` just as before.
 
 8. <a id="step8"></a>TranslationManager uses the vsch/user-privilege-mapper package that creates a mapping layer between your User model implementation and the need to test user privileges without knowing the implementation. You need to name privileges for the UserPrivilegeMapper via the Laravel macro mechanism. This should be done in the initialization files. A good place is the filters.php file, add the following if your User model has is_admin and is_editor attributes to identify users that have Admin and Editor privileges:
 
