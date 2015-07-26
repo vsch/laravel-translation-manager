@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Добавляйте по одному ключу на строке без префикса группы',
     'addsuffixes'               => 'Набор Суффиксов',
     'addsuffixes-placeholder'   => 'добавляй каждый ключ с суффиксом строк, указанных здесь',
+    'auto-fill'                 => 'Автозаполнение',
+    'auto-fill-disabled'        => 'Заполнение...',
     'auto-translate'            => 'Авто Перевод',
     'auto-translate-disabled'   => 'Перевод',
     'changed'                   => 'Измененны',

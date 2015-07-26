@@ -561,16 +561,25 @@
                             <?php foreach($locales as $locale): ?>
                             <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
                             <?php if ($col < 2): ?>
-                            <?php if ($col === 1 && isset($yandex_key) && $yandex_key): ?>
+                            <?php if ($col === 0): ?>
+                            <th width="<?=$mainWidth?>%"><?= $locale ?>
+                                <div class="input-group" style="float:right; display:inline">
+                                    <?= ifEditTrans('laravel-translation-manager::messages.auto-fill-disabled') ?>
+                                    <?= ifEditTrans('laravel-translation-manager::messages.auto-fill') ?>
+                                    <a class="btn btn-sm btn-primary" id="auto-fill" role="button" data-disable-with="<?=noEditTrans('laravel-translation-manager::messages.auto-fill-disabled')?>"
+                                        href="#') ?>"><?= noEditTrans('laravel-translation-manager::messages.auto-fill') ?></a>
+                                </div>
+                            </th>
+                            <?php elseif ($col === 1 && isset($yandex_key) && $yandex_key): ?>
                             <th width="<?=$mainWidth?>%"><?= $locale ?>
                                 <div class="input-group" style="float:right; display:inline">
                                     <?= ifEditTrans('laravel-translation-manager::messages.auto-translate-disabled') ?>
-                                    <?= ifEditTrans('laravel-translation-manager::messages.auto-translate') ?><a
-                                            class="btn btn-sm btn-primary" id="auto-translate" role="button"
-                                            data-disable-with="<?=noEditTrans('laravel-translation-manager::messages.auto-translate-disabled')?>"
-                                            href="#') ?>"><?= noEditTrans('laravel-translation-manager::messages.auto-translate') ?></a>
+                                    <?= ifEditTrans('laravel-translation-manager::messages.auto-translate') ?>
+                                    <a class="btn btn-sm btn-primary" id="auto-translate" role="button" data-disable-with="<?=noEditTrans('laravel-translation-manager::messages.auto-translate-disabled')?>"
+                                        href="#') ?>"><?= noEditTrans('laravel-translation-manager::messages.auto-translate') ?></a>
                                 </div>
-                            </th><?php else: ?>
+                            </th>
+                            <?php else: ?>
                             <th width="<?=$mainWidth?>%"><?= $locale ?></th><?php endif;?>
                             <?php else: ?>
                             <th><?= $locale ?></th><?php endif; $col++; ?>
@@ -582,38 +591,36 @@
                         $translator = App::make('translator');
                         foreach($translations as $key => $translation)
                         {
-                        $is_deleted = 0;
-                        foreach ($locales as $locale)
-                        {
-                            if (!array_key_exists($locale, $displayLocales)) continue;
-                            if (isset($translation[$locale]) && $translation[$locale]->is_deleted) $is_deleted = 1;
-                        }
+                            $is_deleted = 0;
+                            foreach($locales as $locale)
+                            {
+                                if (!array_key_exists($locale, $displayLocales)) continue;
+                                if (isset($translation[$locale]) && $translation[$locale]->is_deleted) $is_deleted = 1;
+                            }
                         ?>
                         <tr id="<?= str_replace('.', '-', $key) ?>" <?= $is_deleted ? ' class="deleted-translation"' : '' ?>>
                             <?php if($adminEnabled): ?>
                             <td>
-                                <a href="<?= action('\Vsch\TranslationManager\Controller@postUndelete', [
-                                        $group,
-                                        $key
-                                ]) ?>" class="undelete-key <?= $is_deleted ? "" : "hidden" ?>" data-method="POST"
+                                <a href="<?= action('\Vsch\TranslationManager\Controller@postUndelete', [$group, $key]) ?>" class="undelete-key <?= $is_deleted ? "" : "hidden" ?>" data-method="POST"
                                         data-remote="true">
                                     <span class="glyphicon glyphicon-thumbs-up"></span>
                                 </a>
-                                <a href="<?= action('\Vsch\TranslationManager\Controller@postDelete', [
-                                        $group,
-                                        $key
-                                ]) ?>" class="delete-key <?= !$is_deleted ? "" : "hidden" ?>" data-method="POST"
+                                <a href="<?= action('\Vsch\TranslationManager\Controller@postDelete', [$group, $key]) ?>" class="delete-key <?= !$is_deleted ? "" : "hidden" ?>" data-method="POST"
                                         data-remote="true">
                                     <span class="glyphicon glyphicon-trash"></span>
                                 </a>
-                            </td><?php endif; ?>
-                            <td><?= $key ?></td><?php foreach($locales as $locale): ?>
+                            </td>
+                            <?php endif; ?>
+                            <td><?= $key ?></td>
+                            <?php foreach($locales as $locale): ?>
                             <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
                             <?php $t = isset($translation[$locale]) ? $translation[$locale] : null ?>
-                            <td <?= $locale === $translatingLocale ? 'class="auto-translatable"' : '' ?>>
+                            <td <?= $locale === $translatingLocale ? 'class="auto-translatable"' : ($locale === $primaryLocale ? 'class="auto-fillable"' : '') ?>>
                                 <?= $translator->inPlaceEditLink(!$t ? $t : ($t->value == '' ? null : $t), true, "$group.$key", $locale, null, $group) ?>
-                            </td><?php endforeach; ?>
-                        </tr><?php } ?>
+                            </td>
+                            <?php endforeach; ?>
+                        </tr>
+                        <?php } ?>
                     </tbody>
                 </table>
             </div>
@@ -680,12 +687,11 @@
     <!--<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>-->
     <!--<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>-->
     <script>
-        // @formatter:on
         var CLIP_TEXT; // we store translation copy/paste here
-        var YANDEX_TRANSLATOR_KEY = '{!!isset($yandex_key) ? $yandex_key : ''!!}';
-        var PRIMARY_LOCALE = '{!!$primaryLocale!!}';
-        var CURRENT_LOCALE = '{!!$currentLocale!!}';
-        var TRANSLATING_LOCALE = '{!!$translatingLocale!!}';
+        var YANDEX_TRANSLATOR_KEY = '{{isset($yandex_key) ? $yandex_key : ''}}';
+        var PRIMARY_LOCALE = '{{$primaryLocale}}';
+        var CURRENT_LOCALE = '{{$currentLocale}}';
+        var TRANSLATING_LOCALE = '{{$translatingLocale}}';
         var xtranslateText;
 
         jQuery(document).ready(function ($) {
@@ -810,44 +816,17 @@
                 $('.display-locale').prop('checked', false);
             });
 
-            var elemButton = $('#auto-translate');
-            elemButton.on('click', function (e) {
-                e.preventDefault();
-                var autoTranslate = [], elemProgress = $('#auto-progress').first(), progTotal, progCurrent, btnText = elemButton.text(), btnAlt = elemButton.data('disable-with');
+            function postTranslationValues(translations, elemButton, processText) {
 
-                // step through all the definitions in the second column and auto translate empty ones
-                // here we make a log of assumptons about where the data is.
-                // we assume that the source is the child element immediately preceeding this one and it is a <td> containing
-                // <a> containing the source text
-                $(".auto-translatable").each(function () {
-                    var row = $(this).parent().find(".vsch_editable");
-                    if (row.length > 1) {
-                        var srcElem = $(row[0]),
-                                dstElem = $(row[1]);
+                if (!translations.length) return;
 
-                        if (dstElem.length) {
-                            if (dstElem.hasClass('editable-empty') && !srcElem.hasClass('editable-empty')) {
-                                var dataName = dstElem.data('name'),
-                                        dataUrl = dstElem.data('url'),
-                                        srcText = srcElem.text();
-
-                                autoTranslate.push({
-                                    srcText: srcText,
-                                    dataUrl: dataUrl,
-                                    dataName: dataName,
-                                    dstElem: dstElem
-                                });
-                            }
-                        }
-                    }
-                });
-
-                progTotal = autoTranslate.length;
+                var progTotal, progCurrent, btnText = elemButton.text(), btnAlt = elemButton.data('disable-with');
+                progTotal = translations.length;
                 progCurrent = 0;
 
                 // we could process all the keys in parallel but we will do it one at a time
                 var fireTranslate, translateNext = function (t) {
-                    xtranslateText(xtranslateService, PRIMARY_LOCALE, t.srcText, TRANSLATING_LOCALE, function (text, trans) {
+                    processText(t.srcText, function (text, trans) {
                         if (text !== "") {
 
                             var jqxhr = $.ajax({
@@ -857,9 +836,10 @@
                                 success: function (json) {
                                     if (json.status === 'ok') {
                                         // now can update the element and fire off the next translation
-                                        t.dstElem.removeClass('editable-empty');
+                                        t.dstElem.removeClass('editable-empty status-0');
                                         t.dstElem.addClass('status-1');
                                         t.dstElem.text(text);
+                                        t.dstElem.vsch_editable();
                                     }
                                     else {
                                         elemButton.removeAttr('disabled');
@@ -887,10 +867,10 @@
                 };
 
                 fireTranslate = function () {
-                    if (autoTranslate.length) {
+                    if (translations.length) {
                         progCurrent++;
-                        translateNext(autoTranslate.pop());
-                        elemButton.attr('disabled', 'disabled');
+                        translateNext(translations.pop());
+                        elemButton.attr('disabled','disabled');
                         elemButton.text(btnAlt + ' ' + progCurrent + ' / ' + progTotal);
                     }
                     else {
@@ -900,10 +880,79 @@
                 };
 
                 // start the chain of translations
-                for (i = 0; i < 4; i++) {
+                for (i = 0; i < 3; i++) {
                     fireTranslate();
                 }
+            }
 
+            var elemAutoTrans = $('#auto-translate');
+            elemAutoTrans.on('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var autoTranslate = [];
+
+                // step through all the definitions in the second column and auto translate empty ones
+                // here we make a log of assumptons about where the data is.
+                // we assume that the source is the child element immediately preceeding this one and it is a <td> containing
+                // <a> containing the source text
+                $(".auto-translatable").each(function () {
+                    var row = $(this).parent().find('.vsch_editable');
+                    if (row.length > 1) {
+                        var srcElem = $(row[0]),
+                                dstElem = $(row[1]);
+
+                        if (dstElem.length && srcElem.length) {
+                            if (dstElem.hasClass('editable-empty') && !srcElem.hasClass('editable-empty')) {
+                                autoTranslate.push({
+                                    srcText: srcElem.text(),
+                                    dataUrl: dstElem.data('url'),
+                                    dataName: dstElem.data('name'),
+                                    dstElem: dstElem
+                                });
+                            }
+                        }
+                    }
+                });
+
+                (function (fromLoc, toLoc, elemButton) {
+                    postTranslationValues(autoTranslate, elemButton, function (text, storeText) {
+                        xtranslateText(xtranslateService, fromLoc, text, toLoc, storeText);
+                    });
+                })(PRIMARY_LOCALE, TRANSLATING_LOCALE, elemAutoTrans);
+            });
+
+            var elemAutoFill = $('#auto-fill');
+            elemAutoFill.on('click', function (e) {
+                var autoFill = [];
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                // step through all the definitions in the second column and auto translate empty ones
+                // here we make a log of assumptons about where the data is.
+                // we assume that the source is the child element immediately preceeding this one and it is a <td> containing
+                // <a> containing the source text
+                $(".auto-fillable").each(function () {
+                    var dstElem = $(this).find("a.vsch_editable.editable-empty");
+
+                    if (dstElem.length) {
+                        autoFill.push({
+                            srcText: dstElem.data('name').substr(PRIMARY_LOCALE.length + 1),
+                            dataUrl: dstElem.data('url'),
+                            dataName: dstElem.data('name'),
+                            dstElem: dstElem
+                        });
+                    }
+                });
+
+                (function (elemButton) {
+                    postTranslationValues(autoFill, elemButton, function (text, storeText) {
+                        var regexnodash = /^.*\.|-|_/g,
+                                value = text.replace(regexnodash, ' ').toCapitalCase().trim();
+
+                        storeText(value, '');
+                    });
+                })(elemAutoFill);
             });
 
             function textareaTandemResize(src, dst, liveupdate) {
