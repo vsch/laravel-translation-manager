@@ -509,7 +509,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
                     @endif
                 </div>
             </div>
@@ -536,25 +535,19 @@
                                 $col = 0;
                             ?>
                             <?php foreach($locales as $locale): ?>
-                                <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
+                            <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
                             <?php if ($col < 2): ?>
                             <?php if ($col === 0): ?>
-                            <th width="<?=$mainWidth?>%"><?= $locale ?>
-                                <div class="input-group" style="float:right; display:inline">
-                                    <?= ifEditTrans('laravel-translation-manager::messages.auto-fill-disabled') ?>
-                                    <?= ifEditTrans('laravel-translation-manager::messages.auto-fill') ?>
-                                    <a class="btn btn-sm btn-primary" id="auto-fill" role="button" data-disable-with="<?=noEditTrans('laravel-translation-manager::messages.auto-fill-disabled')?>"
+                            <th width="<?=$mainWidth?>%"><?= $locale ?>&nbsp;<?= ifEditTrans('laravel-translation-manager::messages.auto-fill-disabled') ?><?= ifEditTrans('laravel-translation-manager::messages.auto-fill') ?>
+                                <a class="btn btn-sm btn-primary" id="auto-fill" role="button" data-disable-with="<?=noEditTrans('laravel-translation-manager::messages.auto-fill-disabled')?>"
                                         href="#') ?>"><?= noEditTrans('laravel-translation-manager::messages.auto-fill') ?></a>
-                                </div>
                             </th>
                             <?php elseif ($col === 1 && isset($yandex_key) && $yandex_key): ?>
-                            <th width="<?=$mainWidth?>%"><?= $locale ?>
-                                <div class="input-group" style="float:right; display:inline">
+                            <th width="<?=$mainWidth?>%"><?= $locale ?>&nbsp;
                                     <?= ifEditTrans('laravel-translation-manager::messages.auto-translate-disabled') ?>
                                     <?= ifEditTrans('laravel-translation-manager::messages.auto-translate') ?>
                                     <a class="btn btn-sm btn-primary" id="auto-translate" role="button" data-disable-with="<?=noEditTrans('laravel-translation-manager::messages.auto-translate-disabled')?>"
                                         href="#') ?>"><?= noEditTrans('laravel-translation-manager::messages.auto-translate') ?></a>
-                                </div>
                             </th>
                             <?php else: ?>
                             <th width="<?=$mainWidth?>%"><?= $locale ?></th><?php endif;?>
@@ -794,7 +787,7 @@
                                         t.dstElem.removeClass('editable-empty status-0');
                                         t.dstElem.addClass('status-1');
                                         t.dstElem.text(text);
-                                        t.dstElem.vsch_editable();
+                                        t.dstElem.editable('setValue', text, false);
                                     }
                                     else {
                                         elemButton.removeAttr('disabled');
