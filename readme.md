@@ -30,7 +30,7 @@ This package is used to comfortably manage, view, edit and translate Laravel lan
 - configurable export format for quoting, sorting of translation keys.
 - preserve multi-line comments and doc comments and empty array() values for first level keys on export.
 - allow in-database translations to override the ones in the language files. Used to update translations on server clusters where updating translation files is not possible (like AWS EC2) or would cause server code to be out of sync.
-- assisted translation with Yandex API integrated into the web interface. [Yandex Translation Supported Languages](#YandexSupportedLanguages)
+- assisted translation with Yandex API integrated into the web interface that handle choice type translations and preserve replacement parameters. [Yandex Translation Supported Languages](#YandexSupportedLanguages)
 - auto-translate empty translations.
 - allow in place editing of translation strings right in your web pages. This may require some rework of your blade/php view files.
 
@@ -192,7 +192,7 @@ If someone contacts me with a request to prioritize a specific area I will do it
 	        ],
 	        "post-update-cmd": [
 	            "php artisan ide-helper:generate",
-	            "php artisan vendor:publish --provider=\"Vsch\\TranslationManager\\ManagerServiceProvider\" --tag=public",
+	            "php artisan vendor:publish --provider=\"Vsch\\TranslationManager\\ManagerServiceProvider\" --tag=public --force",
 	            "php artisan optimize"
 	        ],
 	        "post-root-package-install": [
