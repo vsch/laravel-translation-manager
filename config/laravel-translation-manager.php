@@ -28,7 +28,7 @@ return array(
      *
      * @type string
      */
-    'persistent_prefix' => 'laravel-translation-manager::',
+    'persistent_prefix' => 'g2Lu2pyz8QcVrxhL32eN',
 
     /**
      * Enable management of translations beyond just editing and command line manipulations
@@ -135,4 +135,5 @@ return array(
      */
 
     'yandex_translator_key' => '',
+
 );
