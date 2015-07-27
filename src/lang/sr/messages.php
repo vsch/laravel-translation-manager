@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Додати 1 кључ у реду, без префикса групе',
     'addsuffixes'               => 'Сет Наставака',
     'addsuffixes-placeholder'   => 'додавање сваки кључ, суфикс линије наведене овде',
+    'auto-fill'                 => 'Аутоматско Попуњавање',
+    'auto-fill-disabled'        => 'Попуњавање...',
     'auto-translate'            => 'Ауто Преведе',
     'auto-translate-disabled'   => 'Превод',
     'changed'                   => 'Променило',

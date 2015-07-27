@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Thêm 1 chìa khóa trên một đường thẳng, nếu không có nhóm tiền tố',
     'addsuffixes'               => 'Đặt Đuôi Bổ',
     'addsuffixes-placeholder'   => 'thêm mỗi chìa khóa suffixed theo đường nhập vào đây',
+    'auto-fill'                 => 'Tự Động Lấp Đầy',
+    'auto-fill-disabled'        => 'Giải thích...',
     'auto-translate'            => 'Auto Dịch',
     'auto-translate-disabled'   => 'Dịch',
     'changed'                   => 'Thay đổi',

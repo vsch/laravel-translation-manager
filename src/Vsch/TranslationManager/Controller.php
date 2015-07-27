@@ -38,10 +38,10 @@ class Controller extends BaseController
         $this->package = \Vsch\TranslationManager\ManagerServiceProvider::PACKAGE;
         $this->packagePrefix = $this->package . '::';
         $this->manager = App::make($this->package);
-        $this->cookiePrefix = $this->manager->getConfig('persistent_prefix', $this->packagePrefix);
+        $this->cookiePrefix = $this->manager->getConfig('persistent_prefix', 'K9N6YPi9WHwKp6E3jGbx');
         $locale = Cookie::get($this->cookieName(self::COOKIE_LANG_LOCALE), \Lang::getLocale());
         App::setLocale($locale);
-        $this->primaryLocale = Cookie::get($this->cookieName(self::COOKIE_PRIM_LOCALE), $this->manager->getConfig('primary_locale','en'));
+        $this->primaryLocale = Cookie::get($this->cookieName(self::COOKIE_PRIM_LOCALE), $this->manager->getConfig('primary_locale', 'en'));
 
         $this->locales = $this->loadLocales();
         $this->translatingLocale = Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE));
@@ -51,7 +51,7 @@ class Controller extends BaseController
             Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $this->translatingLocale, 60 * 24 * 365 * 1);
         }
 
-        $this->displayLocales = Cookie::has($this->cookieName(self::COOKIE_DISP_LOCALES)) ? Cookie::get($this->cookieName(self::COOKIE_DISP_LOCALES)) : implode(',', array_slice($this->locales,0,5));
+        $this->displayLocales = Cookie::has($this->cookieName(self::COOKIE_DISP_LOCALES)) ? Cookie::get($this->cookieName(self::COOKIE_DISP_LOCALES)) : implode(',', array_slice($this->locales, 0, 5));
         $this->displayLocales .= implode(',', array_flatten(array_unique(explode(',', ($this->displayLocales ? ',' : '') . $this->primaryLocale . ',' . $this->translatingLocale))));
 
         //$this->sqltraces = [];
@@ -70,7 +70,7 @@ class Controller extends BaseController
     public
     function cookieName($cookie)
     {
-        return $this->cookiePrefix.$cookie;
+        return $this->cookiePrefix . $cookie;
     }
 
     /**
@@ -107,7 +107,7 @@ class Controller extends BaseController
         // to allow proper handling of nested directory structure we need to copy the keys for the group for all missing
         // translations, otherwise we don't know what the group and key looks like.
         //$allTranslations = Translation::where('group', $group)->orderBy('key', 'asc')->get();
-        $displayWhere = $this->displayLocales ? ' AND locale IN (\'' . implode("','", explode(',',$this->displayLocales)) . "')" : '';
+        $displayWhere = $this->displayLocales ? ' AND locale IN (\'' . implode("','", explode(',', $this->displayLocales)) . "')" : '';
         $allTranslations = Translation::hydrateRaw($sql = <<<SQL
 SELECT * FROM ltm_translations WHERE `group` = ? $displayWhere
 UNION ALL
@@ -297,10 +297,12 @@ SQL
         $displayLocales = explode(',', $this->displayLocales);
         $displayLocales = array_combine($displayLocales, $displayLocales);
 
-        $class = get_class($this);
-        return \View::make($this->packagePrefix.'index')
+        return \View::make($this->packagePrefix . 'index')
+            ->with('controller', get_class($this))
+            ->with('package', $this->package)
+            ->with('public_prefix', '/packages/vsch/')
             ->with('translations', $translations)
-            ->with('yandex_key', $this->manager->getConfig('yandex_translator_key'))
+            ->with('yandex_key', !!$this->manager->getConfig('yandex_translator_key'))
             ->with('locales', $locales)
             ->with('primaryLocale', $primaryLocale)
             ->with('currentLocale', $currentLocale)
@@ -310,8 +312,6 @@ SQL
             ->with('group', $group)
             ->with('numTranslations', $numTranslations)
             ->with('numChanged', $numChanged)
-            ->with('editUrl', URL::action($class . '@postEdit', array($group)))
-            ->with('searchUrl', URL::action($class . '@getSearch'))
             ->with('adminEnabled', $this->manager->getConfig('admin_enabled') && UserCan::admin_translations())
             ->with('mismatchEnabled', $mismatchEnabled)
             ->with('stats', $summary)
@@ -326,7 +326,7 @@ SQL
         if ($q === '') $translations = [];
         else
         {
-            $displayWhere = $this->displayLocales ? ' AND locale IN (\'' . implode("','", explode(',',$this->displayLocales)) . "')" : '';
+            $displayWhere = $this->displayLocales ? ' AND locale IN (\'' . implode("','", explode(',', $this->displayLocales)) . "')" : '';
 
             if (strpos($q, '%') === false) $q = "%$q%";
 
@@ -334,11 +334,11 @@ SQL
 
             // need to fill-in missing locale's that match the key
             $translations = DB::select(<<<SQL
-SELECT * FROM ltm_translations rt WHERE `key` LIKE ? OR value LIKE ?
+SELECT * FROM ltm_translations rt WHERE (`key` LIKE ? OR value LIKE ?) $displayWhere
 UNION ALL
 SELECT NULL id, 0 status, lt.locale, kt.`group`, kt.`key`, NULL value, NULL created_at, NULL updated_at, NULL source, NULL saved_value, NULL is_deleted
-FROM (SELECT DISTINCT locale FROM ltm_translations) lt
-    CROSS JOIN (SELECT DISTINCT `key`, `group` FROM ltm_translations) kt
+FROM (SELECT DISTINCT locale FROM ltm_translations WHERE 1=1 $displayWhere) lt
+    CROSS JOIN (SELECT DISTINCT `key`, `group` FROM ltm_translations WHERE 1=1 $displayWhere) kt
 WHERE NOT exists(SELECT * FROM ltm_translations tr WHERE tr.`key` = kt.`key` AND tr.`group` = kt.`group` AND tr.locale = lt.locale)
       AND `key` LIKE ?
 ORDER BY `key`, `group`, locale
@@ -348,10 +348,15 @@ SQL
 
         $numTranslations = count($translations);
 
-        return \View::make($this->packagePrefix.'search')->with('translations', $translations)->with('numTranslations', $numTranslations);
+        return \View::make($this->packagePrefix . 'search')
+            ->with('controller', get_class($this))
+            ->with('package', $this->package)
+            ->with('translations', $translations)
+            ->with('numTranslations', $numTranslations);
     }
 
-    public function getView($group)
+    public
+    function getView($group)
     {
         return $this->getIndex($group);
     }
@@ -365,7 +370,7 @@ SQL
         $translatingLocale = Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE), $currentLocale);
 
         $locales = Translation::groupBy('locale')->lists('locale') ?: [];
-        $locales = array_merge(array( $primaryLocale, $translatingLocale, $currentLocale), $locales);
+        $locales = array_merge(array($primaryLocale, $translatingLocale, $currentLocale), $locales);
         return array_flatten(array_unique($locales));
     }
 
@@ -540,15 +545,15 @@ SQL
 
             if (!$group)
             {
-                $errors[] = trans($this->packagePrefix.'messages.keyop-need-group');
+                $errors[] = trans($this->packagePrefix . 'messages.keyop-need-group');
             }
             elseif (count($srckeys) !== count($dstkeys) && ($op === 'copy' || $op === 'move' || count($dstkeys)))
             {
-                $errors[] = trans($this->packagePrefix.'messages.keyop-count-mustmatch');
+                $errors[] = trans($this->packagePrefix . 'messages.keyop-count-mustmatch');
             }
             elseif (!count($srckeys))
             {
-                $errors[] = trans($this->packagePrefix.'messages.keyop-need-keys');
+                $errors[] = trans($this->packagePrefix . 'messages.keyop-need-keys');
             }
             else
             {
@@ -566,17 +571,17 @@ SQL
 
                         if ((substr($src, 0, 1) === '*') !== (substr($dst, 0, 1) === '*'))
                         {
-                            $keyerrors[] = trans($this->packagePrefix.'messages.keyop-wildcard-mustmatch');
+                            $keyerrors[] = trans($this->packagePrefix . 'messages.keyop-wildcard-mustmatch');
                         }
 
                         if ((substr($src, -1, 1) === '*') !== (substr($dst, -1, 1) === '*'))
                         {
-                            $keyerrors[] = trans($this->packagePrefix.'messages.keyop-wildcard-mustmatch');
+                            $keyerrors[] = trans($this->packagePrefix . 'messages.keyop-wildcard-mustmatch');
                         }
 
                         if ((substr($src, 0, 1) === '*') && (substr($src, -1, 1) === '*'))
                         {
-                            $keyerrors[] = trans($this->packagePrefix.'messages.keyop-wildcard-once');
+                            $keyerrors[] = trans($this->packagePrefix . 'messages.keyop-wildcard-once');
                         }
                     }
 
@@ -796,11 +801,13 @@ SQL
         }
         else
         {
-            $errors[] = trans($this->packagePrefix.'messages.keyops-not-authorized');
+            $errors[] = trans($this->packagePrefix . 'messages.keyops-not-authorized');
         }
 
         $this->logSql = 0;
-        return \View::make($this->packagePrefix.'keyop')
+        return \View::make($this->packagePrefix . 'keyop')
+            ->with('controller', get_class($this))
+            ->with('package', $this->package)
             ->with('errors', $errors)
             ->with('keymap', $keymap)
             ->with('op', $op)
@@ -929,4 +936,14 @@ SQL
         readfile($file);
         unlink($file);
     }
+
+    public
+    function postYandexKey()
+    {
+        return Response::json(array(
+            'status' => 'ok',
+            'yandex_key' => $this->manager->getConfig('yandex_translator_key', null)
+        ));
+    }
+
 }

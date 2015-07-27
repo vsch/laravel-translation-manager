@@ -3,24 +3,45 @@
 return array(
 
     /**
+     *   the root path for the translator web interface
+     *
+     * @type string     root of the web URL path
+     *
+     */
+
+    'web_root' => 'translations',
+
+    /**
+     *   the filter to use for all web UI routes
+     *
+     * @type string     before filter for the web interface routes
+     *
+     */
+
+    'web_route_before' => 'login',
+
+    /**
      * Specify the locale that is used for creating the initial translation strings. This locale is considered
      * to be the driver of all other translations.
      *
      * @type string
      */
     'primary_locale' => 'en',
+
     /**
      * Specify the prefix used for all cookies, session data and cache persistence.
      *
      * @type string
      */
-    'persistent_prefix' => 'laravel-translation-manager::',
+    'persistent_prefix' => 'g2Lu2pyz8QcVrxhL32eN',
+
     /**
      * Enable management of translations beyond just editing and command line manipulations
      *
      * @type boolean
      */
     'admin_enabled' => true,
+
     /**
      * Specify export formatting options:
      *
@@ -39,12 +60,14 @@ return array(
         'USE_SHORT_ARRAY',
         'SORT_KEYS',
     ),
+
     /**
      * Enable mismatch dashboard
      *
      * @type boolean
      */
     'mismatch_enabled' => false,
+
     /**
      * Exclude specific groups from Laravel Translation Manager.
      * This is useful if, for example, you want to avoid editing the official Laravel language files.
@@ -56,6 +79,7 @@ return array(
         //'reminders',
         //'validation',
     ),
+
     /**
      * Exclude specific groups from Laravel Translation Manager in page edit mode.
      * This is useful for groups that are used exclusively for non-display strings like page titles and emails
@@ -67,11 +91,13 @@ return array(
         //'reminders',
         //'validation',
     ),
+
     /**
      * determines whether missing keys are logged
      * @type boolean
      */
     'log_missing_keys' => false,
+
     /**
      * determines one out of how many user sessions will have a chance to log missing keys
      * since the operation hits the database for every missing key you can limit this by setting a
@@ -103,6 +129,7 @@ return array(
      *                  on one system does no good to the rest of the cluster.
      */
     'indatabase_publish' => 0,
+
     /**
      * used to provide the Yandex key for use in automatic Yandex translations
      *
@@ -113,23 +140,5 @@ return array(
      */
 
     'yandex_translator_key' => '',
-
-    /**
-     *   the root path for the translator web interface
-     *
-     * @type string     root of the web URL path
-     *
-     */
-
-    'web_root' => 'translations',
-
-    /**
-     *   the filter to use for all web UI routes
-     *
-     * @type string     before filter for the web interface routes
-     *
-     */
-
-    'web_route_before' => 'login',
 
 );

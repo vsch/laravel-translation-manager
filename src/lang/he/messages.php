@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'להוסיף 1 המפתח בכל שורה, ללא קידומת הקבוצה',
     'addsuffixes'               => 'סט סיומות',
     'addsuffixes-placeholder'   => 'להוסיף כל מפתח suffixed על ידי קווים נכנס כאן',
+    'auto-fill'                 => 'אוטומטי למלא',
+    'auto-fill-disabled'        => 'מילוי...',
     'auto-translate'            => 'אוטומטי לתרגם',
     'auto-translate-disabled'   => 'תרגום',
     'changed'                   => 'שינה',

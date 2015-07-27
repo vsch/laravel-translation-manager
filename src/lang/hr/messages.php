@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Dodati 1 ključ u liniju, bez prefiksa grupe',
     'addsuffixes'               => 'Set Nastavaka',
     'addsuffixes-placeholder'   => 'dodavanje svakog ključa, sufiks retke navedene ovdje',
+    'auto-fill'                 => 'Automatsko Punjenje',
+    'auto-fill-disabled'        => 'Punjenje...',
     'auto-translate'            => 'Auto Prevesti',
     'auto-translate-disabled'   => 'Prijevod',
     'changed'                   => 'Promijenilo',

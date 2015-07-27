@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Shtoni 1 kyç për rresht, pa grupin prefiksin',
     'addsuffixes'               => 'Vendosni Suffixes',
     'addsuffixes-placeholder'   => 'shtoni çdo buton vv nga linjat hyrë këtu',
+    'auto-fill'                 => 'Automatik Të Mbushur',
+    'auto-fill-disabled'        => 'Plotësimi...',
     'auto-translate'            => 'Të Përkthejnë Auto',
     'auto-translate-disabled'   => 'Përkthimin',
     'changed'                   => 'Ndryshuar',

@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Add Keys',
     'addkeys-placeholder'       => 'Add 1 key per line, without the group prefix',
     'addsuffixes'               => 'Set Suffixes',
@@ -8,7 +8,7 @@ return array(
     'auto-fill'                 => 'Auto Fill',
     'auto-fill-disabled'        => 'Filling...',
     'auto-translate'            => 'Auto Translate',
-    'auto-translate-disabled'   => 'Translating',
+    'auto-translate-disabled'   => 'Translating...',
     'changed'                   => 'Changed',
     'check-all'                 => 'All',
     'check-none'                => 'None',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Wildcard Key Operations',
     'zip-all'                   => 'Zip All',
     'zip-group'                 => 'Zip Group',
-);
+];

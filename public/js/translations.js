@@ -110,6 +110,7 @@ function extractPluralForm(pluralForms, index) {
 xtranslateService = translateYandex;
 xtranslateText = function (translator, srcLoc, srcText, dstLoc, processText) {
     var pos, single, plural, havePlural, src = srcText;
+
     if ((pos = srcText.indexOf('|')) !== -1) {
         // have pluralization
         single = srcText.substr(0, pos);
@@ -117,28 +118,59 @@ xtranslateText = function (translator, srcLoc, srcText, dstLoc, processText) {
         src = 'one ' + single + '\ntwo ' + plural + '\nfive ' + plural;
         havePlural = true;
     }
+
+    // convert all occurences of :parameter to {{#}} where # is the parameter number and store the parameter at index #
+    // that way they won't be mangled by translation and we can restore them back on return.
+    var lastPos = 0, params = [], haveParams, matches, regexParam = /\:([a-zA-Z0-9_-]*)(?=[^a-zA-Z0-9_-]|$)/g,
+        result = '', paramIndex = 0;
+
+    while ((matches = regexParam.exec(src)) !== null) {
+        var param = matches[1];
+
+        if (!(paramIndex = params.indexOf(param)+1)) {
+            params.push(param);
+            paramIndex = params.length;
+        }
+
+        result += src.substr(lastPos, matches.index - lastPos);
+        result += '{{' + paramIndex + '}}';
+        lastPos = regexParam.lastIndex;
+    }
+
+    if (paramIndex) {
+        result += src.substr(lastPos, src.length);
+        src = result;
+    }
+
     translator(srcLoc, src, dstLoc, function (text) {
-        var single, plural, plural2, pluralForms, result = text, trans;
+        var single, plural, plural2, pluralForms, trans, regexIndex = /\{\{[0-9]*\}\}/g;
+
+        if (paramIndex) {
+            text = text.replace(regexIndex, function (index) {
+                return ':' + params[parseInt(index.substr(2, index.length - 4))-1];
+            });
+        }
+
         if (havePlural) {
             trans = text.replace(/$\s*/mg, '|');
             if (trans.substr(trans.length - 1, 1) === '|') {
                 trans = trans.substr(0, trans.length - 1);
             }
 
-            pluralForms = result.split('\n', 3);
+            pluralForms = text.split('\n', 3);
             single = extractPluralForm(pluralForms, 0);
             plural = extractPluralForm(pluralForms, 1);
 
             if (dstLoc === 'ru') {
                 plural2 = extractPluralForm(pluralForms, 2);
-                result = single + '|' + plural + '|' + plural2;
+                text = single + '|' + plural + '|' + plural2;
             }
             else {
                 // TODO: have to handle other plural forms for complex locales
-                result = single + '|' + plural;
+                text = single + '|' + plural;
             }
         }
-        processText(result, trans);
+        processText(text, trans);
     });
 };
 

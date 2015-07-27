@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Добавить ключивые',
     'addkeys-placeholder'       => 'Добавляйте по одному ключу на строке без префикса группы',
     'addsuffixes'               => 'Набор Суффиксов',
@@ -8,7 +8,7 @@ return array(
     'auto-fill'                 => 'Автозаполнение',
     'auto-fill-disabled'        => 'Заполнение...',
     'auto-translate'            => 'Авто Перевод',
-    'auto-translate-disabled'   => 'Перевод',
+    'auto-translate-disabled'   => 'Перевод...',
     'changed'                   => 'Измененны',
     'check-all'                 => '<i class="glyphicon glyphicon-ok"></i>',
     'check-none'                => '<i class="glyphicon glyphicon-remove"></i>',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Подстановочные Операции С Ключами',
     'zip-all'                   => 'Zip Все',
     'zip-group'                 => 'Zip Группу',
-);
+];

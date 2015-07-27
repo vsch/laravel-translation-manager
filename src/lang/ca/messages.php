@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Afegir 1 clau per línia, sense el grup de prefix',
     'addsuffixes'               => 'Conjunt De Sufixos',
     'addsuffixes-placeholder'   => 'afegir a cada clau de la segona de les línies introdueix aquí',
+    'auto-fill'                 => 'Auto Omplir',
+    'auto-fill-disabled'        => 'Farciment...',
     'auto-translate'            => 'Auto Traduir',
     'auto-translate-disabled'   => 'Traducció',
     'changed'                   => 'Canviat',

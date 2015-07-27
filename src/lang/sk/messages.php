@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Add 1 tlačidlo na líniu, bez skupiny predpony',
     'addsuffixes'               => 'Nastaviť Prípony',
     'addsuffixes-placeholder'   => 'pridať každé tlačidlo zakončená s. linky zadali tu',
+    'auto-fill'                 => 'Automatické Vyplnenie',
+    'auto-fill-disabled'        => 'Náplň...',
     'auto-translate'            => 'Auto Preložiť',
     'auto-translate-disabled'   => 'Preklad',
     'changed'                   => 'Zmeniť',

@@ -1,8 +1,3 @@
-<?php
-use Illuminate\Support\Facades\URL;
-
-?>
-
 <div class="alert alert-default" role="alert" style="padding-top: 0; padding-bottom: 0; margin: 0;">
     <div class="row">
         <div class="panel panel-default">
@@ -10,8 +5,8 @@ use Illuminate\Support\Facades\URL;
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
-                <?= ifEditTrans('laravel-translation-manager::messages.keyop-header-'.$op, ['group' => $group]) ?>
-                <h4><?= \Lang::get('laravel-translation-manager::messages.keyop-header-' . $op, ['group' => $group]) ?></h4>
+                <?= ifEditTrans($package . '::messages.keyop-header-'.$op, ['group' => $group]) ?>
+                <h4><?= \Lang::get($package . '::messages.keyop-header-' . $op, ['group' => $group]) ?></h4>
             </div>
             <div class="panel-body">
                 <?php if (!empty($errors)): ?>
@@ -27,8 +22,8 @@ use Illuminate\Support\Facades\URL;
                     <table class="table table-condensed" style="margin-bottom: 0;">
                         <thead>
                             <tr>
-                                <th width="15%"><?= trans('laravel-translation-manager::messages.srckey') ?></th>
-                                <th width="15%"><?= trans('laravel-translation-manager::messages.dstkey') ?></th>
+                                <th width="15%"><?= trans($package . '::messages.srckey') ?></th>
+                                <th width="15%"><?= trans($package . '::messages.dstkey') ?></th>
                                 <th width="70%">&nbsp;</th>
                             </tr>
                         </thead>
@@ -57,10 +52,10 @@ use Illuminate\Support\Facades\URL;
                                                 <table class="table table-striped table-condensed">
                                                     <thead>
                                                         <tr>
-                                                            <th width="5%"><?= trans('laravel-translation-manager::messages.locale') ?></th>
-                                                            <th width="25%"><?= trans('laravel-translation-manager::messages.src-preview') ?></th>
+                                                            <th width="5%"><?= trans($package . '::messages.locale') ?></th>
+                                                            <th width="25%"><?= trans($package . '::messages.src-preview') ?></th>
                                                             <th width="5%">&nbsp;</th>
-                                                            <th width="25%"><?= trans('laravel-translation-manager::messages.dst-preview') ?></th>
+                                                            <th width="25%"><?= trans($package . '::messages.dst-preview') ?></th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>

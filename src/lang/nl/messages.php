@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Voeg 1 toets per regel, zonder het prefix groep',
     'addsuffixes'               => 'Stel Achtervoegsels',
     'addsuffixes-placeholder'   => 'voeg elke toets gevolgd door de lijnen die u hier invoert',
+    'auto-fill'                 => 'Automatisch Vullen',
+    'auto-fill-disabled'        => 'Het vullen van...',
     'auto-translate'            => 'Automatisch Vertalen',
     'auto-translate-disabled'   => 'Vertalen',
     'changed'                   => 'Gewijzigd',

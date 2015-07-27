@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => '追加1インターネットは線ではなく、グループの接頭辞',
     'addsuffixes'               => 'セットの接尾辞',
     'addsuffixes-placeholder'   => '追加のキチンによるラインを入力しま',
+    'auto-fill'                 => '自動入',
+    'auto-fill-disabled'        => '充填...',
     'auto-translate'            => 'オート翻訳',
     'auto-translate-disabled'   => '翻訳',
     'changed'                   => '変更',
