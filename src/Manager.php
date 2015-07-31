@@ -9,13 +9,16 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
+use MyProject\Proxies\__CG__\OtherProject\Proxies\__CG__\stdClass;
 use Symfony\Component\Finder\Finder;
+use Vsch\TranslationManager\Classes\PathTemplateResolver;
 use Vsch\TranslationManager\Classes\TranslationFileRewriter;
 use Vsch\TranslationManager\Models\Translation;
 use ZipArchive;
 
 /**
  * Class Manager
+ *
  * @package Vsch\TranslationManager
  */
 class Manager
@@ -31,7 +34,7 @@ class Manager
     protected $config;
     protected $imported;
     protected $translation;
-    protected $cachePrefix;
+    protected $persitentPrefix;
     protected $cache;
     protected $cacheIsDirty;
     protected $cacheTransKey;
@@ -41,6 +44,8 @@ class Manager
      * @var   \ZipArchive
      */
     protected $zipExporting;
+
+    protected $progress;
 
     public
     function packageName($package)
@@ -56,7 +61,7 @@ class Manager
         $this->events = $events;
         $this->translation = $translation;
 
-        $this->cachePrefix = null;
+        $this->persitentPrefix = null;
         $this->cache = null;
 
         // when instantiated from the service provider, config info is not yet loaded, trying to get it here
@@ -71,9 +76,19 @@ class Manager
     }
 
     public
-    function config()
+    function config($key = null, $default = null)
     {
-        return $this->config ?: $this->config = $this->app['config'][$this->package];
+        if (!$this->config) $this->config = $this->app['config'][$this->package];
+
+        if ($key === null)
+        {
+            return $this->config;
+        }
+        if (array_key_exists($key, $this->config))
+        {
+            return $this->config[$key];
+        }
+        return $default;
     }
 
     public
@@ -85,19 +100,19 @@ class Manager
     public
     function cachePrefix()
     {
-        if ($this->cachePrefix === null)
+        if ($this->persitentPrefix === null)
         {
             if (array_key_exists('persistent_prefix', $this->config()))
             {
-                $this->cachePrefix = $this->config()['persistent_prefix'];
-                $this->cacheTransKey = $this->cachePrefix ? $this->cachePrefix . 'translations' : '';
+                $this->persitentPrefix = $this->config()['persistent_prefix'];
+                $this->cacheTransKey = $this->persitentPrefix ? $this->persitentPrefix . 'translations' : '';
             }
             else
             {
-                $this->cachePrefix = '';
+                $this->persitentPrefix = '';
             }
         }
-        return $this->cachePrefix;
+        return $this->persitentPrefix;
     }
 
     public
@@ -106,7 +121,7 @@ class Manager
         if ($this->cache === null)
         {
             $this->cache = $this->cachePrefix() !== '' && Cache::has($this->cacheTransKey) ? Cache::get($this->cacheTransKey) : [];
-            $this->cacheIsDirty = $this->cachePrefix !== '' && !Cache::has($this->cacheTransKey);
+            $this->cacheIsDirty = $this->persitentPrefix !== '' && !Cache::has($this->cacheTransKey);
         }
         return $this->cache;
     }
@@ -114,7 +129,7 @@ class Manager
     public
     function saveCache()
     {
-        if ($this->cachePrefix && $this->cacheIsDirty)
+        if ($this->persitentPrefix && $this->cacheIsDirty)
         {
             Cache::put($this->cacheTransKey, $this->cache, 60 * 24 * 365);
             $this->cacheIsDirty = false;
@@ -127,7 +142,7 @@ class Manager
         if (!$groups || $groups === '*')
         {
             $this->cache = [];
-            $this->cacheIsDirty = !!$this->cachePrefix;
+            $this->cacheIsDirty = !!$this->persitentPrefix;
         }
         elseif ($this->cache())
         {
@@ -138,7 +153,7 @@ class Manager
                 if (array_key_exists($group, $this->cache))
                 {
                     unset($this->cache[$group]);
-                    $this->cacheIsDirty = !!$this->cachePrefix;
+                    $this->cacheIsDirty = !!$this->persitentPrefix;
                 }
             }
         }
@@ -176,7 +191,7 @@ class Manager
         {
             if (!array_key_exists($group, $this->cache())) $this->cache[$group] = [];
             $this->cache[$group][$locale . ':' . $transKey] = $value;
-            $this->cacheIsDirty = $this->cachePrefix !== '';
+            $this->cacheIsDirty = $this->persitentPrefix !== '';
         }
     }
 
@@ -249,164 +264,169 @@ class Manager
         return null;
     }
 
-    private static
-    function calculateGroup($info, $namespace, $locale)
+    /**
+     * @param $locale
+     * @param $db_group
+     * @param $translations
+     * @param $replace
+     */
+    protected
+    function importTranslationFile($locale, $db_group, $translations, $replace)
     {
-        $dirname = $info["dirname"];
-        $filename = $info["filename"];
-        if ($pos = strpos($dirname, "/resources/lang/$locale/"))
-        {
-            $base = substr($dirname, $pos + strlen("/resources/lang/$locale/"));
-            $base = str_replace("/", ".", $base);
-        }
-        elseif ($pos = strpos($dirname, "/resources/vendor/$namespace/$locale/"))
-        {
-            $base = substr($dirname, $pos + strlen("/resources/vendor/$namespace/$locale/"));
-            $base = str_replace("/", ".", $base);
-        }
-        else
-        {
-            return $filename;
-        }
-        return "$base.$filename";
-    }
-
-    public
-    function importTranslationLocale($replace = false, $locale, $langPath, $namespace = null, $groups = null)
-    {
-        $package = $namespace ? $namespace . '::' : '';
-
-        // handle nested language definition directories
-        $directories = $this->files->directories($langPath);
-        foreach ($directories as $dir)
-        {
-            $this->importTranslationLocale($replace, $locale, $dir, $namespace, $groups);
-        }
-
-        $files = $this->files->files($langPath);
-        foreach ($files as $file)
-        {
-            $info = pathinfo($file);
-            $group = self::calculateGroup($info, $namespace, $locale);
-
-            if (in_array($package . $group, $this->config()['exclude_groups']) || ($groups && !in_array($package . $group, $groups)))
-            {
-                continue;
-            }
-
-            $translations = array_dot(\Lang::getLoader()->load($locale, str_replace(".", "/", $group), $namespace));
-
-            $dbTranslations = $this->translation->hydrateRaw(<<<SQL
+        $dbTranslations = $this->translation->hydrateRaw(<<<SQL
 SELECT * FROM ltm_translations WHERE locale = ? AND `group` = ?
 
 SQL
-                , [$locale, $package . $group]);
+            , [$locale, $db_group]);
 
-            $dbTransMap = [];
-            $dbTranslations->each(function ($trans) use (&$dbTransMap)
+        $dbTransMap = [];
+        $dbTranslations->each(function ($trans) use (&$dbTransMap)
+        {
+            $dbTransMap[$trans->key] = $trans;
+        });
+
+        foreach ($translations as $key => $value)
+        {
+            $value = (string)$value;
+
+            if (array_key_exists($key, $dbTransMap))
             {
-                $dbTransMap[$trans->key] = $trans;
-            });
-
-            foreach ($translations as $key => $value)
+                $translation = $dbTransMap[$key];
+                unset($dbTransMap[$key]);
+            }
+            else
             {
-                $value = (string)$value;
-
-                if (array_key_exists($key, $dbTransMap))
-                {
-                    $translation = $dbTransMap[$key];
-                    unset($dbTransMap[$key]);
-                }
-                else
-                {
-                    $translation = new Translation(array(
-                        'locale' => $locale,
-                        'group' => $package . $group,
-                        'key' => $key,
-                    ));
-                }
-
-                // Importing from the source, status is always saved. When it is changed by the user, then it is changed.
-                //$newStatus = ($translation->value === $value || !$translation->exists) ? Translation::STATUS_SAVED : Translation::STATUS_CHANGED;
-                // Only replace when empty, or explicitly told so
-                if ($replace || !$translation->value)
-                {
-                    $translation->value = $value;
-                }
-
-                $translation->is_deleted = 0;
-                $translation->saved_value = $value;
-
-                $newStatus = ($translation->value === $translation->saved_value ? Translation::STATUS_SAVED
-                    : ($translation->status === Translation::STATUS_SAVED ? Translation::STATUS_SAVED_CACHED : Translation::STATUS_CHANGED));
-
-                if ($newStatus !== (int)$translation->status)
-                {
-                    $translation->status = $newStatus;
-                }
-
-                if (!$translation->exists || $translation->isDirty())
-                {
-                    $translation->save();
-                }
-
-                $this->imported++;
+                $translation = new Translation(array(
+                    'locale' => $locale,
+                    'group' => $db_group,
+                    'key' => $key,
+                ));
             }
 
-            // now process all the new translations that are not in the files
-            foreach ($dbTransMap as $translation)
+            // Importing from the source, status is always saved. When it is changed by the user, then it is changed.
+            //$newStatus = ($translation->value === $value || !$translation->exists) ? Translation::STATUS_SAVED : Translation::STATUS_CHANGED;
+            // Only replace when empty, or explicitly told so
+            if ($replace || !$translation->value)
             {
-                // mark it as saved cached or changed
-                if (((int)$translation->status) === Translation::STATUS_SAVED)
-                {
-                    $translation->status = Translation::STATUS_SAVED_CACHED;
-                    $translation->save();
-                }
+                $translation->value = $value;
+            }
+
+            $translation->is_deleted = 0;
+            $translation->saved_value = $value;
+
+            $newStatus = ($translation->value === $translation->saved_value ? Translation::STATUS_SAVED
+                : ($translation->status === Translation::STATUS_SAVED ? Translation::STATUS_SAVED_CACHED : Translation::STATUS_CHANGED));
+
+            if ($newStatus !== (int)$translation->status)
+            {
+                $translation->status = $newStatus;
+            }
+
+            if (!$translation->exists || $translation->isDirty())
+            {
+                $translation->save();
+            }
+
+            $this->imported++;
+        }
+
+        // now process all the new translations that are not in the files
+        foreach ($dbTransMap as $translation)
+        {
+            // mark it as saved cached or changed
+            if (((int)$translation->status) === Translation::STATUS_SAVED)
+            {
+                $translation->status = Translation::STATUS_SAVED_CACHED;
+                $translation->save();
             }
         }
     }
 
     public
-    function importTranslations($replace = false, $packages = false, $groups = null)
+    function importTranslations($replace, $groups = null)
     {
-        if (!$packages)
-        {
-            $this->imported = 0;
+        $this->imported = 0;
+        $this->clearCache($groups);
 
-            $this->clearCache($groups);
-        }
+        $pathTemplateResolver = new PathTemplateResolver($this->app, $this->files, $this->config()['language_dirs'], '5');
+        $langFiles = $pathTemplateResolver->langFileList();
 
-        if ($packages)
+        if ($groups !== null)
         {
-            $packdirs = $this->files->directories($this->app->langPath() . '/vendor');
-            foreach ($packdirs as $packagedir)
+            // now we can filter to the list of given groups or
+            $files = [];
+            if (!is_array($groups)) $groups = array($groups);
+            $groups = array_combine($groups, $groups);
+
+            foreach ($langFiles as $file => $values)
             {
-                $package = basename($packagedir);
-                $langdirs = $this->files->directories($packagedir);
-                foreach ($langdirs as $langdir)
+                if (array_key_exists($values['{db_group}'], $groups))
                 {
-                    $locale = basename($langdir);
-                    $this->importTranslationLocale($replace, $locale, $langdir, $package, $groups);
+                    $files[$file] = $values;
                 }
             }
+
+            $langFiles = $files;
         }
-        else
+
+        $this->startProgress(count($langFiles), trans($this->package . "::messages.import-all"));
+        foreach ($langFiles as $langFile => $vars)
         {
-            $langdirs = $this->files->directories($this->app->langPath());
-            foreach ($langdirs as $langdir)
-            {
-                $locale = basename($langdir);
-                if ($locale === 'vendor' && !$packages)
-                {
-                    $this->importTranslations($replace, true, $groups);
-                }
-                else
-                {
-                    $this->importTranslationLocale($replace, $locale, $langdir, null, $groups);
-                }
-            }
+            $locale = $vars['{locale}'];
+            $db_group = $vars['{db_group}'];
+
+            if (in_array($db_group, $this->config()['exclude_groups'])) continue;
+            $translations = array_dot(include($langFile));
+            $this->importTranslationFile($locale, $db_group, $translations, $replace);
+            $this->stepProgress();
         }
+
         return $this->imported;
+    }
+
+    protected
+    function startProgress($count, $operation)
+    {
+        $this->progress = new \stdClass();
+        $this->progress->total = $count;
+        $this->progress->step = 0;
+        $this->progress->operation = $operation;
+
+        Session::put($this->persitentPrefix . 'progress', $this->progress);
+    }
+
+    protected
+    function stepProgress()
+    {
+        if (!isset($this->progress))
+        {
+            $this->progress = Session::get($this->persitentPrefix . 'progress', null);
+        }
+
+        if ($this->progress)
+        {
+            $this->progress->step++;
+
+            if ($this->progress->total === $this->progress->step)
+            {
+                $this->progress = null;
+                Session::pull($this->persitentPrefix . 'progress');
+            }
+            else
+            {
+                Session::put($this->persitentPrefix . 'progress', $this->progress);
+            }
+        }
+    }
+
+    public
+    function getProgress()
+    {
+        if (!isset($this->progress))
+        {
+            $this->progress = Session::get($this->persitentPrefix . 'progress');
+        }
+        return $this->progress;
     }
 
     public
@@ -543,37 +563,37 @@ SQL
                 $tree = $this->makeTree(Translation::where('group', $group)->whereNotNull('value')->orderby('key')->get());
                 $configRewriter = new TranslationFileRewriter();
                 $exportOptions = array_key_exists('export_format', $this->config()) ? TranslationFileRewriter::optionFlags($this->config()['export_format']) : null;
+                $pathTemplateResolver = new PathTemplateResolver($this->app, $this->files, $this->config()['language_dirs'], '5');
+                $zipRoot = $this->app->basePath() . $this->config('zip_root', mb_substr($this->app->langPath(), 0, -4));
+                if (mb_substr($zipRoot, -1) === '/') $zipRoot = substr($zipRoot, 0, -1);
+
                 foreach ($tree as $locale => $groups)
                 {
                     if (isset($groups[$group]))
                     {
                         $translations = $groups[$group];
-                        if (strpos($group, '::') !== false)
-                        {
-                            // package group
-                            $packgroup = explode('::', $group, 2);
-                            $package = array_shift($packgroup);
-                            $packgroup = array_shift($packgroup);
-                            $path = $this->app->langPath() . '/vendor/' . $package . '/' . $locale . '/' . str_replace(".", "/", $packgroup) . '.php';
-                        }
-                        else
-                        {
-                            $path = $this->app->langPath() . '/' . $locale . '/' . str_replace(".", "/", $group) . '.php';
-                        }
 
-                        $configRewriter->parseSource($this->files->exists($path) ? $this->files->get($path) : '');
-                        $output = $configRewriter->formatForExport($translations, $exportOptions);
+                        // use the new path mapping
+                        $computedPath = $this->app->basePath() . $pathTemplateResolver->groupFilePath($group, $locale);
+                        $path = $computedPath;
 
-                        if ($this->zipExporting)
+                        if ($path)
                         {
-                            $filePathName = substr($path, mb_strlen($this->app->langPath()) - 4);
-                            //$this->makeDirPath($filePathName);
-                            $this->zipExporting->addFromString($filePathName, $output);
-                        }
-                        else
-                        {
-                            $this->makeDirPath($path);
-                            $this->files->put($path, $output);
+                            $configRewriter->parseSource($this->files->exists($path) ? $this->files->get($path) : '');
+                            $output = $configRewriter->formatForExport($translations, $exportOptions);
+
+                            if ($this->zipExporting)
+                            {
+                                $pathPrefix = mb_substr($path, 0, mb_strlen($zipRoot));
+                                $filePathName = ($pathPrefix === $zipRoot) ? mb_substr($path, mb_strlen($zipRoot)) : $path;
+                                //$this->makeDirPath($filePathName);
+                                $this->zipExporting->addFromString($filePathName, $output);
+                            }
+                            else
+                            {
+                                $this->makeDirPath($path);
+                                $this->files->put($path, $output);
+                            }
                         }
                     }
                 }
@@ -691,4 +711,5 @@ SQL
     {
         return $this->zipExporting ? 3 : (array_key_exists('indatabase_publish', $this->config()) ? (int)$this->config['indatabase_publish'] : 0);
     }
+
 }

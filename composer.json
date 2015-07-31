@@ -30,9 +30,19 @@
             "Vsch\\TranslationManager\\": "src/"
         }
     },
+    "require-dev": {
+        "fzaninotto/faker": "~1.4",
+        "mockery/mockery": "0.9.*",
+        "phpunit/phpunit": "~4.0",
+        "phpspec/phpspec": "~2.1"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Vsch\\Tests\\": "tests/"
+        }
+    },
     "scripts": {
         "post-update-cmd": [
-            "php artisan vendor:publish --provider=\"Vsch\\TranslationManager\\ManagerServiceProvider\" --tag=public"
         ]
     },
     "minimum-stability": "stable"

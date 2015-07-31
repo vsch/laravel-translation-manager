@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Response;
+use Vsch\TranslationManager\Classes\PathTemplateResolver;
 use Vsch\TranslationManager\Models\Translation;
 use Vsch\UserPrivilegeMapper\Facade\Privilege as UserCan;
 
@@ -849,7 +850,8 @@ SQL
     {
         $replace = $request->get('replace', false);
         if ($replace == 2) $this->manager->truncateTranslations($group);
-        $counter = $this->manager->importTranslations($group !== '*' ? true : $replace, false, $group === '*' ? null : [$group]);
+        //$counter = $this->manager->importTranslations($group !== '*' ? true : $replace, false, $group === '*' ? null : [$group]);
+        $counter = $this->manager->importTranslations(($group !== '*' ? !$this->manager->inDatabasePublishing() : $replace), $group === '*' ? null : [$group]);
 
         return Response::json(array('status' => 'ok', 'counter' => $counter));
     }
@@ -859,7 +861,8 @@ SQL
     {
         $replace = $request->get('replace', false);
         $group = $request->get('group', '*');
-        $counter = $this->manager->importTranslations(($group !== '*' ? !$this->manager->inDatabasePublishing() : $replace), false, $group === '*' ? null : [$group]);
+        //$counter = $this->manager->importTranslations(($group !== '*' ? !$this->manager->inDatabasePublishing() : $replace), false, $group === '*' ? null : [$group]);
+        $counter = $this->manager->importTranslations(($group !== '*' ? !$this->manager->inDatabasePublishing() : $replace), $group === '*' ? null : [$group]);
 
         return Response::json(array('status' => 'ok', 'counter' => $counter));
     }
@@ -886,6 +889,15 @@ SQL
         $this->manager->exportTranslations($group);
 
         return Response::json(array('status' => 'ok'));
+    }
+
+    public
+    function getProgress()
+    {
+        $progress = $this->manager->getProgress();
+        $progressArray = $progress ? get_object_vars($progress) : [];
+        $progressArray['status'] = 'ok';
+        return Response::json($progressArray);
     }
 
     public
