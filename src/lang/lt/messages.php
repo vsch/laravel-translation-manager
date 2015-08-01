@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'Pridėti Klavišus',
     'addkeys-placeholder'       => 'Pridėti klavišą 1 eilutėje, be grupės kodu',
     'addsuffixes'               => 'Nustatyti Priesagų',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Pakaitos Pagrindinių Operacijų',
     'zip-all'                   => 'Visas Zip',
     'zip-group'                 => 'Zip Grupė',
-];
+);

@@ -331,12 +331,12 @@ class TranslationFileRewriter
         }
         elseif ($options & self::OPT_USE_QUOTES)
         {
-            $str = trim(mb_replace("\"", "\\\"", $str));
+            $str = trim(str_replace("\"", "\\\"", $str));
             $text = "\"$str\"";
         }
         else
         {
-            $str = trim(mb_replace("'", "\\'", $str));
+            $str = trim(str_replace("'", "\\'", $str));
             $text = "'$str'";
         }
         return $text;
@@ -371,7 +371,7 @@ class TranslationFileRewriter
                 $keys = array_keys($trans);
                 if ($options & self::OPT_SORT_KEYS)
                 {
-                    sort($keys);
+                    sort($keys, SORT_STRING);
                 }
 
                 foreach ($keys as $key)

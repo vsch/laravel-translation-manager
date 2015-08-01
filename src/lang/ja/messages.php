@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'キーの追加',
     'addkeys-placeholder'       => '追加1インターネットは線ではなく、グループの接頭辞',
     'addsuffixes'               => 'セットの接尾辞',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'ワイルドカードキーでの操作',
     'zip-all'                   => 'すべてのZip',
     'zip-group'                 => 'Zipグループ',
-];
+);

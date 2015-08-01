@@ -849,7 +849,8 @@ SQL
     {
         $replace = Input::get('replace', false);
         if ($replace == 2) $this->manager->truncateTranslations($group);
-        $counter = $this->manager->importTranslations($group !== '*' ? true : $replace, false, $group === '*' ? null : [$group]);
+        //$counter = $this->manager->importTranslations($group !== '*' ? true : $replace, false, $group === '*' ? null : [$group]);
+        $counter = $this->manager->importTranslations(($group !== '*' ? !$this->manager->inDatabasePublishing() : $replace), $group === '*' ? null : [$group]);
 
         return Response::json(array('status' => 'ok', 'counter' => $counter));
     }
@@ -859,7 +860,8 @@ SQL
     {
         $replace = Input::get('replace', false);
         $group = Input::get('group', '*');
-        $counter = $this->manager->importTranslations(($group !== '*' ? !$this->manager->inDatabasePublishing() : $replace), false, $group === '*' ? null : [$group]);
+        //$counter = $this->manager->importTranslations(($group !== '*' ? !$this->manager->inDatabasePublishing() : $replace), false, $group === '*' ? null : [$group]);
+        $counter = $this->manager->importTranslations(($group !== '*' ? !$this->manager->inDatabasePublishing() : $replace), $group === '*' ? null : [$group]);
 
         return Response::json(array('status' => 'ok', 'counter' => $counter));
     }
@@ -892,8 +894,9 @@ SQL
     function postPublish($group)
     {
         $this->manager->exportTranslations($group);
+        $errors = $this->manager->errors();
 
-        return Response::json(array('status' => 'ok'));
+        return Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
     }
 
     public

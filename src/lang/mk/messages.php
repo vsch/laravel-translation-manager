@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'Додадете Копчиња',
     'addkeys-placeholder'       => 'Додадете 1 копче по линија, без префикс група',
     'addsuffixes'               => 'Поставете Суфикси',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Маска Клучни Операции',
     'zip-all'                   => 'Zip Сите',
     'zip-group'                 => 'Zip Група',
-];
+);

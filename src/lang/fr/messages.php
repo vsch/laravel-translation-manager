@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'Ajouter Les Touches',
     'addkeys-placeholder'       => 'Ajouter 1 clé par ligne, sans le préfixe de groupe',
     'addsuffixes'               => 'Ensemble De Suffixes',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Générique Opérations Des Clés',
     'zip-all'                   => 'Zip Tous',
     'zip-group'                 => 'Zip Groupe',
-];
+);

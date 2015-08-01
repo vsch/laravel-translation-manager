@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'Tambahkan Kunci',
     'addkeys-placeholder'       => 'Tambahkan 1 kunci per baris, tanpa kelompok angka depannya',
     'addsuffixes'               => 'Set Suffixes',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Wildcard Kunci Operasi',
     'zip-all'                   => 'Tutup Semua',
     'zip-group'                 => 'Zip Kelompok',
-];
+);

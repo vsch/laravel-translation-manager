@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'Të Shtoni Butonat',
     'addkeys-placeholder'       => 'Shtoni 1 kyç për rresht, pa grupin prefiksin',
     'addsuffixes'               => 'Vendosni Suffixes',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Wildcard Kryesore Të Operacioneve Të',
     'zip-all'                   => 'Zip Të Gjithë',
     'zip-group'                 => 'Zip Grup',
-];
+);

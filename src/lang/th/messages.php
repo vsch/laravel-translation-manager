@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'เพิ่มกุญแจ',
     'addkeys-placeholder'       => 'เพิ่ม 1 ญแจสำคัญต่อบรรทัดโดยไม่มีส่วนนำหน้ากลุ่ม',
     'addsuffixes'               => 'ตั้งค่าส่วนขยาย',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'ไวล์การ์ดกุญแจการปฏิบัติการ',
     'zip-all'                   => 'ทั้งรูด',
     'zip-group'                 => 'รูดซิบปากลุ่ม',
-];
+);

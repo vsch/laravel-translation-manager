@@ -2,18 +2,20 @@
 
 This package is used to comfortably manage, view, edit and translate Laravel language files with translation assistance through the Yandex Translation API. It augments the Laravel Translator system with a ton of practical functionality. [Features](#Features)
 
-> Master branch is now for Laravel version 5.1
+>Master branch is now for Laravel version 5.1
 
-> - For Laravel 4.2 use the Laravel4 branch, or require: `"vsch/laravel-translation-manager": "~1.0"`
+>- For Laravel 4.2 use the Laravel4 branch, or require: `"vsch/laravel-translation-manager": "~1.0"`
 
-> - For Laravel 5.1 use the master branch, or require: `"vsch/laravel-translation-manager": "~2.0"`
+>- For Laravel 5.1 use the master branch, or require: `"vsch/laravel-translation-manager": "~2.0"`
+
+>New file layout configuration can handle non-standard location and layout of translation files. The main motivator for the change was to eliminate differences in code between the two Laravel versions to ease maintenance, the added benefit is that now Translation Manager can import and publish translations located anywhere in the project tree and is configured to handle vendor and workbench subdirectories. This does require publishing of the new configuration files to your project and manually apply any changes you have made to them.
 
 &nbsp;
 > Initial Localizations Added
 
 > Only en and ru locales were manually verified. All others are there as a starter set and were automatically generated  via Yandex by using the new Auto Translate feature in the web interface.
 
-> Any help in cleaning them up would be greatly appreciated. 
+> Any help in cleaning them up would be greatly appreciated.
 
 <a id="Screenshot"></a>
 #### Screenshot
@@ -30,7 +32,7 @@ This package is used to comfortably manage, view, edit and translate Laravel lan
 - configurable export format for quoting, sorting of translation keys.
 - preserve multi-line comments and doc comments and empty array() values for first level keys on export.
 - allow in-database translations to override the ones in the language files. Used to update translations on server clusters where updating translation files is not possible (like AWS EC2) or would cause server code to be out of sync.
-- assisted translation with Yandex API integrated into the web interface. [Yandex Translation Supported Languages](#YandexSupportedLanguages)
+- assisted translation with Yandex API integrated into the web interface that handle choice type translations and preserve replacement parameters. [Yandex Translation Supported Languages](#YandexSupportedLanguages)
 - auto-translate empty translations.
 - allow in place editing of translation strings right in your web pages. This may require some rework of your blade/php view files.
 
@@ -175,13 +177,13 @@ If someone contacts me with a request to prioritize a specific area I will do it
         "vsch/laravel-translation-manager": "~1.0"
 
 	- if you are not going to be customizing the web interface it is highly recommended that you add automatic asset publishing for this package after upgrade in your project's composer.json:
-	
+
 			"php artisan asset:publish vsch/laravel-translation-manager",
 
 	Otherwise a future update, that needs new assets, will not work properly. composer does not run post-update scripts of packages.
-	
+
 	Here is a full scripts section of a standard Laravel 4.2 project composer.json should look like after the change.
-	
+
 		    "scripts": {
 		        "post-install-cmd": [
 		            "php artisan clear-compiled",
@@ -253,7 +255,23 @@ If someone contacts me with a request to prioritize a specific area I will do it
 
 The config file `app/config/packages/laravel-translation-manager/config.php` has comments that provide a description for each option. Note that when `admin_enabled` is set to false then translation management is limited to editing existing translations all other operations have to be done through the command line. Ideally, this option needs to be dynamic based on user privileges so that translators cannot delete translations or administer translations but admins can. See [step 8](#step8) above.
 
-By default the primary locale is en. The primary locale determines what language is used for the source text for the translate button in the edit pop-up. When editing the text for the primary locale a button in the edit pop-up allows to convert the text of the key to a default label (chage - and _ to spaces, capitalize first letter of each word).
+By default the primary locale is `en`. The primary locale determines what language is used for the source text for the translate button in the edit pop-up and can be changed in the web interface for the current session. When editing the text for the primary locale a button in the edit pop-up allows you to convert the text of the key to a default value (change . - _ to spaces, capitalize first letter of each word) that way you can generate descent placeholder text to continue development and replace it with more meaningful value later.
+
+By default the configuration will load all translations found in the standard Laravel locations. In the table below {vendor}, {package}, {locale}, {group} are placeholders for their corresponding values referring to vendor name, package name, locale string and translation group. The translation group will consist of optional sub-directory tree and the file name, allowing you to organize your translation files.
+
+<table width="100%">
+<thead>
+<tr><th width="30%">Location</th><th width="70%">Description</th></tr>
+</thead>
+<tbody>
+<tr><td>`/resources/lang/{locale}/{group}.php`</td><td>Standard project translation files</td></tr>
+<tr><td>`/resources/lang/vendor/{package}/{locale}/{group}.php`</td><td>Package translation override files.</td></tr>
+<tr><td>`/workbench/{vendor}/{package}/resources/lang/{locale}/{group}.php`</td><td>Translation files for packages that you are developing in the current project. Laravel 4.2 style but the directory layout updated to version 5 standard. These will have a group prefix of `wbn:` in the database and web interface to distinguish them from the standard Laravel package namespaces.</td></tr>
+<tr><td>`/vendor/{vendor}/{package}/resources/lang/{locale}/{group}.php`</td><td>Translation files for packages that are dependents of your project. By default no translation files are loaded from this section. You will need to edit the configuration file for the 'vendor' section and list the packages you want to include in the 'include' array in the form 'vendor/package'.  These will have a group prefix of `vnd:` in the database and web interface to distinguish them from the standard Laravel package namespaces</td></tr>
+</tbody>
+</table>
+
+The default configuration file also has entries for two packages whose translation files' location and naming convention does not follow Laravel conventions and require more tweaking to allow import/export of their language files. These non-standard layouts can only be included in the `wbn:` or `vnd:` prefixed namespaces.
 
 <a id="ModifyingViews"></a>
 ## Modifying the default Views

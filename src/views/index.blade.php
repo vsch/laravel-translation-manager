@@ -19,28 +19,49 @@
                         <p>@lang($package . '::messages.export-warning-text')</p>
 
                         <?= ifInPlaceEdit("@lang($package . '::messages.import-all-done')") ?>
-                        <div class="alert alert-success success-import-all" style="display:none;">
+                        <div class="alert alert-danger alert-hideable" style="display:none;">
+                            <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <div class="errors-alert">
+                            </div>
+                        </div>
+                        <div class="alert alert-success alert-hideable" style="display:none;">
+                            <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <div class="success-import-all">
                             <p>@lang($package . '::messages.import-all-done')</p>
+                            </div>
                         </div>
                         <?= ifInPlaceEdit("@lang($package . '::messages.import-group-done')", ['group' => $group]) ?>
-                        <div class="alert alert-success success-import-group" style="display:none;">
-                            <p>@lang($package . '::messages.import-group-done', ['group' => $group]) </p>
+                        <div class="alert alert-success alert-hideable" style="display:none;">
+                            <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <div class="success-import-group">
+                                <p>@lang($package . '::messages.import-group-done', ['group' => $group]) </p>
+                            </div>
                         </div>
                         <?= ifInPlaceEdit("@lang($package . '::messages.search-done')") ?>
-                        <div class="alert alert-success success-find" style="display:none;">
-                            <p>@lang($package . '::messages.search-done')</p>
+                        <div class="alert alert-success alert-hideable" style="display:none;">
+                            <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <div class="success-find">
+                                <p>@lang($package . '::messages.search-done')</p>
+                            </div>
                         </div>
                         <?= ifInPlaceEdit("@lang($package . '::messages.done-publishing')", ['group' => $group]) ?>
-                        <div class="alert alert-success success-publish" style="display:none;">
-                            <p>@lang($package . '::messages.done-publishing', ['group'=> $group])</p>
+                        <div class="alert alert-success alert-hideable" style="display:none;">
+                            <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <div class="success-publish">
+                                <p>@lang($package . '::messages.done-publishing', ['group'=> $group])</p>
+                            </div>
                         </div>
                         <?= ifInPlaceEdit("@lang($package . '::messages.done-publishing-all')") ?>
-                        <div class="alert alert-success success-publish-all" style="display:none;">
-                            <p>@lang($package . '::messages.done-publishing-all')</p>
+                        <div class="alert alert-success alert-hideable" style="display:none;">
+                            <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <div class="success-publish-all">
+                                <p>@lang($package . '::messages.done-publishing-all')</p>
+                            </div>
                         </div>
 
                         <?php if(Session::has('successPublish')) : ?>
-                        <div class="alert alert-info">
+                        <div class="alert alert-info alert-hideable">
+                            <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                             <?php echo Session::get('successPublish'); ?>
                         </div>
                         <?php endif; ?>
@@ -72,7 +93,7 @@
                                             <div class="col-sm-6">
                                                 <?= ifEditTrans($package . '::messages.import-groups') ?>
                                                 <?= ifEditTrans($package . '::messages.loading') ?>
-                                                <button type="submit" form="form-import-all"
+                                                <button id="submit-import-all" type="submit" form="form-import-all"
                                                         class="btn btn-sm btn-success"
                                                         data-disable-with="<?= noEditTrans($package . '::messages.loading') ?>">
                                                     <?= noEditTrans($package . '::messages.import-groups') ?>
@@ -83,10 +104,17 @@
                                                     <?= noEditTrans($package . '::messages.zip-all') ?>
                                                 </a>
                                                 <div class="input-group" style="float:right; display:inline">
+                                                    <?= ifEditTrans($package . '::messages.publish-all') ?>
+                                                    <?= ifEditTrans($package . '::messages.publishing') ?>
+                                                    <button type="submit" form="form-publish-all"
+                                                            class="btn btn-sm btn-warning input-control"
+                                                            data-disable-with="<?= noEditTrans($package . '::messages.publishing') ?>">
+                                                        <?= noEditTrans($package . '::messages.publish-all') ?>
+                                                    </button><?= ifEditTrans($package . '::messages.publish-all') ?>
                                                     <?= ifEditTrans($package . '::messages.find-in-files') ?>
                                                     <?= ifEditTrans($package . '::messages.searching') ?>
                                                     <button type="submit" form="form-find"
-                                                            class="btn btn-sm btn-warning"
+                                                            class="btn btn-sm btn-danger"
                                                             data-disable-with="<?= noEditTrans($package . '::messages.searching') ?>">
                                                         <?= noEditTrans($package . '::messages.find-in-files') ?>
                                                     </button>
@@ -124,6 +152,8 @@
                                     <?php if ($adminEnabled): ?>
                                     <div class="col-sm-6">
                                         <?php if ($group): ?>
+                                        <?= ifEditTrans($package . '::messages.publishing') ?>
+                                        <?= ifEditTrans($package . '::messages.publish') ?>
                                         <button type="submit" form="form-publish-group"
                                                 class="btn btn-sm btn-info input-control"
                                                 data-disable-with="<?= noEditTrans($package . '::messages.publishing') ?>">
@@ -137,21 +167,19 @@
                                         <?php endif; ?>
                                         <div class="input-group" style="float:right; display:inline">
                                             <?php if ($group): ?>
+                                            <?= ifEditTrans($package . '::messages.import-group') ?>
+                                            <?= ifEditTrans($package . '::messages.loading') ?>
                                             <button type="submit" form="form-import" class="btn btn-sm btn-success"
                                                     data-disable-with="<?= noEditTrans($package . '::messages.loading') ?>">
                                                 <?= noEditTrans($package . '::messages.import-group') ?>
-                                            </button><?= ifEditTrans($package . '::messages.delete') ?>
+                                            </button>
+                                            <?= ifEditTrans($package . '::messages.delete') ?>
                                             <?= ifEditTrans($package . '::messages.deleting') ?>
                                             <button type="submit" form="form-delete-group" class="btn btn-sm btn-danger"
                                                     data-disable-with="<?= noEditTrans($package . '::messages.deleting') ?>">
                                                 <?= noEditTrans($package . '::messages.delete') ?>
-                                            </button><?= ifEditTrans($package . '::messages.publish') ?>
+                                            </button>
                                             <?php endif; ?>
-                                            <button type="submit" form="form-publish-all"
-                                                    class="btn btn-sm btn-warning input-control"
-                                                    data-disable-with="<?= noEditTrans($package . '::messages.publishing') ?>">
-                                                <?= noEditTrans($package . '::messages.publish-all') ?>
-                                            </button><?= ifEditTrans($package . '::messages.publish-all') ?>
                                         </div>
                                     </div>
                                     <?php endif; ?>

@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'Anahtarları Ekleyin',
     'addkeys-placeholder'       => 'Ekleme 1 satır başına anahtar, grup öneki olmadan',
     'addsuffixes'               => 'Set Ekleri',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Joker Anahtar İşlemleri',
     'zip-all'                   => 'Tüm Zip',
     'zip-group'                 => 'Zip Grup',
-];
+);

@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'Додајте Кључеве',
     'addkeys-placeholder'       => 'Додати 1 кључ у реду, без префикса групе',
     'addsuffixes'               => 'Сет Наставака',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Џокер Операције Са Кључевима',
     'zip-all'                   => 'Зип Све',
     'zip-group'                 => 'Груписање СПТА',
-];
+);

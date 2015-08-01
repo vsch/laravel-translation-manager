@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'Přidat Klíče',
     'addkeys-placeholder'       => 'Přidat 1 klíč na řádek, aniž skupiny prefix',
     'addsuffixes'               => 'Soubor Přípon',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Zástupné Klíčových Operací',
     'zip-all'                   => 'Zip Všechny',
     'zip-group'                 => 'Zip Skupiny',
-];
+);

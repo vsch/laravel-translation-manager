@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'اضافه کردن کلید',
     'addkeys-placeholder'       => 'اضافه کردن 1 کلید در هر خط بدون این گروه پیشوند',
     'addsuffixes'               => 'مجموعه پسوندها',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'کلمات کلیدی عملیات',
     'zip-all'                   => 'پستی همه',
     'zip-group'                 => 'پستی گروه',
-];
+);

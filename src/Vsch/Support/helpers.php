@@ -188,41 +188,30 @@ if (!function_exists('formSubmit'))
     }
 }
 
-if (!function_exists('mb_replace'))
+if (!function_exists('mb_str_replace'))
 {
-    function mb_replace($search, $replace, $subject, &$count = null)
+    function mb_str_replace($search, $replace, $subject, &$count = 0)
     {
-        if (!is_array($search)) $search = array($search);
-        if (!is_array($replace)) $replace = array($replace);
-        $sMax = count($search);
-        $rMax = count($replace);
-
-        $result = '';
-        $count = 0;
-        $len = mb_strlen($subject);
-
-        for ($s = 0; $s < $sMax; $s++)
+        if (!is_array($subject))
         {
-            $find = $search[$s];
-            $pos = 0;
-
-            while ($pos < $len)
+            $searches = is_array($search) ? array_values($search) : array($search);
+            $replacements = is_array($replace) ? array_values($replace) : array($replace);
+            $replacements = array_pad($replacements, count($searches), '');
+            foreach ($searches as $key => $search)
             {
-                $lastPos = $pos;
-                if (($pos = mb_strpos($subject, $find, $pos)) === false)
-                {
-                    $result .= mb_substr($subject, $lastPos);
-                    break;
-                }
-
-                $result .= mb_substr($subject, $lastPos, $pos - $lastPos);
-                if ($s < $rMax) $result .= $replace[$s];
-                $pos += mb_strlen($find);
-                $count++;
+                $parts = mb_split(preg_quote($search), $subject);
+                $count += count($parts) - 1;
+                $subject = implode($replacements[$key], $parts);
             }
         }
-
-        return $result;
+        else
+        {
+            foreach ($subject as $key => $value)
+            {
+                $subject[$key] = mb_str_replace($search, $replace, $value, $count);
+            }
+        }
+        return $subject;
     }
 }
 
@@ -318,3 +307,20 @@ if (!function_exists('mb_renderDiffHtml'))
     }
 }
 
+if (!function_exists('appendPath'))
+{
+    function appendPath($path, $part)
+    {
+        if ($path !== '' && $part !== '')
+        {
+            // have both, combine them
+            $pathTerminated = $path[strlen($path) - 1] === '/';
+            $partPrefixed = $part[0] === '/';
+            return $path . ($pathTerminated || $partPrefixed ? '' : '/')  . ($pathTerminated && $partPrefixed ? substr($part, 1) : $part);
+        }
+        else
+        {
+            return $path ?: $part;
+        }
+    }
+}

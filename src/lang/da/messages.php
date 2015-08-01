@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'Tilføj Nøgler',
     'addkeys-placeholder'       => 'Tilføj 1 nøgle per linje, uden at gruppen præfiks',
     'addsuffixes'               => 'Sæt Suffikser',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Wildcard Centrale Aktiviteter',
     'zip-all'                   => 'Zip Alle',
     'zip-group'                 => 'Zip-Gruppen',
-];
+);

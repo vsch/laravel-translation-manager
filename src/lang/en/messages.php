@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'Add Keys',
     'addkeys-placeholder'       => 'Add 1 key per line, without the group prefix',
     'addsuffixes'               => 'Set Suffixes',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Wildcard Key Operations',
     'zip-all'                   => 'Zip All',
     'zip-group'                 => 'Zip Group',
-];
+);

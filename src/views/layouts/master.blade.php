@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="author" content="Vladimir Schneider">
     <link rel="icon" href="/images/favicon.png">
-    <meta name="description" content="{{noEditTrans('laravel-translation-manager::messages.translation-manager')}}">{{--<!-- Bootstrap core CSS -->--}}
+    <meta name="description" content="{{noEditTrans('laravel-translation-manager::messages.translation-manager')}}">
+    {{--<!-- Bootstrap core CSS -->--}}
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
     <link href="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.0/bootstrap3-editable/css/bootstrap-editable.css" rel="stylesheet"/>@yield('head')

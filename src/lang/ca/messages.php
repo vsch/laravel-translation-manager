@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'Afegir Claus',
     'addkeys-placeholder'       => 'Afegir 1 clau per línia, sense el grup de prefix',
     'addsuffixes'               => 'Conjunt De Sufixos',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Comodí Clau Operacions',
     'zip-all'                   => 'Zip Tots',
     'zip-group'                 => 'Zip Grup',
-];
+);

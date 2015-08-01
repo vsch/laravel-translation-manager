@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'Ychwanegu Keys',
     'addkeys-placeholder'       => 'Ychwanegu 1 allweddol y llinell, heb y rhagddodiad grŵp',
     'addsuffixes'               => 'Set Ôl-Ddodiaid',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Wildcard Gweithrediadau Allweddol',
     'zip-all'                   => 'Zip Holl',
     'zip-group'                 => 'Zip Grŵp',
-];
+);

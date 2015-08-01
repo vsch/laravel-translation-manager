@@ -1,6 +1,6 @@
 <?php
 
-return [
+return array(
     'addkeys'                   => 'Dodaj Tipke',
     'addkeys-placeholder'       => 'Add 1 tipke na vrstico, brez skupini predpono',
     'addsuffixes'               => 'Nabor Pripon,',
@@ -107,4 +107,4 @@ TEXT
     'wildcard-keyops'           => 'Nadomestni Ključ Operacije',
     'zip-all'                   => 'Zip Vse',
     'zip-group'                 => 'Zip Skupine',
-];
+);
