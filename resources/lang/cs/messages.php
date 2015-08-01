@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Přidat 1 klíč na řádek, aniž skupiny prefix',
     'addsuffixes'               => 'Soubor Přípon',
     'addsuffixes-placeholder'   => 'přidat každý klíč připojeno linky, vstoupil zde',
+    'auto-fill'                 => 'Automatické Vyplnění',
+    'auto-fill-disabled'        => 'Náplň...',
     'auto-translate'            => 'Auto Přeložit',
     'auto-translate-disabled'   => 'Překlad',
     'changed'                   => 'Změnil',

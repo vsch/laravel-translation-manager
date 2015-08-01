@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Προσθέστε 1 κλειδί ανά γραμμή, χωρίς το πρόθεμα της ομάδας',
     'addsuffixes'               => 'Σύνολο Επιθήματα',
     'addsuffixes-placeholder'   => 'προσθέστε κάθε πλήκτρο επίθεμα από τις γραμμές που καταχωρούνται εδώ',
+    'auto-fill'                 => 'Αυτόματη Πλήρωση',
+    'auto-fill-disabled'        => 'Γεμίζοντας...',
     'auto-translate'            => 'Αυτόματη Μετάφραση',
     'auto-translate-disabled'   => 'Μετάφραση',
     'changed'                   => 'Άλλαξε',

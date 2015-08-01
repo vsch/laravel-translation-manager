@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'เพิ่ม 1 ญแจสำคัญต่อบรรทัดโดยไม่มีส่วนนำหน้ากลุ่ม',
     'addsuffixes'               => 'ตั้งค่าส่วนขยาย',
     'addsuffixes-placeholder'   => 'เพิ่มกันและกุญแจ suffixed โดยบรรทัดที่ป้อนมาอยู่ที่นี่',
+    'auto-fill'                 => 'เติมเต็มอัตโนมัติ',
+    'auto-fill-disabled'        => 'เติ...',
     'auto-translate'            => 'แปลอัตโนมัติ',
     'auto-translate-disabled'   => 'แปล',
     'changed'                   => 'เปลี่ยนไป',

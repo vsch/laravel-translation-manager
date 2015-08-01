@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Tilføj 1 nøgle per linje, uden at gruppen præfiks',
     'addsuffixes'               => 'Sæt Suffikser',
     'addsuffixes-placeholder'   => 'tilføj hver tast efterfulgt af linjer, der indtastes her',
+    'auto-fill'                 => 'Auto Fill',
+    'auto-fill-disabled'        => 'Fylde...',
     'auto-translate'            => 'Auto Oversætte',
     'auto-translate-disabled'   => 'Oversættelse',
     'changed'                   => 'Ændret',

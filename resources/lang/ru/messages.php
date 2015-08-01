@@ -8,7 +8,7 @@ return [
     'auto-fill'                 => 'Автозаполнение',
     'auto-fill-disabled'        => 'Заполнение...',
     'auto-translate'            => 'Авто Перевод',
-    'auto-translate-disabled'   => 'Перевод',
+    'auto-translate-disabled'   => 'Перевод...',
     'changed'                   => 'Измененны',
     'check-all'                 => '<i class="glyphicon glyphicon-ok"></i>',
     'check-none'                => '<i class="glyphicon glyphicon-remove"></i>',

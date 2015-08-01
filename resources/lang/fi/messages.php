@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Lisää näppäin 1 per rivi, ilman konsernin etuliite',
     'addsuffixes'               => 'Aseta Päätteitä',
     'addsuffixes-placeholder'   => 'lisää kutakin näppäintä suffixed mennessä linjat tuli tänne',
+    'auto-fill'                 => 'Automaattinen Täyttö',
+    'auto-fill-disabled'        => 'Täyte...',
     'auto-translate'            => 'Auto Kääntää',
     'auto-translate-disabled'   => 'Kääntäminen',
     'changed'                   => 'Muutettu',

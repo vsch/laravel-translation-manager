@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Ekleme 1 satır başına anahtar, grup öneki olmadan',
     'addsuffixes'               => 'Set Ekleri',
     'addsuffixes-placeholder'   => 'her anahtar hatlarını buraya girilen ekli Ekle',
+    'auto-fill'                 => 'Otomatik Doldurma',
+    'auto-fill-disabled'        => 'Dolum...',
     'auto-translate'            => 'Otomatik Çevir',
     'auto-translate-disabled'   => 'Çeviri',
     'changed'                   => 'Değişti',

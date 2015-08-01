@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Bæta við 1 lykil á línu, án þess að hópurinn forskeyti',
     'addsuffixes'               => 'Tilbúnir Eftirnöfn',
     'addsuffixes-placeholder'   => 'bæta við alla lykla suffixed með línur birtist hér',
+    'auto-fill'                 => 'Sjálfvirk Fylltu',
+    'auto-fill-disabled'        => 'Að fylla þá...',
     'auto-translate'            => 'Sjálfvirk Þýtt',
     'auto-translate-disabled'   => 'Að þýða',
     'changed'                   => 'Breytti',

@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Додати 1 ключ в лінію, без префікса групи',
     'addsuffixes'               => 'Набір Суфіксів',
     'addsuffixes-placeholder'   => 'додавання кожного ключа, суфікс рядки, зазначені тут',
+    'auto-fill'                 => 'Автоматичне Заповнення',
+    'auto-fill-disabled'        => 'Заповнення...',
     'auto-translate'            => 'Авто Перевести',
     'auto-translate-disabled'   => 'Переклад',
     'changed'                   => 'Змінилося',

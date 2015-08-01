@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Add meg az 1 gombot soronként, anélkül, hogy a csoport előtag',
     'addsuffixes'               => 'Állítsa Utótagok',
     'addsuffixes-placeholder'   => 'hozzá minden kulcs suffixed által vonalak az itt megadott',
+    'auto-fill'                 => 'Az Automatikus Kitöltés',
+    'auto-fill-disabled'        => 'Tömés...',
     'auto-translate'            => 'Automatikus Fordítás',
     'auto-translate-disabled'   => 'Fordítás',
     'changed'                   => 'Megváltozott',

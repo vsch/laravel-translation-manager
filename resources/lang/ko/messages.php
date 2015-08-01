@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => '추가 1 당 중요한 라인 없이 그룹히 url 의 앞부분만 비교',
     'addsuffixes'               => '설 Suffixes',
     'addsuffixes-placeholder'   => '를 각각 등록한 다음 중요한 suffixed 하는 라인 입력되기',
+    'auto-fill'                 => '자동 채움',
+    'auto-fill-disabled'        => '충전 km',
     'auto-translate'            => '자동 번역',
     'auto-translate-disabled'   => '번역',
     'changed'                   => '변경',

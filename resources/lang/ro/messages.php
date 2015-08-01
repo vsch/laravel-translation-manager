@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Se adauga 1 cheie în linie, fără prefixul de grup',
     'addsuffixes'               => 'Set De Sufixe',
     'addsuffixes-placeholder'   => 'adăugarea fiecare cheie, sufixul de comandă menționate aici',
+    'auto-fill'                 => 'Completarea Automată A',
+    'auto-fill-disabled'        => 'De umplere...',
     'auto-translate'            => 'Auto Traduce',
     'auto-translate-disabled'   => 'Traducere',
     'changed'                   => 'S-a schimbat',

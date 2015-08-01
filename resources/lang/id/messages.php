@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Tambahkan 1 kunci per baris, tanpa kelompok angka depannya',
     'addsuffixes'               => 'Set Suffixes',
     'addsuffixes-placeholder'   => 'tambahkan masing-masing kunci suffixed oleh garis dimasukkan di sini',
+    'auto-fill'                 => 'Otomatis Mengisi',
+    'auto-fill-disabled'        => 'Mengisi...',
     'auto-translate'            => 'Auto Menerjemahkan',
     'auto-translate-disabled'   => 'Menerjemahkan',
     'changed'                   => 'Berubah',

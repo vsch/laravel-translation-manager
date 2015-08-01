@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Додадете 1 копче по линија, без префикс група',
     'addsuffixes'               => 'Поставете Суфикси',
     'addsuffixes-placeholder'   => 'додадете го секое копче suffixed со линии влезе тука',
+    'auto-fill'                 => 'Автоматско Пополнување',
+    'auto-fill-disabled'        => 'Пополнување...',
     'auto-translate'            => 'Автоматски Превод',
     'auto-translate-disabled'   => 'Преведување',
     'changed'                   => 'Промени',

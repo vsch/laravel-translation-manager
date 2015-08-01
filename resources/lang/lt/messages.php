@@ -8,7 +8,7 @@ return [
     'auto-fill'                 => 'Auto Užpildyti',
     'auto-fill-disabled'        => 'Pylimo...',
     'auto-translate'            => 'Auto Išversti',
-    'auto-translate-disabled'   => 'Vertimas',
+    'auto-translate-disabled'   => 'Vertimo...',
     'changed'                   => 'Keisti',
     'check-all'                 => 'Visi',
     'check-none'                => 'Nėra',

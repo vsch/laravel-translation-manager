@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Dodaj 1 klucz w linii, bez prefiksu grupy',
     'addsuffixes'               => 'Zestaw Sufiksów',
     'addsuffixes-placeholder'   => 'dodawanie każdego klucza, przyrostek polecenia podane tutaj',
+    'auto-fill'                 => 'Automatyczne Wypełnianie',
+    'auto-fill-disabled'        => 'Wypełnienie...',
     'auto-translate'            => 'Auto Przetłumaczyć',
     'auto-translate-disabled'   => 'Tłumaczenie',
     'changed'                   => 'Zmieniło',

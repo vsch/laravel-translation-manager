@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Ychwanegu 1 allweddol y llinell, heb y rhagddodiad grŵp',
     'addsuffixes'               => 'Set Ôl-Ddodiaid',
     'addsuffixes-placeholder'   => 'ychwanegu un allweddol ddodiad gan linellau gofnodi yma',
+    'auto-fill'                 => 'Auto Llenwi',
+    'auto-fill-disabled'        => 'Llenwi...',
     'auto-translate'            => 'Auto Cyfieithu',
     'auto-translate-disabled'   => 'Cyfieithu',
     'changed'                   => 'Newid',

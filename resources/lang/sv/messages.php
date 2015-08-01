@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Lägg till 1 per linje, utan den grupp prefix',
     'addsuffixes'               => 'Ange Suffix',
     'addsuffixes-placeholder'   => 'lägg till varje knapp suffigerade av linjer in här',
+    'auto-fill'                 => 'Automatisk Fyllning',
+    'auto-fill-disabled'        => 'Fyllning...',
     'auto-translate'            => 'Auto-Översätt',
     'auto-translate-disabled'   => 'Översätta',
     'changed'                   => 'Ändrat',

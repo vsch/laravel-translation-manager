@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'اضافه کردن 1 کلید در هر خط بدون این گروه پیشوند',
     'addsuffixes'               => 'مجموعه پسوندها',
     'addsuffixes-placeholder'   => 'اضافه کردن هر یک از کلید پسوند خطوط وارد شده در اینجا',
+    'auto-fill'                 => 'خودکار پر کردن',
+    'auto-fill-disabled'        => 'پر کردن...',
     'auto-translate'            => 'ترجمه خودکار',
     'auto-translate-disabled'   => 'ترجمه',
     'changed'                   => 'تغییر',

@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'إضافة 1 الرئيسية في الخط دون بادئة مجموعة',
     'addsuffixes'               => 'مجموعة اللواحق',
     'addsuffixes-placeholder'   => 'إضافة كل مفتاح بـ بواسطة خطوط دخلت هنا',
+    'auto-fill'                 => 'التعبئة التلقائية',
+    'auto-fill-disabled'        => 'ملء...',
     'auto-translate'            => 'ترجمة تلقائي',
     'auto-translate-disabled'   => 'ترجمة',
     'changed'                   => 'تغيرت',

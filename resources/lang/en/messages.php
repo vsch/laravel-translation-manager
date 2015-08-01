@@ -8,7 +8,7 @@ return [
     'auto-fill'                 => 'Auto Fill',
     'auto-fill-disabled'        => 'Filling...',
     'auto-translate'            => 'Auto Translate',
-    'auto-translate-disabled'   => 'Translating',
+    'auto-translate-disabled'   => 'Translating...',
     'changed'                   => 'Changed',
     'check-all'                 => 'All',
     'check-none'                => 'None',
