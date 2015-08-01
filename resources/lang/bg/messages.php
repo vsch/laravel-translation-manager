@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'За да добавите 1 ключ в линия, без префикс група',
     'addsuffixes'               => 'Набор От Наставки',
     'addsuffixes-placeholder'   => 'добавянето на всеки ключ, наставка ред, посочени тук',
+    'auto-fill'                 => 'Автоматично попълване',
+    'auto-fill-disabled'        => 'Попълване...',
     'auto-translate'            => 'Auto Превод',
     'auto-translate-disabled'   => 'Превод',
     'changed'                   => 'Промени',

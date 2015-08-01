@@ -63,29 +63,45 @@ jQuery(document).ready(function ($) {
     $('.form-import').on('ajax:success', function (e, data) {
         var elem = $('div.success-import-group');
         elem.html(elem.html().replace(/:count\b/, data.counter));
-        elem.slideDown();
+        elem.closest('div.alert').slideDown();
     });
 
     $('.form-import-all').on('ajax:success', function (e, data) {
         var elem = $('div.success-import-all');
         elem.html(elem.html().replace(/:count\b/, data.counter));
-        elem.slideDown();
+        elem.closest('div.alert').slideDown();
     });
 
     $('.form-find').on('ajax:success', function (e, data) {
         var elem = $('div.success-find');
         elem.html(elem.html().replace(/:count\b/, data.counter));
-        elem.slideDown();
+        elem.closest('div.alert').slideDown();
     });
 
     $('.form-publish-group').on('ajax:success', function (e, data) {
-        $('div.success-publish').slideDown();
-        $('tr.deleted-translation').remove();
+        if (data.status === 'errors') {
+            var elem = $('div.errors-alert'),
+                errors = data.errors;
+            elem.html("<p>"+errors.join("</p>\n<p>") + "</p>\n");
+            elem.closest('div.alert').slideDown();
+        }
+        else {
+            $('div.success-publish').closest('div.alert').slideDown();
+            $('tr.deleted-translation').remove();
+        }
     });
 
     $('.form-publish-all').on('ajax:success', function (e, data) {
-        $('div.success-publish-all').slideDown();
-        $('tr.deleted-translation').remove();
+        if (data.status === 'errors') {
+            var elem = $('div.errors-alert'),
+                errors = data.errors;
+            elem.html("<p>"+errors.join("</p>\n<p>") + "</p>\n");
+            elem.closest('div.alert').slideDown();
+        }
+        else {
+            $('div.success-publish-all').closest('div.alert').slideDown();
+            $('tr.deleted-translation').remove();
+        }
     });
 
     $('#form-keyops').on('ajax:success', function (e, data) {
@@ -150,6 +166,15 @@ jQuery(document).ready(function ($) {
     $('#display-locale-none').on('click', function (e) {
         e.preventDefault();
         $('.display-locale').prop('checked', false);
+    });
+
+    $('div.alert-hideable').each(function () {
+        var elem = $(this), btn = elem.find('button.close').first();
+        if (btn.length) {
+            btn.on('click', function () {
+                elem.slideUp();
+            });
+        }
     });
 
     function postTranslationValues(translations, elemButton, processText) {

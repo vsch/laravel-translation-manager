@@ -311,6 +311,16 @@ if (!function_exists('appendPath'))
 {
     function appendPath($path, $part)
     {
-        return $path . (substr($path, -1) !== '/' && substr($part, 0, 1) !== '/' ? '/' : '') . ($part !== '/' ? $part : '');
+        if ($path !== '' && $part !== '')
+        {
+            // have both, combine them
+            $pathTerminated = $path[strlen($path) - 1] === '/';
+            $partPrefixed = $part[0] === '/';
+            return $path . ($pathTerminated || $partPrefixed ? '' : '/')  . ($pathTerminated && $partPrefixed ? substr($part, 1) : $part);
+        }
+        else
+        {
+            return $path ?: $part;
+        }
     }
 }

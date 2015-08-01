@@ -892,20 +892,12 @@ SQL
     }
 
     public
-    function getProgress()
-    {
-        $progress = $this->manager->getProgress();
-        $progressArray = $progress ? get_object_vars($progress) : [];
-        $progressArray['status'] = 'ok';
-        return Response::json($progressArray);
-    }
-
-    public
     function postPublish($group)
     {
         $this->manager->exportTranslations($group);
+        $errors = $this->manager->errors();
 
-        return Response::json(array('status' => 'ok'));
+        return Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
     }
 
     public

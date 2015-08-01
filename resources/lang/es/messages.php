@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Agregar 1 clave por línea, sin el prefijo de grupo',
     'addsuffixes'               => 'Conjunto De Sufijos',
     'addsuffixes-placeholder'   => 'agregar cada tecla seguida por las líneas entrado aquí',
+    'auto-fill'                 => 'Auto Fill',
+    'auto-fill-disabled'        => 'Llenado de...',
     'auto-translate'            => 'Auto Traducir',
     'auto-translate-disabled'   => 'Traducción',
     'changed'                   => 'Cambiado',

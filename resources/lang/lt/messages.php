@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Pridėti klavišą 1 eilutėje, be grupės kodu',
     'addsuffixes'               => 'Nustatyti Priesagų',
     'addsuffixes-placeholder'   => 'įtraukti kiekvieną klavišą suffixed linijos įrašas čia',
+    'auto-fill'                 => 'Auto Užpildyti',
+    'auto-fill-disabled'        => 'Pylimo...',
     'auto-translate'            => 'Auto Išversti',
     'auto-translate-disabled'   => 'Vertimas',
     'changed'                   => 'Keisti',

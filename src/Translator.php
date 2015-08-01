@@ -67,6 +67,12 @@ class Translator extends LaravelTranslator
         return $this->suspendInPlaceEdit ? --$this->suspendInPlaceEdit : 0;
     }
 
+    public static
+    function isLaravelNamespace($namespace)
+    {
+        return preg_match('/^[a-zA-Z0-9_-]+$/', $namespace);
+    }
+
     public
     function inPlaceEditLink($t, $withDiff = false, $key = null, $locale = null, $useDB = null, $group = null)
     {
@@ -87,12 +93,16 @@ class Translator extends LaravelTranslator
             {
                 $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
                 if ((!$t->exists || $t->value == '') && $namespace != '*')
-                { // get the package definition, we don't have an override
-                    $t->saved_value = parent::get($key, [], $locale);
-                    $t->status = 0;
-                    if ($withDiff)
+                {
+                    if (static::isLaravelNamespace($namespace))
                     {
-                        $diff = ' [' . $t->saved_value . ']';
+                        // get the package definition, we don't have an override
+                        $t->saved_value = parent::get($key, [], $locale);
+                        $t->status = 0;
+                        if ($withDiff)
+                        {
+                            $diff = ' [' . $t->saved_value . ']';
+                        }
                     }
                 }
             }
@@ -124,13 +134,6 @@ class Translator extends LaravelTranslator
     function getInPlaceEditLink($key, array $replace = array(), $locale = null, $withDiff = null, $useDB = null)
     {
         return $this->inPlaceEditLink(null, $withDiff, $key, $locale, $useDB);
-        //list($namespace, $group, $item) = $this->parseKey($key);
-        //
-        //if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
-        //{
-        //    $t = $this->manager->missingKey($namespace, $group, $item, $locale);
-        //}
-        //return '';
     }
 
     protected

@@ -14,7 +14,6 @@ return array(
         'prefix' => 'translations',
         'middleware' => 'auth',
     ],
-
     /**
      * Specify the locale that is used for creating the initial translation strings. This locale is considered
      * to be the driver of all other translations.
@@ -22,21 +21,18 @@ return array(
      * @type string
      */
     'primary_locale' => 'en',
-
     /**
      * Specify the prefix used for all cookies, session data and cache persistence.
      *
      * @type string
      */
     'persistent_prefix' => 'g2Lu2pyz8QcVrxhL32eN',
-
     /**
      * Enable management of translations beyond just editing and command line manipulations
      *
      * @type boolean
      */
     'admin_enabled' => true,
-
     /**
      * Specify export formatting options:
      *
@@ -55,14 +51,12 @@ return array(
         'USE_SHORT_ARRAY',
         'SORT_KEYS',
     ),
-
     /**
      * Enable mismatch dashboard
      *
      * @type boolean
      */
     'mismatch_enabled' => false,
-
     /**
      * Exclude specific groups from Laravel Translation Manager.
      * This is useful if, for example, you want to avoid editing the official Laravel language files.
@@ -74,7 +68,6 @@ return array(
         //'reminders',
         //'validation',
     ),
-
     /**
      * Exclude specific groups from Laravel Translation Manager in page edit mode.
      * This is useful for groups that are used exclusively for non-display strings like page titles and emails
@@ -86,13 +79,12 @@ return array(
         //'reminders',
         //'validation',
     ),
-
     /**
      * determines whether missing keys are logged
+     *
      * @type boolean
      */
     'log_missing_keys' => false,
-
     /**
      * determines one out of how many user sessions will have a chance to log missing keys
      * since the operation hits the database for every missing key you can limit this by setting a
@@ -124,7 +116,6 @@ return array(
      *                  on one system does no good to the rest of the cluster.
      */
     'indatabase_publish' => 0,
-
     /**
      * used to provide the Yandex key for use in automatic Yandex translations
      *
@@ -135,7 +126,6 @@ return array(
      */
 
     'yandex_translator_key' => '',
-
     /**
      * used to provide configuration on where the translation files are stored and where to write them out.
      *
@@ -146,76 +136,7 @@ return array(
      *
      * It can also be used to include lang/ files from projects in the workbench subdirectory for Laravel 4.2
      * or Laravel 5 even though Laravel 5 does not support workbench subdirectory the same way it does in
-     * version 4.2
-     *
-     *
-     * keys:            - for all keys / means root of the application directory.
-     *
-     *                  Placeholder variables can be included as path parts in 'group' definitions. The values for
-     *                  these place holders are taken from the path definition during import and the group string
-     *                  value in the database during export. The first matching pattern will be used so make sure that
-     *                  your definitions have a uniquifying string for different as used in the defaults for the
-     *                  'vendor' and 'workbench' definitions.
-     *
-     *                  {package} - the name of the package, (laravel-translation-manager), it will also be used
-     *                  as the namespace prefix for the group, with :: appended as a suffix to the package name, {package}::{group}
-     *
-     *                  {vendor} - the vendor part of the package, (vsch)
-     *
-     *                  {locale} - the subdirectories for the locales
-     *
-     *                  {group} - will be taken from the *.php file name found in the directory. Do not include
-     *                  this placeholder in the path spec, it is assumed and handled differently than other parts.
-     *                  Mainly, any sub-directories between
-     *                  the 'path' spec and the file name, whether in lang, packages, workbench or any other path will
-     *                  be included as . separated prefixes to the group. So you are free to organize your {locale}
-     *                  sub-directories with other subdirectories. All will be recognized and managed by the translation
-     *                  manager.
-     *
-     * values:          if the value is a string then it is assumed to be a 'path' spec, and the default spec for the
-     *                  'db_group' definition, which provides an encoding template for the value stored for the group
-     *                  in the database, will be provided as follows:
-     *
-     *                  lang        - 'db_group' => '{group}'
-     *                        (4.2) - 'path' => '/app/lang/{locale}'
-     *                        (5.x) - 'path' => '/resources/lang/{locale}'
-     *
-     *                  packages    - 'db_group' => '{package}::{group}'
-     *                        (4.2) - 'path' => '/app/lang/packages/{locale}/{package}'
-     *                        (5.x) - 'path' => '/resources/lang/vendor/{package}/{locale}'
-     *
-     *                  workbench   - 'db_group' => 'workbench.{vendor}.{package}::{group}'
-     *                        (4.2) - 'path' => '/workbench/{vendor}/{package}/src/lang/{locale}'
-     *                        (5.x) - 'path' => '/workbench/{vendor}/{package}/resources/lang/{locale}'
-     *
-     *                  vendor      - 'db_group' => 'vendor.{vendor}.{package}::{group}'
-     *                        (4.2) - 'path' => '/vendor/{vendor}/{package}/src/lang/{locale}'
-     *                        (5.x) - 'path' => '/vendor/{vendor}/{package}/resources/lang/{locale}'
-     *
-     *
-     *                  for any other types you need to use the array value definition and specify path and group
-     *                  templates explicitly.
-     *
-     *                  array values can have the following:
-     *                  'path' - the path spec for the element, see above
-     *
-     *                  'group' - the group spec template for this element
-     *
-     *                  'include' - valid for all types other than 'lang' and 'packages', it is string or an array
-     *                  defining package combinations to include, each
-     *                  element in the array is assumed to be {vendor}/{package}, if either {vendor} or {package} is
-     *                  missing or * then all such sub-directories will be included. Example:
-     *
-     *                  'vsch/'  - will include all packages under vsch/
-     *
-     *                  '/laravel-translation-manager' - all packages of that name regardless of the vendor will be
-     *                  included.
-     *
-     *                  '/' or '' or if the 'include' array is ommited. - will include all vendors and packages.
-     *
-     *                  NOTE: if the array is empty then no vendors will be included. This is the default for
-     *                  'vendors' and no definition is the default for 'workbench' which will include language files
-     *                  for all workbench packages.
+     * version 4.2 but it is easy to configure composer.json to include
      *
      * array keys:
      *
@@ -231,18 +152,119 @@ return array(
      * 'workbench'       - defines the location of the packages you are including in the project which are also
      *                  the source of the package that you are developing.
      *
+     *
+     * values:          if the value is a string then it is assumed to be a 'file' spec, if it is an array then the keys
+     *                  in the array should correspond to expected values as below. Any missing keys will be added as
+     *                  follows:
+     *
+     *                  lang        - 'db_group' => '{group}'
+     *                              - 'root' => ''
+     *                        (4.2) - 'file' => '/app/lang/{locale}/{group}'
+     *                        (5.x) - 'file' => '/resources/lang/{locale}/{group}'
+     *
+     *                  packages    - 'db_group' => '{package}::{group}'
+     *                              - 'root' => ''
+     *                        (4.2) - 'file' => '/app/lang/packages/{locale}/{package}/{group}'
+     *                        (5.x) - 'file' => '/resources/lang/vendor/{package}/{locale}/{group}'
+     *
+     *                  workbench   - 'db_group' => 'wbn:{vendor}.{package}::{group}'
+     *                              - 'root' => '/workbench/{vendor}/{package}'
+     *                              - 'include' => '/' // which means all vendor/package combinations
+     *                        (4.2) - 'file' => 'src/lang/{locale}/{group}'
+     *                        (5.x) - 'file' => 'resources/lang/{locale}/{group}'
+     *
+     *                  vendor      - 'db_group' => 'vnd:{vendor}.{package}::{group}'
+     *                              - 'root' => '/vendor/{vendor}/{package}'
+     *                              - 'include' => [] // which means no vendor/package combinations will be included
+     *                        (4.2) - 'file' => 'src/lang/{locale}/{group}'
+     *                        (5.x) - 'file' => 'resources/lang/{locale}/{group}'
+     *
+     *
+     *                  The above sections have other defaults that will be added when the config file is processed. The other
+     *                  sections will only have their 'include' converted from a string to an array, or an empty array
+     *                  will be added
+     *
+     *                  array values can have the following:
+     *
+     *                  'root' - the path spec for the path common between versions and packages
+     *
+     *                  'file' - the path spec, when appended to 'root' that will result in the language file once .php
+     *                           is appended to it. see above
+     *
+     *                  The combined 'root' and 'file' strings are appended, and the resulting path searched with
+     *                  {vendor}, {package}, {group}, {locale} being variables that will match any directory at that
+     *                  position and the actual directory name will be used as the value for the corresponding variable
+     *                  in derriving the 'db_group' value. The last part of the path is expected to be a variable of the
+     *                  form {name} and its value will be the name of the file (minus the .php extension). If the last
+     *                  element in the path is {group} then it will also contain . separated sub-directories. Any other
+     *                  named element will only match files.
+     *
+     *                  'include' - valid for all types other than 'lang' and 'packages', it is a string or an array
+     *                  defining package combinations to include, each
+     *                  element in the array is assumed to be {vendor}/{package}, if either {vendor} or {package} is
+     *                  missing or * then all such sub-directories will be included. Example:
+     *
+     *                  'vsch/'  - will include all packages under vsch/
+     *
+     *                  '/laravel-translation-manager' - all packages of that name regardless of the vendor will be
+     *                  included.
+     *
+     *                  '/' - will include all vendors and packages.
+     *
+     *                  NOTE: if the array is empty then no vendors will be included. This is the default for
+     *                  'vendors' and '/' default for 'workbench' which will include language files
+     *                  for all workbench packages.
+     *
      * @type array
      *
      * Please read above before changing.
      */
     'language_dirs' => array(
-        'lang' => '/resources/lang/{locale}',
-        'packages' => '/resources/lang/vendor/{package}/{locale}',
-        'workbench' => '/workbench/{vendor}/{package}/resources/lang/{locale}',
-        'vendor' => array(
-            'path' => '/vendor/{vendor}/{package}/resources/lang/{locale}',
-            'include' => array(),
-        ),
+        'lang' => '/resources/lang/{locale}/{group}',
+        'packages' => '/resources/lang/vendor/{package}/{locale}/{group}',
+        'workbench' => [
+            'include' => '*/*',
+            'root' => '/workbench/{vendor}/{package}',
+            'files' => 'resources/lang/{locale}/{group}',
+        ],
+        'vendor' => [
+            'include' => [],
+            'root' => '/vendor/{vendor}/{package}',
+            'files' => 'resources/lang/{locale}/{group}',
+        ],
+        /*
+         * add packages that need special mapping to their language files because they don't use the standard Laravel
+         * layout for the version that you are using or just plain not Laravel layout. Add '__merge' key with names of
+         * sections where the package should be attempted to be merged.
+         *
+         * These will be merged with vendor or workbench type to get the rest of the config information.
+         * The sections will be checked in the order listed in the __merge entry. The first section whose include
+         * accepts the vendor/package used here, will be used. All the other sections, listed in __merge, will be ignored.
+         *
+         * Since vendor section requires opt-in, it is listed first, if this package is included then
+         * it will be a vendor type.
+         *
+         * NOTE: Regardless of whether the directory exists or not under vendor if the vendor section includes this
+         * package, then it will be expected to be in the vendor directory. If it is not then no language files will be
+         * loaded for it. Therefore only include in vendor section if it is not actually located in workbench.
+         */
+        'caouecs/laravel4-lang' => [
+            '__merge' => ['vendor', 'workbench',],
+            'files' => '{locale}/{group}',
+        ],
+        /*
+         * This one requires a very different definition. The file names are the locale.php, therefore more guts are
+         * exposed when defining the mapping of this one. Including a hard-coded value for the {group} since the only
+         * other option is to replace Lang dir with {group}, but then the group will be called Lang, seems a bit out of
+         * place from the rest of the packages. So there is a way to just hard code the group to any string.
+         */
+        'nesbot/carbon' => [
+            '__merge' => ['vendor', 'workbench',],
+            'files' => 'src/Carbon/Lang/{locale}',
+            'vars' => [
+                '{group}' => 'carbon',
+            ],
+        ],
     ),
     /**
      *

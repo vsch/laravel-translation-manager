@@ -19,28 +19,49 @@
                         <p>@lang($package . '::messages.export-warning-text')</p>
 
                         <?= ifInPlaceEdit("@lang($package . '::messages.import-all-done')") ?>
-                        <div class="alert alert-success success-import-all" style="display:none;">
+                        <div class="alert alert-danger alert-hideable" style="display:none;">
+                            <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <div class="errors-alert">
+                            </div>
+                        </div>
+                        <div class="alert alert-success alert-hideable" style="display:none;">
+                            <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <div class="success-import-all">
                             <p>@lang($package . '::messages.import-all-done')</p>
+                            </div>
                         </div>
                         <?= ifInPlaceEdit("@lang($package . '::messages.import-group-done')", ['group' => $group]) ?>
-                        <div class="alert alert-success success-import-group" style="display:none;">
-                            <p>@lang($package . '::messages.import-group-done', ['group' => $group]) </p>
+                        <div class="alert alert-success alert-hideable" style="display:none;">
+                            <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <div class="success-import-group">
+                                <p>@lang($package . '::messages.import-group-done', ['group' => $group]) </p>
+                            </div>
                         </div>
                         <?= ifInPlaceEdit("@lang($package . '::messages.search-done')") ?>
-                        <div class="alert alert-success success-find" style="display:none;">
-                            <p>@lang($package . '::messages.search-done')</p>
+                        <div class="alert alert-success alert-hideable" style="display:none;">
+                            <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <div class="success-find">
+                                <p>@lang($package . '::messages.search-done')</p>
+                            </div>
                         </div>
                         <?= ifInPlaceEdit("@lang($package . '::messages.done-publishing')", ['group' => $group]) ?>
-                        <div class="alert alert-success success-publish" style="display:none;">
-                            <p>@lang($package . '::messages.done-publishing', ['group'=> $group])</p>
+                        <div class="alert alert-success alert-hideable" style="display:none;">
+                            <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <div class="success-publish">
+                                <p>@lang($package . '::messages.done-publishing', ['group'=> $group])</p>
+                            </div>
                         </div>
                         <?= ifInPlaceEdit("@lang($package . '::messages.done-publishing-all')") ?>
-                        <div class="alert alert-success success-publish-all" style="display:none;">
-                            <p>@lang($package . '::messages.done-publishing-all')</p>
+                        <div class="alert alert-success alert-hideable" style="display:none;">
+                            <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <div class="success-publish-all">
+                                <p>@lang($package . '::messages.done-publishing-all')</p>
+                            </div>
                         </div>
 
                         <?php if(Session::has('successPublish')) : ?>
-                        <div class="alert alert-info">
+                        <div class="alert alert-info alert-hideable">
+                            <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                             <?php echo Session::get('successPublish'); ?>
                         </div>
                         <?php endif; ?>
@@ -93,7 +114,7 @@
                                                     <?= ifEditTrans($package . '::messages.find-in-files') ?>
                                                     <?= ifEditTrans($package . '::messages.searching') ?>
                                                     <button type="submit" form="form-find"
-                                                            class="btn btn-sm btn-warning"
+                                                            class="btn btn-sm btn-danger"
                                                             data-disable-with="<?= noEditTrans($package . '::messages.searching') ?>">
                                                         <?= noEditTrans($package . '::messages.find-in-files') ?>
                                                     </button>
@@ -703,7 +724,6 @@
         var TRANSLATING_LOCALE = '{{$translatingLocale}}';
         var URL_TRANSLATOR_GROUP = '<?= action($controller . '@getView') ?>/';
         var URL_TRANSLATOR_ALL = '<?= action($controller . '@getIndex') ?>';
-        var URL_PROGRESS = '<?= action($controller . '@getProgress') ?>';
     </script>
 
     <!-- Moved out to allow auto-format in PhpStorm w/o screwing up HTML format -->

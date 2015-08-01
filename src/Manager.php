@@ -1,5 +1,6 @@
 <?php namespace Vsch\TranslationManager;
 
+use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Events\Dispatcher;
@@ -9,7 +10,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
-use MyProject\Proxies\__CG__\OtherProject\Proxies\__CG__\stdClass;
 use Symfony\Component\Finder\Finder;
 use Vsch\TranslationManager\Classes\PathTemplateResolver;
 use Vsch\TranslationManager\Classes\TranslationFileRewriter;
@@ -34,18 +34,17 @@ class Manager
     protected $config;
     protected $imported;
     protected $translation;
-    protected $persitentPrefix;
+    protected $persistentPrefix;
     protected $cache;
     protected $cacheIsDirty;
     protected $cacheTransKey;
     private $package;
+    protected $errors;
 
     /**
      * @var   \ZipArchive
      */
     protected $zipExporting;
-
-    protected $progress;
 
     public
     function packageName($package)
@@ -61,7 +60,7 @@ class Manager
         $this->events = $events;
         $this->translation = $translation;
 
-        $this->persitentPrefix = null;
+        $this->persistentPrefix = null;
         $this->cache = null;
 
         // when instantiated from the service provider, config info is not yet loaded, trying to get it here
@@ -78,7 +77,10 @@ class Manager
     public
     function config($key = null, $default = null)
     {
+        // Version 5.1
         if (!$this->config) $this->config = $this->app['config'][$this->package];
+        // Version 4.2
+        //if (!$this->config) $this->config = $this->app['config'][$this->package.'::config'];
 
         if ($key === null)
         {
@@ -100,19 +102,19 @@ class Manager
     public
     function cachePrefix()
     {
-        if ($this->persitentPrefix === null)
+        if ($this->persistentPrefix === null)
         {
             if (array_key_exists('persistent_prefix', $this->config()))
             {
-                $this->persitentPrefix = $this->config()['persistent_prefix'];
-                $this->cacheTransKey = $this->persitentPrefix ? $this->persitentPrefix . 'translations' : '';
+                $this->persistentPrefix = $this->config()['persistent_prefix'];
+                $this->cacheTransKey = $this->persistentPrefix ? $this->persistentPrefix . 'translations' : '';
             }
             else
             {
-                $this->persitentPrefix = '';
+                $this->persistentPrefix = '';
             }
         }
-        return $this->persitentPrefix;
+        return $this->persistentPrefix;
     }
 
     public
@@ -121,7 +123,7 @@ class Manager
         if ($this->cache === null)
         {
             $this->cache = $this->cachePrefix() !== '' && Cache::has($this->cacheTransKey) ? Cache::get($this->cacheTransKey) : [];
-            $this->cacheIsDirty = $this->persitentPrefix !== '' && !Cache::has($this->cacheTransKey);
+            $this->cacheIsDirty = $this->persistentPrefix !== '' && !Cache::has($this->cacheTransKey);
         }
         return $this->cache;
     }
@@ -129,7 +131,7 @@ class Manager
     public
     function saveCache()
     {
-        if ($this->persitentPrefix && $this->cacheIsDirty)
+        if ($this->persistentPrefix && $this->cacheIsDirty)
         {
             Cache::put($this->cacheTransKey, $this->cache, 60 * 24 * 365);
             $this->cacheIsDirty = false;
@@ -142,7 +144,7 @@ class Manager
         if (!$groups || $groups === '*')
         {
             $this->cache = [];
-            $this->cacheIsDirty = !!$this->persitentPrefix;
+            $this->cacheIsDirty = !!$this->persistentPrefix;
         }
         elseif ($this->cache())
         {
@@ -153,7 +155,7 @@ class Manager
                 if (array_key_exists($group, $this->cache))
                 {
                     unset($this->cache[$group]);
-                    $this->cacheIsDirty = !!$this->persitentPrefix;
+                    $this->cacheIsDirty = !!$this->persistentPrefix;
                 }
             }
         }
@@ -191,7 +193,7 @@ class Manager
         {
             if (!array_key_exists($group, $this->cache())) $this->cache[$group] = [];
             $this->cache[$group][$locale . ':' . $transKey] = $value;
-            $this->cacheIsDirty = $this->persitentPrefix !== '';
+            $this->cacheIsDirty = $this->persistentPrefix !== '';
         }
     }
 
@@ -348,7 +350,10 @@ SQL
         $this->imported = 0;
         $this->clearCache($groups);
 
-        $pathTemplateResolver = new PathTemplateResolver($this->app, $this->files, $this->config()['language_dirs'], '5');
+        // Laravel 5.1
+        $pathTemplateResolver = new PathTemplateResolver($this->files, $this->app->basePath(), $this->config()['language_dirs'], '5');
+        // Laravel 4.2
+        //$pathTemplateResolver = new PathTemplateResolver($this->files, base_path(), $this->config()['language_dirs'], '4');
         $langFiles = $pathTemplateResolver->langFileList();
 
         if ($groups !== null)
@@ -369,7 +374,6 @@ SQL
             $langFiles = $files;
         }
 
-        $this->startProgress(count($langFiles), trans($this->package . "::messages.import-all"));
         foreach ($langFiles as $langFile => $vars)
         {
             $locale = $vars['{locale}'];
@@ -378,55 +382,9 @@ SQL
             if (in_array($db_group, $this->config()['exclude_groups'])) continue;
             $translations = array_dot(include($langFile));
             $this->importTranslationFile($locale, $db_group, $translations, $replace);
-            $this->stepProgress();
         }
 
         return $this->imported;
-    }
-
-    protected
-    function startProgress($count, $operation)
-    {
-        $this->progress = new \stdClass();
-        $this->progress->total = $count;
-        $this->progress->step = 0;
-        $this->progress->operation = $operation;
-
-        Session::put($this->persitentPrefix . 'progress', $this->progress);
-    }
-
-    protected
-    function stepProgress()
-    {
-        if (!isset($this->progress))
-        {
-            $this->progress = Session::get($this->persitentPrefix . 'progress', null);
-        }
-
-        if ($this->progress)
-        {
-            $this->progress->step++;
-
-            if ($this->progress->total === $this->progress->step)
-            {
-                $this->progress = null;
-                Session::pull($this->persitentPrefix . 'progress');
-            }
-            else
-            {
-                Session::put($this->persitentPrefix . 'progress', $this->progress);
-            }
-        }
-    }
-
-    public
-    function getProgress()
-    {
-        if (!isset($this->progress))
-        {
-            $this->progress = Session::get($this->persitentPrefix . 'progress');
-        }
-        return $this->progress;
     }
 
     public
@@ -491,22 +449,47 @@ SQL
     function makeDirPath($path)
     {
         $directories = explode("/", $path);
+        array_shift($directories);
+
         $filename = array_pop($directories);
         $dirpath = "/";
+
         // Build path and create dirrectories if needed
         foreach ($directories as $directory)
         {
             $dirpath .= $directory . "/";
             if (!$this->files->exists($dirpath))
             {
-                $this->files->makeDirectory($dirpath);
+                try
+                {
+                    $this->files->makeDirectory($dirpath);
+                }
+                catch (Exception $e)
+                {
+                    $this->errors[] = $e->getMessage() . " for $dirpath";
+                }
             }
         }
     }
 
     public
+    function clearErrors()
+    {
+        $this->errors = [];
+    }
+
+    public
+    function errors()
+    {
+        return $this->errors;
+    }
+
+    public
     function exportTranslations($group, $recursing = 0)
     {
+        // TODO: clean up this recursion crap
+        if (!$recursing) $this->clearErrors();
+
         if ($group && $group !== '*')
         {
             $this->translation->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE is_deleted = 1");
@@ -563,8 +546,16 @@ SQL
                 $tree = $this->makeTree(Translation::where('group', $group)->whereNotNull('value')->orderby('key')->get());
                 $configRewriter = new TranslationFileRewriter();
                 $exportOptions = array_key_exists('export_format', $this->config()) ? TranslationFileRewriter::optionFlags($this->config()['export_format']) : null;
-                $pathTemplateResolver = new PathTemplateResolver($this->app, $this->files, $this->config()['language_dirs'], '5');
-                $zipRoot = $this->app->basePath() . $this->config('zip_root', mb_substr($this->app->langPath(), 0, -4));
+
+                // Laravel 5.1
+                $base_path = $this->app->basePath();
+                $pathTemplateResolver = new PathTemplateResolver($this->files, $base_path, $this->config()['language_dirs'], '5');
+                $zipRoot = $base_path . $this->config('zip_root', mb_substr($this->app->langPath(), 0, -4));
+                // Laravel 4.2
+                //$base_path = base_path();
+                //$pathTemplateResolver = new PathTemplateResolver($this->files, $base_path, $this->config()['language_dirs'], '4');
+                //$zipRoot = $base_path . $this->config('zip_root', mb_substr($this->app->make('path').'/lang', 0, -4));
+
                 if (mb_substr($zipRoot, -1) === '/') $zipRoot = substr($zipRoot, 0, -1);
 
                 foreach ($tree as $locale => $groups)
@@ -574,7 +565,7 @@ SQL
                         $translations = $groups[$group];
 
                         // use the new path mapping
-                        $computedPath = $this->app->basePath() . $pathTemplateResolver->groupFilePath($group, $locale);
+                        $computedPath = $base_path . $pathTemplateResolver->groupFilePath($group, $locale);
                         $path = $computedPath;
 
                         if ($path)
@@ -591,8 +582,18 @@ SQL
                             }
                             else
                             {
-                                $this->makeDirPath($path);
-                                $this->files->put($path, $output);
+                                try
+                                {
+                                    $this->makeDirPath($path);
+                                    if (($result = $this->files->put($path, $output)) === false)
+                                    {
+                                        $this->errors[] = "Failed to write to $path";
+                                    };
+                                }
+                                catch (Exception $e)
+                                {
+                                    $this->errors[] = $e->getMessage();
+                                }
                             }
                         }
                     }
@@ -691,7 +692,7 @@ SQL
     }
 
     public
-    function getConfig($key = null)
+    function getConfig($key = null, $default = null)
     {
         if ($key == null)
         {
@@ -699,7 +700,7 @@ SQL
         }
         else
         {
-            return $this->config()[$key];
+            return $this->config($key, $default);
         }
     }
 

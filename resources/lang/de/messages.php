@@ -5,6 +5,8 @@ return [
     'addkeys-placeholder'       => 'Fügen Sie 1 Schlüssel pro Zeile, ohne die Gruppe Präfix',
     'addsuffixes'               => 'Set Suffixe',
     'addsuffixes-placeholder'   => 'fügen Sie jede Taste mit dem Suffix-Linien hier eingetragen',
+    'auto-fill'                 => 'Auto-Ausfüllen',
+    'auto-fill-disabled'        => 'Füllen...',
     'auto-translate'            => 'Automatische Übersetzung',
     'auto-translate-disabled'   => 'Übersetzung',
     'changed'                   => 'Geändert',
