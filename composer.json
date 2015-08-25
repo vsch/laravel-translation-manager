@@ -11,7 +11,7 @@
         }
     ],
     "require": {
-        "php": ">=5.4.0",
+        "php": ">=5.5.9",
         "illuminate/support": "5.0.x|5.1.x",
         "illuminate/translation": "5.0.x|5.1.x",
         "doctrine/dbal": "~2.3",
@@ -37,8 +37,10 @@
         "phpspec/phpspec": "~2.1"
     },
     "autoload-dev": {
+        "classmap": [
+            "tests"
+        ],
         "psr-4": {
-            "Vsch\\Tests\\": "tests/"
         }
     },
     "scripts": {

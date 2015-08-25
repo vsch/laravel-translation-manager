@@ -2,7 +2,7 @@
 
 use Exception;
 
-class ExampleTest extends \Vsch\Tests\TranslationManagerTestCase
+class HelpersTest extends \Vsch\Tests\TranslationManagerTestCase
 {
 
     /**

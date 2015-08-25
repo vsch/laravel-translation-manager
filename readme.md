@@ -1,14 +1,13 @@
 # Laravel 5.1 Translation Manager
-
 This package is used to comfortably manage, view, edit and translate Laravel language files with translation assistance through the Yandex Translation API. It augments the Laravel Translator system with a ton of practical functionality. [Features](#Features)
 
->Master branch is now for Laravel version 5.1
-
->- For Laravel 4.2 use the Laravel4 branch, or require: `"vsch/laravel-translation-manager": "~1.0"`
-
->- For Laravel 5.1 use the master branch, or require: `"vsch/laravel-translation-manager": "~2.0"`
-
->New file layout configuration can handle non-standard location and layout of translation files. The main motivator for the change was to eliminate differences in code between the two Laravel versions to ease maintenance, the added benefit is that now Translation Manager can import and publish translations located anywhere in the project tree and is configured to handle vendor and workbench subdirectories. This does require publishing of the new configuration files to your project and manually apply any changes you have made to them.
+> Master branch is now for Laravel version 5.1
+>
+> - For Laravel 4.2 use the Laravel4 branch, or require: `"vsch/laravel-translation-manager": "~1.0"`
+>
+> - For Laravel 5.1 use the master branch, or require: `"vsch/laravel-translation-manager": "~2.0"`
+>
+> New file layout configuration can handle non-standard location and layout of translation files. The main motivator for the change was to eliminate differences in code between the two Laravel versions to ease maintenance, the added benefit is that now Translation Manager can import and publish translations located anywhere in the project tree and is configured to handle vendor and workbench subdirectories. This does require publishing of the new configuration files to your project and manually applying any changes you have made to them. You should rename your current configuration file before publishing a new one so you can merge your changes into the new file. [publishing configuration](#publish-config)
 
 &nbsp;
 > Initial Localizations Added
@@ -17,12 +16,10 @@ This package is used to comfortably manage, view, edit and translate Laravel lan
 
 > Any help in cleaning them up would be greatly appreciated.
 
-<a id="Screenshot"></a>
 #### Screenshot
 
 ![Translation Manager Screenshot](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_main.png)
 
-<a id="Features"></a>
 #### Features
 
 - import language files with options to add new translations, replace old ones or a clean start with import.
@@ -34,7 +31,7 @@ This package is used to comfortably manage, view, edit and translate Laravel lan
 - allow in-database translations to override the ones in the language files. Used to update translations on server clusters where updating translation files is not possible (like AWS EC2) or would cause server code to be out of sync.
 - assisted translation with Yandex API integrated into the web interface that handle choice type translations and preserve replacement parameters. [Yandex Translation Supported Languages](#YandexSupportedLanguages)
 - auto-translate empty translations.
-- allow in place editing of translation strings right in your web pages. This may require some rework of your blade/php view files.
+- allow editing in place of translation strings right in your web pages. This may require some rework of your blade/php view files.
 
 #### Workflow
 
@@ -48,17 +45,16 @@ This package is used to comfortably manage, view, edit and translate Laravel lan
 This way, translations can be saved in git history and no overhead is introduced in production.
 
 ## Table of Contents
-- [Web Interface](#WebInterface)
-- [Limitations](#Limitations)
-- [Installation](#Installation)
-- [Configuration](#Configuration)
-- [Artisan Commands](#ArtisanCommands)
-- [New Features](#NewFeatures)
-- [Yandex Supported Languages](#YandexSupportedLanguages)
-- [To Do](#ToDo)
-- [History and Origins](#History)
+- [Web Interface](#web-interface)
+- [Limitations](#limitations)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Artisan Commands](#artisan-commands)
+- [New Features](#new-features)
+- [Yandex Translation Supported Languages](#yandex-translation-supported-languages)
+- [To Do](#to-do)
+- [History and Origins](#history-and-origins)
 
-<a id="WebInterface"></a>
 ## Web Interface
 
 When you have imported your translation (via buttons or command), you can view them in the web interface (on the url you defined the with the controller).
@@ -78,9 +74,9 @@ The web interface lets you select the locale:
 
 Here you can see a summary by group what was deleted, changed or is missing in the translation files. The group is a link that will display its translations for editing.
 
-### In Place Edit
+### Edit In Place
 
-The "In Place Edit" button will allow you to edit all Translation Manager web interface translation strings right in the page. If you want to try this mode you will need to publish the Translation Manager language files to your project so you can view and edit them in the web interface, as described in [step 10](#step10).
+The "Edit In Place" button will allow you to edit all Translation Manager web interface translation strings right in the page. If you want to try this mode you will need to publish the Translation Manager language files to your project so you can view and edit them in the web interface, as described in [step 10](#step10).
 
 If you do not copy the package language files then all translation edit links will display as Empty and editing them will create an override in your project for the translation when you 'Publish' the group 'laravel-translation-manager::messages' or 'Publish All'.
 
@@ -120,7 +116,7 @@ All changes to translations are done via this pop-up. It has convenience buttons
 
 13. Translate primary text to locale currently being edited. The button text shows {primary locale}->{editing locale}. The locale being edited can be any locale displayed on the page, does not have to be the one selected in the Translate locale selection. See 3. for details.
 
-### Suffixed Key Operations & Search (panel)
+### Suffixed Key Operations and Search
 
 Click on the panel to expand it.
 
@@ -134,7 +130,7 @@ You can edit the resulting translations directly in the search dialog results ta
 
 ![Search](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_search.png)
 
-### Wildcard Key Operations (panel)
+### Wildcard Key Operations
 
 Click on the panel to expand it.
 
@@ -150,7 +146,7 @@ Example of preview/copy/move:
 
 ![Wildcard Key Operations 2](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_wildcard_keyops2.png)
 
-### Translation Helpers (panel)
+### Translation Helpers
 
 Click on the panel to expand it.
 
@@ -158,18 +154,16 @@ Here you can translate between the primary locale and the translating locale.
 
 ![Translation Helpers](https://raw.githubusercontent.com/vsch/laravel-translation-manager/master/images/ScreenShot_translation_helpers.png)
 
-<a id="Limitations"></a>
 ## Limitations
 
 The package has only been tested with MySQL backend. No MySQL specific syntax is being used but no other backend has been tested with the package.
 
 Translation helpers use Yandex. You can edit any locale, even if it is not supported by Yandex. However, automatic translation will not work for unsupported locales. See [Yandex Supported languages](#YandexSupportedLanguages)
 
-For other limitations, please see [To Do List](#ToDo).
+For other limitations, please see [To Do](#to-do).
 
 If someone contacts me with a request to prioritize a specific area I will do it sooner :).
 
-<a id="Installation"></a>
 ## Installation
 
 1. Require this package in your composer.json and run composer update (or run `composer require vsch/laravel-translation-manager:*` directly):
@@ -226,7 +220,7 @@ If someone contacts me with a request to prioritize a specific area I will do it
         $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=migrations
         $ php artisan migrate
 
-5. You need to publish the config file for this package. This will add the file `config/laravel-translation-manager.php`
+5. <a id="publish-config"></a>You need to publish the config file for this package. This will add the file `config/laravel-translation-manager.php`
 
         $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=config
 
@@ -265,7 +259,6 @@ If someone contacts me with a request to prioritize a specific area I will do it
 
 	This will copy the views to your project under the `resources/views/vendor/laravel-translation-manager` directory. See: [Modifying the default Views](#ModifyingViews)
 
-<a id="Configuration"></a>
 ## Configuration
 
 The config file `app/config/packages/laravel-translation-manager/config.php` has comments that provide a description for each option. Note that when `admin_enabled` is set to `false` then translation management is limited to editing existing translations all other operations have to be done through the command line. Ideally, this option needs to be dynamic based on user privileges so that translators cannot delete translations or administer translations but admins can. See [step 8](#step8) above.
@@ -274,26 +267,19 @@ By default the primary locale is `en`. The primary locale determines what langua
 
 By default the configuration will load all translations found in the standard Laravel locations. In the table below {vendor}, {package}, {locale}, {group} are placeholders for their corresponding values referring to vendor name, package name, locale string and translation group. The translation group will consist of optional sub-directory tree and the file name, allowing you to organize your translation files.
 
-<table width="100%">
-<thead>
-<tr><th width="30%">Location</th><th width="70%">Description</th></tr>
-</thead>
-<tbody>
-<tr><td>`/resources/lang/{locale}/{group}.php`</td><td>Standard project translation files</td></tr>
-<tr><td>`/resources/lang/vendor/{package}/{locale}/{group}.php`</td><td>Package translation override files.</td></tr>
-<tr><td>`/workbench/{vendor}/{package}/resources/lang/{locale}/{group}.php`</td><td>Translation files for packages that you are developing in the current project. Laravel 4.2 style but the directory layout updated to version 5 standard. These will have a group prefix of `wbn:` in the database and web interface to distinguish them from the standard Laravel package namespaces.</td></tr>
-<tr><td>`/vendor/{vendor}/{package}/resources/lang/{locale}/{group}.php`</td><td>Translation files for packages that are dependents of your project. By default no translation files are loaded from this section. You will need to edit the configuration file for the 'vendor' section and list the packages you want to include in the 'include' array in the form 'vendor/package'.  These will have a group prefix of `vnd:` in the database and web interface to distinguish them from the standard Laravel package namespaces</td></tr>
-</tbody>
-</table>
+|Location|Description|
+|--------|-----------|
+|`/resources/lang/{locale}/{group}.php`|Standard project translation files|
+|`/resources/lang/vendor/{package}/{locale}/{group}.php`|Package translation override files.|
+|`/workbench/{vendor}/{package}/resources/lang/{locale}/{group}.php`|Translation files for packages that you are developing in the current project. Laravel 4.2 style but the directory layout updated to version 5 standard. These will have a group prefix of `wbn:` in the database and web interface to distinguish them from the standard Laravel package namespaces.|
+|`/vendor/{vendor}/{package}/resources/lang/{locale}/{group}.php`|Translation files for packages that are dependents of your project. By default no translation files are loaded from this section. You will need to edit the configuration file for the 'vendor' section and list the packages you want to include in the 'include' array in the form 'vendor/package'.  These will have a group prefix of `vnd:` in the database and web interface to distinguish them from the standard Laravel package namespaces|
 
 The default configuration file also has entries for two packages whose translation files' location and naming convention does not follow Laravel conventions and require more tweaking to allow import/export of their language files. These non-standard layouts can only be included in the `wbn:` or `vnd:` prefixed namespaces.
 
-<a id="ModifyingViews"></a>
 ## Modifying the default Views
 
 If you published the views to your project in [step 11](#step11) then you can customize them to your liking. The package view directory also contains a `layouts/master.blade.php` file for a default layout. The intent is for you to provide your own master layout that the index.blade.php will extend so it can match your site's style.
 
-<a id="ArtisanCommands"></a>
 ## Artisan Commands
 
 You can also use the commands below.
@@ -339,7 +325,6 @@ The reset command clears all translation in the database, so you can start fresh
 
         $ php artisan translations:reset
 
-<a id="NewFeatures"></a>
 ## New Features
 
 These features were added since the code diverged from the original `barryvdh/laravel-translation-manager` package:
@@ -386,31 +371,29 @@ These features were added since the code diverged from the original `barryvdh/la
 
 - added a working set of locales to limit number of locales displayed on the page to reduce clutter and page load time.
 
-<a id="YandexSupportedLanguages"></a>
 ## Yandex Translation Supported Languages
 
 You can find an up to date list here: <https://tech.yandex.com/translate/doc/dg/concepts/langs-docpage/>
 
-<table>
-    <thead>
-        <tr><th>Language</th><th>Locale</th><th>Language</th><th>Locale</th><th>Language</th><th>Locale</th><th>Language</th><th>Locale</th></tr>
-    </thead>
-    <tbody>
-        <tr><td>Albanian</td><td>sq</td><td>Dutch</td><td>nl</td><td>Italian</td><td>it</td><td>Russian</td><td>ru</td></tr>
-        <tr><td>Arabian</td><td>ar</td><td>English</td><td>en</td><td>Japanese</td><td>ja</td><td>Spanish</td><td>es</td></tr>
-        <tr><td>Armenian</td><td>hy</td><td>Estonian</td><td>et</td><td>Korean</td><td>ko</td><td>Serbian</td><td>sr</td></tr>
-        <tr><td>Azeri</td><td>az</td><td>Finnish</td><td>fi</td><td>Latvian</td><td>lv</td><td>Slovak</td><td>sk</td></tr>
-        <tr><td>Belarusian</td><td>be</td><td>French</td><td>fr</td><td>Lithuanian</td><td>lt</td><td>Slovenian</td><td>sl</td></tr>
-        <tr><td>Bosnian</td><td>bs</td><td>Georgian</td><td>ka</td><td>Macedonian</td><td>mk</td><td>Swedish</td><td>sv</td></tr>
-        <tr><td>Bulgarian</td><td>bg</td><td>German</td><td>de</td><td>Malay</td><td>ms</td><td>Thai</td><td>th</td></tr>
-        <tr><td>Catalan</td><td>ca</td><td>Greek</td><td>el</td><td>Maltese</td><td>mt</td><td>Turkish</td><td>tr</td></tr>
-        <tr><td>Croatian</td><td>hr</td><td>Hebrew</td><td>he</td><td>Norwegian</td><td>no</td><td>Ukrainian</td><td>uk</td></tr>
-        <tr><td>Czech</td><td>cs</td><td>Hungarian</td><td>hu</td><td>Polish</td><td>pl</td><td>Vietnamese</td><td>vi</td></tr>
-        <tr><td>Chinese</td><td>zh</td><td>Icelandic</td><td>is</td><td>Portuguese</td><td>pt</td><td></td><td><tr><td>Danish</td><td>da</td><td>Indonesian</td><td>id</td><td>Romanian</td><td>ro</td><td></td><td></tr>
-    </tbody>
-</table>
+|Language |Locale |Language |Locale |Language |Locale |
+|--------------|--------------|--------------|--------------|--------------|--------------|
+|Albanian |sq |French |fr |Norwegian |no |
+|Arabian |ar |Georgian |ka |Polish |pl |
+|Armenian |hy |German |de |Portuguese |pt |
+|Azeri |az |Greek |el |Romanian |ro |
+|Belarusian |be |Hebrew |he |Russian |ru |
+|Bosnian |bs |Hungarian |hu |Spanish |es |
+|Bulgarian |bg |Icelandic |is |Serbian |sr |
+|Catalan |ca |Indonesian |id |Slovak |sk |
+|Croatian |hr |Italian |it |Slovenian |sl |
+|Czech |cs |Japanese |ja |Swedish |sv |
+|Chinese |zh |Korean |ko |Thai |th |
+|Danish |da |Latvian |lv |Turkish |tr |
+|Dutch |nl |Lithuanian |lt |Ukrainian |uk |
+|English |en |Macedonian |mk |Vietnamese |vi |
+|Estonian |et |Malay |ms | ||
+|Finnish |fi |Maltese |mt | ||
 
-<a id="ToDo"></a>
 ## To Do List
 
 This package is still in development although it is successfully being used to manage translations. Here is a list of to do's and limitations:
@@ -423,9 +406,8 @@ This package is still in development although it is successfully being used to m
 
 Suggestions and priority requests are welcome. :)
 
-<a id="History"></a>
 ## History and Origins
 
-This package was originally based on Barry vd. Heuvel's excellent **barryvdh/laravel-translation-manager** package.
+This package was originally based on Barry vd. Heuvel's excellent [barryvdh/laravel-translation-manager](https://github.com/barryvdh/laravel-translation-manager) package.
 
 I was creating an English/Russian site on a tight schedule and managing translations was a serious burden. When I saw Barry's package, I instantly decided that it was a must have. Right away I could see that it needed some features to make it into serious translator's workhorse. The code base diverged very quickly and I decided to publish it as a separate package so that others can experience the joy of creating localized sites without the pain, blood, sweat nor tears.

@@ -2,10 +2,12 @@
 
 use PHPUnit_Framework_TestCase as TestCase;
 
-class TranslationManagerTestCase extends TestCase
+class TranslationManagerTestCase extends \Illuminate\Foundation\Testing\TestCase
 {
     private static $timing;
     private static $timers;
+    private static $timeItOverhead;
+    private static $startEndOverhead;
 
     static
     function startTimer($name, $time)
@@ -14,24 +16,15 @@ class TranslationManagerTestCase extends TestCase
     }
 
     static
-    function endTimer($name, $time)
+    function endTimer($name, $end)
     {
-        $elapsedTime = $time - self::$timers[$name];
+        $start = self::$timers[$name];
         unset(self::$timers[$name]);
-
-        if (!array_key_exists($name, self::$timing))
-        {
-            self::$timing[$name] = [];
-            self::$timing[$name]['name'] = $name;
-            self::$timing[$name]['total'] = 0;
-            self::$timing[$name]['count'] = 0;
-        }
-        self::$timing[$name]['total'] += $elapsedTime;
-        self::$timing[$name]['count']++;
+        self::addTime($name, $start, $end, self::$startEndOverhead);
     }
 
     static
-    function addTime($name, $start, $end)
+    function addTime($name, $start, $end, $overhead)
     {
         if (!array_key_exists($name, self::$timing))
         {
@@ -40,7 +33,7 @@ class TranslationManagerTestCase extends TestCase
             self::$timing[$name]['total'] = 0;
             self::$timing[$name]['count'] = 0;
         }
-        self::$timing[$name]['total'] += $end - $start;
+        self::$timing[$name]['total'] += $end - $start - $overhead;
         self::$timing[$name]['count']++;
     }
 
@@ -50,12 +43,29 @@ class TranslationManagerTestCase extends TestCase
         $start = microtime(true);
         $test();
         $end = microtime(true);
-        self::addTime($name, $start, $end);
+        self::addTime($name, $start, $end, self::$timeItOverhead);
     }
 
     public static
     function setupBeforeClass()
     {
+        parent::setUpBeforeClass();
+
+        $iMax = 100;
+        self::$timeItOverhead = 0;
+        self::$startEndOverhead = 0;
+        self::$timers = [];
+        self::$timing = [];
+        for ($i = 0; $i < $iMax; $i++)
+        {
+            self::timeIt('$timeItOverhead', function ()
+            {
+            });
+            self::startTimer('$startEndOverhead', microtime(true));
+            self::endTimer('$startEndOverhead', microtime(true));
+        }
+        self::$timeItOverhead = self::$timing['$timeItOverhead']['total'] / $iMax;
+        self::$startEndOverhead = self::$timing['$startEndOverhead']['total'] / $iMax;
         self::$timers = [];
         self::$timing = [];
     }
@@ -71,7 +81,7 @@ class TranslationManagerTestCase extends TestCase
 
         $class = get_called_class();
         echo "Timing results : $class\n";
-        $s = sprintf("%20s %6s %9s %9s %4s\n", 'name', 'count', 'total', 'avg', '% best');
+        $s = sprintf("%40s %6s %9s %9s %4s\n", 'name', 'count', 'total', 'avg', '% best');
         echo str_repeat('=', strlen($s)) . "\n";
         echo $s;
         echo str_repeat('-', strlen($s)) . "\n";
@@ -92,12 +102,15 @@ class TranslationManagerTestCase extends TestCase
 
         foreach (self::$timing as $timing)
         {
-            printf("%20s %6d %7.3fms %7.3fus %4.1f%%\n", $timing['name'], $timing['count'],
+            printf("%40s %6d %7.3fms %7.3fus %4.1f%%\n", $timing['name'], $timing['count'],
                 round($timing['total'] * 1000, 3),
                 $timing['avg'],
                 round($timing['avg'] / $best * 100, 3));
         }
         echo str_repeat('-', strlen($s)) . "\n\n";
+        printf("\nTiming compensated for avg overhead for: timeIt of %.3fus and startTimer/endTimer of %.3fus per invocation\n\n", self::$timeItOverhead * 1000000, self::$startEndOverhead * 1000000);
+
+        parent::tearDownAfterClass();
     }
 
     /**
@@ -106,18 +119,18 @@ class TranslationManagerTestCase extends TestCase
      * @var string
      */
     //protected $baseUrl = 'http://localhost';
-    //
-    ///**
-    // * Creates the application.
-    // *
-    // * @return \Illuminate\Foundation\Application
-    // */
-    //public function createApplication()
-    //{
-    //    $app = require __DIR__.'/../bootstrap/app.php';
-    //
-    //    $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
-    //
-    //    return $app;
-    //}
+
+    /**
+     * Creates the application.
+     *
+     * @return \Illuminate\Foundation\Application
+     */
+    public function createApplication()
+    {
+        $app = require __DIR__.'/../../../../bootstrap/app.php';
+
+        $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+
+        return $app;
+    }
 }
