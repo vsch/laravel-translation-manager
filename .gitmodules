@@ -1,0 +1,3 @@
+[submodule "github.wiki"]
+	path = github.wiki
+	url = /www/sites/vladsch/workbench/vsch/laravel-translation-manager/github.wiki
