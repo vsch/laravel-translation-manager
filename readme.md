@@ -1,19 +1,15 @@
 # Laravel 5.1 Translation Manager
-This package is used to comfortably manage, view, edit and translate Laravel language files with translation assistance through the Yandex Translation API. It augments the Laravel Translator system with a ton of practical functionality. [Features](#Features)
+This package is used to comfortably manage, view, edit and translate Laravel language files with translation assistance through the Yandex Translation API. It augments the Laravel Translator system with a ton of practical functionality. [Features](#features)
 
 > Master branch is now for Laravel version 5.1
 >
 > - For Laravel 4.2 use the Laravel4 branch, or require: `"vsch/laravel-translation-manager": "~1.0"`
->
 > - For Laravel 5.1 use the master branch, or require: `"vsch/laravel-translation-manager": "~2.0"`
 >
 > New file layout configuration can handle non-standard location and layout of translation files. The main motivator for the change was to eliminate differences in code between the two Laravel versions to ease maintenance, the added benefit is that now Translation Manager can import and publish translations located anywhere in the project tree and is configured to handle vendor and workbench subdirectories. This does require publishing of the new configuration files to your project and manually applying any changes you have made to them. You should rename your current configuration file before publishing a new one so you can merge your changes into the new file. [publishing configuration](#publish-config)
 
-&nbsp;
-> Initial Localizations Added
-
+> **Initial Localizations Added**
 > Only en and ru locales were manually verified. All others are there as a starter set and were automatically generated  via Yandex by using the new Auto Translate feature in the web interface.
-
 > Any help in cleaning them up would be greatly appreciated.
 
 #### Screenshot
@@ -29,7 +25,7 @@ This package is used to comfortably manage, view, edit and translate Laravel lan
 - configurable export format for quoting, sorting of translation keys.
 - preserve multi-line comments and doc comments and empty array() values for first level keys on export.
 - allow in-database translations to override the ones in the language files. Used to update translations on server clusters where updating translation files is not possible (like AWS EC2) or would cause server code to be out of sync.
-- assisted translation with Yandex API integrated into the web interface that handle choice type translations and preserve replacement parameters. [Yandex Translation Supported Languages](#YandexSupportedLanguages)
+- assisted translation with Yandex API integrated into the web interface that handle choice type translations and preserve replacement parameters. [Yandex Translation Supported Languages](#yandex-translation-supported-languages)
 - auto-translate empty translations.
 - allow editing in place of translation strings right in your web pages. This may require some rework of your blade/php view files.
 
@@ -44,7 +40,7 @@ This package is used to comfortably manage, view, edit and translate Laravel lan
 
 This way, translations can be saved in git history and no overhead is introduced in production.
 
-## Table of Contents
+## Table of Contents 
 - [Web Interface](#web-interface)
 - [Limitations](#limitations)
 - [Installation](#installation)
@@ -158,7 +154,7 @@ Here you can translate between the primary locale and the translating locale.
 
 The package has only been tested with MySQL backend. No MySQL specific syntax is being used but no other backend has been tested with the package.
 
-Translation helpers use Yandex. You can edit any locale, even if it is not supported by Yandex. However, automatic translation will not work for unsupported locales. See [Yandex Supported languages](#YandexSupportedLanguages)
+Translation helpers use Yandex. You can edit any locale, even if it is not supported by Yandex. However, automatic translation will not work for unsupported locales. See [Yandex Supported languages](#yandex-supported-languages)
 
 For other limitations, please see [To Do](#to-do).
 
@@ -168,96 +164,126 @@ If someone contacts me with a request to prioritize a specific area I will do it
 
 1. Require this package in your composer.json and run composer update (or run `composer require vsch/laravel-translation-manager:*` directly):
 
+    ```json
+    "require": {
         "vsch/laravel-translation-manager": "~2.0"
+    }
+    ```        
 
-	- if you are not going to be customizing the web interface it is highly recommended that you add automatic asset publishing for this package after upgrade in your project's composer.json:
+    - if you are not going to be customizing the web interface it is highly recommended that you add automatic asset publishing for this package after upgrade in your project's composer.json:
 
-			"php artisan vendor:publish --provider=\"Vsch\\TranslationManager\\ManagerServiceProvider\" --tag=public",
+    ```json
+    "scripts": {
+        "post-update-cmd": [
+            ... other suff ... 
+            "php artisan vendor:publish --provider=\"Vsch\\TranslationManager\\ManagerServiceProvider\" --tag=public",
+            ... other suff ... 
+        ]
+    },
+    ```
+    
+    Otherwise a future update, that needs new assets, will not work properly. composer does not run post-update scripts of packages.
 
-	Otherwise a future update, that needs new assets, will not work properly. composer does not run post-update scripts of packages.
+    Here is a full scripts section of a standard Laravel 5.1 project composer.json should look like after the change.
 
-	Here is a full scripts section of a standard Laravel 4.2 project composer.json should look like after the change.
-
-	    "scripts": {
-	        "post-install-cmd": [
-	            "php artisan clear-compiled",
-	            "php artisan optimize"
-	        ],
-	        "pre-update-cmd": [
-	            "php artisan clear-compiled"
-	        ],
-	        "post-update-cmd": [
-	            "php artisan ide-helper:generate",
-	            "php artisan vendor:publish --provider=\"Vsch\\TranslationManager\\ManagerServiceProvider\" --tag=public --force",
-	            "php artisan optimize"
-	        ],
-	        "post-root-package-install": [
-	            "php -r \"copy('.env.example', '.env');\""
-	        ],
-	        "post-create-project-cmd": [
-	            "php artisan key:generate"
-	        ]
-	    },
+    ```json
+    "scripts": {
+        "post-install-cmd": [
+            "php artisan clear-compiled",
+            "php artisan optimize"
+        ],
+        "pre-update-cmd": [
+            "php artisan clear-compiled"
+        ],
+        "post-update-cmd": [
+            "php artisan ide-helper:generate",
+            "php artisan vendor:publish --provider=\"Vsch\\TranslationManager\\ManagerServiceProvider\" --tag=public --force",
+            "php artisan optimize"
+        ],
+        "post-root-package-install": [
+            "php -r \"copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "php artisan key:generate"
+        ]
+    },
+    ```
 
 2. After updating composer, add the ServiceProviders to the providers array in config/app.php and comment out the original TranslationServiceProvider:
 
-        //Illuminate\Translation\TranslationServiceProvider::class,
-        Vsch\UserPrivilegeMapper\UserPrivilegeMapperServiceProvider::class,
-        Vsch\TranslationManager\ManagerServiceProvider::class,
-        Vsch\TranslationManager\TranslationServiceProvider::class,
-        Collective\Html\HtmlServiceProvider::class,
+    ```php
+    //Illuminate\Translation\TranslationServiceProvider::class,
+    Vsch\UserPrivilegeMapper\UserPrivilegeMapperServiceProvider::class,
+    Vsch\TranslationManager\ManagerServiceProvider::class,
+    Vsch\TranslationManager\TranslationServiceProvider::class,
+    Collective\Html\HtmlServiceProvider::class,
+    ```
 
     The TranslationServiceProvider is an extension to the standard functionality and is required in order for the web interface to work properly. It is backward compatible with the existing Translator since it is a subclass of it and only overrides implementation for new features.
 
 3. add the Facade to the aliases array in config/app.php:
 
-        'Form'      => Collective\Html\FormFacade::class,
-        'Html'      => Collective\Html\HtmlFacade::class,
-        'UserCan'   => Vsch\UserPrivilegeMapper\Facade\Privilege::class,
+    ```php
+    'Form'      => Collective\Html\FormFacade::class,
+    'Html'      => Collective\Html\HtmlFacade::class,
+    'UserCan'   => Vsch\UserPrivilegeMapper\Facade\Privilege::class,
+    ```
 
 4. You need to publish then run the migrations for this package:
 
-        $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=migrations
-        $ php artisan migrate
+    ```bash
+    $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=migrations
+    $ php artisan migrate
+    ```
 
-5. <a id="publish-config"></a>You need to publish the config file for this package. This will add the file `config/laravel-translation-manager.php`
+5. <a name="publish-config"></a>You need to publish the config file for this package. This will add the file `config/laravel-translation-manager.php`
 
-        $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=config
+    ```bash
+    $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=config
+    ```
 
 6. You need to publish the web assets used by the translation manager web interface. This will add the assets to `public/vendor/laravel-translation-manager`
 
-        $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=public
+    ```bash
+    $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=public
+    ```
 
 7. By default the web interface of the translation manager is available at `http://yourdomain.com/translations`. You can change this in the configuration file.
 
-8. <a id="step8"></a>TranslationManager uses the vsch/user-privilege-mapper package that creates a mapping layer between your User model implementation and the need to test user privileges without knowing the implementation. You need to name privileges for the UserPrivilegeMapper via the Laravel macro mechanism. This should be done in the initialization files. A good place is the app/Providers/AppServiceProvider.php file, add the following to boot() function, if your User model has is_admin and is_editor attributes to identify users that have Admin and Editor privileges or just `return true` in both cases if you don't have any way of determining user privileges:
+8. <a name="step8"></a>TranslationManager uses the vsch/user-privilege-mapper package that creates a mapping layer between your User model implementation and the need to test user privileges without knowing the implementation. You need to name privileges for the UserPrivilegeMapper via the Laravel macro mechanism. This should be done in the initialization files. A good place is the app/Providers/AppServiceProvider.php file, add the following to boot() function, if your User model has is_admin and is_editor attributes to identify users that have Admin and Editor privileges or just `return true` in both cases if you don't have any way of determining user privileges:
 
-        \UserCan::macro("admin_translations", function ()
-        {
-            return ($user = Auth::user()) && $user->is_admin;
-        });
+    ```php
+    \UserCan::macro("admin_translations", function ()
+    {
+        return ($user = Auth::user()) && $user->is_admin;
+    });
 
-        // return false to use the translator missing key lottery, true to always check missing keys for the user
-        \UserCan::macro("bypass_translations_lottery", function ()
-        {
-            return ($user = Auth::user()) && ($user->is_admin || $user->is_editor);
-        });
+    // return false to use the translator missing key lottery, true to always check missing keys for the user
+    \UserCan::macro("bypass_translations_lottery", function ()
+    {
+        return ($user = Auth::user()) && ($user->is_admin || $user->is_editor);
+    });
+    ```
 
     In this example the User model implements two attributes: is_admin and is_editor. The admin user is allowed to manage translations: import, delete, export, etc., the editor user can only edit existing translations. However, both of these users will always log missing translation keys so that any missing translations will be visible to them instead of relying on the missing key lottery settings.
 
 9. Yandex assisted translations requires setting the `yandex_translator_key` to your Yandex API key in the `config/laravel-translation-manager.php` file, it is free to get and use. See: <https://tech.yandex.com/translate/>
 
-10. <a id="step10"></a>If you want to override the Translation Manager web interface translations or add another locale you will need to publish the language files to your project by executing:
+10. <a name="step10"></a>If you want to override the Translation Manager web interface translations or add another locale you will need to publish the language files to your project by executing:
 
-        $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=lang
+    ```bash
+    $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=lang
+    ```
 
-	This will copy the translations to your project and allow you to view/edit them in the translation manager web interface.
+    This will copy the translations to your project and allow you to view/edit them in the translation manager web interface.
 
-11. <a id="step11"></a>If you want to customize views for the Translation Manager web interface you will need to publish the views to your project by executing:
+11. <a name="step11"></a>If you want to customize views for the Translation Manager web interface you will need to publish the views to your project by executing:
 
-        $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=views
+    ```bash
+    $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=views
+    ```
 
-	This will copy the views to your project under the `resources/views/vendor/laravel-translation-manager` directory. See: [Modifying the default Views](#ModifyingViews)
+    This will copy the views to your project under the `resources/views/vendor/laravel-translation-manager` directory. See: [Modifying the default Views](#modifying-the-default-views)
 
 ## Configuration
 
@@ -288,7 +314,9 @@ You can also use the commands below.
 
 The import command will load all translations in the `resources/lang` directory.
 
-        $ php artisan translations:import
+```bash
+$ php artisan translations:import
+```
 
 Note: By default, only new strings are added. Translations already in the DB are kept the same. If you want to replace all values with the ones from the files,
 add the `--replace` (or `-R`) option: `php artisan translations:import --replace`
@@ -300,7 +328,9 @@ The Find command and the web interface 'Add References' button will search for a
 The found keys will be added to the database, so they can be easily translated.
 This can be done through the web interface, or via an Artisan command.
 
-        $ php artisan translations:find
+```bash
+$ php artisan translations:find
+```
 
 ### Export command
 
@@ -309,7 +339,9 @@ This will overwrite existing translations and remove all comments, so make sure 
 
 Supply the group name to define which groups you want to publish.
 
-        $ php artisan translations:export <group>
+```bash
+$ php artisan translations:export <group>
+```
 
 For example, `php artisan translations:export reminders` when you have 2 locales (en/nl), will write to `resources/lang/en/reminders.php` and `resources/lang/nl/reminders.php`
 
@@ -317,13 +349,17 @@ For example, `php artisan translations:export reminders` when you have 2 locales
 
 The clean command will search for all translation that are NULL and delete them, so your interface is a bit cleaner. Empty translations are never exported to language files.
 
-        $ php artisan translations:clean
+```bash
+$ php artisan translations:clean
+```
 
 ### Reset command
 
 The reset command clears all translation in the database, so you can start fresh (by a new import). Make sure to export your work or download a zip archive of it, to make sure you don't irretrievably blow away your or someone else's work.
 
-        $ php artisan translations:reset
+```bash
+$ php artisan translations:reset
+```
 
 ## New Features
 

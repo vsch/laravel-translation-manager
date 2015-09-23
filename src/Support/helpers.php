@@ -178,10 +178,15 @@ if (!function_exists('formSubmit'))
     {
         if (inPlaceEditing())
         {
-            $innerText = preg_match('/^\s*<a\s*[^>]*>([^<]*)<\/a>\s*$/', $value, $matches) ? $matches[1] : $value;
+            $innerText = $value;
+            if (preg_match('/^\s*(<a\s*[^>]*>[^<]*<\/a>)\s*\[(.*)\]$/', $value, $matches))
+            {
+                $innerText = $matches[2];
+                $value = $matches[1];
+            }
             if ($innerText !== $value)
             {
-                return Form::submit($innerText, $options) . "[$value]";
+                return "[$value]" . Form::submit($innerText, $options);
             }
         }
         return Form::submit($value, $options);
@@ -280,11 +285,7 @@ if (!function_exists('mb_renderDiffHtml'))
         $removeSpaces = false;
         if ($charDiff === null)
         {
-            $charDiff = mb_strtolower($from_text) === mb_strtolower($to_text)
-                || abs(mb_strlen($from_text) - mb_strlen($to_text)) <= 2
-                || ($from_text && $to_text
-                    && ((strpos($from_text, $to_text) !== false)
-                        || ($to_text && strpos($to_text, $from_text) !== false)));
+            $charDiff = mb_strtolower($from_text) === mb_strtolower($to_text) || abs(mb_strlen($from_text) - mb_strlen($to_text)) <= 2 || ($from_text && $to_text && ((strpos($from_text, $to_text) !== false) || ($to_text && strpos($to_text, $from_text) !== false)));
         }
 
         if ($charDiff)
@@ -316,7 +317,7 @@ if (!function_exists('appendPath'))
             // have both, combine them
             $pathTerminated = $path[strlen($path) - 1] === '/';
             $partPrefixed = $part[0] === '/';
-            return $path . ($pathTerminated || $partPrefixed ? '' : '/')  . ($pathTerminated && $partPrefixed ? substr($part, 1) : $part);
+            return $path . ($pathTerminated || $partPrefixed ? '' : '/') . ($pathTerminated && $partPrefixed ? substr($part, 1) : $part);
         }
         else
         {

@@ -1,9 +1,5 @@
 @extends((isset($package) ? $package . '::' : '') . 'layouts.master')
 
-@section('head')
-    <meta name="csrf-token" content="{{ csrf_token() }}"/>
-@stop
-
 @section('content')
     <div class="col-sm-12 translation-manager">
         <div class="row">
