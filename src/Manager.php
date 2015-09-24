@@ -6,10 +6,7 @@ use Illuminate\Database\Query\Expression;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Session;
 use Symfony\Component\Finder\Finder;
 use Vsch\TranslationManager\Classes\PathTemplateResolver;
 use Vsch\TranslationManager\Classes\TranslationFileRewriter;
@@ -38,6 +35,9 @@ class Manager
     protected $cache;
     protected $cacheIsDirty;
     protected $cacheTransKey;
+    protected $usageCache;
+    protected $usageCacheIsDirty;
+    protected $usageCacheTransKey;
     private $package;
     protected $errors;
 
@@ -62,15 +62,18 @@ class Manager
 
         $this->persistentPrefix = null;
         $this->cache = null;
+        $this->usageCache = null;
 
         // when instantiated from the service provider, config info is not yet loaded, trying to get it here
         // causes a problem since none of the keys are defined.
         $this->config = null;
 
         $manager = $this;
-        Route::after(function () use ($manager)
+        $events = \App::make('events');
+        $events->listen('router.after', function () use ($manager)
         {
             $manager->saveCache();
+            $manager->saveUsageCache();
         });
     }
 
@@ -118,14 +121,46 @@ class Manager
     }
 
     public
+    function usageCachePrefix()
+    {
+        if ($this->usageCacheTransKey == null)
+        {
+            if ($this->persistentPrefix === null)
+            {
+                if (array_key_exists('persistent_prefix', $this->config()))
+                {
+                    $this->persistentPrefix = $this->config()['persistent_prefix'];
+                }
+                else
+                {
+                    $this->persistentPrefix = '';
+                }
+            }
+            $this->usageCacheTransKey = $this->persistentPrefix ? $this->persistentPrefix . 'usage_info' : '';
+        }
+        return $this->persistentPrefix;
+    }
+
+    public
     function cache()
     {
         if ($this->cache === null)
         {
-            $this->cache = $this->cachePrefix() !== '' && Cache::has($this->cacheTransKey) ? Cache::get($this->cacheTransKey) : [];
-            $this->cacheIsDirty = $this->persistentPrefix !== '' && !Cache::has($this->cacheTransKey);
+            $this->cache = $this->cachePrefix() !== '' && \Cache::has($this->cacheTransKey) ? \Cache::get($this->cacheTransKey) : [];
+            $this->cacheIsDirty = $this->persistentPrefix !== '' && !\Cache::has($this->cacheTransKey);
         }
         return $this->cache;
+    }
+
+    public
+    function usageCache()
+    {
+        if ($this->usageCache === null)
+        {
+            $this->usageCache = $this->usageCachePrefix() !== '' && \Cache::has($this->usageCacheTransKey) ? \Cache::get($this->usageCacheTransKey) : [];
+            $this->usageCacheIsDirty = $this->persistentPrefix !== '' && !\Cache::has($this->usageCacheTransKey);
+        }
+        return $this->usageCache;
     }
 
     public
@@ -133,8 +168,56 @@ class Manager
     {
         if ($this->persistentPrefix && $this->cacheIsDirty)
         {
-            Cache::put($this->cacheTransKey, $this->cache, 60 * 24 * 365);
+            \Cache::put($this->cacheTransKey, $this->cache, 60 * 24 * 365);
             $this->cacheIsDirty = false;
+        }
+    }
+
+    public
+    function saveUsageCache()
+    {
+        if ($this->persistentPrefix && $this->usageCacheIsDirty)
+        {
+            // we never save it in the cache, it is only in database use, otherwise every page it will save the full cache to the database
+            // instead of only the accessed keys
+            //\Cache::put($this->usageCacheTransKey, $this->usageCache, 60 * 24 * 365);
+            \Cache::put($this->usageCacheTransKey, [], 60 * 24 * 365);
+            $this->usageCacheIsDirty = false;
+
+            // now update the keys in the database
+            foreach ($this->usageCache as $group => $keys)
+            {
+                $setKeys = "";
+                $resetKeys = "";
+                foreach ($keys as $key => $usage)
+                {
+                    if ($usage)
+                    {
+                        if ($setKeys) $setKeys .= ',';
+                        $setKeys .= "'$key'";
+                    }
+                    else
+                    {
+                        if ($resetKeys) $resetKeys .= ',';
+                        $resetKeys .= "'$key'";
+                    }
+                }
+
+                if ($setKeys)
+                {
+                    $this->translation->getConnection()->affectingStatement(<<<SQL
+UPDATE ltm_translations SET was_used = 1 WHERE was_used <> 1 AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?) AND `key` IN ($setKeys)
+SQL
+                        , [$group, 'vnd:%.'.$group, 'wbn:%.'.$group]);
+                }
+                if ($resetKeys)
+                {
+                    $this->translation->getConnection()->affectingStatement(<<<SQL
+UPDATE ltm_translations SET was_used = 0 WHERE was_used <> 0 AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?) AND `key` IN ($resetKeys)
+SQL
+                        , [$group, 'vnd:%.'.$group, 'wbn:%.'.$group]);
+                }
+            }
         }
     }
 
@@ -162,9 +245,59 @@ class Manager
     }
 
     public
+    function clearUsageCache($clearDatabase, $groups = null)
+    {
+        if (!$groups || $groups === '*')
+        {
+            $this->usageCache();
+            $this->usageCache = [];
+            $this->usageCacheIsDirty = true;
+            $this->saveUsageCache();
+
+            if ($clearDatabase)
+            {
+                $this->translation->getConnection()->affectingStatement(<<<SQL
+UPDATE ltm_translations SET was_used = 0 WHERE was_used <> 0
+SQL
+                );
+            }
+        }
+        elseif ($this->usageCache())
+        {
+            $this->usageCache();
+            if (!is_array($groups)) $groups = [$groups];
+
+            foreach ($groups as $group)
+            {
+                if (array_key_exists($group, $this->usageCache))
+                {
+                    unset($this->usageCache[$group]);
+                    $this->usageCacheIsDirty = !!$this->persistentPrefix;
+                }
+
+                if ($clearDatabase)
+                {
+                    $this->translation->getConnection()->affectingStatement(<<<SQL
+UPDATE ltm_translations SET was_used = 0 WHERE was_used <> 0 AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?)
+SQL
+                        , [$group, 'vnd:%.'.$group, 'wbn:%.'.$group]);
+                }
+            }
+
+            $this->saveUsageCache();
+        }
+    }
+
+    public
     function cacheKey($key, $locale)
     {
         return $locale . ':' . $key;
+    }
+
+    public
+    function usageCacheKey($key, $locale)
+    {
+        return $key;
     }
 
     protected static
@@ -192,7 +325,7 @@ class Manager
         if ($group)
         {
             if (!array_key_exists($group, $this->cache())) $this->cache[$group] = [];
-            $this->cache[$group][$locale . ':' . $transKey] = $value;
+            $this->cache[$group][$this->cacheKey($transKey, $locale)] = $value;
             $this->cacheIsDirty = $this->persistentPrefix !== '';
         }
     }
@@ -201,7 +334,30 @@ class Manager
     function cachedTranslation($key, $locale)
     {
         list($group, $transKey) = self::groupKeyList($key);
-        $value = $group && array_key_exists($group, $this->cache()) && array_key_exists($locale . ':' . $transKey, $this->cache[$group]) ? $this->cache[$group][$locale . ':' . $transKey] : null;
+        $cacheKey = $this->cacheKey($transKey, $locale);
+        $value = $group && array_key_exists($group, $this->cache()) && array_key_exists($cacheKey, $this->cache[$group]) ? $this->cache[$group][$cacheKey] : null;
+        return $value;
+    }
+
+    public
+    function cacheUsageInfo($key, $value, $locale)
+    {
+        list($group, $transKey) = self::groupKeyList($key);
+
+        if ($group)
+        {
+            if (!array_key_exists($group, $this->usageCache())) $this->usageCache[$group] = [];
+            $this->usageCache[$group][$this->usageCacheKey($transKey, $locale)] = $value;
+            $this->usageCacheIsDirty = $this->persistentPrefix !== '';
+        }
+    }
+
+    public
+    function cachedUsageInfo($key, $locale)
+    {
+        list($group, $transKey) = self::groupKeyList($key);
+        $cacheKey = $this->usageCacheKey($transKey, $locale);
+        $value = $group && array_key_exists($group, $this->usageCache()) && array_key_exists($cacheKey, $this->usageCache[$group]) ? $this->usageCache[$group][$cacheKey] : null;
         return $value;
     }
 
@@ -225,45 +381,88 @@ class Manager
     public
     function missingKey($namespace, $group, $key, $locale = null, $useLottery = false, $findOrNew = false)
     {
-        $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
-
-        if (!in_array($group, $this->config()['exclude_groups']) && $this->config()['log_missing_keys'])
+        if ($this->config()['log_missing_keys'])
         {
-            $lottery = 1;
-            if ($useLottery && $this->config()['missing_keys_lottery'] !== 1)
-            {
-                $lottery = Session::get($this->config()['persistent_prefix'] . 'lottery', '');
-                if ($lottery === '')
-                {
-                    $lottery = rand(1, $this->config()['missing_keys_lottery']);
-                    Session::put($this->config()['persistent_prefix'] . 'lottery', $lottery);
-                }
-            }
+            $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
 
-            if ($lottery === 1)
+            if (!in_array($group, $this->config()['exclude_groups']))
             {
-                $locale = $locale ?: $this->app['config']['app.locale'];
-                if ($findOrNew)
+                $lottery = 1;
+                if ($useLottery && $this->config()['missing_keys_lottery'] !== 1)
                 {
-                    $translation = Translation::firstOrNew(array(
-                        'locale' => $locale,
-                        'group' => $group,
-                        'key' => $key,
-                    ));
-                }
-                else
-                {
-                    $translation = Translation::firstOrCreate(array(
-                        'locale' => $locale,
-                        'group' => $group,
-                        'key' => $key,
-                    ));
+                    $lottery = \Session::get($this->config()['persistent_prefix'] . 'lottery', '');
+                    if ($lottery === '')
+                    {
+                        $lottery = rand(1, $this->config()['missing_keys_lottery']);
+                        \Session::put($this->config()['persistent_prefix'] . 'lottery', $lottery);
+                    }
                 }
 
-                return $translation;
+                if ($lottery === 1)
+                {
+                    $locale = $locale ?: $this->app['config']['app.locale'];
+                    if ($findOrNew)
+                    {
+                        $translation = Translation::firstOrNew(array(
+                            'locale' => $locale,
+                            'group' => $group,
+                            'key' => $key,
+                        ));
+                    }
+                    else
+                    {
+                        $translation = Translation::firstOrCreate(array(
+                            'locale' => $locale,
+                            'group' => $group,
+                            'key' => $key,
+                        ));
+                    }
+
+                    return $translation;
+                }
             }
         }
         return null;
+    }
+
+    /**
+     * @param      $namespace string
+     * @param      $group     string
+     * @param      $key       string
+     *
+     * @param null $locale
+     * @param bool $useLottery
+     * @param bool $findOrNew
+     *
+     * @return void
+     */
+    public
+    function usingKey($namespace, $group, $key, $locale = null, $useLottery = false)
+    {
+        if ($this->config()['log_key_usage_info'])
+        {
+            $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
+
+            if (!in_array($group, $this->config()['exclude_groups']))
+            {
+                $lottery = 1;
+                if ($useLottery && $this->config()['missing_keys_lottery'] !== 1)
+                {
+                    $lottery = \Session::get($this->config()['persistent_prefix'] . 'lottery', '');
+                    if ($lottery === '')
+                    {
+                        $lottery = rand(1, $this->config()['missing_keys_lottery']);
+                        \Session::put($this->config()['persistent_prefix'] . 'lottery', $lottery);
+                    }
+                }
+
+                if ($lottery === 1)
+                {
+                    $locale = $locale ?: $this->app['config']['app.locale'];
+                    $this->cacheUsageInfo($group . '.' . $key, 1, $locale);
+                }
+            }
+        }
     }
 
     /**
@@ -316,8 +515,7 @@ SQL
             $translation->is_deleted = 0;
             $translation->saved_value = $value;
 
-            $newStatus = ($translation->value === $translation->saved_value ? Translation::STATUS_SAVED
-                : ($translation->status === Translation::STATUS_SAVED ? Translation::STATUS_SAVED_CACHED : Translation::STATUS_CHANGED));
+            $newStatus = ($translation->value === $translation->saved_value ? Translation::STATUS_SAVED : ($translation->status === Translation::STATUS_SAVED ? Translation::STATUS_SAVED_CACHED : Translation::STATUS_CHANGED));
 
             if ($newStatus !== (int)$translation->status)
             {
@@ -349,6 +547,7 @@ SQL
     {
         $this->imported = 0;
         $this->clearCache($groups);
+        $this->clearUsageCache(false, $groups);
 
         // Laravel 5.1
         $pathTemplateResolver = new PathTemplateResolver($this->files, $this->app->basePath(), $this->config()['language_dirs'], '5');
@@ -496,8 +695,7 @@ SQL
         }
         elseif (!$recursing)
         {
-            $this->translation->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE is_deleted = 1 AND `group` = ?"
-                , [$group]);
+            $this->translation->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE is_deleted = 1 AND `group` = ?", [$group]);
         }
 
         $inDatabasePublishing = $this->inDatabasePublishing();
@@ -510,10 +708,12 @@ UPDATE ltm_translations SET saved_value = value, status = ? WHERE (saved_value <
 SQL
                     , [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED, $group]);
 
-                $translations = $this->translation->query()
-                    ->where('status', '<>', Translation::STATUS_SAVED)
-                    ->where('group', '=', $group)
-                    ->get(['group', 'key', 'locale', 'saved_value']);
+                $translations = $this->translation->query()->where('status', '<>', Translation::STATUS_SAVED)->where('group', '=', $group)->get([
+                    'group',
+                    'key',
+                    'locale',
+                    'saved_value'
+                ]);
             }
             else
             {
@@ -521,13 +721,17 @@ SQL
 UPDATE ltm_translations SET saved_value = value, status = ? WHERE (saved_value <> value || status <> ?)
 SQL
                     , [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED]);
-                $translations = $this->translation->query()
-                    ->where('status', '<>', Translation::STATUS_SAVED)
-                    ->get(['group', 'key', 'locale', 'saved_value']);
+                $translations = $this->translation->query()->where('status', '<>', Translation::STATUS_SAVED)->get([
+                    'group',
+                    'key',
+                    'locale',
+                    'saved_value'
+                ]);
             }
 
             /* @var $translations Collection */
             $this->clearCache($group);
+            $this->clearUsageCache(false, $group);
             $translations->each(function ($tr)
             {
                 $this->cacheTranslation($tr->group . '.' . $tr->key, $tr->saved_value, $tr->locale);
@@ -538,10 +742,13 @@ SQL
         {
             if (!in_array($group, $this->config()['exclude_groups']))
             {
-                if ($group == '*')
-                    $this->exportAllTranslations(1);
+                if ($group == '*') $this->exportAllTranslations(1);
 
-                if ($inDatabasePublishing !== 3) $this->clearCache($group);
+                if ($inDatabasePublishing !== 3)
+                {
+                    $this->clearCache($group);
+                    $this->clearUsageCache(false, $group);
+                }
 
                 $tree = $this->makeTree(Translation::where('group', $group)->whereNotNull('value')->orderby('key')->get());
                 $configRewriter = new TranslationFileRewriter();
@@ -615,6 +822,7 @@ SQL
     {
         $groups = Translation::whereNotNull('value')->select(DB::raw('DISTINCT `group`'))->get('group');
         $this->clearCache();
+        $this->clearUsageCache(false);
 
         foreach ($groups as $group)
         {

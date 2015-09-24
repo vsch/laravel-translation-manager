@@ -1,3 +1,7 @@
+<?php
+//$trans = App::make('translator');
+//$trans->suspendUsageLogging();
+?>
 <div class="alert alert-default" role="alert" style="padding-top: 0; padding-bottom: 0; margin: 0;">
     <div class="row">
         <div class="panel panel-default">
@@ -86,4 +90,7 @@
         </div>
     </div>
 </div>
+<?php
+//$trans->resumeUsageLogging();
+?>
 

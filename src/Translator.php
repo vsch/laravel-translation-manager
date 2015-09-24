@@ -17,6 +17,7 @@ class Translator extends LaravelTranslator
     protected $manager;
 
     protected $suspendInPlaceEdit;
+    protected $suspendUsageLogging;
 
     protected $useDB;
     protected $inPlaceEditing;
@@ -32,6 +33,7 @@ class Translator extends LaravelTranslator
     {
         parent::__construct($loader, $locale);
         $this->suspendInPlaceEdit = 0;
+        $this->suspendUsageLogging = 0;
         $this->inPlaceEditing = null;
         $this->useDB = 1;  // fill in missing keys from DB by default
         $this->app = $app;
@@ -67,6 +69,18 @@ class Translator extends LaravelTranslator
         return $this->suspendInPlaceEdit ? --$this->suspendInPlaceEdit : 0;
     }
 
+    public
+    function suspendUsageLogging()
+    {
+        return $this->suspendUsageLogging++;
+    }
+
+    public
+    function resumeUsageLogging()
+    {
+        return $this->suspendUsageLogging ? --$this->suspendUsageLogging : 0;
+    }
+
     public static
     function isLaravelNamespace($namespace)
     {
@@ -76,58 +90,61 @@ class Translator extends LaravelTranslator
     public
     function inPlaceEditLink($t, $withDiff = false, $key = null, $locale = null, $useDB = null, $group = null)
     {
-        $diff = '';
-        if (!$t && $key)
+        try
         {
-            if ($useDB === null) $useDB = $this->useDB;
+            $this->suspendUsageLogging();
 
-            list($namespace, $parsed_group, $item) = $this->parseKey($key);
-            if ($group === null) $group = $parsed_group;
-            else
+            $diff = '';
+            if (!$t && $key)
             {
-                $item = substr($key, strlen("$group."));
-                if ($namespace && $namespace !== '*') $group = substr($group, strlen("$namespace::"));
-            }
+                if ($useDB === null) $useDB = $this->useDB;
 
-            if ($this->manager && $group && $item && (!$this->manager->excludedPageEditGroup($group) || $withDiff))
-            {
-                $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
-                if ((!$t->exists || $t->value == '') && $namespace != '*')
+                list($namespace, $parsed_group, $item) = $this->parseKey($key);
+                if ($group === null) $group = $parsed_group;
+                else
                 {
-                    if (static::isLaravelNamespace($namespace))
+                    $item = substr($key, strlen("$group."));
+                    if ($namespace && $namespace !== '*') $group = substr($group, strlen("$namespace::"));
+                }
+
+                if ($this->manager && $group && $item && (!$this->manager->excludedPageEditGroup($group) || $withDiff))
+                {
+                    $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
+                    if ((!$t->exists || $t->value == '') && $namespace != '*')
                     {
-                        // get the package definition, we don't have an override
-                        $t->saved_value = parent::get($key, [], $locale);
-                        $t->status = 0;
-                        if ($withDiff)
+                        if (static::isLaravelNamespace($namespace))
                         {
-                            $diff = ' [' . $t->saved_value . ']';
+                            // get the package definition, we don't have an override
+                            $t->saved_value = parent::get($key, [], $locale);
+                            $t->status = 0;
+                            if ($withDiff)
+                            {
+                                $diff = ' [' . $t->saved_value . ']';
+                            }
                         }
                     }
                 }
             }
-        }
 
-        if ($t)
-        {
-            if ($withDiff && $diff === '')
+            if ($t)
             {
-                $diff = ($t->saved_value == $t->value ? '' : ($t->saved_value === $t->value ? '' : ' [' . mb_renderDiffHtml($t->saved_value, $t->value) . ']'));
+                if ($withDiff && $diff === '')
+                {
+                    $diff = ($t->saved_value == $t->value ? '' : ($t->saved_value === $t->value ? '' : ' [' . mb_renderDiffHtml($t->saved_value, $t->value) . ']'));
+                }
+                $title = parent::get($this->packagePrefix . 'messages.enter-translation');
+
+                if ($t->value === null) $t->value = ''; //$t->value = parent::get($key, $replace, $locale);
+                $result = '<a href="#edit" class="vsch_editable status-' . ($t->status ?: 0) . ' locale-' . $t->locale . '" data-locale="' . $t->locale . '" ' . 'data-name="' . $t->locale . '|' . $t->key . '" id="' . $t->locale . "-" . str_replace('.', '-', $t->key) . '"  data-type="textarea" data-pk="' . ($t->id ?: 0) . '" ' . 'data-url="' . URL::action('\Vsch\TranslationManager\Controller@postEdit', array($t->group)) . '" ' . 'data-inputclass="editable-input" data-saved_value="' . htmlentities($t->saved_value, ENT_QUOTES, 'UTF-8', false) . '" ' . 'data-title="' . $title . ': [' . $t->locale . '] ' . $t->group . '.' . $t->key . '">' . ($t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '') . '</a> ' . $diff;
+                return $result;
             }
-            $title = parent::get($this->packagePrefix . 'messages.enter-translation');
 
-            if ($t->value === null) $t->value = ''; //$t->value = parent::get($key, $replace, $locale);
-            $result = '<a href="#edit" class="vsch_editable status-' . ($t->status ?: 0) . ' locale-' . $t->locale . '" data-locale="' . $t->locale . '" '
-                . 'data-name="' . $t->locale . '|' . $t->key . '" id="' . $t->locale . "-" . str_replace('.', '-', $t->key) . '"  data-type="textarea" data-pk="' . ($t->id ?: 0) . '" '
-                . 'data-url="' . URL::action('\Vsch\TranslationManager\Controller@postEdit', array($t->group)) . '" '
-                . 'data-inputclass="editable-input" data-saved_value="' . htmlentities($t->saved_value, ENT_QUOTES, 'UTF-8', false) . '" '
-                . 'data-title="' . $title . ': [' . $t->locale . '] ' . $t->group . '.' . $t->key . '">'
-                . ($t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '') . '</a> '
-                . $diff;
-            return $result;
+            return '';
         }
-
-        return '';
+        finally
+        {
+            $this->resumeUsageLogging();
+        }
     }
 
     public
@@ -211,11 +228,17 @@ class Translator extends LaravelTranslator
                         $this->manager->cacheTranslation($key, $result, $locale ?: $this->getLocale());
                         return $this->processResult($result, $replace);
                     }
+                    $this->notifyUsingKey($key, $locale);
                     return $result;
                 }
             }
 
             $this->notifyMissingKey($key, $locale);
+            $this->notifyUsingKey($key, $locale);
+        }
+        else
+        {
+            $this->notifyUsingKey($key, $locale);
         }
         return $result;
     }
@@ -303,6 +326,19 @@ class Translator extends LaravelTranslator
         if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
         {
             $this->manager->missingKey($namespace, $group, $item, $locale, !UserCan::bypass_translations_lottery());
+        }
+    }
+
+    protected
+    function notifyUsingKey($key, $locale = null)
+    {
+        if (!$this->suspendUsageLogging)
+        {
+            list($namespace, $group, $item) = $this->parseKey($key);
+            if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group))
+            {
+                $this->manager->usingKey($namespace, $group, $item, $locale, !UserCan::bypass_translations_lottery());
+            }
         }
     }
 }

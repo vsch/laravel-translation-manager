@@ -226,7 +226,7 @@
                     <div class="col-sm-12">
                         <div style="min-height: 10px"></div>
 
-                        <form class="form-inline" id="form-interface-locale" class="form-interface-locale" method="GET"
+                        <form class="form-inline" id="form-interface-locale" method="GET"
                                 action="<?= action($controller . '@getInterfaceLocale') ?>">
                             <input type="hidden" name="_token" value="<?php echo csrf_token(); ?>">
 
@@ -311,6 +311,42 @@
                         </form>
                     </div>
                 </div>
+                @if($usage_info_enabled)
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div style="min-height: 10px"></div>
+
+                        <form class="form-inline" id="form-usage-info" method="GET"
+                                action="<?= action($controller . '@getUsageInfo') ?>">
+                            <input type="hidden" name="_token" value="<?php echo csrf_token(); ?>">
+                            <input type="hidden" name="group" value="<?php echo $group ? $group : '*'; ?>">
+                            <div class="row">
+                                <div class=" col-sm-12">
+                                    <div class="row">
+                                        <div class=" col-sm-3">
+                                            <div class="row">
+                                                <div class=" col-sm-12">
+                                                    <?= formSubmit(trans($package . '::messages.set-usage-info'), ['class' => "btn btn-sm btn-primary"]) ?>&nbsp;&nbsp;
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class=" col-sm-9">
+                                            <label>
+                                                <input id="show-usage-info" name="show-usage-info" type="checkbox" value="1" {!! $show_usage ? 'checked' : '' !!}>
+                                                {!! trans($package . '::messages.show-usage-info') !!}
+                                            </label>
+                                            <label>
+                                                <input id="reset-usage-info" name="reset-usage-info" type="checkbox" value="1">
+                                                {!! trans($package . '::messages.reset-usage-info') !!}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
         <div class="row">
@@ -640,7 +676,22 @@
                                 </a>
                             </td>
                             <?php endif; ?>
-                            <td><?= $key ?></td>
+                            <?php
+                                $was_used = true;
+                                if ($show_usage)
+                                {
+                                    $was_used = false;
+                                    foreach($locales as $locale) {
+                                        $t = isset($translation[$locale]) ? $translation[$locale] : null;
+                                        if ($t != null && $t->was_used)
+                                        {
+                                            $was_used = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            ?>
+                            <td <?= $was_used ? '' : 'class="unused-key"' ?> ><?= $key ?></td>
                             <?php foreach($locales as $locale): ?>
                             <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
                             <?php $t = isset($translation[$locale]) ? $translation[$locale] : null ?>

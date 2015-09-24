@@ -5,6 +5,7 @@
 var CLIP_TEXT;
 var MISSMATCHED_QUOTES_MESSAGE;
 var YANDEX_TRANSLATOR_KEY;
+var URL_YANDEX_TRANSLATOR_KEY;
 var PRIMARY_LOCALE;
 var CURRENT_LOCALE;
 var TRANSLATING_LOCALE;
@@ -177,6 +178,27 @@ xtranslateText = function (translator, srcLoc, srcText, dstLoc, processText) {
 $(document).ready(function () {
     'use strict';
     var elem;
+
+    $.ajaxPrefilter(function (options) {
+        if (!options.crossDomain) {
+            options.headers = {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            };
+            //window.console.log('Injected CSRF: ' + $('meta[name="csrf-token"]').attr('content'));
+        }
+    });
+
+    $.ajax({
+        type: 'POST',
+        url: URL_YANDEX_TRANSLATOR_KEY,
+        data: {},
+        success: function (json) {
+            if (json.status === 'ok') {
+                YANDEX_TRANSLATOR_KEY = json.yandex_key;
+            }
+        },
+        encode: true
+    });
 
     function validateXEdit(value) {
         // check for open or mismatched quotes in href=  and src=, attributes if any

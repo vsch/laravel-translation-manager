@@ -85,6 +85,14 @@ return array(
      * @type boolean
      */
     'log_missing_keys' => false,
+
+    /**
+     * determines whether usage of keys is logged, requires missing keys to be logged too
+     *
+     * @type boolean
+     */
+    'log_key_usage_info' => false,
+
     /**
      * determines one out of how many user sessions will have a chance to log missing keys
      * since the operation hits the database for every missing key you can limit this by setting a

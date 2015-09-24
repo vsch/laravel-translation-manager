@@ -26,50 +26,50 @@ class PathTemplateResolver
     protected $config_path;
 
     protected static $defaults = array(
-            'lang' => [
-                    'db_group' => '{group}',
-                    'root' => '',
-                    'files' => [
-                            '4' => '/app/lang/{locale}/{group}',
-                            '*' => '/resources/lang/{locale}/{group}',
-                    ],
-                    'vars' => [
-                            '{vendor}' => '',
-                            '{package}' => '',
-                    ],
+        'lang' => [
+            'db_group' => '{group}',
+            'root' => '',
+            'files' => [
+                '4' => '/app/lang/{locale}/{group}',
+                '*' => '/resources/lang/{locale}/{group}',
             ],
-            'packages' => [
-                    'db_group' => '{package}::{group}',
-                    'include' => '*',
-                    'root' => '',
-                    'files' => [
-                            '4' => '/app/lang/packages/{locale}/{package}/{group}',
-                            '*' => '/resources/lang/vendor/{package}/{locale}/{group}',
-                    ],
-                    'vars' => [
-                            '{vendor}' => '',
-                    ],
+            'vars' => [
+                '{vendor}' => '',
+                '{package}' => '',
             ],
-            'workbench' => [
-                    'db_group' => 'wbn:{vendor}.{package}::{group}',
-                    'include' => '*/*',
-                    'root' => '/workbench/{vendor}/{package}',
-                    'files' => [
-                            '4' => 'src/lang/{locale}/{group}',
-                            '*' => 'resources/lang/{locale}/{group}',
-                    ],
-                    'vars' => [],
+        ],
+        'packages' => [
+            'db_group' => '{package}::{group}',
+            'include' => '*',
+            'root' => '',
+            'files' => [
+                '4' => '/app/lang/packages/{locale}/{package}/{group}',
+                '*' => '/resources/lang/vendor/{package}/{locale}/{group}',
             ],
-            'vendor' => [
-                    'db_group' => 'vnd:{vendor}.{package}::{group}',
-                    'include' => [],
-                    'root' => '/vendor/{vendor}/{package}',
-                    'files' => [
-                            '4' => 'src/lang/{locale}/{group}',
-                            '*' => 'resources/lang/{locale}/{group}',
-                    ],
-                    'vars' => [],
+            'vars' => [
+                '{vendor}' => '',
             ],
+        ],
+        'workbench' => [
+            'db_group' => 'wbn:{vendor}.{package}::{group}',
+            'include' => '*/*',
+            'root' => '/workbench/{vendor}/{package}',
+            'files' => [
+                '4' => 'src/lang/{locale}/{group}',
+                '*' => 'resources/lang/{locale}/{group}',
+            ],
+            'vars' => [],
+        ],
+        'vendor' => [
+            'db_group' => 'vnd:{vendor}.{package}::{group}',
+            'include' => [],
+            'root' => '/vendor/{vendor}/{package}',
+            'files' => [
+                '4' => 'src/lang/{locale}/{group}',
+                '*' => 'resources/lang/{locale}/{group}',
+            ],
+            'vars' => [],
+        ],
         //// these will be merged with vendor or workbench type and create their own types named by the package
         //// the first section whose include is satisfied will be used, the other ignored. Since vendor section requires
         //// opt-in, it is listed first, if this custom type is included then it will be a vendor type. Regardless of
@@ -187,15 +187,17 @@ class PathTemplateResolver
         foreach ($config as $key => &$value)
         {
             // resolve any vendor and package now so that these get processed first
-            $value['path'] = static::expandVars(appendPath($value['root'], $value['files']), array_key_exists('vars', $value) ? $value['vars'] : []);
+            if (array_key_exists('root', $value))
+            {
+                $value['path'] = static::expandVars(appendPath($value['root'], $value['files']), array_key_exists('vars', $value) ? $value['vars'] : []);
+            }
         }
     }
 
     /**
      * @param mixed $value
      */
-    public
-    static
+    public static
     function normalizeInclude($value)
     {
         if (array_key_exists('include', $value))
@@ -335,7 +337,7 @@ class PathTemplateResolver
         {
             if (($pos = strpos($package, '/')) === false) continue; // erroneous include directive
             $vendor = substr($package, 0, $pos);
-            $package = substr($package, $pos+1);
+            $package = substr($package, $pos + 1);
 
             if (!$matchPackage)
             {
@@ -426,6 +428,12 @@ class PathTemplateResolver
                 });
 
                 // now we add all these files to the list as keys with the resolved db_group as the value
+                //if (!array_key_exists('db_group', $this->config_paths[$this->config_path]))
+                //{
+                //    $tmp = 0;
+                //    break;
+                //}
+                //else
                 $db_group = static::expandVars($this->config_paths[$this->config_path]['db_group'], $this->path_vars);
 
                 foreach ($files as $file)

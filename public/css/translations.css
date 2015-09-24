@@ -102,6 +102,11 @@ h6 .editable-click, h6 a.editable-click, h6 a.editable-click:hover {
     padding-left: 8px;
 }
 
+.table-translations td.unused-key
+{
+    color: #999999;
+}
+
 .table.translation-stats > thead > tr > th.deleted,
 .table.translation-stats > tbody > tr > td.group.deleted > a
 {

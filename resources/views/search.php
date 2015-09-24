@@ -1,6 +1,8 @@
 <?php
 use Illuminate\Support\Facades\URL;
 
+//$trans = App::make('translator');
+//$trans->suspendUsageLogging();
 ?>
 
 <h4><?php trans($package . '::messages.search-header', ['count'=>$numTranslations])?></h4>
@@ -28,4 +30,7 @@ use Illuminate\Support\Facades\URL;
     <?php endforeach; ?>
     </tbody>
 </table>
+<?php
+//$trans->resumeUsageLogging();
+?>
 

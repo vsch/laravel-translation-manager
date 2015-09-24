@@ -26,12 +26,14 @@ class Controller extends BaseController
     private $primaryLocale;
     private $translatingLocale;
     private $displayLocales;
+    private $showUsageInfo;
     private $locales;
 
     const COOKIE_LANG_LOCALE = 'lang';
     const COOKIE_TRANS_LOCALE = 'trans';
     const COOKIE_PRIM_LOCALE = 'prim';
     const COOKIE_DISP_LOCALES = 'disp';
+    const COOKIE_SHOW_USAGE = 'show-usage';
 
     public
     function __construct()
@@ -45,7 +47,10 @@ class Controller extends BaseController
         $this->primaryLocale = Cookie::get($this->cookieName(self::COOKIE_PRIM_LOCALE), $this->manager->getConfig('primary_locale', 'en'));
 
         $this->locales = $this->loadLocales();
+
         $this->translatingLocale = Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE));
+        $this->showUsageInfo = Cookie::get($this->cookieName(self::COOKIE_SHOW_USAGE));
+
         if (!$this->translatingLocale || ($this->translatingLocale === $this->primaryLocale && count($this->locales) > 1))
         {
             $this->translatingLocale = count($this->locales) > 1 ? $this->locales[1] : $this->locales[0];
@@ -90,6 +95,9 @@ class Controller extends BaseController
     public
     function getIndex($group = null)
     {
+        //$trans = App::make('translator');
+        //$trans->suspendUsageLogging();
+
         $locales = $this->locales;
         $currentLocale = \Lang::getLocale();
         $primaryLocale = $this->primaryLocale;
@@ -123,7 +131,8 @@ SELECT DISTINCT
     NULL updated_at,
     NULL source,
     NULL saved_value,
-    NULL is_deleted
+    NULL is_deleted,
+    NULL was_used
 FROM
 (SELECT * FROM (SELECT DISTINCT locale FROM ltm_translations WHERE 1=1 $displayWhere) lcs
     CROSS JOIN (SELECT DISTINCT `group`, `key` FROM ltm_translations WHERE `group` = ? $displayWhere) grp) m
@@ -298,7 +307,9 @@ SQL
         $displayLocales = explode(',', $this->displayLocales);
         $displayLocales = array_combine($displayLocales, $displayLocales);
 
-        return \View::make($this->packagePrefix . 'index')
+        $show_usage_enabled = $this->manager->config('log_key_usage_info', false);
+
+        $view = \View::make($this->packagePrefix . 'index')
             ->with('controller', '\\' . get_class($this))
             ->with('package', $this->package)
             ->with('public_prefix', '/vendor/')
@@ -316,7 +327,15 @@ SQL
             ->with('adminEnabled', $this->manager->getConfig('admin_enabled') && UserCan::admin_translations())
             ->with('mismatchEnabled', $mismatchEnabled)
             ->with('stats', $summary)
-            ->with('mismatches', $mismatches);
+            ->with('mismatches', $mismatches)
+            ->with('show_usage', $this->showUsageInfo && $show_usage_enabled)
+            ->with('usage_info_enabled', $show_usage_enabled);
+
+        $view = $view->render();
+
+        //$trans->resumeUsageLogging();
+
+        return $view;
     }
 
     public
@@ -337,7 +356,7 @@ SQL
             $translations = DB::select(<<<SQL
 SELECT * FROM ltm_translations rt WHERE (`key` LIKE ? OR value LIKE ?) $displayWhere
 UNION ALL
-SELECT NULL id, 0 status, lt.locale, kt.`group`, kt.`key`, NULL value, NULL created_at, NULL updated_at, NULL source, NULL saved_value, NULL is_deleted
+SELECT NULL id, 0 status, lt.locale, kt.`group`, kt.`key`, NULL value, NULL created_at, NULL updated_at, NULL source, NULL saved_value, NULL is_deleted, NULL was_used
 FROM (SELECT DISTINCT locale FROM ltm_translations WHERE 1=1 $displayWhere) lt
     CROSS JOIN (SELECT DISTINCT `key`, `group` FROM ltm_translations WHERE 1=1 $displayWhere) kt
 WHERE NOT exists(SELECT * FROM ltm_translations tr WHERE tr.`key` = kt.`key` AND tr.`group` = kt.`group` AND tr.locale = lt.locale)
@@ -779,7 +798,7 @@ SQL
                                 DB::insert($sql = <<<SQL
 INSERT INTO ltm_translations
 SELECT
-    NULL,
+    NULL id,
     1 status,
     locale,
     ? `group`,
@@ -788,7 +807,9 @@ SELECT
     sysdate() created_at,
     sysdate() updated_at,
     source,
-    saved_value
+    saved_value,
+    is_deleted,
+    was_used
 FROM ltm_translations t1
 WHERE id = ?
 
@@ -922,6 +943,27 @@ SQL
         Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $translating, 60 * 24 * 365 * 1);
         Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $primary, 60 * 24 * 365 * 1);
         Cookie::queue($this->cookieName(self::COOKIE_DISP_LOCALES), $display, 60 * 24 * 365 * 1);
+
+        if (App::runningUnitTests()) return Redirect::to('/');
+        return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
+    }
+
+    public
+    function getUsageInfo()
+    {
+        $group = Input::get("group");
+        $reset = Input::get("reset-usage-info");
+        $show = Input::get("show-usage-info");
+
+        // need to store this so that it can be displayed again
+        Cookie::queue($this->cookieName(self::COOKIE_SHOW_USAGE), $show, 60 * 24 * 365 * 1);
+
+        if ($reset)
+        {
+            // TODO: add show usage info to view variables so that a class can be added to keys that have no usage info
+            // need to clear the usage information
+            $this->manager->clearUsageCache(true, $group);
+        }
 
         if (App::runningUnitTests()) return Redirect::to('/');
         return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
