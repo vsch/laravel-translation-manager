@@ -5,6 +5,8 @@
  * Date: 15-07-20
  * Time: 4:50 PM
  */
+use Vsch\TranslationManager\Translator;
+
 if (!function_exists('mapTrans'))
 {
     /**
@@ -93,18 +95,18 @@ if (!function_exists('noEditTrans'))
      * @return mixed
      *
      */
-    function noEditTrans($key, $parameters = array(), $locale = null, $useDB = null)
+    function noEditTrans($key, $parameters = null, $locale = null, $useDB = null)
     {
         $trans = App::make('translator');
         if ($trans->inPlaceEditing())
         {
             /* @var $trans Translator */
             $trans->suspendInPlaceEditing();
-            $text = $trans->get($key, $parameters, $locale, $useDB);
+            $text = $trans->get($key, $parameters ?: [], $locale, $useDB);
             $trans->resumeInPlaceEditing();
             return $text;
         }
-        return $trans->get($key, $parameters, $locale, $useDB);
+        return $trans->get($key, $parameters ?: [], $locale, $useDB);
     }
 }
 
@@ -119,13 +121,13 @@ if (!function_exists('ifEditTrans'))
      * @return mixed
      *
      */
-    function ifEditTrans($key, $parameters = array(), $locale = null, $useDB = null, $noWrap = null)
+    function ifEditTrans($key, $parameters = null, $locale = null, $useDB = null, $noWrap = null)
     {
         $trans = App::make('translator');
         if ($trans->inPlaceEditing())
         {
             /* @var $trans Translator */
-            $text = $trans->getInPlaceEditLink($key, $parameters, $locale, $useDB);
+            $text = $trans->getInPlaceEditLink($key, $parameters ?: [], $locale, $useDB);
             return $noWrap ? $text : "<br>[$text]";
         }
         return '';

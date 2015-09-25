@@ -109,6 +109,8 @@ class Translator extends LaravelTranslator
 
                 if ($this->manager && $group && $item && (!$this->manager->excludedPageEditGroup($group) || $withDiff))
                 {
+                    if ($locale == null) $locale = $this->locale();
+
                     $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
                     if ((!$t->exists || $t->value == '') && $namespace != '*')
                     {
