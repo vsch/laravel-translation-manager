@@ -185,6 +185,9 @@ if (!function_exists('formSubmit'))
             {
                 $innerText = $matches[2];
                 $value = $matches[1];
+            } else if (preg_match('/^\s*(<a\s*[^>]*>([^<]*)<\/a>)\s*$/', $value, $matches)) {
+                $innerText = $matches[2];
+                $value = $matches[1];
             }
             if ($innerText !== $value)
             {
