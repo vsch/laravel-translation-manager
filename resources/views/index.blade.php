@@ -145,21 +145,24 @@
                                             )) ?>
                                         </div>
                                     </div>
-                                    <?php if ($adminEnabled): ?>
                                     <div class="col-sm-6">
+                                    <?php if ($adminEnabled): ?>
                                         <?php if ($group): ?>
-                                        <?= ifEditTrans($package . '::messages.publishing') ?>
-                                        <?= ifEditTrans($package . '::messages.publish') ?>
-                                        <button type="submit" form="form-publish-group"
-                                                class="btn btn-xs btn-info input-control"
-                                                data-disable-with="<?= noEditTrans($package . '::messages.publishing') ?>">
-                                            <?= noEditTrans($package . '::messages.publish') ?>
-                                        </button>
-                                        <?= ifEditTrans($package . '::messages.zip-group') ?>
-                                        <a href="<?= action($controller . '@getZippedTranslations', ['group' => $group]) ?>"
-                                                role="button" class="btn btn-primary btn-xs">
-                                            <?= noEditTrans($package . '::messages.zip-group') ?>
-                                        </a>
+                                            <?= ifEditTrans($package . '::messages.publishing') ?>
+                                            <?= ifEditTrans($package . '::messages.publish') ?>
+                                            <button type="submit" form="form-publish-group"
+                                                    class="btn btn-xs btn-info input-control"
+                                                    data-disable-with="<?= noEditTrans($package . '::messages.publishing') ?>">
+                                                <?= noEditTrans($package . '::messages.publish') ?>
+                                            </button>
+                                            <?= ifEditTrans($package . '::messages.zip-group') ?>
+                                            <a href="<?= action($controller . '@getZippedTranslations', ['group' => $group]) ?>"
+                                                    role="button" class="btn btn-primary btn-xs">
+                                                <?= noEditTrans($package . '::messages.zip-group') ?>
+                                            </a>
+                                            <?= ifEditTrans($package . '::messages.search'); ?>
+                                            <button type="button" class="btn btn-xs btn-primary" data-toggle="modal"
+                                                    data-target="#searchModal"><?= noEditTrans($package . '::messages.search') ?></button>
                                         <?php endif; ?>
                                         <div class="input-group" style="float:right; display:inline">
                                             <?php if ($group): ?>
@@ -177,8 +180,14 @@
                                             </button>
                                             <?php endif; ?>
                                         </div>
-                                    </div>
+                                    <?php else: ?>
+                                        <?php if ($group): ?>
+                                        <?= ifEditTrans($package . '::messages.search'); ?>
+                                        <button type="button" class="btn btn-xs btn-primary" data-toggle="modal"
+                                                data-target="#searchModal"><?= noEditTrans($package . '::messages.search') ?></button>
+                                        <?php endif; ?>
                                     <?php endif; ?>
+                                    </div>
                                     <?= ifEditTrans($package . '::messages.confirm-delete') ?>
                                     <form id="form-delete-group" class="form-inline form-delete-group" method="POST"
                                             action="<?= action($controller . '@postDeleteAll', $group) ?>"

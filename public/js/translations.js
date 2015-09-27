@@ -344,8 +344,9 @@ $(document).ready(function () {
 
         this.each(function () {
             var elem = $(this);
+            var top = elem.offset().top;
 
-            if (elem.offset().top < 300) {
+            if (top < 300) {
                 elem.editable({placement: 'bottom'});
             }
             else {

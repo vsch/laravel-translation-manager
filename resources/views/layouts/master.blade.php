@@ -22,6 +22,11 @@
 </head>
 <body role="document">
 <noscript>This site does not work without JavaScript</noscript>
+
+@if(inPlaceEditing())
+    <div class="top-spacer" style="min-height: 50px"></div>
+@endif
+
 <div id="main" class="container-fluid main theme-showcase" role="main">
     @yield('content')
 </div>

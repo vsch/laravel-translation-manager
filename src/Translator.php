@@ -184,6 +184,7 @@ class Translator extends LaravelTranslator
     {
         if (!$this->suspendInPlaceEdit && $this->inPlaceEditing())
         {
+            $this->notifyUsingKey($key, $locale);
             return $this->inPlaceEditLink(null, true, $key, $locale);
         }
 
@@ -195,6 +196,7 @@ class Translator extends LaravelTranslator
             $result = $this->manager->cachedTranslation($key, $locale ?: $this->locale());
             if ($result)
             {
+                $this->notifyUsingKey($key, $locale);
                 return $this->processResult($result, $replace);
             }
         }
@@ -207,6 +209,7 @@ class Translator extends LaravelTranslator
                 $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
                 $result = $t->value ?: $key;
                 if ($t->isDirty()) $t->save();
+                $this->notifyUsingKey($key, $locale);
                 return $this->processResult($result, $replace);
             }
         }

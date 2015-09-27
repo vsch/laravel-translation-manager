@@ -101,7 +101,7 @@ TEXT
     'srckeys'                   => 'From Keys',
     'srckeys-placeholder'       => 'Add 1 key per line, with or without the group prefix',
     'stats'                     => 'Dashboard View',
-    'suffixed-keyops'           => 'Suffixed Key Operations & Search',
+    'suffixed-keyops'           => 'Suffixed Key Operations',
     'suffixes'                  => 'Suffixes',
     'total'                     => 'Total',
     'translating-locale'        => 'Translate',

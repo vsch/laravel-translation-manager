@@ -101,7 +101,7 @@ TEXT
     'srckeys'                   => 'À Partir De Clés',
     'srckeys-placeholder'       => 'Ajouter 1 clé par ligne, avec ou sans le préfixe de groupe',
     'stats'                     => 'Vue De Tableau De Bord',
-    'suffixed-keyops'           => 'Suffixé Les Principales Opérations Et De La Recherche',
+    'suffixed-keyops'           => 'Suffixé Les Principales Opérations',
     'suffixes'                  => 'Les Suffixes',
     'total'                     => 'Total',
     'translating-locale'        => 'Traduire',
