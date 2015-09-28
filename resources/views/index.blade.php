@@ -168,7 +168,7 @@
                                             <?php if ($group): ?>
                                             <?= ifEditTrans($package . '::messages.import-group') ?>
                                             <?= ifEditTrans($package . '::messages.loading') ?>
-                                            <button type="submit" form="form-import" class="btn btn-xs btn-success"
+                                            <button type="submit" form="form-import-group" class="btn btn-xs btn-success"
                                                     data-disable-with="<?= noEditTrans($package . '::messages.loading') ?>">
                                                 <?= noEditTrans($package . '::messages.import-group') ?>
                                             </button>
@@ -194,7 +194,7 @@
                                             data-remote="true" role="form"
                                             data-confirm="<?= noEditTrans($package . '::messages.confirm-delete', ['group' => $group]) ?>">
                                         <input type="hidden" name="_token" value="<?php echo csrf_token(); ?>"></form>
-                                    <form id="form-import" class="form-inline form-import" method="POST"
+                                    <form id="form-import-group" class="form-inline form-import-group" method="POST"
                                             action="<?= action($controller . '@postImport', $group) ?>"
                                             data-remote="true" role="form"><input type="hidden" name="_token"
                                                 value="<?php echo csrf_token(); ?>"></form>
@@ -241,19 +241,33 @@
 
                             <div class="row">
                                 <div class=" col-sm-3">
+                                    @if($adminEnabled && count($connection_list) > 1)
+                                    <div class="input-group-sm">
+                                        <label for="db-connection"><?= trans($package . '::messages.db-connection') ?>:</label>
+                                        <select name="c" id="db-connection" class="form-control">
+                                            @foreach($connection_list as $connection => $description)
+                                                <option value="<?=$connection?>"<?= $connection_name === $connection ? ' selected="selected"' : ''?>><?= $description ?></option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    @else
+                                        &nbsp;
+                                    @endif
+                                </div>
+                                <div class=" col-sm-2">
                                     <div class="input-group-sm">
                                         <label for="interface-locale"><?= trans($package . '::messages.interface-locale') ?>:</label>
-                                        <select name="l" id="interface-locale" class="form-control" ?>">
+                                        <select name="l" id="interface-locale" class="form-control">
                                             @foreach($locales as $locale)
                                                 <option value="<?=$locale?>"<?= $currentLocale === $locale ? ' selected="selected"' : ''?>><?= $locale ?></option>
                                             @endforeach
                                         </select>
                                     </div>
                                 </div>
-                                <div class=" col-sm-3">
+                                <div class=" col-sm-2">
                                     <div class="input-group-sm">
                                         <label for="translating-locale"><?= trans($package . '::messages.translating-locale') ?>:</label>
-                                        <select name="t" id="translating-locale" class="form-control" ?>">
+                                        <select name="t" id="translating-locale" class="form-control">
                                             @foreach($locales as $locale)
                                                 @if($locale !== $primaryLocale) continue;
                                                 <option value="<?=$locale?>"<?= $translatingLocale === $locale ? ' selected="selected"' : ''?>><?= $locale ?></option>
@@ -262,10 +276,10 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class=" col-sm-3">
+                                <div class=" col-sm-2">
                                     <div class="input-group-sm">
                                         <label for="primary-locale"><?= trans($package . '::messages.primary-locale') ?>:</label>
-                                        <select name="p" id="primary-locale" class="form-control" ?>">
+                                        <select name="p" id="primary-locale" class="form-control">
                                             @foreach($locales as $locale)
                                             <option value="<?=$locale?>"<?= $primaryLocale === $locale ? ' selected="selected"' : ''?>><?= $locale ?></option>
                                             @endforeach
@@ -612,7 +626,37 @@
         <div class="row">
             <div class="col-sm-12 ">
                 <div style="min-height: 10px"></div>
-                <table class="table table-condensed table-striped table-translations">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12 ">
+                <div class="input-group input-group-sm">
+                    <label class="radio-inline">
+                        <input id="show-all" type="radio" name="show-options" value="show-all" checked> @lang($package . '::messages.show-all')
+                    </label>
+                    <label class="radio-inline">
+                        <input id="show-nonempty" type="radio" name="show-options" value="show-nonempty"> @lang($package . '::messages.show-nonempty')
+                    </label>
+                    <label class="radio-inline">
+                        <input id="show-empty" type="radio" name="show-options" value="show-empty"> @lang($package . '::messages.show-empty')
+                    </label>
+                    <label class="radio-inline">
+                        <input id="show-changed" type="radio" name="show-options" value="show-changed"> @lang($package . '::messages.show-changed')
+                    </label>
+                    <label class="radio-inline">
+                        <input id="show-deleted" type="radio" name="show-options" value="show-deleted"> @lang($package . '::messages.show-deleted')
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12 ">
+                <div style="min-height: 10px"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12 ">
+                <table id="translations" class="table table-condensed table-striped table-translations">
                     <thead>
                         <tr>
                             <?php if($adminEnabled): ?>
@@ -663,14 +707,27 @@
                         $translator = App::make('translator');
                         foreach($translations as $key => $translation)
                         {
-                            $is_deleted = 0;
+                            $is_deleted = false;
+                            $has_empty = false;
+                            $has_nonempty = false;
+                            $has_changes = false;
                             foreach($locales as $locale)
                             {
                                 if (!array_key_exists($locale, $displayLocales)) continue;
-                                if (isset($translation[$locale]) && $translation[$locale]->is_deleted) $is_deleted = 1;
+
+                                if (isset($translation[$locale])) {
+                                    $trans = $translation[$locale];
+                                    if ($trans->is_deleted) $is_deleted = true;
+                                    if ($trans->value != '') {
+                                        $has_nonempty = true;
+                                        if ($trans->value != $trans->saved_value) $has_changes = true;
+                                    }
+                                    else $has_empty = true;
+                                }
                             }
                         ?>
-                        <tr id="<?= str_replace('.', '-', $key) ?>" <?= $is_deleted ? ' class="deleted-translation"' : '' ?>>
+                        <tr id="<?= str_replace('.', '-', $key) ?>"  class="<?= $is_deleted ? ' deleted-translation' : '' ?><?= $has_empty ? ' has-empty-translation' : '' ?><?= $has_nonempty ? ' has-nonempty-translation' : '' ?><?= $has_changes ? ' has-changed-translation' : '' ?>
+                                ">
                             <?php if($adminEnabled): ?>
                             <td>
                                 <a href="<?= action($controller . '@postUndelete', [$group, $key]) ?>"
@@ -700,7 +757,7 @@
                                     }
                                 }
                             ?>
-                            <td <?= $was_used ? '' : 'class="unused-key"' ?> ><?= $key ?></td>
+                            <td class="<?= $was_used ? 'used-key' : 'unused-key' ?>" ><?= $key ?></td>
                             <?php foreach($locales as $locale): ?>
                             <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
                             <?php $t = isset($translation[$locale]) ? $translation[$locale] : null ?>

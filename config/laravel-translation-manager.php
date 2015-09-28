@@ -124,6 +124,23 @@ return array(
      *                  on one system does no good to the rest of the cluster.
      */
     'indatabase_publish' => 0,
+
+    /**
+     * @type array      list of alternate database connections and their properties indexed by app()->environment() value,
+     *                  default connection settings are taken from config, so only add alternate connections
+     *
+     *                  description is used to display the connection name, default connection is displayed as 'default' in
+     *                  the web interface.
+     */
+    'db_connections' => array(
+        //'local' => array(
+        //    'mysql_prd' => array(
+        //        'description' => 'production',
+        //        'indatabase_publish' => 2,
+        //    ),
+        //),
+    ),
+
     /**
      * used to provide the Yandex key for use in automatic Yandex translations
      *

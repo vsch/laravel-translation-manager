@@ -20,6 +20,15 @@ use ZipArchive;
  */
 class Manager
 {
+    const INDATABASE_PUBLISH_KEY = 'indatabase_publish';
+    const DB_CONNECTIONS_KEY = 'db_connections';
+    const PERSISTENT_PREFIX_KEY = 'persistent_prefix';
+    const EXCLUDE_PAGE_EDIT_GROUPS_KEY = 'exclude_page_edit_groups';
+    const LOG_MISSING_KEYS_KEY = 'log_missing_keys';
+    const EXCLUDE_GROUPS_KEY = 'exclude_groups';
+    const MISSING_KEYS_LOTTERY_KEY = 'missing_keys_lottery';
+    const LOTTERY_PERSISTENT_SUFFIX = 'lottery';
+    const LOG_KEY_USAGE_INFO_KEY = 'log_key_usage_info';
 
     /** @var \Illuminate\Foundation\Application */
     protected $app;
@@ -30,7 +39,10 @@ class Manager
 
     protected $config;
     protected $imported;
+
+    /* @var $translation Translation */
     protected $translation;
+
     protected $persistentPrefix;
     protected $cache;
     protected $cacheIsDirty;
@@ -38,8 +50,13 @@ class Manager
     protected $usageCache;
     protected $usageCacheIsDirty;
     protected $usageCacheTransKey;
-    private $package;
     protected $errors;
+    protected $indatabase_publish;
+    protected $default_connection;
+    protected $default_indatabase_publish;
+    private $package;
+    protected $groupList;
+    protected $augmentedGroupList;
 
     /**
      * @var   \ZipArchive
@@ -47,9 +64,74 @@ class Manager
     protected $zipExporting;
 
     public
-    function packageName($package)
+    function setConnectionName($connection = null)
     {
-        $this->package = $package;
+        if ($connection === null || $connection === '') {
+            // resetting to default
+            $connection = $this->default_connection;
+        }
+
+        $this->translation->setConnection($connection);
+        $this->indatabase_publish = $this->getConnectionInDatabasePublish($connection);
+        $this->clearCache();
+    }
+
+    public
+    function getConnectionName()
+    {
+        return $this->translation->getConnectionName();
+    }
+
+    public
+    function getConnection()
+    {
+        return $this->translation->getConnection();
+    }
+
+    /**
+     * @return \Vsch\TranslationManager\Models\Translation
+     */
+    public
+    function getTranslation()
+    {
+        return $this->translation;
+    }
+
+    public
+    function getConnectionInDatabasePublish($connection)
+    {
+        if ($connection === null || $connection === '') {
+            return $this->getConfig(self::INDATABASE_PUBLISH_KEY, 0);
+        }
+        return $this->getConnectionInfo($connection, self::INDATABASE_PUBLISH_KEY, $this->getConfig(self::INDATABASE_PUBLISH_KEY, 0));
+    }
+
+    public
+    function getConnectionInfo($connection, $key = null, $default = null)
+    {
+        if ($key === null) {
+            return $this->getConfig(self::DB_CONNECTIONS_KEY);
+        }
+
+        $db_connections = $this->getConfig(self::DB_CONNECTIONS_KEY);
+        $environment = \App::environment();
+
+        $db_connection = $connection !== null && array_key_exists($environment, $db_connections) && array_key_exists($connection, $db_connections[$environment]) ? $db_connections[$environment][$connection] : null;
+
+        $value = $db_connection && array_key_exists($key, $db_connection)
+            ? $db_connection[$key]
+            : $default;
+
+        return $value;
+    }
+
+    /**
+     * @return bool
+     */
+    public
+    function inDatabasePublishing()
+    {
+        return $this->zipExporting ? 3 : $this->indatabase_publish;
     }
 
     public
@@ -59,22 +141,65 @@ class Manager
         $this->files = $files;
         $this->events = $events;
         $this->translation = $translation;
+        $this->default_connection = $translation->getConnectionName();
 
         $this->persistentPrefix = null;
         $this->cache = null;
         $this->usageCache = null;
+        $this->package = ManagerServiceProvider::PACKAGE;
 
-        // when instantiated from the service provider, config info is not yet loaded, trying to get it here
-        // causes a problem since none of the keys are defined.
-        $this->config = null;
+        $this->config = $this->app['config'][$this->package];
+        $this->indatabase_publish = $this->getConnectionInDatabasePublish($this->default_connection);
+
+        $this->groupList = null;
+        $this->augmentedGroupList = null;
 
         $manager = $this;
         $events = \App::make('events');
-        $events->listen('router.after', function () use ($manager)
-        {
+        $events->listen('router.after', function () use ($manager) {
             $manager->saveCache();
             $manager->saveUsageCache();
         });
+    }
+
+    public
+    function getGroupList()
+    {
+        if ($this->groupList === null) {
+            // read it in
+            $groups = $this->getTranslation()->groupBy('group');
+            $excludedGroups = $this->getConfig(Manager::EXCLUDE_GROUPS_KEY);
+            if ($excludedGroups) {
+                $groups = $groups->whereNotIn('group', $excludedGroups);
+            }
+
+            $this->groupList = $groups->lists('group', 'group')->all();
+        }
+        return $this->groupList;
+    }
+
+    public
+    function getGroupAugmentedList()
+    {
+        if ($this->augmentedGroupList === null) {
+            // compute augmented list from vnd:{vendor}.{package}::group.key
+            // remove the vnd:{vendor}. and add to augmented, map it to original name
+            $groupList = $this->getGroupList();
+
+            foreach ($groupList as $group) {
+                if (starts_with($group, ["vnd:", "wbn:"])) {
+                    // we need this one
+                    $parts = explode('.', $group, 2);
+                    if (count($parts) === 2) {
+                        // if it is not included in the vendor resources
+                        if (!array_key_exists($parts[1], $groupList)) {
+                            $this->augmentedGroupList[$parts[1]] = $group;
+                        }
+                    }
+                }
+            }
+        }
+        return $this->augmentedGroupList;
     }
 
     public
@@ -85,12 +210,10 @@ class Manager
         // Version 4.2
         //if (!$this->config) $this->config = $this->app['config'][$this->package.'::config'];
 
-        if ($key === null)
-        {
+        if ($key === null) {
             return $this->config;
         }
-        if (array_key_exists($key, $this->config))
-        {
+        if (array_key_exists($key, $this->config)) {
             return $this->config[$key];
         }
         return $default;
@@ -105,15 +228,12 @@ class Manager
     public
     function cachePrefix()
     {
-        if ($this->persistentPrefix === null)
-        {
-            if (array_key_exists('persistent_prefix', $this->config()))
-            {
-                $this->persistentPrefix = $this->config()['persistent_prefix'];
+        if ($this->persistentPrefix === null) {
+            if (array_key_exists(self::PERSISTENT_PREFIX_KEY, $this->config())) {
+                $this->persistentPrefix = $this->config()[self::PERSISTENT_PREFIX_KEY];
                 $this->cacheTransKey = $this->persistentPrefix ? $this->persistentPrefix . 'translations' : '';
             }
-            else
-            {
+            else {
                 $this->persistentPrefix = '';
             }
         }
@@ -123,16 +243,12 @@ class Manager
     public
     function usageCachePrefix()
     {
-        if ($this->usageCacheTransKey == null)
-        {
-            if ($this->persistentPrefix === null)
-            {
-                if (array_key_exists('persistent_prefix', $this->config()))
-                {
-                    $this->persistentPrefix = $this->config()['persistent_prefix'];
+        if ($this->usageCacheTransKey == null) {
+            if ($this->persistentPrefix === null) {
+                if (array_key_exists(self::PERSISTENT_PREFIX_KEY, $this->config())) {
+                    $this->persistentPrefix = $this->config()[self::PERSISTENT_PREFIX_KEY];
                 }
-                else
-                {
+                else {
                     $this->persistentPrefix = '';
                 }
             }
@@ -144,9 +260,8 @@ class Manager
     public
     function cache()
     {
-        if ($this->cache === null)
-        {
-            $this->cache = $this->cachePrefix() !== '' && \Cache::has($this->cacheTransKey) ? \Cache::get($this->cacheTransKey) : [];
+        if ($this->cache === null) {
+            $this->cache = $this->cachePrefix() !== '' && $this->indatabase_publish != 0 && \Cache::has($this->cacheTransKey) ? \Cache::get($this->cacheTransKey) : [];
             $this->cacheIsDirty = $this->persistentPrefix !== '' && !\Cache::has($this->cacheTransKey);
         }
         return $this->cache;
@@ -155,8 +270,7 @@ class Manager
     public
     function usageCache()
     {
-        if ($this->usageCache === null)
-        {
+        if ($this->usageCache === null) {
             $this->usageCache = $this->usageCachePrefix() !== '' && \Cache::has($this->usageCacheTransKey) ? \Cache::get($this->usageCacheTransKey) : [];
             $this->usageCacheIsDirty = $this->persistentPrefix !== '' && !\Cache::has($this->usageCacheTransKey);
         }
@@ -166,8 +280,7 @@ class Manager
     public
     function saveCache()
     {
-        if ($this->persistentPrefix && $this->cacheIsDirty)
-        {
+        if ($this->persistentPrefix && $this->cacheIsDirty) {
             \Cache::put($this->cacheTransKey, $this->cache, 60 * 24 * 365);
             $this->cacheIsDirty = false;
         }
@@ -176,8 +289,7 @@ class Manager
     public
     function saveUsageCache()
     {
-        if ($this->persistentPrefix && $this->usageCacheIsDirty)
-        {
+        if ($this->persistentPrefix && $this->usageCacheIsDirty) {
             // we never save it in the cache, it is only in database use, otherwise every page it will save the full cache to the database
             // instead of only the accessed keys
             //\Cache::put($this->usageCacheTransKey, $this->usageCache, 60 * 24 * 365);
@@ -185,37 +297,31 @@ class Manager
             $this->usageCacheIsDirty = false;
 
             // now update the keys in the database
-            foreach ($this->usageCache as $group => $keys)
-            {
+            foreach ($this->usageCache as $group => $keys) {
                 $setKeys = "";
                 $resetKeys = "";
-                foreach ($keys as $key => $usage)
-                {
-                    if ($usage)
-                    {
+                foreach ($keys as $key => $usage) {
+                    if ($usage) {
                         if ($setKeys) $setKeys .= ',';
                         $setKeys .= "'$key'";
                     }
-                    else
-                    {
+                    else {
                         if ($resetKeys) $resetKeys .= ',';
                         $resetKeys .= "'$key'";
                     }
                 }
 
-                if ($setKeys)
-                {
-                    $this->translation->getConnection()->affectingStatement(<<<SQL
+                if ($setKeys) {
+                    $this->getConnection()->affectingStatement(<<<SQL
 UPDATE ltm_translations SET was_used = 1 WHERE was_used <> 1 AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?) AND `key` IN ($setKeys)
 SQL
-                        , [$group, 'vnd:%.'.$group, 'wbn:%.'.$group]);
+                        , [$group, 'vnd:%.' . $group, 'wbn:%.' . $group]);
                 }
-                if ($resetKeys)
-                {
-                    $this->translation->getConnection()->affectingStatement(<<<SQL
+                if ($resetKeys) {
+                    $this->getConnection()->affectingStatement(<<<SQL
 UPDATE ltm_translations SET was_used = 0 WHERE was_used <> 0 AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?) AND `key` IN ($resetKeys)
 SQL
-                        , [$group, 'vnd:%.'.$group, 'wbn:%.'.$group]);
+                        , [$group, 'vnd:%.' . $group, 'wbn:%.' . $group]);
                 }
             }
         }
@@ -224,19 +330,15 @@ SQL
     public
     function clearCache($groups = null)
     {
-        if (!$groups || $groups === '*')
-        {
+        if (!$groups || $groups === '*') {
             $this->cache = [];
             $this->cacheIsDirty = !!$this->persistentPrefix;
         }
-        elseif ($this->cache())
-        {
+        elseif ($this->cache()) {
             if (!is_array($groups)) $groups = [$groups];
 
-            foreach ($groups as $group)
-            {
-                if (array_key_exists($group, $this->cache))
-                {
+            foreach ($groups as $group) {
+                if (array_key_exists($group, $this->cache)) {
                     unset($this->cache[$group]);
                     $this->cacheIsDirty = !!$this->persistentPrefix;
                 }
@@ -247,40 +349,34 @@ SQL
     public
     function clearUsageCache($clearDatabase, $groups = null)
     {
-        if (!$groups || $groups === '*')
-        {
+        if (!$groups || $groups === '*') {
             $this->usageCache();
             $this->usageCache = [];
             $this->usageCacheIsDirty = true;
             $this->saveUsageCache();
 
-            if ($clearDatabase)
-            {
-                $this->translation->getConnection()->affectingStatement(<<<SQL
+            if ($clearDatabase) {
+                $this->getConnection()->affectingStatement(<<<SQL
 UPDATE ltm_translations SET was_used = 0 WHERE was_used <> 0
 SQL
                 );
             }
         }
-        elseif ($this->usageCache())
-        {
+        elseif ($this->usageCache()) {
             $this->usageCache();
             if (!is_array($groups)) $groups = [$groups];
 
-            foreach ($groups as $group)
-            {
-                if (array_key_exists($group, $this->usageCache))
-                {
+            foreach ($groups as $group) {
+                if (array_key_exists($group, $this->usageCache)) {
                     unset($this->usageCache[$group]);
                     $this->usageCacheIsDirty = !!$this->persistentPrefix;
                 }
 
-                if ($clearDatabase)
-                {
-                    $this->translation->getConnection()->affectingStatement(<<<SQL
+                if ($clearDatabase) {
+                    $this->getConnection()->affectingStatement(<<<SQL
 UPDATE ltm_translations SET was_used = 0 WHERE was_used <> 0 AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?)
 SQL
-                        , [$group, 'vnd:%.'.$group, 'wbn:%.'.$group]);
+                        , [$group, 'vnd:%.' . $group, 'wbn:%.' . $group]);
                 }
             }
 
@@ -304,13 +400,11 @@ SQL
     function groupKeyList($key)
     {
         $key = explode('.', $key, 2);
-        if (count($key) > 1)
-        {
+        if (count($key) > 1) {
             $group = $key[0];
             $key = $key[1];
         }
-        else
-        {
+        else {
             $group = '';
             $key = $key[0];
         }
@@ -322,8 +416,7 @@ SQL
     {
         list($group, $transKey) = self::groupKeyList($key);
 
-        if ($group)
-        {
+        if ($group) {
             if (!array_key_exists($group, $this->cache())) $this->cache[$group] = [];
             $this->cache[$group][$this->cacheKey($transKey, $locale)] = $value;
             $this->cacheIsDirty = $this->persistentPrefix !== '';
@@ -344,8 +437,7 @@ SQL
     {
         list($group, $transKey) = self::groupKeyList($key);
 
-        if ($group)
-        {
+        if ($group) {
             if (!array_key_exists($group, $this->usageCache())) $this->usageCache[$group] = [];
             $this->usageCache[$group][$this->usageCacheKey($transKey, $locale)] = $value;
             $this->usageCacheIsDirty = $this->persistentPrefix !== '';
@@ -364,7 +456,7 @@ SQL
     public
     function excludedPageEditGroup($group)
     {
-        return in_array($group, $this->config()['exclude_page_edit_groups']);
+        return in_array($group, $this->config()[self::EXCLUDE_PAGE_EDIT_GROUPS_KEY]);
     }
 
     /**
@@ -381,37 +473,38 @@ SQL
     public
     function missingKey($namespace, $group, $key, $locale = null, $useLottery = false, $findOrNew = false)
     {
-        if ($this->config()['log_missing_keys'])
-        {
-            $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
+        $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
+        if ($this->config()[self::LOG_MISSING_KEYS_KEY]) {
 
-            if (!in_array($group, $this->config()['exclude_groups']))
-            {
+            if (!in_array($group, $this->config()[self::EXCLUDE_GROUPS_KEY])) {
                 $lottery = 1;
-                if ($useLottery && $this->config()['missing_keys_lottery'] !== 1)
-                {
-                    $lottery = \Session::get($this->config()['persistent_prefix'] . 'lottery', '');
-                    if ($lottery === '')
-                    {
-                        $lottery = rand(1, $this->config()['missing_keys_lottery']);
-                        \Session::put($this->config()['persistent_prefix'] . 'lottery', $lottery);
+                if ($useLottery && $this->config()[self::MISSING_KEYS_LOTTERY_KEY] !== 1) {
+                    $lottery = \Session::get($this->config()[self::PERSISTENT_PREFIX_KEY] . self::LOTTERY_PERSISTENT_SUFFIX, '');
+                    if ($lottery === '') {
+                        $lottery = rand(1, $this->config()[self::MISSING_KEYS_LOTTERY_KEY]);
+                        \Session::put($this->config()[self::PERSISTENT_PREFIX_KEY] . self::LOTTERY_PERSISTENT_SUFFIX, $lottery);
                     }
                 }
 
-                if ($lottery === 1)
-                {
+                if ($lottery === 1) {
+                    // here need to map a local group to wbn: or vnd: package if the local file does not already exist so that
+                    // new keys will be added to the appropriate package
+                    $augmentedGroupList = $this->getGroupAugmentedList();
+                    if (array_key_exists($group, $augmentedGroupList)) {
+                        $group = $augmentedGroupList[$group];
+                    }
+
                     $locale = $locale ?: $this->app['config']['app.locale'];
-                    if ($findOrNew)
-                    {
-                        $translation = Translation::firstOrNew(array(
+
+                    if ($findOrNew) {
+                        $translation = $this->translation->firstOrNew(array(
                             'locale' => $locale,
                             'group' => $group,
                             'key' => $key,
                         ));
                     }
-                    else
-                    {
-                        $translation = Translation::firstOrCreate(array(
+                    else {
+                        $translation = $this->translation->firstOrCreate(array(
                             'locale' => $locale,
                             'group' => $group,
                             'key' => $key,
@@ -439,25 +532,20 @@ SQL
     public
     function usingKey($namespace, $group, $key, $locale = null, $useLottery = false)
     {
-        if ($this->config()['log_key_usage_info'])
-        {
+        if ($this->config()[self::LOG_KEY_USAGE_INFO_KEY]) {
             $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
 
-            if (!in_array($group, $this->config()['exclude_groups']))
-            {
+            if (!in_array($group, $this->config()[self::EXCLUDE_GROUPS_KEY])) {
                 $lottery = 1;
-                if ($useLottery && $this->config()['missing_keys_lottery'] !== 1)
-                {
-                    $lottery = \Session::get($this->config()['persistent_prefix'] . 'lottery', '');
-                    if ($lottery === '')
-                    {
-                        $lottery = rand(1, $this->config()['missing_keys_lottery']);
-                        \Session::put($this->config()['persistent_prefix'] . 'lottery', $lottery);
+                if ($useLottery && $this->config()[self::MISSING_KEYS_LOTTERY_KEY] !== 1) {
+                    $lottery = \Session::get($this->config()[self::PERSISTENT_PREFIX_KEY] . self::LOTTERY_PERSISTENT_SUFFIX, '');
+                    if ($lottery === '') {
+                        $lottery = rand(1, $this->config()[self::MISSING_KEYS_LOTTERY_KEY]);
+                        \Session::put($this->config()[self::PERSISTENT_PREFIX_KEY] . self::LOTTERY_PERSISTENT_SUFFIX, $lottery);
                     }
                 }
 
-                if ($lottery === 1)
-                {
+                if ($lottery === 1) {
                     $locale = $locale ?: $this->app['config']['app.locale'];
                     $this->cacheUsageInfo($group . '.' . $key, 1, $locale);
                 }
@@ -474,41 +562,42 @@ SQL
     protected
     function importTranslationFile($locale, $db_group, $translations, $replace)
     {
+        $connectionName = $this->getConnectionName();
         $dbTranslations = $this->translation->hydrateRaw(<<<SQL
 SELECT * FROM ltm_translations WHERE locale = ? AND `group` = ?
 
 SQL
-            , [$locale, $db_group]);
+            , [$locale, $db_group], $connectionName);
 
+        $timeStamp = 'now()';
         $dbTransMap = [];
-        $dbTranslations->each(function ($trans) use (&$dbTransMap)
-        {
+        $dbTranslations->each(function ($trans) use (&$dbTransMap, $connectionName) {
             $dbTransMap[$trans->key] = $trans;
         });
 
-        foreach ($translations as $key => $value)
-        {
+        $values = [];
+
+        foreach ($translations as $key => $value) {
             $value = (string)$value;
 
-            if (array_key_exists($key, $dbTransMap))
-            {
+            if (array_key_exists($key, $dbTransMap)) {
                 $translation = $dbTransMap[$key];
                 unset($dbTransMap[$key]);
             }
-            else
-            {
+            else {
                 $translation = new Translation(array(
                     'locale' => $locale,
                     'group' => $db_group,
                     'key' => $key,
                 ));
+
+                $translation->setConnection($connectionName);
             }
 
             // Importing from the source, status is always saved. When it is changed by the user, then it is changed.
             //$newStatus = ($translation->value === $value || !$translation->exists) ? Translation::STATUS_SAVED : Translation::STATUS_CHANGED;
             // Only replace when empty, or explicitly told so
-            if ($replace || !$translation->value)
-            {
+            if ($replace || !$translation->value) {
                 $translation->value = $value;
             }
 
@@ -517,29 +606,66 @@ SQL
 
             $newStatus = ($translation->value === $translation->saved_value ? Translation::STATUS_SAVED : ($translation->status === Translation::STATUS_SAVED ? Translation::STATUS_SAVED_CACHED : Translation::STATUS_CHANGED));
 
-            if ($newStatus !== (int)$translation->status)
-            {
+            if ($newStatus !== (int)$translation->status) {
                 $translation->status = $newStatus;
             }
 
-            if (!$translation->exists || $translation->isDirty())
-            {
+            if (!$translation->exists) {
+                $sql = '(' .
+                    self::dbValue($translation->status, Translation::STATUS_SAVED) . ',' .
+                    self::dbValue($translation->locale) . ',' .
+                    self::dbValue($translation->group) . ',' .
+                    self::dbValue($translation->key) . ',' .
+                    self::dbValue($translation->value) . ',' .
+                    self::dbValue($translation->created_at, $timeStamp) . ',' .
+                    self::dbValue($translation->updated_at, $timeStamp) . ',' .
+                    self::dbValue($translation->source) . ',' .
+                    self::dbValue($translation->saved_value) . ',' .
+                    self::dbValue($translation->is_deleted, 0) . ',' .
+                    self::dbValue($translation->was_used, 0) .
+                    ')';
+
+                $values[] = $sql;
+            }
+            else if ($translation->isDirty()) {
                 $translation->save();
             }
 
             $this->imported++;
         }
 
+        //$sql = "INSERT INTO `ltm_translations`(status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used) VALUES ";
+
         // now process all the new translations that are not in the files
-        foreach ($dbTransMap as $translation)
-        {
+        // batch them into a multi-row insert
+        foreach ($dbTransMap as $translation) {
             // mark it as saved cached or changed
-            if (((int)$translation->status) === Translation::STATUS_SAVED)
-            {
+            if (((int)$translation->status) === Translation::STATUS_SAVED) {
                 $translation->status = Translation::STATUS_SAVED_CACHED;
                 $translation->save();
             }
         }
+
+        if ($values) {
+            $sql = "INS" . "ERT INTO `ltm_translations`(status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used) VALUES " . implode(",", $values);
+
+            //$this->getConnection()->unprepared('LOCK TABLES `ltm_translations` WRITE');
+            try {
+                $this->getConnection()->unprepared($sql);
+            } catch (\Exception $e) {
+                $tmp = 0;
+            }
+            //$this->getConnection()->unprepared('UNLOCK TABLES');
+        }
+    }
+
+    protected static
+    function dbValue($value, $nullValue = 'NULL')
+    {
+        if ($value === null) return $nullValue;
+        if (is_string($value)) return '\'' . str_replace('\'', '\'\'', $value) . '\'';
+        if (is_bool($value)) return $value ? 1 : 0;
+        return $value;
     }
 
     public
@@ -555,17 +681,14 @@ SQL
         //$pathTemplateResolver = new PathTemplateResolver($this->files, base_path(), $this->config()['language_dirs'], '4');
         $langFiles = $pathTemplateResolver->langFileList();
 
-        if ($groups !== null)
-        {
+        if ($groups !== null) {
             // now we can filter to the list of given groups or
             $files = [];
             if (!is_array($groups)) $groups = array($groups);
             $groups = array_combine($groups, $groups);
 
-            foreach ($langFiles as $file => $values)
-            {
-                if (array_key_exists($values['{db_group}'], $groups))
-                {
+            foreach ($langFiles as $file => $values) {
+                if (array_key_exists($values['{db_group}'], $groups)) {
                     $files[$file] = $values;
                 }
             }
@@ -573,12 +696,11 @@ SQL
             $langFiles = $files;
         }
 
-        foreach ($langFiles as $langFile => $vars)
-        {
+        foreach ($langFiles as $langFile => $vars) {
             $locale = $vars['{locale}'];
             $db_group = $vars['{db_group}'];
 
-            if (in_array($db_group, $this->config()['exclude_groups'])) continue;
+            if (in_array($db_group, $this->config()[self::EXCLUDE_GROUPS_KEY])) continue;
             $translations = array_dot(include($langFile));
             $this->importTranslationFile($locale, $db_group, $translations, $replace);
         }
@@ -617,14 +739,11 @@ SQL
         $finder->in($path)->exclude('storage')->name('*.php')->name('*.twig')->files();
 
         /** @var \Symfony\Component\Finder\SplFileInfo $file */
-        foreach ($finder as $file)
-        {
+        foreach ($finder as $file) {
             // Search the current file for the pattern
-            if (preg_match_all("/$pattern/siU", $file->getContents(), $matches))
-            {
+            if (preg_match_all("/$pattern/siU", $file->getContents(), $matches)) {
                 // Get all matches
-                foreach ($matches[2] as $key)
-                {
+                foreach ($matches[2] as $key) {
                     $keys[] = $key;
                 }
             }
@@ -633,8 +752,7 @@ SQL
         $keys = array_unique($keys);
 
         // Add the translations to the database, if not existing.
-        foreach ($keys as $key)
-        {
+        foreach ($keys as $key) {
             // Split the group and item
             list($group, $item) = explode('.', $key, 2);
             $this->missingKey('', $group, $item);
@@ -654,17 +772,12 @@ SQL
         $dirpath = "/";
 
         // Build path and create dirrectories if needed
-        foreach ($directories as $directory)
-        {
+        foreach ($directories as $directory) {
             $dirpath .= $directory . "/";
-            if (!$this->files->exists($dirpath))
-            {
-                try
-                {
+            if (!$this->files->exists($dirpath)) {
+                try {
                     $this->files->makeDirectory($dirpath);
-                }
-                catch (Exception $e)
-                {
+                } catch (Exception $e) {
                     $this->errors[] = $e->getMessage() . " for $dirpath";
                 }
             }
@@ -689,21 +802,17 @@ SQL
         // TODO: clean up this recursion crap
         if (!$recursing) $this->clearErrors();
 
-        if ($group && $group !== '*')
-        {
-            $this->translation->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE is_deleted = 1");
+        if ($group && $group !== '*') {
+            $this->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE is_deleted = 1");
         }
-        elseif (!$recursing)
-        {
-            $this->translation->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE is_deleted = 1 AND `group` = ?", [$group]);
+        elseif (!$recursing) {
+            $this->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE is_deleted = 1 AND `group` = ?", [$group]);
         }
 
         $inDatabasePublishing = $this->inDatabasePublishing();
-        if ($inDatabasePublishing < 3 && $inDatabasePublishing && ($inDatabasePublishing < 2 || !$recursing))
-        {
-            if ($group && $group !== '*')
-            {
-                $this->translation->getConnection()->affectingStatement(<<<SQL
+        if ($inDatabasePublishing < 3 && $inDatabasePublishing && ($inDatabasePublishing < 2 || !$recursing)) {
+            if ($group && $group !== '*') {
+                $this->getConnection()->affectingStatement(<<<SQL
 UPDATE ltm_translations SET saved_value = value, status = ? WHERE (saved_value <> value || status <> ?) AND `group` = ?
 SQL
                     , [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED, $group]);
@@ -715,9 +824,8 @@ SQL
                     'saved_value'
                 ]);
             }
-            else
-            {
-                $this->translation->getConnection()->affectingStatement(<<<SQL
+            else {
+                $this->getConnection()->affectingStatement(<<<SQL
 UPDATE ltm_translations SET saved_value = value, status = ? WHERE (saved_value <> value || status <> ?)
 SQL
                     , [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED]);
@@ -732,25 +840,21 @@ SQL
             /* @var $translations Collection */
             $this->clearCache($group);
             $this->clearUsageCache(false, $group);
-            $translations->each(function ($tr)
-            {
+            $translations->each(function ($tr) {
                 $this->cacheTranslation($tr->group . '.' . $tr->key, $tr->saved_value, $tr->locale);
             });
         }
 
-        if (!$inDatabasePublishing || $inDatabasePublishing === 2 || $inDatabasePublishing === 3)
-        {
-            if (!in_array($group, $this->config()['exclude_groups']))
-            {
+        if (!$inDatabasePublishing || $inDatabasePublishing === 2 || $inDatabasePublishing === 3) {
+            if (!in_array($group, $this->config()[self::EXCLUDE_GROUPS_KEY])) {
                 if ($group == '*') $this->exportAllTranslations(1);
 
-                if ($inDatabasePublishing !== 3)
-                {
+                if ($inDatabasePublishing !== 3) {
                     $this->clearCache($group);
                     $this->clearUsageCache(false, $group);
                 }
 
-                $tree = $this->makeTree(Translation::where('group', $group)->whereNotNull('value')->orderby('key')->get());
+                $tree = $this->makeTree($this->translation->where('group', $group)->whereNotNull('value')->orderby('key')->get());
                 $configRewriter = new TranslationFileRewriter();
                 $exportOptions = array_key_exists('export_format', $this->config()) ? TranslationFileRewriter::optionFlags($this->config()['export_format']) : null;
 
@@ -765,40 +869,31 @@ SQL
 
                 if (mb_substr($zipRoot, -1) === '/') $zipRoot = substr($zipRoot, 0, -1);
 
-                foreach ($tree as $locale => $groups)
-                {
-                    if (isset($groups[$group]))
-                    {
+                foreach ($tree as $locale => $groups) {
+                    if (isset($groups[$group])) {
                         $translations = $groups[$group];
 
                         // use the new path mapping
                         $computedPath = $base_path . $pathTemplateResolver->groupFilePath($group, $locale);
                         $path = $computedPath;
 
-                        if ($path)
-                        {
+                        if ($path) {
                             $configRewriter->parseSource($this->files->exists($path) ? $this->files->get($path) : '');
                             $output = $configRewriter->formatForExport($translations, $exportOptions);
 
-                            if ($this->zipExporting)
-                            {
+                            if ($this->zipExporting) {
                                 $pathPrefix = mb_substr($path, 0, mb_strlen($zipRoot));
                                 $filePathName = ($pathPrefix === $zipRoot) ? mb_substr($path, mb_strlen($zipRoot)) : $path;
                                 //$this->makeDirPath($filePathName);
                                 $this->zipExporting->addFromString($filePathName, $output);
                             }
-                            else
-                            {
-                                try
-                                {
+                            else {
+                                try {
                                     $this->makeDirPath($path);
-                                    if (($result = $this->files->put($path, $output)) === false)
-                                    {
+                                    if (($result = $this->files->put($path, $output)) === false) {
                                         $this->errors[] = "Failed to write to $path";
                                     };
-                                }
-                                catch (Exception $e)
-                                {
+                                } catch (Exception $e) {
                                     $this->errors[] = $e->getMessage();
                                 }
                             }
@@ -806,9 +901,8 @@ SQL
                     }
                 }
 
-                if (!$inDatabasePublishing)
-                {
-                    Translation::where('group', $group)->update(array(
+                if (!$inDatabasePublishing) {
+                    $this->translation->where('group', $group)->update(array(
                         'status' => Translation::STATUS_SAVED,
                         'saved_value' => (new Expression('value'))
                     ));
@@ -820,12 +914,11 @@ SQL
     public
     function exportAllTranslations($recursing = 0)
     {
-        $groups = Translation::whereNotNull('value')->select(DB::raw('DISTINCT `group`'))->get('group');
+        $groups = $this->translation->whereNotNull('value')->select(DB::raw('DISTINCT `group`'))->get('group');
         $this->clearCache();
         $this->clearUsageCache(false);
 
-        foreach ($groups as $group)
-        {
+        foreach ($groups as $group) {
             $this->exportTranslations($group->group, $recursing);
         }
     }
@@ -837,27 +930,21 @@ SQL
         $this->zipExporting = new ZipArchive();
         $this->zipExporting->open($zip_name, ZipArchive::OVERWRITE);
 
-        if (!is_array($groups))
-        {
-            if ($groups === '*')
-            {
-                $groups = Translation::whereNotNull('value')->select(DB::raw('DISTINCT `group`'))->get('group');
-                foreach ($groups as $group)
-                {
+        if (!is_array($groups)) {
+            if ($groups === '*') {
+                $groups = $this->translation->whereNotNull('value')->select(DB::raw('DISTINCT `group`'))->get('group');
+                foreach ($groups as $group) {
                     // Stuff with content
                     $this->exportTranslations($group->group, 0);
                 }
             }
-            else
-            {
+            else {
                 // Stuff with content
                 $this->exportTranslations($groups, 0);
             }
         }
-        else
-        {
-            foreach ($groups as $group)
-            {
+        else {
+            foreach ($groups as $group) {
                 // Stuff with content
                 $this->exportTranslations($group, 0);
             }
@@ -872,19 +959,17 @@ SQL
     public
     function cleanTranslations()
     {
-        Translation::whereNull('value')->delete();
+        $this->translation->whereNull('value')->delete();
     }
 
     public
     function truncateTranslations($group = '*')
     {
-        if ($group === '*')
-        {
-            Translation::truncate();
+        if ($group === '*') {
+            $this->translation->truncate();
         }
-        else
-        {
-            $this->translation->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE `group` = ?", [$group]);
+        else {
+            $this->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE `group` = ?", [$group]);
         }
     }
 
@@ -892,8 +977,7 @@ SQL
     function makeTree($translations)
     {
         $array = array();
-        foreach ($translations as $translation)
-        {
+        foreach ($translations as $translation) {
             array_set($array[$translation->locale][$translation->group], $translation->key, $translation->value);
         }
         return $array;
@@ -902,23 +986,12 @@ SQL
     public
     function getConfig($key = null, $default = null)
     {
-        if ($key == null)
-        {
+        if ($key == null) {
             return $this->config();
         }
-        else
-        {
+        else {
             return $this->config($key, $default);
         }
-    }
-
-    /**
-     * @return bool
-     */
-    public
-    function inDatabasePublishing()
-    {
-        return $this->zipExporting ? 3 : (array_key_exists('indatabase_publish', $this->config()) ? (int)$this->config['indatabase_publish'] : 0);
     }
 
 }

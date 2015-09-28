@@ -32,8 +32,6 @@ class ManagerServiceProvider extends ServiceProvider
         {
             /* @var $manager \Vsch\TranslationManager\Manager */
             $manager = $app->make('Vsch\TranslationManager\Manager');
-            $manager->packageName(self::PACKAGE);
-
             return $manager;
         });
 

@@ -14,6 +14,15 @@ var xtranslateText;
 var xtranslateService;
 
 jQuery(document).ready(function ($) {
+    $.ajaxPrefilter(function (options) {
+        if (!options.crossDomain) {
+            options.headers = {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            };
+            //window.console.log('Injected CSRF: ' + $('meta[name="csrf-token"]').attr('content'));
+        }
+    });
+
     $('.group-select').on('change', function () {
         var group = $(this).val();
         if (group) {
@@ -21,6 +30,18 @@ jQuery(document).ready(function ($) {
         } else {
             window.location.href = URL_TRANSLATOR_ALL;
         }
+    });
+
+    $.ajax({
+        type: 'POST',
+        url: URL_YANDEX_TRANSLATOR_KEY,
+        data: {},
+        success: function (json) {
+            if (json.status === 'ok') {
+                YANDEX_TRANSLATOR_KEY = json.yandex_key;
+            }
+        },
+        encode: true
     });
 
     $('a.delete-key').on('ajax:success', function (e, data) {
@@ -39,23 +60,35 @@ jQuery(document).ready(function ($) {
         row.find("a.delete-key").first().removeClass("hidden");
     });
 
-    $('.form-import').on('ajax:success', function (e, data) {
-        var elem = $('div.success-import-group');
-        elem.html(elem.html().replace(/:count\b/, data.counter));
-        elem.closest('div.alert').slideDown();
-    });
+    var successReporter = function (suffix) {
+        var elem = $('div.success-' + suffix);
+        var originalHtml = elem.html();
+        $('.form-' + suffix).on('ajax:success', function (e, data) {
+            elem.html(originalHtml.replace(/:count\b/, data.counter));
+            elem.closest('div.alert').slideDown();
+        });
+    };
 
-    $('.form-import-all').on('ajax:success', function (e, data) {
-        var elem = $('div.success-import-all');
-        elem.html(elem.html().replace(/:count\b/, data.counter));
-        elem.closest('div.alert').slideDown();
-    });
+    successReporter('import-group');
+    //$('.form-import-group').on('ajax:success', function (e, data) {
+    //    var elem = $('div.success-import-group');
+    //    elem.html(elem.html().replace(/:count\b/, data.counter));
+    //    elem.closest('div.alert').slideDown();
+    //});
 
-    $('.form-find').on('ajax:success', function (e, data) {
-        var elem = $('div.success-find');
-        elem.html(elem.html().replace(/:count\b/, data.counter));
-        elem.closest('div.alert').slideDown();
-    });
+    successReporter('import-all');
+    //$('.form-import-all').on('ajax:success', function (e, data) {
+    //    var elem = $('div.success-import-all');
+    //    elem.html(elem.html().replace(/:count\b/, data.counter));
+    //    elem.closest('div.alert').slideDown();
+    //});
+
+    successReporter('find');
+    //$('.form-find').on('ajax:success', function (e, data) {
+    //    var elem = $('div.success-find');
+    //    elem.html(elem.html().replace(/:count\b/, data.counter));
+    //    elem.closest('div.alert').slideDown();
+    //});
 
     $('.form-publish-group').on('ajax:success', function (e, data) {
         if (data.status === 'errors') {
@@ -125,6 +158,10 @@ jQuery(document).ready(function ($) {
         });
     });
 
+    $('#db-connection').on('change', function () {
+        $('#form-interface-locale')[0].submit();
+    });
+
     $('#interface-locale').on('change', function () {
         $('#form-interface-locale')[0].submit();
     });
@@ -145,6 +182,40 @@ jQuery(document).ready(function ($) {
     $('#display-locale-none').on('click', function (e) {
         e.preventDefault();
         $('.display-locale').prop('checked', false);
+    });
+
+    $('#show-all').on('click', function (e) {
+        //e.preventDefault();
+        var table = $('#translations');
+        table.find('tr').removeClass('hidden');
+    });
+
+    $('#show-empty').on('click', function (e) {
+        //e.preventDefault();
+        var table = $('#translations').find('tbody').first();
+        table.find('tr').addClass('hidden');
+        table.find('tr.has-empty-translation').removeClass('hidden');
+    });
+
+    $('#show-nonempty').on('click', function (e) {
+        //e.preventDefault();
+        var table = $('#translations').find('tbody').first();
+        table.find('tr').addClass('hidden');
+        table.find('tr.has-nonempty-translation').removeClass('hidden');
+    });
+
+    $('#show-deleted').on('click', function (e) {
+        //e.preventDefault();
+        var table = $('#translations').find('tbody').first();
+        table.find('tr').addClass('hidden');
+        table.find('tr.deleted-translation').removeClass('hidden');
+    });
+
+    $('#show-changed').on('click', function (e) {
+        //e.preventDefault();
+        var table = $('#translations').find('tbody').first();
+        table.find('tr').addClass('hidden');
+        table.find('tr.has-changed-translation').removeClass('hidden');
     });
 
     $('div.alert-hideable').each(function () {
