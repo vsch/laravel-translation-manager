@@ -14,15 +14,6 @@ var xtranslateText;
 var xtranslateService;
 
 jQuery(document).ready(function ($) {
-    $.ajaxPrefilter(function (options) {
-        if (!options.crossDomain) {
-            options.headers = {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            };
-            //window.console.log('Injected CSRF: ' + $('meta[name="csrf-token"]').attr('content'));
-        }
-    });
-
     $('.group-select').on('change', function () {
         var group = $(this).val();
         if (group) {
@@ -30,18 +21,6 @@ jQuery(document).ready(function ($) {
         } else {
             window.location.href = URL_TRANSLATOR_ALL;
         }
-    });
-
-    $.ajax({
-        type: 'POST',
-        url: URL_YANDEX_TRANSLATOR_KEY,
-        data: {},
-        success: function (json) {
-            if (json.status === 'ok') {
-                YANDEX_TRANSLATOR_KEY = json.yandex_key;
-            }
-        },
-        encode: true
     });
 
     $('a.delete-key').on('ajax:success', function (e, data) {
