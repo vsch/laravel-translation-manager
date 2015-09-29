@@ -13,4 +13,5 @@
 - add batch insert mode for new translations. Uses insert into with a list of values instead of invoking db connection for each one. Speeds up imports of new translations and initial import significantly, especially for remote database connections.
 - add now missing translation keys for packages from vendor and workbench directories will have these keys added to the appropriate vendor/workbench group if there are no translations for the package in the project. Makes working on code in workbench and vendor directories that references a new translation easier. Previously the new key would be created under the package name but in the project space instead of the vendor/workbench (ie. vnd: or wbn: prefixed group) name space.
 - add buttons to filter translation rows: show all, show non-empty, show empty, show changed, show deleted
-
+- fix indatabase_publish was not working since usage tracking was added.
+- add auto translate buttons to all locale column headers not just the translating locale.

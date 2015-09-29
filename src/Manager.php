@@ -231,11 +231,13 @@ class Manager
         if ($this->persistentPrefix === null) {
             if (array_key_exists(self::PERSISTENT_PREFIX_KEY, $this->config())) {
                 $this->persistentPrefix = $this->config()[self::PERSISTENT_PREFIX_KEY];
-                $this->cacheTransKey = $this->persistentPrefix ? $this->persistentPrefix . 'translations' : '';
             }
             else {
                 $this->persistentPrefix = '';
             }
+        }
+        elseif ($this->cacheTransKey == null) {
+            $this->cacheTransKey = $this->persistentPrefix ? $this->persistentPrefix . 'translations' : '';
         }
         return $this->persistentPrefix;
     }
@@ -244,14 +246,7 @@ class Manager
     function usageCachePrefix()
     {
         if ($this->usageCacheTransKey == null) {
-            if ($this->persistentPrefix === null) {
-                if (array_key_exists(self::PERSISTENT_PREFIX_KEY, $this->config())) {
-                    $this->persistentPrefix = $this->config()[self::PERSISTENT_PREFIX_KEY];
-                }
-                else {
-                    $this->persistentPrefix = '';
-                }
-            }
+            $this->cachePrefix();
             $this->usageCacheTransKey = $this->persistentPrefix ? $this->persistentPrefix . 'usage_info' : '';
         }
         return $this->persistentPrefix;

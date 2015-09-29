@@ -662,7 +662,7 @@
                             <?php if($adminEnabled): ?>
                             <th width="1%">&nbsp;</th>
                             <?php endif; ?>
-                            <th width="20%">@lang($package . '::messages.key')</th>
+                            <th width="15%">@lang($package . '::messages.key')</th>
                             <?php
                                 $setWidth = count($displayLocales);
                                 if ($setWidth > 3) {
@@ -670,7 +670,7 @@
                                 }
                                 else
                                 {
-                                    $mainWidth = 40;
+                                    $mainWidth = 32;
                                 }
                                 $col = 0;
                             ?>
@@ -689,14 +689,20 @@
                             <th width="<?=$mainWidth?>%"><?= $locale ?>&nbsp;
                                 <?= ifEditTrans($package . '::messages.auto-translate-disabled') ?>
                                 <?= ifEditTrans($package . '::messages.auto-translate') ?>
-                                <a class="btn btn-xs btn-primary" id="auto-translate" role="button"
+                                <a class="btn btn-xs btn-primary auto-translate" role="button" data-trans="<?=$col?>" data-locale="<?=$locale?>"
                                         data-disable-with="<?=noEditTrans($package . '::messages.auto-translate-disabled')?>"
                                         href="#') ?>"><?= noEditTrans($package . '::messages.auto-translate') ?></a>
                             </th>
                                 <?php else: ?>
                             <th width="<?=$mainWidth?>%"><?= $locale ?></th><?php endif;?>
                             <?php else: ?>
-                            <th><?= $locale ?></th>
+                            <th><?= $locale ?>
+                                <?= ifEditTrans($package . '::messages.auto-translate-disabled') ?>
+                                <?= ifEditTrans($package . '::messages.auto-translate') ?>
+                                <a class="btn btn-xs btn-primary auto-translate" role="button" data-trans="<?=$col?>" data-locale="<?=$locale?>"
+                                        data-disable-with="<?=noEditTrans($package . '::messages.auto-translate-disabled')?>"
+                                        href="#') ?>"><?= noEditTrans($package . '::messages.auto-translate') ?></a>
+                            </th>
                                 <?php endif;
                                 $col++; ?>
                             <?php endforeach; ?>
@@ -761,7 +767,7 @@
                             <?php foreach($locales as $locale): ?>
                             <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
                             <?php $t = isset($translation[$locale]) ? $translation[$locale] : null ?>
-                            <td <?= $locale === $translatingLocale ? 'class="auto-translatable"' : ($locale === $primaryLocale ? 'class="auto-fillable"' : '') ?>>
+                            <td <?= $locale !== $primaryLocale ? 'class="auto-translatable-'. $locale . '"' :  ($locale === $primaryLocale ? 'class="auto-fillable"' : '') ?>>
                                 <?= $translator->inPlaceEditLink(!$t ? $t : ($t->value == '' ? null : $t), true, "$group.$key", $locale, null, $group) ?>
                             </td>
                             <?php endforeach; ?>

@@ -73,7 +73,7 @@ jQuery(document).ready(function ($) {
         if (data.status === 'errors') {
             var elem = $('div.errors-alert'),
                 errors = data.errors;
-            elem.html("<p>"+errors.join("</p>\n<p>") + "</p>\n");
+            elem.html("<p>" + errors.join("</p>\n<p>") + "</p>\n");
             elem.closest('div.alert').slideDown();
         }
         else {
@@ -86,7 +86,7 @@ jQuery(document).ready(function ($) {
         if (data.status === 'errors') {
             var elem = $('div.errors-alert'),
                 errors = data.errors;
-            elem.html("<p>"+errors.join("</p>\n<p>") + "</p>\n");
+            elem.html("<p>" + errors.join("</p>\n<p>") + "</p>\n");
             elem.closest('div.alert').slideDown();
         }
         else {
@@ -274,40 +274,48 @@ jQuery(document).ready(function ($) {
         }
     }
 
-    var elemAutoTrans = $('#auto-translate');
-    elemAutoTrans.on('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var autoTranslate = [];
+    var elemAutoTrans = $('.btn.auto-translate');
 
-        // step through all the definitions in the second column and auto translate empty ones
-        // here we make a log of assumptons about where the data is.
-        // we assume that the source is the child element immediately preceeding this one and it is a <td> containing
-        // <a> containing the source text
-        $(".auto-translatable").each(function () {
-            var row = $(this).parent().find('.vsch_editable');
-            if (row.length > 1) {
-                var srcElem = $(row[0]),
-                    dstElem = $(row[1]);
+    elemAutoTrans.each(function () {
+        var colNum = $(this).data('trans');
+        var dstLoc = $(this).data('locale');
+        var btnElem = $(this);
 
-                if (dstElem.length && srcElem.length) {
-                    if (dstElem.hasClass('editable-empty') && !srcElem.hasClass('editable-empty')) {
-                        autoTranslate.push({
-                            srcText: srcElem.text(),
-                            dataUrl: dstElem.data('url'),
-                            dataName: dstElem.data('name'),
-                            dstElem: dstElem
-                        });
+        btnElem.on('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var autoTranslate = [];
+
+            // step through all the definitions in the second column and auto translate empty ones
+            // here we make a log of assumptions about where the data is.
+            // we assume that the source is the child element immediately preceding this one and it is a <td> containing
+            // <a> containing the source text
+            $(".auto-translatable-" + dstLoc).each(function () {
+                var row = $(this).parent().find('.vsch_editable');
+                if (row.length > 1) {
+                    var srcElem = $(row[0]),
+                        dstElem = $(row[colNum]);
+
+                    if (dstElem.length && srcElem.length) {
+                        if (dstElem.hasClass('editable-empty') && !srcElem.hasClass('editable-empty')) {
+                            autoTranslate.push({
+                                srcText: srcElem.text(),
+                                dataUrl: dstElem.data('url'),
+                                dataName: dstElem.data('name'),
+                                dstElem: dstElem
+                            });
+                        }
                     }
                 }
-            }
-        });
-
-        (function (fromLoc, toLoc, elemButton) {
-            postTranslationValues(autoTranslate, elemButton, function (text, storeText) {
-                xtranslateText(xtranslateService, fromLoc, text, toLoc, storeText);
             });
-        })(PRIMARY_LOCALE, TRANSLATING_LOCALE, elemAutoTrans);
+
+            (function (fromLoc, toLoc, btnElem) {
+                postTranslationValues(autoTranslate, btnElem, function (text, storeText) {
+                    xtranslateText(xtranslateService, fromLoc, text, toLoc, storeText);
+                });
+            })(PRIMARY_LOCALE, dstLoc, btnElem);
+
+        });
     });
 
     var elemAutoFill = $('#auto-fill');
