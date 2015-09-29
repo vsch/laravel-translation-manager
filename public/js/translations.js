@@ -188,17 +188,19 @@ $(document).ready(function () {
         }
     });
 
-    $.ajax({
-        type: 'POST',
-        url: URL_YANDEX_TRANSLATOR_KEY,
-        data: {},
-        success: function (json) {
-            if (json.status === 'ok') {
-                YANDEX_TRANSLATOR_KEY = json.yandex_key;
-            }
-        },
-        encode: true
-    });
+    if (URL_YANDEX_TRANSLATOR_KEY) {
+        $.ajax({
+            type: 'POST',
+            url: URL_YANDEX_TRANSLATOR_KEY,
+            data: {},
+            success: function (json) {
+                if (json.status === 'ok') {
+                    YANDEX_TRANSLATOR_KEY = json.yandex_key;
+                }
+            },
+            encode: true
+        });
+    }
 
     function validateXEdit(value) {
         // check for open or mismatched quotes in href=  and src=, attributes if any
