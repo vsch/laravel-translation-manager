@@ -64,7 +64,7 @@ class Controller extends BaseController
 
         $this->connectionList = [];
         $this->connectionList[''] = 'default';
-        $connections = $this->manager->getConfig(Manager::DB_CONNECTIONS_KEY);
+        $connections = $this->manager->config(Manager::DB_CONNECTIONS_KEY);
         if ($connections && array_key_exists(\App::environment(), $connections)) {
             foreach ($connections[\App::environment()] as $key => $value) {
                 if (array_key_exists('description', $value)) {
@@ -76,14 +76,14 @@ class Controller extends BaseController
             }
         }
 
-        $this->cookiePrefix = $this->manager->getConfig('persistent_prefix', 'K9N6YPi9WHwKp6E3jGbx');
+        $this->cookiePrefix = $this->manager->config('persistent_prefix', 'K9N6YPi9WHwKp6E3jGbx');
 
         $connectionName = \Cookie::has($this->cookieName(self::COOKIE_CONNECTION_NAME)) ? \Cookie::get($this->cookieName(self::COOKIE_CONNECTION_NAME)) : '';
         $this->setConnectionName($connectionName);
 
         $locale = \Cookie::get($this->cookieName(self::COOKIE_LANG_LOCALE), \Lang::getLocale());
         \App::setLocale($locale);
-        $this->primaryLocale = \Cookie::get($this->cookieName(self::COOKIE_PRIM_LOCALE), $this->manager->getConfig('primary_locale', 'en'));
+        $this->primaryLocale = \Cookie::get($this->cookieName(self::COOKIE_PRIM_LOCALE), $this->manager->config('primary_locale', 'en'));
 
         $this->locales = $this->loadLocales();
 
@@ -218,7 +218,7 @@ SQL
         }
 
         $mismatches = null;
-        $mismatchEnabled = $this->manager->getConfig('mismatch_enabled');
+        $mismatchEnabled = $this->manager->config('mismatch_enabled');
 
         if ($mismatchEnabled) {
             // get mismatches
@@ -329,7 +329,7 @@ SQL
             ->with('package', $this->package)
             ->with('public_prefix', '/vendor/')
             ->with('translations', $translations)
-            ->with('yandex_key', !!$this->manager->getConfig('yandex_translator_key'))
+            ->with('yandex_key', !!$this->manager->config('yandex_translator_key'))
             ->with('locales', $locales)
             ->with('primaryLocale', $primaryLocale)
             ->with('currentLocale', $currentLocale)
@@ -339,7 +339,7 @@ SQL
             ->with('group', $group)
             ->with('numTranslations', $numTranslations)
             ->with('numChanged', $numChanged)
-            ->with('adminEnabled', $this->manager->getConfig('admin_enabled') && UserCan::admin_translations())
+            ->with('adminEnabled', $this->manager->config('admin_enabled') && UserCan::admin_translations())
             ->with('mismatchEnabled', $mismatchEnabled)
             ->with('stats', $summary)
             ->with('mismatches', $mismatches)
@@ -406,7 +406,11 @@ SQL
         $translatingLocale = \Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE), $currentLocale);
 
         $locales = $this->getTranslation()->groupBy('locale')->lists('locale')->all() ?: [];
-        $locales = array_merge(array($primaryLocale, $translatingLocale, $currentLocale), $locales);
+
+        $configLocales = $this->manager->config(Manager::ADDITIONAL_LOCALES_KEY, []);
+        if (!is_array($configLocales)) $configLocales = array($configLocales);
+
+        $locales = array_merge(array($primaryLocale, $translatingLocale, $currentLocale), $configLocales, $locales);
         return array_flatten(array_unique($locales));
     }
 
@@ -440,7 +444,7 @@ SQL
     public
     function postDeleteSuffixedKeys($group)
     {
-        if (!in_array($group, $this->manager->getConfig(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->getConfig('admin_enabled')) {
+        if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
             $keys = explode("\n", trim(\Input::get('keys')));
             $suffixes = explode("\n", trim(\Input::get('suffixes')));
 
@@ -475,7 +479,7 @@ SQL
     public
     function postEdit(HttpRequest $request, $group)
     {
-        if (!in_array($group, $this->manager->getConfig(Manager::EXCLUDE_GROUPS_KEY))) {
+        if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY))) {
             $name = $request->get('name');
             $value = $request->get('value');
 
@@ -499,7 +503,7 @@ SQL
     public
     function postDelete($group, $key)
     {
-        if (!in_array($group, $this->manager->getConfig(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->getConfig('admin_enabled')) {
+        if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
             //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
             $result = $this->getConnection()->update(<<<SQL
 UPDATE ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
@@ -512,7 +516,7 @@ SQL
     public
     function postUndelete($group, $key)
     {
-        if (!in_array($group, $this->manager->getConfig(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->getConfig('admin_enabled')) {
+        if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
             //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
             $result = $this->getConnection()->update(<<<SQL
 UPDATE ltm_translations SET is_deleted = 0 WHERE is_deleted = 1 AND `group` = ? AND `key` = ?
@@ -561,7 +565,7 @@ SQL
         $this->logSql = 1;
         $this->sqltraces = [];
 
-        if (!in_array($group, $this->manager->getConfig(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->getConfig('admin_enabled')) {
+        if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
             $srckeys = explode("\n", trim(\Input::get('srckeys')));
             $dstkeys = explode("\n", trim(\Input::get('dstkeys')));
 
@@ -970,7 +974,7 @@ SQL
     {
         return \Response::json(array(
             'status' => 'ok',
-            'yandex_key' => $this->manager->getConfig('yandex_translator_key', null)
+            'yandex_key' => $this->manager->config('yandex_translator_key', null)
         ));
     }
 }

@@ -15,3 +15,5 @@
 - add buttons to filter translation rows: show all, show non-empty, show empty, show changed, show deleted
 - fix indatabase_publish was not working since usage tracking was added.
 - add auto translate buttons to all locale column headers not just the translating locale.
+- fix exception when 'log_missing_keys' is disabled in configuration and translation manager in-place-edit mode is used. Issue: #10
+- add `locales` config entry for additional locales that are to be included in the locales list even if these don't have translation files or translations in the database. That way you can add locales by adding translations for them in translation manager without having to create the directories with a single group file and a single translation key to get locales added to your translations.

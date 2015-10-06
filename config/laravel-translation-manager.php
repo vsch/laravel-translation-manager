@@ -22,6 +22,14 @@ return array(
      */
     'primary_locale' => 'en',
     /**
+     * Specify any additional locales that you want to be shown even if they have no translation files or translations in the database
+     *
+     * @type array of strings
+     */
+    'locales' => [
+        'en',
+    ],
+    /**
      * Specify the prefix used for all cookies, session data and cache persistence.
      *
      * @type string

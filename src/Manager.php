@@ -29,6 +29,7 @@ class Manager
     const MISSING_KEYS_LOTTERY_KEY = 'missing_keys_lottery';
     const LOTTERY_PERSISTENT_SUFFIX = 'lottery';
     const LOG_KEY_USAGE_INFO_KEY = 'log_key_usage_info';
+    const ADDITIONAL_LOCALES_KEY = 'locales';
 
     /** @var \Illuminate\Foundation\Application */
     protected $app;
@@ -101,19 +102,19 @@ class Manager
     function getConnectionInDatabasePublish($connection)
     {
         if ($connection === null || $connection === '') {
-            return $this->getConfig(self::INDATABASE_PUBLISH_KEY, 0);
+            return $this->config(self::INDATABASE_PUBLISH_KEY, 0);
         }
-        return $this->getConnectionInfo($connection, self::INDATABASE_PUBLISH_KEY, $this->getConfig(self::INDATABASE_PUBLISH_KEY, 0));
+        return $this->getConnectionInfo($connection, self::INDATABASE_PUBLISH_KEY, $this->config(self::INDATABASE_PUBLISH_KEY, 0));
     }
 
     public
     function getConnectionInfo($connection, $key = null, $default = null)
     {
         if ($key === null) {
-            return $this->getConfig(self::DB_CONNECTIONS_KEY);
+            return $this->config(self::DB_CONNECTIONS_KEY);
         }
 
-        $db_connections = $this->getConfig(self::DB_CONNECTIONS_KEY);
+        $db_connections = $this->config(self::DB_CONNECTIONS_KEY);
         $environment = \App::environment();
 
         $db_connection = $connection !== null && array_key_exists($environment, $db_connections) && array_key_exists($connection, $db_connections[$environment]) ? $db_connections[$environment][$connection] : null;
@@ -168,7 +169,7 @@ class Manager
         if ($this->groupList === null) {
             // read it in
             $groups = $this->getTranslation()->groupBy('group');
-            $excludedGroups = $this->getConfig(Manager::EXCLUDE_GROUPS_KEY);
+            $excludedGroups = $this->config(Manager::EXCLUDE_GROUPS_KEY);
             if ($excludedGroups) {
                 $groups = $groups->whereNotIn('group', $excludedGroups);
             }
@@ -185,6 +186,7 @@ class Manager
             // compute augmented list from vnd:{vendor}.{package}::group.key
             // remove the vnd:{vendor}. and add to augmented, map it to original name
             $groupList = $this->getGroupList();
+            $this->augmentedGroupList = [];
 
             foreach ($groupList as $group) {
                 if (starts_with($group, ["vnd:", "wbn:"])) {
@@ -230,7 +232,7 @@ class Manager
     {
         if ($this->persistentPrefix === null) {
             if (array_key_exists(self::PERSISTENT_PREFIX_KEY, $this->config())) {
-                $this->persistentPrefix = $this->config()[self::PERSISTENT_PREFIX_KEY];
+                $this->persistentPrefix = $this->config(self::PERSISTENT_PREFIX_KEY);
             }
             else {
                 $this->persistentPrefix = '';
@@ -451,7 +453,9 @@ SQL
     public
     function excludedPageEditGroup($group)
     {
-        return in_array($group, $this->config()[self::EXCLUDE_PAGE_EDIT_GROUPS_KEY]);
+        return
+            in_array($group, $this->config(self::EXCLUDE_PAGE_EDIT_GROUPS_KEY))
+            || in_array($group, $this->config(self::EXCLUDE_GROUPS_KEY));
     }
 
     /**
@@ -469,15 +473,14 @@ SQL
     function missingKey($namespace, $group, $key, $locale = null, $useLottery = false, $findOrNew = false)
     {
         $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
-        if ($this->config()[self::LOG_MISSING_KEYS_KEY]) {
-
-            if (!in_array($group, $this->config()[self::EXCLUDE_GROUPS_KEY])) {
+        if (!$useLottery || $this->config(self::LOG_MISSING_KEYS_KEY)) {
+            if (!in_array($group, $this->config(self::EXCLUDE_GROUPS_KEY))) {
                 $lottery = 1;
-                if ($useLottery && $this->config()[self::MISSING_KEYS_LOTTERY_KEY] !== 1) {
-                    $lottery = \Session::get($this->config()[self::PERSISTENT_PREFIX_KEY] . self::LOTTERY_PERSISTENT_SUFFIX, '');
+                if ($useLottery && $this->config(self::MISSING_KEYS_LOTTERY_KEY) !== 1) {
+                    $lottery = \Session::get($this->config(self::PERSISTENT_PREFIX_KEY) . self::LOTTERY_PERSISTENT_SUFFIX, '');
                     if ($lottery === '') {
-                        $lottery = rand(1, $this->config()[self::MISSING_KEYS_LOTTERY_KEY]);
-                        \Session::put($this->config()[self::PERSISTENT_PREFIX_KEY] . self::LOTTERY_PERSISTENT_SUFFIX, $lottery);
+                        $lottery = rand(1, $this->config(self::MISSING_KEYS_LOTTERY_KEY));
+                        \Session::put($this->config(self::PERSISTENT_PREFIX_KEY) . self::LOTTERY_PERSISTENT_SUFFIX, $lottery);
                     }
                 }
 
@@ -527,16 +530,16 @@ SQL
     public
     function usingKey($namespace, $group, $key, $locale = null, $useLottery = false)
     {
-        if ($this->config()[self::LOG_KEY_USAGE_INFO_KEY]) {
+        if (!$useLottery || $this->config(self::LOG_KEY_USAGE_INFO_KEY)) {
             $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
 
-            if (!in_array($group, $this->config()[self::EXCLUDE_GROUPS_KEY])) {
+            if (!in_array($group, $this->config(self::EXCLUDE_GROUPS_KEY))) {
                 $lottery = 1;
-                if ($useLottery && $this->config()[self::MISSING_KEYS_LOTTERY_KEY] !== 1) {
-                    $lottery = \Session::get($this->config()[self::PERSISTENT_PREFIX_KEY] . self::LOTTERY_PERSISTENT_SUFFIX, '');
+                if ($useLottery && $this->config(self::MISSING_KEYS_LOTTERY_KEY) !== 1) {
+                    $lottery = \Session::get($this->config(self::PERSISTENT_PREFIX_KEY) . self::LOTTERY_PERSISTENT_SUFFIX, '');
                     if ($lottery === '') {
-                        $lottery = rand(1, $this->config()[self::MISSING_KEYS_LOTTERY_KEY]);
-                        \Session::put($this->config()[self::PERSISTENT_PREFIX_KEY] . self::LOTTERY_PERSISTENT_SUFFIX, $lottery);
+                        $lottery = rand(1, $this->config(self::MISSING_KEYS_LOTTERY_KEY));
+                        \Session::put($this->config(self::PERSISTENT_PREFIX_KEY) . self::LOTTERY_PERSISTENT_SUFFIX, $lottery);
                     }
                 }
 
@@ -671,9 +674,9 @@ SQL
         $this->clearUsageCache(false, $groups);
 
         // Laravel 5.1
-        $pathTemplateResolver = new PathTemplateResolver($this->files, $this->app->basePath(), $this->config()['language_dirs'], '5');
+        $pathTemplateResolver = new PathTemplateResolver($this->files, $this->app->basePath(), $this->config('language_dirs'), '5');
         // Laravel 4.2
-        //$pathTemplateResolver = new PathTemplateResolver($this->files, base_path(), $this->config()['language_dirs'], '4');
+        //$pathTemplateResolver = new PathTemplateResolver($this->files, base_path(), $this->config('language_dirs'), '4');
         $langFiles = $pathTemplateResolver->langFileList();
 
         if ($groups !== null) {
@@ -695,7 +698,7 @@ SQL
             $locale = $vars['{locale}'];
             $db_group = $vars['{db_group}'];
 
-            if (in_array($db_group, $this->config()[self::EXCLUDE_GROUPS_KEY])) continue;
+            if (in_array($db_group, $this->config(self::EXCLUDE_GROUPS_KEY))) continue;
             $translations = array_dot(include($langFile));
             $this->importTranslationFile($locale, $db_group, $translations, $replace);
         }
@@ -841,7 +844,7 @@ SQL
         }
 
         if (!$inDatabasePublishing || $inDatabasePublishing === 2 || $inDatabasePublishing === 3) {
-            if (!in_array($group, $this->config()[self::EXCLUDE_GROUPS_KEY])) {
+            if (!in_array($group, $this->config(self::EXCLUDE_GROUPS_KEY))) {
                 if ($group == '*') $this->exportAllTranslations(1);
 
                 if ($inDatabasePublishing !== 3) {
@@ -851,15 +854,15 @@ SQL
 
                 $tree = $this->makeTree($this->translation->where('group', $group)->whereNotNull('value')->orderby('key')->get());
                 $configRewriter = new TranslationFileRewriter();
-                $exportOptions = array_key_exists('export_format', $this->config()) ? TranslationFileRewriter::optionFlags($this->config()['export_format']) : null;
+                $exportOptions = array_key_exists('export_format', $this->config()) ? TranslationFileRewriter::optionFlags($this->config('export_format')) : null;
 
                 // Laravel 5.1
                 $base_path = $this->app->basePath();
-                $pathTemplateResolver = new PathTemplateResolver($this->files, $base_path, $this->config()['language_dirs'], '5');
+                $pathTemplateResolver = new PathTemplateResolver($this->files, $base_path, $this->config('language_dirs'), '5');
                 $zipRoot = $base_path . $this->config('zip_root', mb_substr($this->app->langPath(), 0, -4));
                 // Laravel 4.2
                 //$base_path = base_path();
-                //$pathTemplateResolver = new PathTemplateResolver($this->files, $base_path, $this->config()['language_dirs'], '4');
+                //$pathTemplateResolver = new PathTemplateResolver($this->files, $base_path, $this->config('language_dirs'), '4');
                 //$zipRoot = $base_path . $this->config('zip_root', mb_substr($this->app->make('path').'/lang', 0, -4));
 
                 if (mb_substr($zipRoot, -1) === '/') $zipRoot = substr($zipRoot, 0, -1);
@@ -978,15 +981,5 @@ SQL
         return $array;
     }
 
-    public
-    function getConfig($key = null, $default = null)
-    {
-        if ($key == null) {
-            return $this->config();
-        }
-        else {
-            return $this->config($key, $default);
-        }
-    }
 
 }
