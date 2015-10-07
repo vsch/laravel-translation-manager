@@ -3,6 +3,10 @@ This package is used to comfortably manage, view, edit and translate Laravel lan
 
 **Detailed information is now in the [wiki](https://github.com/vsch/laravel-translation-manager/wiki).**
 
+[Installation](https://github.com/vsch/laravel-translation-manager/wiki/Installation)
+[Configuration](https://github.com/vsch/laravel-translation-manager/wiki/Configuration)
+[Version Notes](https://github.com/vsch/laravel-translation-manager/blob/master/versioninfo.md)
+
 > Master branch is now for Laravel version 5.1
 >
 > - For Laravel 4.2 use the Laravel4 branch, or require: `"vsch/laravel-translation-manager": "~1.0"`
