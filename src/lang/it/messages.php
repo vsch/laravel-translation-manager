@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Aggiungere Le Chiavi',
     'addkeys-placeholder'       => 'Aggiungere 1 chiave per riga, senza il prefisso del gruppo',
     'addsuffixes'               => 'Set Suffissi',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Jolly Chiave Di Operazioni Di',
     'zip-all'                   => 'Zip Tutti',
     'zip-group'                 => 'Zip Di Gruppo',
-);
+];

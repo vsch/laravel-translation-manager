@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Pridať Tlačidlá',
     'addkeys-placeholder'       => 'Add 1 tlačidlo na líniu, bez skupiny predpony',
     'addsuffixes'               => 'Nastaviť Prípony',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Zástupné Kľúčové Operácie',
     'zip-all'                   => 'Zip Všetky',
     'zip-group'                 => 'Zip Skupiny',
-);
+];

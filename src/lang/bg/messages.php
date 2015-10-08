@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Добавяне На Ключове',
     'addkeys-placeholder'       => 'За да добавите 1 ключ в линия, без префикс група',
     'addsuffixes'               => 'Набор От Наставки',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Маска Операции С Ключове',
     'zip-all'                   => 'Zip Всички',
     'zip-group'                 => 'Групиране на ЗИП',
-);
+];

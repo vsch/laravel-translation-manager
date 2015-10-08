@@ -28,6 +28,14 @@ return array(
      */
     'primary_locale' => 'en',
     /**
+     * Specify any additional locales that you want to be shown even if they have no translation files or translations in the database
+     *
+     * @type array of strings
+     */
+    'locales' => [
+        'en',
+    ],
+    /**
      * Specify the prefix used for all cookies, session data and cache persistence.
      *
      * @type string
@@ -91,6 +99,14 @@ return array(
      * @type boolean
      */
     'log_missing_keys' => false,
+
+    /**
+     * determines whether usage of keys is logged, requires missing keys to be logged too
+     *
+     * @type boolean
+     */
+    'log_key_usage_info' => false,
+
     /**
      * determines one out of how many user sessions will have a chance to log missing keys
      * since the operation hits the database for every missing key you can limit this by setting a
@@ -122,6 +138,23 @@ return array(
      *                  on one system does no good to the rest of the cluster.
      */
     'indatabase_publish' => 0,
+
+    /**
+     * @type array      list of alternate database connections and their properties indexed by app()->environment() value,
+     *                  default connection settings are taken from config, so only add alternate connections
+     *
+     *                  description is used to display the connection name, default connection is displayed as 'default' in
+     *                  the web interface.
+     */
+    'db_connections' => array(
+        //'local' => array(
+        //    'mysql_prd' => array(
+        //        'description' => 'production',
+        //        'indatabase_publish' => 2,
+        //    ),
+        //),
+    ),
+
     /**
      * used to provide the Yandex key for use in automatic Yandex translations
      *

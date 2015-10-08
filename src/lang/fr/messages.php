@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Ajouter Les Touches',
     'addkeys-placeholder'       => 'Ajouter 1 clé par ligne, sans le préfixe de groupe',
     'addsuffixes'               => 'Ensemble De Suffixes',
@@ -35,6 +35,7 @@ TEXT
 ,
     'confirm-find'              => 'Êtes-vous sûr que vous voulez analyser votre dossier app? Tous trouvé les clés de traduction seront ajoutés à la base de données.',
     'copykeys'                  => 'Touches De Copie',
+    'db-connection'             => 'Base de données',
     'delete'                    => 'Supprimer',
     'delete-all'                => 'Supprimer Tous Les',
     'deleted'                   => 'Supprimé',
@@ -86,6 +87,7 @@ TEXT
     'publish'                   => 'Publier Groupe',
     'publish-all'               => 'Publier Tous Les',
     'publishing'                => 'Publier...',
+    'reset-usage-info'          => 'Réinitialiser Les Informations D\'Utilisation',
     'search'                    => 'Recherche',
     'search-done'               => 'Fait à la recherche pour les traductions, <strong>:count</strong> éléments.',
     'search-done-head'          => 'Fait à la recherche pour les traductions, trouvé',
@@ -93,12 +95,19 @@ TEXT
     'search-header'             => 'Résultats trouvés: :count',
     'search-translations'       => 'Recherche De Traductions',
     'searching'                 => 'Recherche en cours...',
+    'set-usage-info'            => 'Définir Des Informations D\'Utilisation',
+    'show-all'                  => 'Afficher Tous',
+    'show-changed'              => 'Montrer Changé',
+    'show-deleted'              => 'Afficher Supprimé',
+    'show-empty'                => 'Afficher Manquant',
+    'show-nonempty'             => 'Masquer Manquant',
+    'show-usage-info'           => 'Afficher Les Informations D\'Utilisation',
     'src-preview'               => 'À partir de',
     'srckey'                    => 'À partir de',
     'srckeys'                   => 'À Partir De Clés',
     'srckeys-placeholder'       => 'Ajouter 1 clé par ligne, avec ou sans le préfixe de groupe',
     'stats'                     => 'Vue De Tableau De Bord',
-    'suffixed-keyops'           => 'Suffixé Les Principales Opérations Et De La Recherche',
+    'suffixed-keyops'           => 'Suffixé Les Principales Opérations',
     'suffixes'                  => 'Les Suffixes',
     'total'                     => 'Total',
     'translating-locale'        => 'Traduire',
@@ -109,4 +118,4 @@ TEXT
     'wildcard-keyops'           => 'Générique Opérations Des Clés',
     'zip-all'                   => 'Zip Tous',
     'zip-group'                 => 'Zip Groupe',
-);
+];

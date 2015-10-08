@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Add Keys',
     'addkeys-placeholder'       => 'Add 1 key per line, without the group prefix',
     'addsuffixes'               => 'Set Suffixes',
@@ -35,6 +35,7 @@ TEXT
 ,
     'confirm-find'              => 'Are you sure you want to scan your app folder? All found translation keys will be added to the database.',
     'copykeys'                  => 'Copy Keys',
+    'db-connection'             => 'Database',
     'delete'                    => 'Delete',
     'delete-all'                => 'Delete All',
     'deleted'                   => 'Deleted',
@@ -86,6 +87,7 @@ TEXT
     'publish'                   => 'Publish Group',
     'publish-all'               => 'Publish All',
     'publishing'                => 'Publishing...',
+    'reset-usage-info'          => 'Reset Usage Info',
     'search'                    => 'Search',
     'search-done'               => 'Done searching for translations, found <strong>:count</strong> items.',
     'search-done-head'          => 'Done searching for translations, found',
@@ -93,12 +95,19 @@ TEXT
     'search-header'             => 'Results found: :count',
     'search-translations'       => 'Search Translations',
     'searching'                 => 'Searching...',
+    'set-usage-info'            => 'Set Usage Info',
+    'show-all'                  => 'Show All',
+    'show-changed'              => 'Show Changed',
+    'show-deleted'              => 'Show Deleted',
+    'show-empty'                => 'Show Missing',
+    'show-nonempty'             => 'Hide Missing',
+    'show-usage-info'           => 'Show Usage Info',
     'src-preview'               => 'From',
     'srckey'                    => 'From',
     'srckeys'                   => 'From Keys',
     'srckeys-placeholder'       => 'Add 1 key per line, with or without the group prefix',
     'stats'                     => 'Dashboard View',
-    'suffixed-keyops'           => 'Suffixed Key Operations & Search',
+    'suffixed-keyops'           => 'Suffixed Key Operations',
     'suffixes'                  => 'Suffixes',
     'total'                     => 'Total',
     'translating-locale'        => 'Translate',
@@ -109,4 +118,4 @@ TEXT
     'wildcard-keyops'           => 'Wildcard Key Operations',
     'zip-all'                   => 'Zip All',
     'zip-group'                 => 'Zip Group',
-);
+];

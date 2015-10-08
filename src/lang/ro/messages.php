@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Pentru A Adăuga Chei',
     'addkeys-placeholder'       => 'Se adauga 1 cheie în linie, fără prefixul de grup',
     'addsuffixes'               => 'Set De Sufixe',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Wildcard Operațiuni Cu Cheile',
     'zip-all'                   => 'Zip Toate',
     'zip-group'                 => 'Gruparea ЗИП',
-);
+];

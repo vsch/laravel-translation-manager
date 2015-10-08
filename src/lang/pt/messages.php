@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Adicionar Chaves',
     'addkeys-placeholder'       => 'Adicionar 1 chave por linha, sem o prefixo do grupo',
     'addsuffixes'               => 'Conjunto De Sufixos',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Curinga-Chave De Operações De',
     'zip-all'                   => 'Zip De Todos Os',
     'zip-group'                 => 'Grupo De Zip',
-);
+];

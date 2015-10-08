@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Het Toevoegen Van Sleutels',
     'addkeys-placeholder'       => 'Voeg 1 toets per regel, zonder het prefix groep',
     'addsuffixes'               => 'Stel Achtervoegsels',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Wildcard Belangrijke Activiteiten',
     'zip-all'                   => 'Zip-Alle',
     'zip-group'                 => 'Zip-Groep',
-);
+];

@@ -24,6 +24,8 @@ class PathTemplateResolver
     protected $config_paths;
     protected $path_vars;
     protected $config_path;
+    protected $version;
+    protected $group_sep;
 
     protected static $defaults = array(
         'lang' => [
@@ -34,8 +36,8 @@ class PathTemplateResolver
                 '*' => '/resources/lang/{locale}/{group}',
             ],
             'vars' => [
-                '{vendor}' => null,
-                '{package}' => null,
+                '{vendor}' => '',
+                '{package}' => '',
             ],
         ],
         'packages' => [
@@ -47,7 +49,7 @@ class PathTemplateResolver
                 '*' => '/resources/lang/vendor/{package}/{locale}/{group}',
             ],
             'vars' => [
-                '{vendor}' => null,
+                '{vendor}' => '',
             ],
         ],
         'workbench' => [
@@ -101,6 +103,8 @@ class PathTemplateResolver
     {
         $this->files = $files;
         $this->base_path = $base_path;
+        $this->version = $version;
+        $this->group_sep = ".";
 
         // provide default mappings if needed. and normalize the config
         static::normalizeConfig($config, $version);
@@ -112,7 +116,7 @@ class PathTemplateResolver
      * @param &$config
      * @param $version
      */
-    protected static
+    public static
     function normalizeConfig(&$config, $version)
     {
         $toMerge = [];
@@ -153,7 +157,7 @@ class PathTemplateResolver
                 }
             }
 
-            static::normalizeInclude($value);
+            $value = static::normalizeInclude($value);
         }
 
         // add custom sections as mergers with vendor and workbench, these are custom mappings
@@ -167,13 +171,13 @@ class PathTemplateResolver
 
                 // see if this one is included in that section and only add it's merged version if it is
                 $vars = array_combine(['{vendor}', '{package}'], explode('/', $custom));
-                if (static::isIncluded($custom, $default['include'], $vars))
+                if (static::isPathIncluded($default, $vars))
                 {
-                    static::mergeConfig($config[$custom], $config[$mergeWith]);
+                    $config[$custom] = array_replace_recursive($config[$mergeWith], $config[$custom]);
 
                     // add the vendor, package, variables
                     if (!array_key_exists('vars', $config[$custom])) $config[$custom]['vars'] = [];
-                    static::mergeConfig($config[$custom]['vars'], $vars);
+                    $config[$custom]['vars'] = array_replace_recursive($vars, $config[$custom]['vars']);
 
                     // include itself so the rest of the code does not have to know anything special about it
                     $config[$custom]['include'] = array($custom);
@@ -187,76 +191,60 @@ class PathTemplateResolver
         foreach ($config as $key => &$value)
         {
             // resolve any vendor and package now so that these get processed first
-            $value['path'] = static::expandVars(appendPath($value['root'], $value['files']), array_key_exists('vars', $value) ? $value['vars'] : []);
-        }
-    }
-
-    /**
-     * @param $config
-     * @param $default
-     */
-    protected static
-    function mergeConfig(&$config, $default)
-    {
-        foreach ($default as $key => $value)
-        {
-            if (!array_key_exists($key, $config))
+            if (array_key_exists('root', $value))
             {
-                $config[$key] = $value;
-            }
-            elseif (is_array($config[$key]))
-            {
-                // can merge them recursively
-                static::mergeConfig($config[$key], $value);
+                $value['path'] = static::expandVars(appendPath($value['root'], $value['files']), array_key_exists('vars', $value) ? $value['vars'] : []);
             }
         }
     }
 
     /**
-     * @param $value
+     * @param mixed $value
      */
-    protected
-    static
-    function normalizeInclude(&$value)
+    public static
+    function normalizeInclude($value)
     {
-        if (!array_key_exists('include', $value)) return;
-
-        if (!is_array($value['include'])) $value['include'] = $value['include'] ? array($value['include']) : [];
-
-        $includeNormalize = [];
-        if (!array_key_exists('{vendor}', $value['vars']) || $value['vars']['{vendor}'] !== null)
+        if (array_key_exists('include', $value))
         {
-            // this type has vendor
-            $includeNormalize['|^/|'] = '*/';
-            $includeNormalize['|/$|'] = '/*';
-        }
-        elseif (!array_key_exists('{package}', $value['vars']) || $value['vars']['{package}'] !== null)
-        {
-            // this type has package only
-            $includeNormalize['|^/$|'] = '*';
-        }
 
-        if ($includeNormalize)
-        {
-            $includeSearch = array_keys($includeNormalize);
-            $includeReplace = array_values($includeNormalize);
+            if (!is_array($value['include'])) $value['include'] = $value['include'] ? array($value['include']) : [];
 
-            foreach ($value['include'] as &$vendor_package)
+            $includeNormalize = [];
+            if (!array_key_exists('{vendor}', $value['vars']) || $value['vars']['{vendor}'] !== null)
             {
-                $vendor_package = preg_replace($includeSearch, $includeReplace, $vendor_package);
+                // this type has vendor
+                $includeNormalize['|^/|'] = '*/';
+                $includeNormalize['|/$|'] = '/*';
+            }
+            elseif (!array_key_exists('{package}', $value['vars']) || $value['vars']['{package}'] !== null)
+            {
+                // this type has package only
+                $includeNormalize['|^/$|'] = '*';
+            }
+
+            if ($includeNormalize)
+            {
+                $includeSearch = array_keys($includeNormalize);
+                $includeReplace = array_values($includeNormalize);
+
+                foreach ($value['include'] as &$vendor_package)
+                {
+                    $vendor_package = preg_replace($includeSearch, $includeReplace, $vendor_package);
+                }
             }
         }
+        return $value;
     }
 
-    public
-    function configValues($setting)
+    public static
+    function configValues($config, $setting)
     {
         $values = [];
-        foreach ($this->config as $key => $value)
+        foreach ($config as $key => $value)
         {
             if (is_array($value) && array_key_exists($setting, $value))
             {
-                if (!array_key_exists($value[$setting], $values))
+                if (!is_array($value[$setting]) && !array_key_exists($value[$setting], $values))
                 {
                     $values[$value[$setting]] = $value + ['section' => $key];
                 }
@@ -272,16 +260,10 @@ class PathTemplateResolver
         return $values;
     }
 
-    protected static
-    function fixedPathPrefix($path)
-    {
-        return ($pos = mb_strpos('{', $path)) !== false ? mb_substr($path, 0, $pos) : $path;
-    }
-
     public
     function langFileList()
     {
-        $this->config_paths = $this->configValues('path');
+        $this->config_paths = self::configValues($this->config, 'path');
         $sorted_paths = array_keys($this->config_paths);
         sort($sorted_paths, SORT_STRING);
 
@@ -295,57 +277,88 @@ class PathTemplateResolver
 
             $full_path = appendPath($this->base_path, $path);
             $path_parts = explode('/', $full_path);
-
-            // drop empty entry
             array_shift($path_parts);
-
             $this->loadFileList('/', $path_parts, []);
         }
 
         return $this->lang_files;
     }
 
-    protected static
-    function isIncluded($section, $include, $vars)
+    public static
+    function isPathIncluded($config, $vars, $partial = true)
     {
-        if ($section === 'lang') return (!array_key_exists('{package}', $vars) || $vars['{package}'] === null) && (!array_key_exists('{vendor}', $vars) || $vars['{vendor}'] === null);
-        if (!$include) return false;
+        $matchVendor = array_key_exists('{vendor}', $vars);
+        $vars_vendor = $matchVendor ? $vars['{vendor}'] : null;
 
-        $matchedVendor = !array_key_exists('{vendor}', $vars) ? null : ($vars['{vendor}'] != null ? false : null);
+        $matchPackage = array_key_exists('{package}', $vars);
+        $vars_package = $matchPackage ? $vars['{package}'] : null;
 
-        foreach ($include as $vendor_package)
+        // if we don't have vendor or package yet, then we can include it as partial
+        if (!$matchVendor && !$matchPackage && $partial) return true;
+
+        $secVars = array_key_exists('vars', $config) ? $config['vars'] : [];
+        if (array_key_exists('{vendor}', $secVars))
         {
-            $parts = explode('/', $vendor_package, 2);
+            if ($matchVendor && $vars_vendor !== $secVars['{vendor}']) return false;
 
-            if (count($parts) < 2)
+            if (array_key_exists('{package}', $secVars))
             {
-                $package = $parts[0];
-                $vendor = null;
-            }
-            else
-            {
-                $vendor = $parts[0];
-                $package = $parts[1];
+                if ($matchPackage && $vars_package !== $secVars['{package}']) return false;
+
+                // either no vendor or vendor matched, and no package or package matched,
+                return ($matchPackage && $matchVendor) || $partial;
             }
 
-            if (array_key_exists('{vendor}', $vars) && $vars['{vendor}'] !== null && $vendor === null) return false; // no vendor allowed, can't be part of this
+            // at this point we have no package in section vars, and we could not fail on vendor so we check includes, if we have package in vars
+            if ($vars_package === '') return false;
+            if (!$matchPackage) return $partial; // we can't tell yet, so we include it as partial
 
-            if (!array_key_exists('{vendor}', $vars) && $vendor !== null) continue;    // can't tell yet, so we go on
+            // we have to check for package match with what is in the include
+            if (!array_key_exists('include', $config)) return false;
+            $include = $config['include'];
 
-            if ($vendor === null || $vendor === '*' || $vars['{vendor}'] === $vendor)
+            foreach ($include as $package)
             {
-                $matchedVendor = true;
-
-                if (!array_key_exists('{package}', $vars)) continue;                       // can't tell yet
-
-                if ($package === '*' || $vars['{package}'] === $package)
+                if ($package === '*' || $package === $vars_package)
                 {
                     return true;
                 }
             }
+            return false;
         }
 
-        return $matchedVendor;  // if we had no vendor match and vars contains a vendor then this will return false, otherwise it will be true
+        if ($vars_vendor === '' || $vars_package === '') return false;
+        if (!$partial && (!$matchVendor || !$matchPackage)) return false;
+        // at this point we either have vendor or package and partials are allowed, or we have both and partials are not allowed.
+
+        // here we expect vendor/package to be matched in include, else all are not included
+        if (!array_key_exists('include', $config)) return false;
+
+        // we may only be able to match vendor or package if only one of them is known
+        $include = $config['include'];
+
+        foreach ($include as $package)
+        {
+            if (($pos = strpos($package, '/')) === false) continue; // erroneous include directive
+            $vendor = substr($package, 0, $pos);
+            $package = substr($package, $pos + 1);
+
+            if (!$matchPackage)
+            {
+                // vendor must be known at this point and partials allowed
+                if (($vendor === '*' || $vendor === $vars_vendor)) return true;
+            }
+            elseif (!$matchVendor)
+            {
+                // package must be known at this point and partials allowed
+                if ($package === '*' || $package === $vars_package) return true;
+            }
+            else
+            {
+                if (($vendor === '*' || $vendor === $vars_vendor) && ($package === '*' || $package === $vars_package)) return true;
+            }
+        }
+        return false;
     }
 
     protected
@@ -381,7 +394,7 @@ class PathTemplateResolver
                         if ($part === '{vendor}' || $part === '{package}')
                         {
                             // we can test it here
-                            if (static::isIncluded($config['section'], $config['include'], $this->path_vars) === false) continue;
+                            if (!static::isPathIncluded($config, $this->path_vars)) continue;
                         }
 
                         $this->loadFileList($dir, $path_parts, $group_parts);
@@ -392,7 +405,7 @@ class PathTemplateResolver
                 }
                 else
                 {
-                    // fixed, append it and keep going
+                    // fixed string, append it and keep going
                     $prefix = appendPath($prefix, $part);
                 }
             }
@@ -407,7 +420,10 @@ class PathTemplateResolver
                     $dirs = $this->files->directories($prefix);
                     foreach ($dirs as $dir)
                     {
-                        $this->loadFileList($dir, $path_parts, $group_parts + [$dir]);
+                        $dir_name = substr($dir, strlen($prefix)+1);
+                        $subgroup_parts = $group_parts;
+                        $subgroup_parts[] = $dir_name;
+                        $this->loadFileList($dir, $path_parts, $subgroup_parts);
                     }
                 }
 
@@ -419,13 +435,21 @@ class PathTemplateResolver
                 });
 
                 // now we add all these files to the list as keys with the resolved db_group as the value
+                //if (!array_key_exists('db_group', $this->config_paths[$this->config_path]))
+                //{
+                //    $tmp = 0;
+                //    break;
+                //}
+                //else
                 $db_group = static::expandVars($this->config_paths[$this->config_path]['db_group'], $this->path_vars);
 
                 foreach ($files as $file)
                 {
                     if (!array_key_exists($file, $this->lang_files))
                     {
-                        $last_part = implode('.', $group_parts + [pathinfo($file, PATHINFO_FILENAME)]);
+                        $pieces = $group_parts;
+                        $pieces[] = pathinfo($file, PATHINFO_FILENAME);
+                        $last_part = implode($this->group_sep, $pieces);
                         $this->path_vars[$path_parts[0]] = $last_part;
                         $this->lang_files[$file] = $this->path_vars + ['{db_group}' => static::expandVars($db_group, $this->path_vars)];
                     }
@@ -447,7 +471,7 @@ class PathTemplateResolver
         return str_replace(array_keys($vars), array_values($vars), $text);
     }
 
-    protected static
+    public static
     function extractTemplateVars($template, $text)
     {
         // return vars array or null if no match
@@ -479,14 +503,14 @@ class PathTemplateResolver
         return null;
     }
 
-    protected static
-    function getDbGroupPath($partVars, $group, $locale)
+    public static
+    function getDbGroupPath($config, $group, $locale)
     {
-        $db_group = $partVars['db_group'];
-        $path = $partVars['path'];
+        $db_group = $config['db_group'];
+        $path = $config['path'];
         if ($vars = static::extractTemplateVars($db_group, $group))
         {
-            $fixed_vars = array_key_exists('vars', $partVars) ? $partVars['vars'] : [];
+            $fixed_vars = array_key_exists('vars', $config) ? $config['vars'] : [];
 
             foreach ($fixed_vars as $key => $value)
             {
@@ -498,10 +522,10 @@ class PathTemplateResolver
             $vars['{group}'] = str_replace('.', '/', $vars['{group}']); // convert group to path parts
 
             // see if this one is included, if not, then it cannot possibly be the one
-            if (!static::isIncluded($partVars['section'], array_key_exists('include', $partVars) ? $partVars['include'] : null, $vars)) return null;
+            if (!static::isPathIncluded($config, $vars, false)) return null;
 
             $vars['{locale}'] = $locale;
-            return str_replace(array_keys($vars), array_values($vars), $partVars['path']) . '.php';
+            return str_replace(array_keys($vars), array_values($vars), $path) . '.php';
         }
         return null;
     }
@@ -509,7 +533,7 @@ class PathTemplateResolver
     public
     function groupFilePath($group, $locale)
     {
-        $config_paths = $this->configValues('path');
+        $config_paths = self::configValues($this->config, 'path');
         $sorted_paths = array_keys($config_paths);
         sort($sorted_paths, SORT_STRING);
 

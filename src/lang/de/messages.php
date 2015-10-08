@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Fügen Sie Schlüssel',
     'addkeys-placeholder'       => 'Fügen Sie 1 Schlüssel pro Zeile, ohne die Gruppe Präfix',
     'addsuffixes'               => 'Set Suffixe',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Wildcard-Key-Operationen',
     'zip-all'                   => 'Zip-Alle',
     'zip-group'                 => 'Zip-Gruppe',
-);
+];

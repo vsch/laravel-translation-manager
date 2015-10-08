@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'הוספת מפתחות',
     'addkeys-placeholder'       => 'להוסיף 1 המפתח בכל שורה, ללא קידומת הקבוצה',
     'addsuffixes'               => 'סט סיומות',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'כללי פעולות מפתח',
     'zip-all'                   => 'כל Zip',
     'zip-group'                 => 'קבוצת מיקוד',
-);
+];

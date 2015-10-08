@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => '추가 열쇠',
     'addkeys-placeholder'       => '추가 1 당 중요한 라인 없이 그룹히 url 의 앞부분만 비교',
     'addsuffixes'               => '설 Suffixes',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => '와일드카드 주요 작업',
     'zip-all'                   => 'Zip 모든',
     'zip-group'                 => '우 Group',
-);
+];

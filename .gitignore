@@ -2,3 +2,6 @@
 composer.phar
 composer.lock
 .DS_Store
+images/BulletÍs.psd
+images/EditPopup.psd
+config.codekit

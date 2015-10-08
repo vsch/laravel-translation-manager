@@ -102,6 +102,11 @@ h6 .editable-click, h6 a.editable-click, h6 a.editable-click:hover {
     padding-left: 8px;
 }
 
+.table-translations td.unused-key
+{
+    color: #999999;
+}
+
 .table.translation-stats > thead > tr > th.deleted,
 .table.translation-stats > tbody > tr > td.group.deleted > a
 {
@@ -137,15 +142,27 @@ textarea.editable-input {
     margin-left: 1px;
 }
 
+.table-translations thead tr {
+    background-color: #f0f0f0;
+}
+
+.table-striped>tbody>tr:nth-of-type(even) {
+    background-color: #f9f9f9;
+}
+
+.table-striped>tbody>tr:nth-of-type(odd) {
+    background-color: #ffffff;
+}
+
 .table-translations tr.editing {
     backround-color: rgba(255, 255, 100, .3);
 }
 
-.table-striped > tbody > tr.editing:nth-of-type(odd) {
+.table-striped > tbody > tr.editing:nth-of-type(even) {
     background-color: #f7f9da;
 }
 
-.table-striped > tbody > tr.editing:nth-of-type(even) {
+.table-striped > tbody > tr.editing:nth-of-type(odd) {
     background-color: #fffdd9;
 }
 
@@ -157,11 +174,11 @@ textarea.editable-input {
     backround-color: rgba(255, 130, 147, 0.31);
 }
 
-.table-striped > tbody > tr.deleted-translation:nth-of-type(odd) {
+.table-striped > tbody > tr.deleted-translation:nth-of-type(even) {
     background-color: #f5e1e3;
 }
 
-.table-striped > tbody > tr.deleted-translation:nth-of-type(even) {
+.table-striped > tbody > tr.deleted-translation:nth-of-type(odd) {
     background-color: #ffebec;
 }
 
@@ -169,11 +186,11 @@ textarea.editable-input {
     backround-color: rgba(255, 136, 77, 0.41);
 }
 
-.table-striped > tbody > tr.editing.deleted-translation:nth-of-type(odd) {
+.table-striped > tbody > tr.editing.deleted-translation:nth-of-type(even) {
     background-color: #f5d3c4;
 }
 
-.table-striped > tbody > tr.editing.deleted-translation:nth-of-type(even) {
+.table-striped > tbody > tr.editing.deleted-translation:nth-of-type(odd) {
     background-color: #ffdccc;
 }
 
@@ -189,3 +206,12 @@ ins {
     color: #108030;
 }
 
+#accordion.panel-group .panel > .panel-heading a:not(.collapsed):not(.btn):before {
+    content: "▼ ";
+    display: inline;
+}
+
+#accordion.panel-group .panel > .panel-heading a.collapsed:not(.in):before {
+    content: "▶ ";
+    display: inline;
+}

@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Lägg Nycklar',
     'addkeys-placeholder'       => 'Lägg till 1 per linje, utan den grupp prefix',
     'addsuffixes'               => 'Ange Suffix',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Wildcard Viktiga Verksamhet',
     'zip-all'                   => 'Zip Alla',
     'zip-group'                 => 'Zip-Gruppen',
-);
+];

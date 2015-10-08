@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Thêm Chìa Khóa',
     'addkeys-placeholder'       => 'Thêm 1 chìa khóa trên một đường thẳng, nếu không có nhóm tiền tố',
     'addsuffixes'               => 'Đặt Đuôi Bổ',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Đại Diện (Chìa Khóa Hoạt Động',
     'zip-all'                   => 'Im Đi Được',
     'zip-group'                 => 'Zip Nhóm',
-);
+];

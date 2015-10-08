@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Agregar Claves',
     'addkeys-placeholder'       => 'Agregar 1 clave por línea, sin el prefijo de grupo',
     'addsuffixes'               => 'Conjunto De Sufijos',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Comodín Clave De Operaciones',
     'zip-all'                   => 'Zip Todos',
     'zip-group'                 => 'Postal De Grupo',
-);
+];

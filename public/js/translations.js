@@ -5,6 +5,7 @@
 var CLIP_TEXT;
 var MISSMATCHED_QUOTES_MESSAGE;
 var YANDEX_TRANSLATOR_KEY;
+var URL_YANDEX_TRANSLATOR_KEY;
 var PRIMARY_LOCALE;
 var CURRENT_LOCALE;
 var TRANSLATING_LOCALE;
@@ -127,7 +128,7 @@ xtranslateText = function (translator, srcLoc, srcText, dstLoc, processText) {
     while ((matches = regexParam.exec(src)) !== null) {
         var param = matches[1];
 
-        if (!(paramIndex = params.indexOf(param)+1)) {
+        if (!(paramIndex = params.indexOf(param) + 1)) {
             params.push(param);
             paramIndex = params.length;
         }
@@ -147,7 +148,7 @@ xtranslateText = function (translator, srcLoc, srcText, dstLoc, processText) {
 
         if (paramIndex) {
             text = text.replace(regexIndex, function (index) {
-                return ':' + params[parseInt(index.substr(2, index.length - 4))-1];
+                return ':' + params[parseInt(index.substr(2, index.length - 4)) - 1];
             });
         }
 
@@ -177,6 +178,29 @@ xtranslateText = function (translator, srcLoc, srcText, dstLoc, processText) {
 $(document).ready(function () {
     'use strict';
     var elem;
+
+    $.ajaxPrefilter(function (options) {
+        if (!options.crossDomain) {
+            options.headers = {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            };
+            //window.console.log('Injected CSRF: ' + $('meta[name="csrf-token"]').attr('content'));
+        }
+    });
+
+    if (URL_YANDEX_TRANSLATOR_KEY) {
+        $.ajax({
+            type: 'POST',
+            url: URL_YANDEX_TRANSLATOR_KEY,
+            data: {},
+            success: function (json) {
+                if (json.status === 'ok') {
+                    YANDEX_TRANSLATOR_KEY = json.yandex_key;
+                }
+            },
+            encode: true
+        });
+    }
 
     function validateXEdit(value) {
         // check for open or mismatched quotes in href=  and src=, attributes if any
@@ -322,8 +346,9 @@ $(document).ready(function () {
 
         this.each(function () {
             var elem = $(this);
+            var top = elem.offset().top;
 
-            if (elem.offset().top < 300) {
+            if (top < 300) {
                 elem.editable({placement: 'bottom'});
             }
             else {
@@ -333,10 +358,31 @@ $(document).ready(function () {
             elem.editable().off('hidden');
             elem.editable().on('hidden.vsch', function (e, reason) {
                 var locale = $(this).data('locale');
+                var elemRow = $(this).parents('tr').first();
+                var trans = elemRow.find('a.vsch_editable'), tmp;
+
                 if (reason === 'save') {
                     $(this).removeClass('status-0').addClass('status-1');
                 }
                 if (reason === 'save' || reason === 'nochange') {
+                }
+
+                if ((tmp = trans.filter('.editable-empty').length)) {
+                    elemRow.addClass('has-empty-translation');
+                    if (tmp === trans.length) {
+                        elemRow.removeClass('has-nonempty-translation');
+                    } else {
+                        elemRow.addClass('has-nonempty-translation');
+                    }
+                } else {
+                    elemRow.removeClass('has-empty-translation');
+                    elemRow.addClass('has-nonempty-translation');
+                }
+
+                if (trans.filter('.status-1').length) {
+                    elemRow.addClass('has-changed-translation');
+                } else {
+                    elemRow.removeClass('has-changed-translation');
                 }
 
                 if (!--inEditable) {

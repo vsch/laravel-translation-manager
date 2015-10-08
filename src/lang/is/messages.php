@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Bæta Við Lyklana',
     'addkeys-placeholder'       => 'Bæta við 1 lykil á línu, án þess að hópurinn forskeyti',
     'addsuffixes'               => 'Tilbúnir Eftirnöfn',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Wildcard Lykill Aðgerðir',
     'zip-all'                   => 'Allt Zip',
     'zip-group'                 => 'Zip Hópur',
-);
+];

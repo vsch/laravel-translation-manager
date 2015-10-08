@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Dodati Ključeve',
     'addkeys-placeholder'       => 'Dodati 1 ključ u liniju, bez prefiksa grupe',
     'addsuffixes'               => 'Set Nastavaka',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Zamjenske Operacije S Ključevima',
     'zip-all'                   => 'Zip Sve',
     'zip-group'                 => 'Grupiranje ZIP',
-);
+];

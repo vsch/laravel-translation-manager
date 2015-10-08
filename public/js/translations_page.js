@@ -14,15 +14,6 @@ var xtranslateText;
 var xtranslateService;
 
 jQuery(document).ready(function ($) {
-    $.ajaxPrefilter(function (options) {
-        if (!options.crossDomain) {
-            options.headers = {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            };
-            //window.console.log('Injected CSRF: ' + $('meta[name="csrf-token"]').attr('content'));
-        }
-    });
-
     $('.group-select').on('change', function () {
         var group = $(this).val();
         if (group) {
@@ -30,18 +21,6 @@ jQuery(document).ready(function ($) {
         } else {
             window.location.href = URL_TRANSLATOR_ALL;
         }
-    });
-
-    $.ajax({
-        type: 'POST',
-        url: URL_YANDEX_TRANSLATOR_KEY,
-        data: {},
-        success: function (json) {
-            if (json.status === 'ok') {
-                YANDEX_TRANSLATOR_KEY = json.yandex_key;
-            }
-        },
-        encode: true
     });
 
     $('a.delete-key').on('ajax:success', function (e, data) {
@@ -60,29 +39,41 @@ jQuery(document).ready(function ($) {
         row.find("a.delete-key").first().removeClass("hidden");
     });
 
-    $('.form-import').on('ajax:success', function (e, data) {
-        var elem = $('div.success-import-group');
-        elem.html(elem.html().replace(/:count\b/, data.counter));
-        elem.closest('div.alert').slideDown();
-    });
+    var successReporter = function (suffix) {
+        var elem = $('div.success-' + suffix);
+        var originalHtml = elem.html();
+        $('.form-' + suffix).on('ajax:success', function (e, data) {
+            elem.html(originalHtml.replace(/:count\b/, data.counter));
+            elem.closest('div.alert').slideDown();
+        });
+    };
 
-    $('.form-import-all').on('ajax:success', function (e, data) {
-        var elem = $('div.success-import-all');
-        elem.html(elem.html().replace(/:count\b/, data.counter));
-        elem.closest('div.alert').slideDown();
-    });
+    successReporter('import-group');
+    //$('.form-import-group').on('ajax:success', function (e, data) {
+    //    var elem = $('div.success-import-group');
+    //    elem.html(elem.html().replace(/:count\b/, data.counter));
+    //    elem.closest('div.alert').slideDown();
+    //});
 
-    $('.form-find').on('ajax:success', function (e, data) {
-        var elem = $('div.success-find');
-        elem.html(elem.html().replace(/:count\b/, data.counter));
-        elem.closest('div.alert').slideDown();
-    });
+    successReporter('import-all');
+    //$('.form-import-all').on('ajax:success', function (e, data) {
+    //    var elem = $('div.success-import-all');
+    //    elem.html(elem.html().replace(/:count\b/, data.counter));
+    //    elem.closest('div.alert').slideDown();
+    //});
+
+    successReporter('find');
+    //$('.form-find').on('ajax:success', function (e, data) {
+    //    var elem = $('div.success-find');
+    //    elem.html(elem.html().replace(/:count\b/, data.counter));
+    //    elem.closest('div.alert').slideDown();
+    //});
 
     $('.form-publish-group').on('ajax:success', function (e, data) {
         if (data.status === 'errors') {
             var elem = $('div.errors-alert'),
                 errors = data.errors;
-            elem.html("<p>"+errors.join("</p>\n<p>") + "</p>\n");
+            elem.html("<p>" + errors.join("</p>\n<p>") + "</p>\n");
             elem.closest('div.alert').slideDown();
         }
         else {
@@ -95,7 +86,7 @@ jQuery(document).ready(function ($) {
         if (data.status === 'errors') {
             var elem = $('div.errors-alert'),
                 errors = data.errors;
-            elem.html("<p>"+errors.join("</p>\n<p>") + "</p>\n");
+            elem.html("<p>" + errors.join("</p>\n<p>") + "</p>\n");
             elem.closest('div.alert').slideDown();
         }
         else {
@@ -146,6 +137,10 @@ jQuery(document).ready(function ($) {
         });
     });
 
+    $('#db-connection').on('change', function () {
+        $('#form-interface-locale')[0].submit();
+    });
+
     $('#interface-locale').on('change', function () {
         $('#form-interface-locale')[0].submit();
     });
@@ -166,6 +161,40 @@ jQuery(document).ready(function ($) {
     $('#display-locale-none').on('click', function (e) {
         e.preventDefault();
         $('.display-locale').prop('checked', false);
+    });
+
+    $('#show-all').on('click', function (e) {
+        //e.preventDefault();
+        var table = $('#translations');
+        table.find('tr').removeClass('hidden');
+    });
+
+    $('#show-empty').on('click', function (e) {
+        //e.preventDefault();
+        var table = $('#translations').find('tbody').first();
+        table.find('tr').addClass('hidden');
+        table.find('tr.has-empty-translation').removeClass('hidden');
+    });
+
+    $('#show-nonempty').on('click', function (e) {
+        //e.preventDefault();
+        var table = $('#translations').find('tbody').first();
+        table.find('tr').addClass('hidden');
+        table.find('tr.has-nonempty-translation').removeClass('hidden');
+    });
+
+    $('#show-deleted').on('click', function (e) {
+        //e.preventDefault();
+        var table = $('#translations').find('tbody').first();
+        table.find('tr').addClass('hidden');
+        table.find('tr.deleted-translation').removeClass('hidden');
+    });
+
+    $('#show-changed').on('click', function (e) {
+        //e.preventDefault();
+        var table = $('#translations').find('tbody').first();
+        table.find('tr').addClass('hidden');
+        table.find('tr.has-changed-translation').removeClass('hidden');
     });
 
     $('div.alert-hideable').each(function () {
@@ -245,40 +274,48 @@ jQuery(document).ready(function ($) {
         }
     }
 
-    var elemAutoTrans = $('#auto-translate');
-    elemAutoTrans.on('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var autoTranslate = [];
+    var elemAutoTrans = $('.btn.auto-translate');
 
-        // step through all the definitions in the second column and auto translate empty ones
-        // here we make a log of assumptons about where the data is.
-        // we assume that the source is the child element immediately preceeding this one and it is a <td> containing
-        // <a> containing the source text
-        $(".auto-translatable").each(function () {
-            var row = $(this).parent().find('.vsch_editable');
-            if (row.length > 1) {
-                var srcElem = $(row[0]),
-                    dstElem = $(row[1]);
+    elemAutoTrans.each(function () {
+        var colNum = $(this).data('trans');
+        var dstLoc = $(this).data('locale');
+        var btnElem = $(this);
 
-                if (dstElem.length && srcElem.length) {
-                    if (dstElem.hasClass('editable-empty') && !srcElem.hasClass('editable-empty')) {
-                        autoTranslate.push({
-                            srcText: srcElem.text(),
-                            dataUrl: dstElem.data('url'),
-                            dataName: dstElem.data('name'),
-                            dstElem: dstElem
-                        });
+        btnElem.on('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var autoTranslate = [];
+
+            // step through all the definitions in the second column and auto translate empty ones
+            // here we make a log of assumptions about where the data is.
+            // we assume that the source is the child element immediately preceding this one and it is a <td> containing
+            // <a> containing the source text
+            $(".auto-translatable-" + dstLoc).each(function () {
+                var row = $(this).parent().find('.vsch_editable');
+                if (row.length > 1) {
+                    var srcElem = $(row[0]),
+                        dstElem = $(row[colNum]);
+
+                    if (dstElem.length && srcElem.length) {
+                        if (dstElem.hasClass('editable-empty') && !srcElem.hasClass('editable-empty')) {
+                            autoTranslate.push({
+                                srcText: srcElem.text(),
+                                dataUrl: dstElem.data('url'),
+                                dataName: dstElem.data('name'),
+                                dstElem: dstElem
+                            });
+                        }
                     }
                 }
-            }
-        });
-
-        (function (fromLoc, toLoc, elemButton) {
-            postTranslationValues(autoTranslate, elemButton, function (text, storeText) {
-                xtranslateText(xtranslateService, fromLoc, text, toLoc, storeText);
             });
-        })(PRIMARY_LOCALE, TRANSLATING_LOCALE, elemAutoTrans);
+
+            (function (fromLoc, toLoc, btnElem) {
+                postTranslationValues(autoTranslate, btnElem, function (text, storeText) {
+                    xtranslateText(xtranslateService, fromLoc, text, toLoc, storeText);
+                });
+            })(PRIMARY_LOCALE, dstLoc, btnElem);
+
+        });
     });
 
     var elemAutoFill = $('#auto-fill');

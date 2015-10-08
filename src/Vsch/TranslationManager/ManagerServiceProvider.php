@@ -7,6 +7,12 @@ class ManagerServiceProvider extends ServiceProvider
 {
     const PACKAGE = 'laravel-translation-manager';
 
+    // Laravel 4
+    const CONTROLLER_PREFIX = '';
+    const PUBLIC_PREFIX = '/packages/vsch/';
+
+    public static function getLists($query) { return $query; }
+
     /**
      * Indicates if loading of the provider is deferred.
      *
@@ -27,8 +33,6 @@ class ManagerServiceProvider extends ServiceProvider
         {
             /* @var $manager \Vsch\TranslationManager\Manager */
             $manager = $app->make('Vsch\TranslationManager\Manager');
-            $manager->packageName(self::PACKAGE);
-
             return $manager;
         });
 
@@ -72,7 +76,7 @@ class ManagerServiceProvider extends ServiceProvider
     function boot()
     {
         $this->package('vsch/'.self::PACKAGE);
-        
+
         if ($root = Config::get(self::PACKAGE . '::config.web_root')) {
             $before = Config::get(self::PACKAGE . '::config.web_route_before');
             $controller = 'Vsch\TranslationManager\Controller';

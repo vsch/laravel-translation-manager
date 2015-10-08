@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Dodać Klucze',
     'addkeys-placeholder'       => 'Dodaj 1 klucz w linii, bez prefiksu grupy',
     'addsuffixes'               => 'Zestaw Sufiksów',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Podstawiane Operacji Z Kluczami',
     'zip-all'                   => 'Zip Wszystkie',
     'zip-group'                 => 'Grupowanie ZIP',
-);
+];

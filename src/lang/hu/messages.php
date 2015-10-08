@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Add Gombok',
     'addkeys-placeholder'       => 'Add meg az 1 gombot soronként, anélkül, hogy a csoport előtag',
     'addsuffixes'               => 'Állítsa Utótagok',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Helyettesítő Alapvető Műveletek',
     'zip-all'                   => 'Zip Összes',
     'zip-group'                 => 'Zip-Csoport',
-);
+];

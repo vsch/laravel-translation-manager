@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'Lisää Avaimet',
     'addkeys-placeholder'       => 'Lisää näppäin 1 per rivi, ilman konsernin etuliite',
     'addsuffixes'               => 'Aseta Päätteitä',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'Jokerimerkki Tärkeimmät Toiminnot',
     'zip-all'                   => 'Zip-Kaikki',
     'zip-group'                 => 'Zip-Ryhmä',
-);
+];

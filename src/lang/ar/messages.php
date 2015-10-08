@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
     'addkeys'                   => 'إضافة مفاتيح',
     'addkeys-placeholder'       => 'إضافة 1 الرئيسية في الخط دون بادئة مجموعة',
     'addsuffixes'               => 'مجموعة اللواحق',
@@ -109,4 +109,4 @@ TEXT
     'wildcard-keyops'           => 'بدل عمليات رئيسية ،',
     'zip-all'                   => 'الرمز البريدي لجميع',
     'zip-group'                 => 'الرمز البريدي الفريق',
-);
+];
