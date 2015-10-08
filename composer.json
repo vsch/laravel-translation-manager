@@ -38,7 +38,7 @@
     },
     "autoload-dev": {
         "classmap": [
-            "tests"
+            "tests/"
         ],
         "psr-4": {
         }

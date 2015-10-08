@@ -290,7 +290,11 @@ if (!function_exists('mb_renderDiffHtml'))
         $removeSpaces = false;
         if ($charDiff === null)
         {
-            $charDiff = mb_strtolower($from_text) === mb_strtolower($to_text) || abs(mb_strlen($from_text) - mb_strlen($to_text)) <= 2 || ($from_text && $to_text && ((strpos($from_text, $to_text) !== false) || ($to_text && strpos($to_text, $from_text) !== false)));
+            $charDiff = mb_strtolower($from_text) === mb_strtolower($to_text)
+                || abs(mb_strlen($from_text) - mb_strlen($to_text)) <= 2
+                || ($from_text && $to_text
+                    && ((strpos($from_text, $to_text) !== false)
+                        || ($to_text && strpos($to_text, $from_text) !== false)));
         }
 
         if ($charDiff)

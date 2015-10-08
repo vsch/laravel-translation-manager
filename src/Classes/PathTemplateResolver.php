@@ -24,6 +24,8 @@ class PathTemplateResolver
     protected $config_paths;
     protected $path_vars;
     protected $config_path;
+    protected $version;
+    protected $group_sep;
 
     protected static $defaults = array(
         'lang' => [
@@ -101,6 +103,8 @@ class PathTemplateResolver
     {
         $this->files = $files;
         $this->base_path = $base_path;
+        $this->version = $version;
+        $this->group_sep = ".";
 
         // provide default mappings if needed. and normalize the config
         static::normalizeConfig($config, $version);
@@ -416,7 +420,10 @@ class PathTemplateResolver
                     $dirs = $this->files->directories($prefix);
                     foreach ($dirs as $dir)
                     {
-                        $this->loadFileList($dir, $path_parts, $group_parts + [$dir]);
+                        $dir_name = substr($dir, strlen($prefix)+1);
+                        $subgroup_parts = $group_parts;
+                        $subgroup_parts[] = $dir_name;
+                        $this->loadFileList($dir, $path_parts, $subgroup_parts);
                     }
                 }
 
@@ -440,7 +447,9 @@ class PathTemplateResolver
                 {
                     if (!array_key_exists($file, $this->lang_files))
                     {
-                        $last_part = implode('.', $group_parts + [pathinfo($file, PATHINFO_FILENAME)]);
+                        $pieces = $group_parts;
+                        $pieces[] = pathinfo($file, PATHINFO_FILENAME);
+                        $last_part = implode($this->group_sep, $pieces);
                         $this->path_vars[$path_parts[0]] = $last_part;
                         $this->lang_files[$file] = $this->path_vars + ['{db_group}' => static::expandVars($db_group, $this->path_vars)];
                     }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit backupGlobals="false"
          backupStaticAttributes="false"
-         bootstrap="vendor/autoload.php"
+         bootstrap="../../../vendor/autoload.php"
          colors="true"
          convertErrorsToExceptions="true"
          convertNoticesToExceptions="true"
@@ -13,13 +13,14 @@
          verbose="true"
 >
     <testsuites>
-        <testsuite name="Translation Manager Package Test Suite">
-            <directory suffix="Test.php">tests</directory>
+        <testsuite name="Application Test Suite">
+            <directory suffix="Test.php">./tests/</directory>
         </testsuite>
     </testsuites>
     <filter>
         <whitelist>
-            <directory suffix=".php">src</directory>
+            <directory suffix=".php">app/</directory>
+            <!--<directory suffix=".php">./workbench/vsch/laravel-translation-manager/src/</directory>-->
         </whitelist>
     </filter>
     <php>

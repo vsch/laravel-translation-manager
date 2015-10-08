@@ -1,7 +1,3 @@
-<?php
-//$trans = App::make('translator');
-//$trans->suspendUsageLogging();
-?>
 <div class="row">
     <div class="col-sm-12">
         <div class="panel panel-primary">
@@ -61,6 +57,3 @@
         </div>
     </div>
 </div>
-<?php
-//$trans->resumeUsageLogging();
-?>

@@ -156,8 +156,13 @@ class Manager
         $this->augmentedGroupList = null;
 
         $manager = $this;
+        // Laravel 4
+        //$app->after(function () use ($manager) {
+
+        // Laravel 5
         $events = \App::make('events');
         $events->listen('router.after', function () use ($manager) {
+        // Common 4-5
             $manager->saveCache();
             $manager->saveUsageCache();
         });
@@ -174,7 +179,7 @@ class Manager
                 $groups = $groups->whereNotIn('group', $excludedGroups);
             }
 
-            $this->groupList = $groups->lists('group', 'group')->all();
+            $this->groupList = ManagerServiceProvider::getLists($groups->lists('group', 'group'));
         }
         return $this->groupList;
     }
@@ -233,12 +238,10 @@ class Manager
         if ($this->persistentPrefix === null) {
             if (array_key_exists(self::PERSISTENT_PREFIX_KEY, $this->config())) {
                 $this->persistentPrefix = $this->config(self::PERSISTENT_PREFIX_KEY);
-            }
-            else {
+            } else {
                 $this->persistentPrefix = '';
             }
-        }
-        elseif ($this->cacheTransKey == null) {
+        } elseif ($this->cacheTransKey == null) {
             $this->cacheTransKey = $this->persistentPrefix ? $this->persistentPrefix . 'translations' : '';
         }
         return $this->persistentPrefix;
@@ -301,8 +304,7 @@ class Manager
                     if ($usage) {
                         if ($setKeys) $setKeys .= ',';
                         $setKeys .= "'$key'";
-                    }
-                    else {
+                    } else {
                         if ($resetKeys) $resetKeys .= ',';
                         $resetKeys .= "'$key'";
                     }
@@ -330,8 +332,7 @@ SQL
         if (!$groups || $groups === '*') {
             $this->cache = [];
             $this->cacheIsDirty = !!$this->persistentPrefix;
-        }
-        elseif ($this->cache()) {
+        } elseif ($this->cache()) {
             if (!is_array($groups)) $groups = [$groups];
 
             foreach ($groups as $group) {
@@ -358,8 +359,7 @@ UPDATE ltm_translations SET was_used = 0 WHERE was_used <> 0
 SQL
                 );
             }
-        }
-        elseif ($this->usageCache()) {
+        } elseif ($this->usageCache()) {
             $this->usageCache();
             if (!is_array($groups)) $groups = [$groups];
 
@@ -398,10 +398,9 @@ SQL
     {
         $key = explode('.', $key, 2);
         if (count($key) > 1) {
-            $group = $key[0];
+            $group = self::fixGroup($key[0]);
             $key = $key[1];
-        }
-        else {
+        } else {
             $group = '';
             $key = $key[0];
         }
@@ -458,6 +457,13 @@ SQL
             || in_array($group, $this->config(self::EXCLUDE_GROUPS_KEY));
     }
 
+    public static
+    function fixGroup($group)
+    {
+        if ($group !== null) $group = str_replace('/', '.', $group);
+        return $group;
+    }
+
     /**
      * @param      $namespace string
      * @param      $group     string
@@ -472,6 +478,8 @@ SQL
     public
     function missingKey($namespace, $group, $key, $locale = null, $useLottery = false, $findOrNew = false)
     {
+        // Fucking L5 changes
+        $group = self::fixGroup($group);
         $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
         if (!$useLottery || $this->config(self::LOG_MISSING_KEYS_KEY)) {
             if (!in_array($group, $this->config(self::EXCLUDE_GROUPS_KEY))) {
@@ -500,8 +508,7 @@ SQL
                             'group' => $group,
                             'key' => $key,
                         ));
-                    }
-                    else {
+                    } else {
                         $translation = $this->translation->firstOrCreate(array(
                             'locale' => $locale,
                             'group' => $group,
@@ -530,6 +537,7 @@ SQL
     public
     function usingKey($namespace, $group, $key, $locale = null, $useLottery = false)
     {
+        $group = self::fixGroup($group);
         if (!$useLottery || $this->config(self::LOG_KEY_USAGE_INFO_KEY)) {
             $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
 
@@ -581,8 +589,7 @@ SQL
             if (array_key_exists($key, $dbTransMap)) {
                 $translation = $dbTransMap[$key];
                 unset($dbTransMap[$key]);
-            }
-            else {
+            } else {
                 $translation = new Translation(array(
                     'locale' => $locale,
                     'group' => $db_group,
@@ -624,8 +631,7 @@ SQL
                     ')';
 
                 $values[] = $sql;
-            }
-            else if ($translation->isDirty()) {
+            } else if ($translation->isDirty()) {
                 $translation->save();
             }
 
@@ -669,6 +675,14 @@ SQL
     public
     function importTranslations($replace, $groups = null)
     {
+        // this can come from the command line
+        if (is_array($groups)) {
+            foreach ($groups as &$group) {
+                $group = self::fixGroup($group);
+            }
+        } else {
+            $groups = self::fixGroup($groups);
+        }
         $this->imported = 0;
         $this->clearCache($groups);
         $this->clearUsageCache(false, $groups);
@@ -798,12 +812,15 @@ SQL
     function exportTranslations($group, $recursing = 0)
     {
         // TODO: clean up this recursion crap
-        if (!$recursing) $this->clearErrors();
+        // this can come from the command line
+        if (!$recursing) {
+            $this->clearErrors();
+            $group = self::fixGroup($group);
+        }
 
         if ($group && $group !== '*') {
             $this->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE is_deleted = 1");
-        }
-        elseif (!$recursing) {
+        } elseif (!$recursing) {
             $this->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE is_deleted = 1 AND `group` = ?", [$group]);
         }
 
@@ -821,8 +838,7 @@ SQL
                     'locale',
                     'saved_value'
                 ]);
-            }
-            else {
+            } else {
                 $this->getConnection()->affectingStatement(<<<SQL
 UPDATE ltm_translations SET saved_value = value, status = ? WHERE (saved_value <> value || status <> ?)
 SQL
@@ -884,8 +900,7 @@ SQL
                                 $filePathName = ($pathPrefix === $zipRoot) ? mb_substr($path, mb_strlen($zipRoot)) : $path;
                                 //$this->makeDirPath($filePathName);
                                 $this->zipExporting->addFromString($filePathName, $output);
-                            }
-                            else {
+                            } else {
                                 try {
                                     $this->makeDirPath($path);
                                     if (($result = $this->files->put($path, $output)) === false) {
@@ -935,13 +950,11 @@ SQL
                     // Stuff with content
                     $this->exportTranslations($group->group, 0);
                 }
-            }
-            else {
+            } else {
                 // Stuff with content
                 $this->exportTranslations($groups, 0);
             }
-        }
-        else {
+        } else {
             foreach ($groups as $group) {
                 // Stuff with content
                 $this->exportTranslations($group, 0);
@@ -965,8 +978,7 @@ SQL
     {
         if ($group === '*') {
             $this->translation->truncate();
-        }
-        else {
+        } else {
             $this->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE `group` = ?", [$group]);
         }
     }

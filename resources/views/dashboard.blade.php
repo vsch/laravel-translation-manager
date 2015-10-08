@@ -1,7 +1,3 @@
-<?php
-//$trans = App::make('translator');
-//$trans->suspendUsageLogging();
-?>
 <div class="panel panel-primary">
     <div class="panel-heading">
         <h3 class="panel-title">@lang($package . '::messages.stats')</h3>
@@ -45,6 +41,3 @@
         </table>
     </div>
 </div>
-<?php
-//$trans->resumeUsageLogging();
-?>

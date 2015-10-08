@@ -7,6 +7,13 @@ class ManagerServiceProvider extends ServiceProvider
 {
     const PACKAGE = 'laravel-translation-manager';
 
+    // Laravel 5
+    const CONTROLLER_PREFIX = '\\';
+    const PUBLIC_PREFIX = '/vendor/';
+
+    public static function getLists($query) { return $query->all(); }
+
+
     /**
      * Indicates if loading of the provider is deferred.
      *

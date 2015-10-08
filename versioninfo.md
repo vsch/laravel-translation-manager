@@ -1,4 +1,29 @@
-#### 1.0.29
+### Version Notes
+
+The 1.x branch is for Laravel 4.2, 2.x branch is for Laravel 5.1
+
+#### 1.0.30 - 2.0.30
+
+- fix import of locale sub-directories. Note that in L4 you access translations in sub-directories by using the `.` as separator in L5 this is `/`. In translation manager the group will have a period in all Laravel Versions. For example for directory structure like the following:
+
+    ```text
+    lang
+    └── en
+        └── test
+            ├── sub-dir
+            │ └── sub-sub-test.php
+            └── subtest.php
+    ```
+
+    You would access translations:      
+    
+    - in L5 as `@lang('test/subtest.translation-key')` for `subtest.php` and as `@lang('test/sub-dir/sub-sub-test.translation-key')` for `sub-sub-test.php`.
+    
+    - in L4 as `@lang('test.subtest.translation-key')` for `subtest.php` and as `@lang('test.sub-dir.sub-sub-test.translation-key')` for `sub-sub-test.php`.
+    
+    In both cases the group in translation manager will show as `test.subtest` and `test.sub-dir.sub-sub-test`. It was too big a pain to support `/` in group names because these are passed in the URL as parameters and having slashes messes things up. URL encoding is no help because Laravel cannot resolve the path.
+
+#### 1.0.29 - 2.0.29
 
 - fix formSubmit() was not properly processing translation result for inPlaceEdit() mode
 - fix moved csrf meta from index.blade.php to layouts.master.blade.php so that all pages that extend layouts.master can use in-place-edit mode.

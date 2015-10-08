@@ -221,8 +221,7 @@ class Translator extends LaravelTranslator
 
             $this->notifyMissingKey($key, $locale);
             $this->notifyUsingKey($key, $locale);
-        }
-        else {
+        } else {
             $this->notifyUsingKey($key, $locale);
         }
         return $result;
@@ -276,16 +275,14 @@ class Translator extends LaravelTranslator
     {
         if (!$this->suspendInPlaceEdit && $this->inPlaceEditing()) {
             return $this->get($key, $replace, $locale, $useDB);
-        }
-        else {
+        } else {
             if ($useDB !== null) {
                 $oldUseDB = $this->useDB;
                 $this->useDB = $useDB;
                 $retVal = parent::choice($key, $number, $replace, $locale);
                 $this->useDB = $oldUseDB;
                 return $retVal;
-            }
-            else {
+            } else {
                 return parent::choice($key, $number, $replace, $locale);
             }
         }

@@ -1,10 +1,13 @@
 <?php namespace Vsch\TranslationManager;
 
-use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Routing\Controller as BaseController;
 use Vsch\TranslationManager\Models\Translation;
 use Vsch\UserPrivilegeMapper\Facade\Privilege as UserCan;
 
+// Laravel 4
+//include_once(__DIR__ . '/../../../scripts/finediff.php');
+
+// Laravel 5
 include_once(__DIR__ . '/Support/finediff.php');
 
 class Controller extends BaseController
@@ -69,8 +72,7 @@ class Controller extends BaseController
             foreach ($connections[\App::environment()] as $key => $value) {
                 if (array_key_exists('description', $value)) {
                     $this->connectionList[$key] = $value['description'];
-                }
-                else {
+                } else {
                     $this->connectionList[$key] = $key;
                 }
             }
@@ -120,8 +122,7 @@ class Controller extends BaseController
     /**
      * @return mixed
      */
-    public
-    static
+    public static
     function active($url)
     {
         $url = url($url, null, false);
@@ -134,9 +135,6 @@ class Controller extends BaseController
     public
     function getIndex($group = null)
     {
-        //$trans = \App::make('translator');
-        //$trans->suspendUsageLogging();
-
         $locales = $this->locales;
         $currentLocale = \Lang::getLocale();
         $primaryLocale = $this->primaryLocale;
@@ -145,7 +143,7 @@ class Controller extends BaseController
         $groups = array('' => noEditTrans($this->packagePrefix . 'messages.choose-group')) + $this->manager->getGroupList();
 
         if ($group != null && !array_key_exists($group, $groups)) {
-            return \Redirect::action('\\' . get_class($this) . '@getIndex');
+            return \Redirect::action(ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this) . '@getIndex');
         }
 
         $numChanged = $this->getTranslation()->where('group', $group)->where('status', Translation::STATUS_CHANGED)->count();
@@ -271,8 +269,7 @@ SQL
                                 }
                             }
                             $enbases[$key] = $txten;
-                        }
-                        else {
+                        } else {
                             $txten = array_keys($ens)[0];
                             $enbases[$key] = $txten;
                         }
@@ -285,8 +282,7 @@ SQL
                                 }
                             }
                             $rubases[$key] = $txtru;
-                        }
-                        else {
+                        } else {
                             $txtru = array_keys($rus)[0];
                             $rubases[$key] = $txtru;
                         }
@@ -324,10 +320,11 @@ SQL
 
         $show_usage_enabled = $this->manager->config('log_key_usage_info', false);
 
-        $view = \View::make($this->packagePrefix . 'index')
-            ->with('controller', '\\' . get_class($this))
+        //$view = $view->render();
+        return \View::make($this->packagePrefix . 'index')
+            ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
             ->with('package', $this->package)
-            ->with('public_prefix', '/vendor/')
+            ->with('public_prefix', ManagerServiceProvider::PUBLIC_PREFIX)
             ->with('translations', $translations)
             ->with('yandex_key', !!$this->manager->config('yandex_translator_key'))
             ->with('locales', $locales)
@@ -347,12 +344,6 @@ SQL
             ->with('usage_info_enabled', $show_usage_enabled)
             ->with('connection_list', $this->connectionList)
             ->with('connection_name', $this->getConnectionName());
-
-        $view = $view->render();
-
-        //$trans->resumeUsageLogging();
-
-        return $view;
     }
 
     public
@@ -385,7 +376,7 @@ SQL
         $numTranslations = count($translations);
 
         return \View::make($this->packagePrefix . 'search')
-            ->with('controller', '\\' . get_class($this))
+            ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
             ->with('package', $this->package)
             ->with('translations', $translations)
             ->with('numTranslations', $numTranslations);
@@ -405,7 +396,7 @@ SQL
         $primaryLocale = $this->primaryLocale;
         $translatingLocale = \Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE), $currentLocale);
 
-        $locales = $this->getTranslation()->groupBy('locale')->lists('locale')->all() ?: [];
+        $locales = ManagerServiceProvider::getLists($this->getTranslation()->groupBy('locale')->lists('locale')) ?: [];
 
         $configLocales = $this->manager->config(Manager::ADDITIONAL_LOCALES_KEY, []);
         if (!is_array($configLocales)) $configLocales = array($configLocales);
@@ -431,8 +422,7 @@ SQL
                     foreach ($suffixes as $suffix) {
                         $this->manager->missingKey($namespace, $group, $key . trim($suffix));
                     }
-                }
-                else {
+                } else {
                     $this->manager->missingKey($namespace, $group, $key);
                 }
             }
@@ -461,8 +451,7 @@ UPDATE ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? 
 SQL
                                 , [$group, $key . trim($suffix)]);
                         }
-                    }
-                    else {
+                    } else {
                         //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
                         $result = $this->getConnection()->update(<<<SQL
 UPDATE ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
@@ -477,11 +466,11 @@ SQL
     }
 
     public
-    function postEdit(HttpRequest $request, $group)
+    function postEdit($group)
     {
         if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY))) {
-            $name = $request->get('name');
-            $value = $request->get('value');
+            $name = \Input::get('name');
+            $value = \Input::get('value');
 
             list($locale, $key) = explode('|', $name, 2);
             $translation = $this->getTranslation()->firstOrNew(array(
@@ -548,8 +537,7 @@ SQL
         if (count($parts) === 1) {
             $tgroup = $group;
             $tkey = $gkey;
-        }
-        else {
+        } else {
             $tgroup = $parts[0];
             $tkey = $parts[1];
         }
@@ -581,14 +569,11 @@ SQL
 
             if (!$group) {
                 $errors[] = trans($this->packagePrefix . 'messages.keyop-need-group');
-            }
-            elseif (count($srckeys) !== count($dstkeys) && ($op === 'copy' || $op === 'move' || count($dstkeys))) {
+            } elseif (count($srckeys) !== count($dstkeys) && ($op === 'copy' || $op === 'move' || count($dstkeys))) {
                 $errors[] = trans($this->packagePrefix . 'messages.keyop-count-mustmatch');
-            }
-            elseif (!count($srckeys)) {
+            } elseif (!count($srckeys)) {
                 $errors[] = trans($this->packagePrefix . 'messages.keyop-need-keys');
-            }
-            else {
+            } else {
                 if (!count($dstkeys)) $dstkeys = array_fill(0, count($srckeys), null);
 
                 $keys = array_combine($srckeys, $dstkeys);
@@ -633,8 +618,7 @@ SQL
                                     $srcgrp,
                                     '%' . mb_substr($srckey, 1),
                                 ]);
-                        }
-                        else {
+                        } else {
                             $rows = $this->getConnection()->select($sql = <<<SQL
 SELECT DISTINCT `group`, `key`, locale, id, CONCAT(SUBSTR(`key`, 1, CHAR_LENGTH(`key`)-?), ?) dst, ? dstgrp FROM ltm_translations t1
 WHERE `group` = ? AND `key` LIKE BINARY ?
@@ -654,8 +638,7 @@ SQL
                                     mb_substr($dstkey, 1)
                                 ]);
                         }
-                    }
-                    elseif ((substr($src, -1, 1) === '*')) {
+                    } elseif ((substr($src, -1, 1) === '*')) {
                         if ($dst === null) {
                             $rows = $this->getConnection()->select($sql = <<<SQL
 SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM ltm_translations t1
@@ -667,8 +650,7 @@ SQL
                                     $srcgrp,
                                     mb_substr($srckey, 0, -1) . '%',
                                 ]);
-                        }
-                        else {
+                        } else {
                             $rows = $this->getConnection()->select($sql = <<<SQL
 SELECT DISTINCT `group`, `key`, locale, id, CONCAT(?, SUBSTR(`key`, ?+1, CHAR_LENGTH(`key`)-?)) dst, ? dstgrp FROM ltm_translations t1
 WHERE `group` = ? AND `key` LIKE BINARY ?
@@ -690,8 +672,7 @@ SQL
                                     mb_strlen($srckey) - 1
                                 ]);
                         }
-                    }
-                    else {
+                    } else {
                         if ($dst === null) {
                             $rows = $this->getConnection()->select($sql = <<<SQL
 SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM ltm_translations t1
@@ -703,8 +684,7 @@ SQL
                                     $srcgrp,
                                     $srckey,
                                 ]);
-                        }
-                        else {
+                        } else {
                             $rows = $this->getConnection()->select($sql = <<<SQL
 SELECT DISTINCT `group`, `key`, locale, id, ? dst, ? dstgrp FROM ltm_translations t1
 WHERE `group` = ? AND `key` LIKE BINARY ?
@@ -757,12 +737,10 @@ SQL
                                 $this->getConnection()->update("UPDATE ltm_translations SET `group` = ?, `key` = ?, status = 1 WHERE id = ?"
                                     , [$dstgrp, $dstkey, $row->id]);
                             }
-                        }
-                        elseif ($op === 'delete') {
+                        } elseif ($op === 'delete') {
                             //$this->getConnection()->delete("DELETE FROM ltm_translations WHERE id IN ($rowids)");
                             $this->getConnection()->update("UPDATE ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND id IN ($rowids)");
-                        }
-                        elseif ($op === 'copy') {
+                        } elseif ($op === 'copy') {
                             foreach ($rows as $row) {
                                 list($dstgrp, $dstkey) = self::keyGroup($row->dstgrp, $row->dst);
                                 $to_delete = $this->getConnection()->select(<<<SQL
@@ -805,14 +783,13 @@ SQL
                     }
                 }
             }
-        }
-        else {
+        } else {
             $errors[] = trans($this->packagePrefix . 'messages.keyops-not-authorized');
         }
 
         $this->logSql = 0;
         return \View::make($this->packagePrefix . 'keyop')
-            ->with('controller', '\\' . get_class($this))
+            ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
             ->with('package', $this->package)
             ->with('errors', $errors)
             ->with('keymap', $keymap)
@@ -851,9 +828,9 @@ SQL
     }
 
     public
-    function postImport(HttpRequest $request, $group)
+    function postImport($group)
     {
-        $replace = $request->get('replace', false);
+        $replace = \Input::get('replace', false);
         if ($replace == 2) $this->manager->truncateTranslations($group);
         //$counter = $this->manager->importTranslations($group !== '*' ? true : $replace, false, $group === '*' ? null : [$group]);
         $counter = $this->manager->importTranslations(($group !== '*' ? !$this->manager->inDatabasePublishing() : $replace), $group === '*' ? null : [$group]);
@@ -862,10 +839,10 @@ SQL
     }
 
     public
-    function getImport(HttpRequest $request)
+    function getImport()
     {
-        $replace = $request->get('replace', false);
-        $group = $request->get('group', '*');
+        $replace = \Input::get('replace', false);
+        $group = \Input::get('group', '*');
         //$counter = $this->manager->importTranslations(($group !== '*' ? !$this->manager->inDatabasePublishing() : $replace), false, $group === '*' ? null : [$group]);
         $counter = $this->manager->importTranslations(($group !== '*' ? !$this->manager->inDatabasePublishing() : $replace), $group === '*' ? null : [$group]);
 
