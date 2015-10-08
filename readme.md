@@ -10,7 +10,7 @@ This package is used to comfortably manage, view, edit and translate Laravel lan
 > Master branch is now for Laravel version 5.1
 >
 > - For Laravel 4.2 use the Laravel4 branch, or require: `"vsch/laravel-translation-manager": "~1.0"`
->   **I would like to stop maintaining Laravel 4.2 version of this package. If you are still using it please leave a comment on #14 to let me know that it is still worth maintaining.**
+>   **I would like to stop maintaining Laravel 4.2 version of this package. If you are still using it please leave a comment on [Issue #14](https://github.com/vsch/laravel-translation-manager/issues/14) to let me know that it is still worth maintaining.**
 >
 > - For Laravel 5.1 use the master branch, or require: `"vsch/laravel-translation-manager": "~2.0"`
 >
