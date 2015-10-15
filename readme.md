@@ -5,9 +5,9 @@ This package is used to comfortably manage, view, edit and translate Laravel lan
 
 **Detailed information is now in the [wiki](../../wiki).**
 
-[Installation](../../wiki/Installation)
-[Configuration](../../wiki/Configuration)
-[Version Notes](versioninfo.md)
+[Installation](../../wiki/Installation)  
+[Configuration](../../wiki/Configuration)  
+[Version Notes](versioninfo.md)  
 
 > Master branch is now for Laravel version 5.1
 >
