@@ -735,8 +735,10 @@ SQL
                                 if (!empty($to_delete)) {
                                     $to_delete = $to_delete[0]->ids;
                                     if ($to_delete) {
-                                        //$this->getConnection()->delete("DELETE FROM ltm_translations WHERE id IN ($to_delete)");
-                                        $this->getConnection()->update("UPDATE ltm_translations SET is_deleted = 1 WHERE id IN ($to_delete)");
+                                        //$this->getConnection()->update("UPDATE ltm_translations SET is_deleted = 1 WHERE id IN ($to_delete)");
+                                        // have to delete right away, we will be bringing another key here
+                                        // TODO: copy value to new key's saved value
+                                        $this->getConnection()->delete("DELETE FROM ltm_translations WHERE id IN ($to_delete)");
                                     }
                                 }
 
@@ -747,6 +749,7 @@ SQL
                             //$this->getConnection()->delete("DELETE FROM ltm_translations WHERE id IN ($rowids)");
                             $this->getConnection()->update("UPDATE ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND id IN ($rowids)");
                         } elseif ($op === 'copy') {
+                            // TODO: split operation into update and insert so that conflicting keys get new values instead of being replaced
                             foreach ($rows as $row) {
                                 list($dstgrp, $dstkey) = self::keyGroup($row->dstgrp, $row->dst);
                                 $to_delete = $this->getConnection()->select(<<<SQL
@@ -759,8 +762,8 @@ SQL
                                 if (!empty($to_delete)) {
                                     $to_delete = $to_delete[0]->ids;
                                     if ($to_delete) {
-                                        //$this->getConnection()->delete("DELETE FROM ltm_translations WHERE id IN ($to_delete)");
-                                        $this->getConnection()->update("UPDATE ltm_translations SET is_deleted = 1 WHERE id IN ($to_delete)");
+                                        //$this->getConnection()->update("UPDATE ltm_translations SET is_deleted = 1 WHERE id IN ($to_delete)");
+                                        $this->getConnection()->delete("DELETE FROM ltm_translations WHERE id IN ($to_delete)");
                                     }
                                 }
 
@@ -804,9 +807,9 @@ SQL
     }
 
     public
-    function getKeyop($group)
+    function getKeyop($group, $op = 'preview')
     {
-        return $this->keyOp($group);
+        return $this->keyOp($group, $op);
     }
 
     public

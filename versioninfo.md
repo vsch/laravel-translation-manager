@@ -2,6 +2,10 @@
 
 The 1.x branch is for Laravel 4.2, 2.x branch is for Laravel 5.1
 
+#### 1.0.32 - 2.0.32
+
+- fix move keys would fail if destination had existing key. Now conflicting destination keys are deleted and replaced by the moved keys.
+
 #### 1.0.31 - 2.0.31
 
 - fix error reporting for wild card key operations would show empty alert
