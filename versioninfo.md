@@ -8,7 +8,7 @@ The 1.x branch is for Laravel 4.2, 2.x branch is for Laravel 5.1
 - fix discrepancy between changed status in dashboard view and show changed radio button translation results
 - add unpublished radio button to show translations that need attention or will be modified on next publish. These are: deleted, changed or missing.
 - add text box for regex to show translations whose keys match regex in the text box. Applied on top of other radio button filtering.
-- add key stats displayed in the translations table key column. Shows total displayed, vs total from radio buttons, vs total keys.
+- add filtered key stats display in the translations table key column. Shows total displayed after regex filtering vs total from radio buttons vs total keys.
 - add `show_locales` config option to limit the locales to ones contained in the option. If empty or not provided then all locales from the database will be shown. Only affects locales shown. All locales are imported and exported regardless of this setting.
 
 #### 1.0.30 - 2.0.30
