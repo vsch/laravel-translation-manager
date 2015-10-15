@@ -215,3 +215,22 @@ ins {
     content: "▶ ";
     display: inline;
 }
+
+.panel-heading > h1,
+.panel-heading > h2,
+.panel-heading > h3,
+.panel-heading > h4,
+.panel-heading > h5,
+.panel-heading > h6 {
+    margin-bottom: 0;
+}
+
+.key-filter {
+    float: right;
+    font-weight: normal;
+}
+
+.key-filter.have-filtered {
+    font-weight: bold;
+    color: #be0031;
+}

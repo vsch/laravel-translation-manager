@@ -36,6 +36,14 @@ return array(
         'en',
     ],
     /**
+     * Specify locales that you want to show in the web interface, if empty or not provided then all locales in the database
+     * will be shown
+     *
+     * @type array of strings
+     */
+    'show_locales' => [
+    ],
+    /**
      * Specify the prefix used for all cookies, session data and cache persistence.
      *
      * @type string

@@ -30,6 +30,7 @@ class Manager
     const LOTTERY_PERSISTENT_SUFFIX = 'lottery';
     const LOG_KEY_USAGE_INFO_KEY = 'log_key_usage_info';
     const ADDITIONAL_LOCALES_KEY = 'locales';
+    const SHOW_LOCALES_KEY = 'show_locales';
 
     /** @var \Illuminate\Foundation\Application */
     protected $app;

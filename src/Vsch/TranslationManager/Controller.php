@@ -320,7 +320,7 @@ SQL
 
         $show_usage_enabled = $this->manager->config('log_key_usage_info', false);
 
-        $view = \View::make($this->packagePrefix . 'index')
+        return \View::make($this->packagePrefix . 'index')
             ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
             ->with('package', $this->package)
             ->with('public_prefix', ManagerServiceProvider::PUBLIC_PREFIX)
@@ -343,10 +343,6 @@ SQL
             ->with('usage_info_enabled', $show_usage_enabled)
             ->with('connection_list', $this->connectionList)
             ->with('connection_name', $this->getConnectionName());
-
-        $view = $view->render();
-
-        return $view;
     }
 
     public
@@ -400,6 +396,13 @@ SQL
         $translatingLocale = \Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE), $currentLocale);
 
         $locales = ManagerServiceProvider::getLists($this->getTranslation()->groupBy('locale')->lists('locale')) ?: [];
+
+        // limit the locale list to what is in the config
+        $configShowLocales = $this->manager->config(Manager::SHOW_LOCALES_KEY, []);
+        if ($configShowLocales) {
+            if (!is_array($configShowLocales)) $configShowLocales = array($configShowLocales);
+            $locales = array_intersect($locales, $configShowLocales);
+        }
 
         $configLocales = $this->manager->config(Manager::ADDITIONAL_LOCALES_KEY, []);
         if (!is_array($configLocales)) $configLocales = array($configLocales);
