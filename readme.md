@@ -1,8 +1,6 @@
 
 # Laravel 5.1 Translation Manager
 
-
-
 This package is used to comfortably manage, view, edit and translate Laravel language files with translation assistance through the Yandex Translation API. It augments the Laravel Translator system with a ton of practical functionality. [Features](../../wiki/#features)
 
 **Detailed information is now in the [wiki](../../wiki).**

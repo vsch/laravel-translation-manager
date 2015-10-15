@@ -163,41 +163,165 @@ jQuery(document).ready(function ($) {
         $('.display-locale').prop('checked', false);
     });
 
-    $('#show-all').on('click', function (e) {
-        //e.preventDefault();
+    function showMatched(table, matched) {
+        table.find('tr').each(function () {
+            if (!$(this).hasClass('hidden')) {
+                var key = $(this).find('td.key').first();
+                if (key.length > 0) {
+                    var text = key[0].innerText;
+                    if (!matched.exec(text)) {
+                        $(this).addClass('hidden');
+                    }
+                }
+            }
+        });
+    }
+
+    function showAll() {
         var table = $('#translations');
         table.find('tr').removeClass('hidden');
+    }
+
+    var updateTranslationList = showAll;
+
+    function updateMatching() {
+        var table = $('#translations').find('tbody').first(),
+            matchedText = $('#show-matching-text'),
+            matched, totalKeys, filteredKeys, matchedKeys, keyFilterSpan;
+
+        totalKeys = table.find('tr').length;
+        updateTranslationList();
+        matchedKeys = filteredKeys = totalKeys - table.find('tr.hidden').length;
+
+        if (matchedText.length > 0) {
+            var pattern = matchedText[0].value.trim();
+            matched = new RegExp(pattern, 'i');
+            showMatched(table, matched);
+            matchedKeys = totalKeys - table.find('tr.hidden').length;
+        }
+
+        keyFilterSpan = $('#key-filter').first();
+        if (keyFilterSpan.length > 0) {
+            var html = "";
+            if (matchedKeys !== filteredKeys) {
+                html += matchedKeys + "/";
+            }
+            if (filteredKeys !== totalKeys) {
+                html += filteredKeys + "/";
+            }
+
+            html += totalKeys;
+
+            keyFilterSpan.removeClass('have-filtered');
+            if (matchedKeys !== totalKeys) {
+                keyFilterSpan.addClass('have-filtered');
+            }
+            keyFilterSpan[0].innerHTML = html;
+        }
+    }
+
+    $('#show-all').on('click', function (e) {
+        //e.preventDefault();
+        updateTranslationList = showAll;
+        updateMatching();
+    });
+
+    $('#show-unpublished').on('click', function (e) {
+        //e.preventDefault();
+        updateTranslationList = function () {
+            var table = $('#translations').find('tbody').first();
+            table.find('tr').addClass('hidden');
+            table.find('tr.has-empty-translation').removeClass('hidden');
+            table.find('tr.deleted-translation').removeClass('hidden');
+            table.find('tr.has-changed-translation').removeClass('hidden');
+        };
+        updateMatching();
     });
 
     $('#show-empty').on('click', function (e) {
         //e.preventDefault();
-        var table = $('#translations').find('tbody').first();
-        table.find('tr').addClass('hidden');
-        table.find('tr.has-empty-translation').removeClass('hidden');
+        updateTranslationList = function () {
+            var table = $('#translations').find('tbody').first();
+            table.find('tr').addClass('hidden');
+            table.find('tr.has-empty-translation').removeClass('hidden');
+        };
+        updateMatching();
     });
 
     $('#show-nonempty').on('click', function (e) {
         //e.preventDefault();
-        var table = $('#translations').find('tbody').first();
-        table.find('tr').addClass('hidden');
-        table.find('tr.has-nonempty-translation').removeClass('hidden');
+        updateTranslationList = function () {
+            var table = $('#translations').find('tbody').first();
+            table.find('tr').addClass('hidden');
+            table.find('tr.has-nonempty-translation').removeClass('hidden');
+        };
+        updateMatching();
+    });
+
+    $('#show-used').on('click', function (e) {
+        //e.preventDefault();
+        updateTranslationList = function () {
+            var table = $('#translations').find('tbody').first();
+            table.find('tr').addClass('hidden');
+            table.find('tr.has-used-translation').removeClass('hidden');
+        };
+        updateMatching();
     });
 
     $('#show-deleted').on('click', function (e) {
         //e.preventDefault();
-        var table = $('#translations').find('tbody').first();
-        table.find('tr').addClass('hidden');
-        table.find('tr.deleted-translation').removeClass('hidden');
+        updateTranslationList = function () {
+            var table = $('#translations').find('tbody').first();
+            table.find('tr').addClass('hidden');
+            table.find('tr.deleted-translation').removeClass('hidden');
+        };
+        updateMatching();
     });
 
     $('#show-changed').on('click', function (e) {
         //e.preventDefault();
-        var table = $('#translations').find('tbody').first();
-        table.find('tr').addClass('hidden');
-        table.find('tr.has-changed-translation').removeClass('hidden');
+        updateTranslationList = function () {
+            var table = $('#translations').find('tbody').first();
+            table.find('tr').addClass('hidden');
+            table.find('tr.has-changed-translation').removeClass('hidden');
+        };
+        updateMatching();
     });
 
-    $('div.alert-hideable').each(function () {
+    //var showMatching = $('#show-matching');
+    //showMatching.on('click', function () {
+    //    updateMatching();
+    //});
+    //
+    var updateMatchingTimer = null,
+        matchingText = $('#show-matching-text');
+
+    matchingText.on('keyup change', function () {
+        //if (showMatching.length > 0 && !showMatching.prop('checked')) {
+        //    showMatching.prop('checked', true);
+        //} else {
+        //    updateMatching();
+        //}
+        if (updateMatchingTimer) {
+            window.clearTimeout(updateMatchingTimer);
+            updateMatchingTimer = null;
+        }
+
+        updateMatchingTimer = window.setTimeout(function () {
+            updateMatchingTimer = null;
+            updateMatching();
+        }, 100);
+    });
+
+    $('#show-matching-clear').on('click', function () {
+        if (matchingText.length){
+            matchingText[0].value = '';
+            matchingText.focus();
+            updateMatching();
+        }
+    });
+
+    $('div.alert-dismissible').each(function () {
         var elem = $(this), btn = elem.find('button.close').first();
         if (btn.length) {
             btn.on('click', function () {

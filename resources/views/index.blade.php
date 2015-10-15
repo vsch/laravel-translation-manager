@@ -15,40 +15,40 @@
                         <p>@lang($package . '::messages.export-warning-text')</p>
 
                         <?= ifInPlaceEdit("@lang($package . '::messages.import-all-done')") ?>
-                        <div class="alert alert-danger alert-hideable" style="display:none;">
+                        <div class="alert alert-danger alert-dismissible" style="display:none;">
                             <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                             <div class="errors-alert">
                             </div>
                         </div>
-                        <div class="alert alert-success alert-hideable" style="display:none;">
+                        <div class="alert alert-success alert-dismissible" style="display:none;">
                             <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                             <div class="success-import-all">
                             <p>@lang($package . '::messages.import-all-done')</p>
                             </div>
                         </div>
                         <?= ifInPlaceEdit("@lang($package . '::messages.import-group-done')", ['group' => $group]) ?>
-                        <div class="alert alert-success alert-hideable" style="display:none;">
+                        <div class="alert alert-success alert-dismissible" style="display:none;">
                             <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                             <div class="success-import-group">
                                 <p>@lang($package . '::messages.import-group-done', ['group' => $group]) </p>
                             </div>
                         </div>
                         <?= ifInPlaceEdit("@lang($package . '::messages.search-done')") ?>
-                        <div class="alert alert-success alert-hideable" style="display:none;">
+                        <div class="alert alert-success alert-dismissible" style="display:none;">
                             <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                             <div class="success-find">
                                 <p>@lang($package . '::messages.search-done')</p>
                             </div>
                         </div>
                         <?= ifInPlaceEdit("@lang($package . '::messages.done-publishing')", ['group' => $group]) ?>
-                        <div class="alert alert-success alert-hideable" style="display:none;">
+                        <div class="alert alert-success alert-dismissible" style="display:none;">
                             <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                             <div class="success-publish">
                                 <p>@lang($package . '::messages.done-publishing', ['group'=> $group])</p>
                             </div>
                         </div>
                         <?= ifInPlaceEdit("@lang($package . '::messages.done-publishing-all')") ?>
-                        <div class="alert alert-success alert-hideable" style="display:none;">
+                        <div class="alert alert-success alert-dismissible" style="display:none;">
                             <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                             <div class="success-publish-all">
                                 <p>@lang($package . '::messages.done-publishing-all')</p>
@@ -56,7 +56,7 @@
                         </div>
 
                         <?php if(Session::has('successPublish')) : ?>
-                        <div class="alert alert-info alert-hideable">
+                        <div class="alert alert-info alert-dismissible">
                             <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                             <?php echo Session::get('successPublish'); ?>
                         </div>
@@ -630,22 +630,39 @@
         </div>
         <div class="row">
             <div class="col-sm-12 ">
-                <div class="input-group input-group-sm">
-                    <label class="radio-inline">
-                        <input id="show-all" type="radio" name="show-options" value="show-all" checked> @lang($package . '::messages.show-all')
-                    </label>
-                    <label class="radio-inline">
-                        <input id="show-nonempty" type="radio" name="show-options" value="show-nonempty"> @lang($package . '::messages.show-nonempty')
-                    </label>
-                    <label class="radio-inline">
-                        <input id="show-empty" type="radio" name="show-options" value="show-empty"> @lang($package . '::messages.show-empty')
-                    </label>
-                    <label class="radio-inline">
-                        <input id="show-changed" type="radio" name="show-options" value="show-changed"> @lang($package . '::messages.show-changed')
-                    </label>
-                    <label class="radio-inline">
-                        <input id="show-deleted" type="radio" name="show-options" value="show-deleted"> @lang($package . '::messages.show-deleted')
-                    </label>
+                <div class="form-inline">
+                    <?= ifEditTrans($package . '::messages.show-matching-text') ?>
+                    <div class="input-group input-group-sm">
+                        <input class="form-control" style="width: 200px;" id="show-matching-text" type="text" placeholder="{{noEditTrans($package . '::messages.show-matching-text')}}">
+                        <span class="input-group-btn">
+                            <button type="button"  class="btn btn-default" id="show-matching-clear" style="margin-right: 15px;">
+                                &times;
+                            </button>
+                        </span>
+                    </div>
+                    <div class="input-group input-group-sm">
+                        <label class="radio-inline">
+                            <input id="show-all" type="radio" name="show-options" value="show-all" checked> @lang($package . '::messages.show-all')
+                        </label>
+                        <label class="radio-inline">
+                            <input id="show-nonempty" type="radio" name="show-options" value="show-nonempty"> @lang($package . '::messages.show-nonempty')
+                        </label>
+                        <label class="radio-inline">
+                            <input id="show-used" type="radio" name="show-options" value="show-used"> @lang($package . '::messages.show-used')
+                        </label>
+                        <label class="radio-inline">
+                            <input id="show-unpublished" type="radio" name="show-options" value="show-unpublished"> @lang($package . '::messages.show-unpublished')
+                        </label>
+                        <label class="radio-inline">
+                            <input id="show-empty" type="radio" name="show-options" value="show-empty"> @lang($package . '::messages.show-empty')
+                        </label>
+                        <label class="radio-inline">
+                            <input id="show-changed" type="radio" name="show-options" value="show-changed"> @lang($package . '::messages.show-changed')
+                        </label>
+                        <label class="radio-inline">
+                            <input id="show-deleted" type="radio" name="show-options" value="show-deleted"> @lang($package . '::messages.show-deleted')
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -662,21 +679,26 @@
                             <?php if($adminEnabled): ?>
                             <th width="1%">&nbsp;</th>
                             <?php endif; ?>
-                            <th width="15%">@lang($package . '::messages.key')</th>
                             <?php
                                 $setWidth = count($displayLocales);
                                 if ($setWidth > 3) {
-                                    $mainWidth = 30;
+                                    $mainWidth = 25;
+                                }
+                                else if ($setWidth == 3)
+                                {
+                                    $mainWidth = 28;
                                 }
                                 else
                                 {
-                                    $mainWidth = 32;
+                                    $mainWidth = 42;
                                 }
                                 $col = 0;
+                                $translationRows = count(array_keys($translations));
                             ?>
+                            <th width="15%">@lang($package . '::messages.key')<span class="key-filter" id="key-filter"><?=$translationRows?></span></th>
                             <?php foreach($locales as $locale): ?>
                             <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
-                            <?php if ($col < 2): ?>
+                            <?php if ($col < 3): ?>
                                 <?php if ($col === 0): ?>
                             <th width="<?=$mainWidth?>%"><?= $locale ?>&nbsp;
                                 <?= ifEditTrans($package . '::messages.auto-fill-disabled') ?>
@@ -685,7 +707,7 @@
                                         data-disable-with="<?=noEditTrans($package . '::messages.auto-fill-disabled')?>"
                                         href="#') ?>"><?= noEditTrans($package . '::messages.auto-fill') ?></a>
                             </th>
-                                <?php elseif ($col === 1 && isset($yandex_key) && $yandex_key): ?>
+                                <?php elseif (isset($yandex_key) && $yandex_key): ?>
                             <th width="<?=$mainWidth?>%"><?= $locale ?>&nbsp;
                                 <?= ifEditTrans($package . '::messages.auto-translate-disabled') ?>
                                 <?= ifEditTrans($package . '::messages.auto-translate') ?>
@@ -717,6 +739,7 @@
                             $has_empty = false;
                             $has_nonempty = false;
                             $has_changes = false;
+                            $has_used = false;
                             foreach($locales as $locale)
                             {
                                 if (!array_key_exists($locale, $displayLocales)) continue;
@@ -724,15 +747,16 @@
                                 if (isset($translation[$locale])) {
                                     $trans = $translation[$locale];
                                     if ($trans->is_deleted) $is_deleted = true;
+                                    if ($trans->was_used) $has_used = true;
                                     if ($trans->value != '') {
                                         $has_nonempty = true;
-                                        if ($trans->value != $trans->saved_value) $has_changes = true;
+                                        if ($trans->status != 0 || $trans->value != $trans->saved_value) $has_changes = true;
                                     }
                                     else $has_empty = true;
                                 }
                             }
                         ?>
-                        <tr id="<?= str_replace('.', '-', $key) ?>"  class="<?= $is_deleted ? ' deleted-translation' : '' ?><?= $has_empty ? ' has-empty-translation' : '' ?><?= $has_nonempty ? ' has-nonempty-translation' : '' ?><?= $has_changes ? ' has-changed-translation' : '' ?>
+                        <tr id="<?= str_replace('.', '-', $key) ?>"  class="<?= $is_deleted ? ' deleted-translation' : '' ?><?= $has_empty ? ' has-empty-translation' : '' ?><?= $has_nonempty ? ' has-nonempty-translation' : '' ?><?= $has_changes ? ' has-changed-translation' : '' ?><?= $has_used ? ' has-used-translation' : '' ?>
                                 ">
                             <?php if($adminEnabled): ?>
                             <td>
@@ -763,7 +787,7 @@
                                     }
                                 }
                             ?>
-                            <td class="<?= $was_used ? 'used-key' : 'unused-key' ?>" ><?= $key ?></td>
+                            <td class="key<?= $was_used ? ' used-key' : ' unused-key' ?>" ><?= $key ?></td>
                             <?php foreach($locales as $locale): ?>
                             <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
                             <?php $t = isset($translation[$locale]) ? $translation[$locale] : null ?>
@@ -779,21 +803,20 @@
         </div>
         <?php endif; ?>
         <!-- Search Modal -->
-        <div class="modal fade" id="searchModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
+        <div class="modal fade" id="searchModal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
-                        <h4 class="modal-title"
-                                id="myModalLabel">@lang($package . '::messages.search-translations')</h4>
+                        <h4 class="modal-title" id="searchModalLabel">@lang($package . '::messages.search-translations')</h4>
                     </div>
                     <div class="modal-body">
                         <form id="search-form" method="GET" action="<?= action($controller . '@getSearch') ?>" data-remote="true">
                             <div class="form-group">
                                 <div class="input-group">
-                                    <input id="search-form-text" type="search" name="q" class="form-control">
+                                    <input id="search-form-text" type="search" name="q" class="form-control form-control-feedback">
                                     <span class="input-group-btn">
                                         <?= formSubmit(trans($package . '::messages.search'), ['class' => "btn btn-default"]) ?>
                                     </span>
@@ -804,8 +827,7 @@
                     </div>
                     <div class="modal-footer">
                         <?= ifEditTrans($package . '::messages.close') ?>
-                        <button type="button" class="btn btn-xs btn-default"
-                                data-dismiss="modal"><?= noEditTrans($package . '::messages.close') ?></button>
+                        <button type="button" class="btn btn-sm btn-default" data-dismiss="modal"><?= noEditTrans($package . '::messages.close') ?></button>
                     </div>
                 </div>
             </div>
