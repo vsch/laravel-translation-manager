@@ -29,7 +29,6 @@ class ManagerServiceProvider extends ServiceProvider
     public
     function register()
     {
-
         // Register the config publish path
         $configPath = __DIR__ . '/../config/' . self::PACKAGE . '.php';
         $this->mergeConfigFrom($configPath, self::PACKAGE);

@@ -1,12 +1,12 @@
 ### Version Notes
 
-The 1.x branch is for Laravel 4.2, 2.x branch is for Laravel 5.1
+The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
-#### 1.0.32 - 2.0.32
+#### x.0.32
 
 - fix move keys would fail if destination had existing key. Now conflicting destination keys are deleted and replaced by the moved keys.
 
-#### 1.0.31 - 2.0.31
+#### x.0.31
 
 - fix error reporting for wild card key operations would show empty alert
 - fix discrepancy between changed status in dashboard view and show changed radio button translation results
@@ -15,7 +15,7 @@ The 1.x branch is for Laravel 4.2, 2.x branch is for Laravel 5.1
 - add filtered key stats display in the translations table key column. Shows total displayed after regex filtering vs total from radio buttons vs total keys.
 - add `show_locales` config option to limit the locales to ones contained in the option. If empty or not provided then all locales from the database will be shown. Only affects locales shown. All locales are imported and exported regardless of this setting.
 
-#### 1.0.30 - 2.0.30
+#### x.0.30
 
 - fix import of locale sub-directories. Note that in L4 you access translations in sub-directories by using the `.` as separator in L5 this is `/`. In translation manager the group will have a period in all Laravel Versions. For example for directory structure like the following:
 
@@ -36,7 +36,7 @@ The 1.x branch is for Laravel 4.2, 2.x branch is for Laravel 5.1
     
     In both cases the group in translation manager will show as `test.subtest` and `test.sub-dir.sub-sub-test`. It was too big a pain to support `/` in group names because these are passed in the URL as parameters and having slashes messes things up. URL encoding is no help because Laravel cannot resolve the path.
 
-#### 1.0.29 - 2.0.29
+#### x.0.29
 
 - fix formSubmit() was not properly processing translation result for inPlaceEdit() mode
 - fix moved csrf meta from index.blade.php to layouts.master.blade.php so that all pages that extend layouts.master can use in-place-edit mode.
