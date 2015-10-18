@@ -29,14 +29,21 @@ function swapClass(elem, swapDir, toAdd, toRemove) {
 
 String.prototype.toCapitalCase = function () {
     "use strict";
-    return this.replace(/(?:^|\s)\S/g, function (a) {
+    return this.toLowerCase().replace(/(?:^|\s)\S/g, function (a) {
         return a.toUpperCase();
     });
 };
 
 String.prototype.toLocaleCapitalCase = function () {
     "use strict";
-    return this.replace(/(?:^|\s)\S/g, function (a) {
+    return this.toLocaleLowerCase().replace(/(?:^|\s)\S/g, function (a) {
+        return a.toLocaleUpperCase();
+    });
+};
+
+String.prototype.toLocaleProperCase = function () {
+    "use strict";
+    return this.toLocaleLowerCase().replace(/(?:^)\S/, function (a) {
         return a.toLocaleUpperCase();
     });
 };
@@ -258,6 +265,7 @@ $(document).ready(function () {
         '&nbsp;&nbsp;<button id="x-plurals" type="button" class="editable-translate btn btn-sm btn-warning hidden">|</i></button>' +
         '&nbsp;&nbsp;<button id="x-capitalize" type="button" class="editable-translate btn btn-sm btn-info">ab <i class="glyphicon glyphicon-share-alt"></i> Ab</button>' +
         '<button id="x-lowercase" type="button" class="editable-translate btn btn-sm btn-info">AB <i class="glyphicon glyphicon-share-alt"></i> ab</button>' +
+        '<button id="x-propcap" type="button" class="editable-translate btn btn-sm btn-info">A B <i class="glyphicon glyphicon-share-alt"></i> A b</button>' +
         '&nbsp;&nbsp;<button id="x-copy" type="button" class="editable-translate btn btn-sm btn-primary"><i class="glyphicon glyphicon-copy"></i></button>' +
         '<button id="x-paste" type="button" class="editable-translate btn btn-sm btn-primary"><i class="glyphicon glyphicon-paste"></i></button>' +
         '&nbsp;&nbsp;<button id="x-reset-open" type="button" class="editable-translate btn btn-sm btn-success"><i class="glyphicon glyphicon-open"></i></button>' +
@@ -394,7 +402,7 @@ $(document).ready(function () {
 
             elem.editable().off('shown');
             elem.editable().on('shown.vsch', function (e, editable) {
-                var key, srcId, elemXerr, elemXtrans, elemXcap, elemXlow, elemXnodash, elemXcopy, elemXpaste, elemXresetopen, elemXresetsaved, elemXplurals, srcElem,
+                var key, srcId, elemXerr, elemXtrans, elemXcap, elemXlow, elemXprop, elemXnodash, elemXcopy, elemXpaste, elemXresetopen, elemXresetsaved, elemXplurals, srcElem,
                     savedValue = $(this).data('saved_value'), openedValue,
                     dstId = $(this).attr('id'),
                     regexnodash = /-|_/g,
@@ -418,6 +426,7 @@ $(document).ready(function () {
                 elemXtrans = divElem.find('#x-translate').first();
                 elemXcap = divElem.find('#x-capitalize').first();
                 elemXlow = divElem.find('#x-lowercase').first();
+                elemXprop = divElem.find('#x-propcap').first();
                 elemXnodash = divElem.find('#x-nodash').first();
                 elemXcopy = divElem.find('#x-copy').first();
                 elemXpaste = divElem.find('#x-paste').first();
@@ -455,6 +464,9 @@ $(document).ready(function () {
                 }
                 if (elemXlow.length) {
                     elemXlow.on('click', xedit(dstElem, String.prototype.toLocaleLowerCase));
+                }
+                if (elemXprop.length) {
+                    elemXprop.on('click', xedit(dstElem, String.prototype.toLocaleProperCase));
                 }
                 if (elemXcopy.length) {
                     elemXcopy.on('click', xedit(dstElem, function () {

@@ -7,6 +7,7 @@ return [
     'addsuffixes-placeholder'   => 'add each key suffixed by lines entered here',
     'auto-fill'                 => 'Auto Fill',
     'auto-fill-disabled'        => 'Filling...',
+    'auto-prop-case-disabled'   => 'Applying...',
     'auto-translate'            => 'Auto Translate',
     'auto-translate-disabled'   => 'Translating...',
     'changed'                   => 'Changed',

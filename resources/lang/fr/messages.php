@@ -1,13 +1,14 @@
 <?php
 
 return [
-    'addkeys'                   => 'Ajouter Les Touches',
+    'addkeys'                   => 'Ajouter les touches',
     'addkeys-placeholder'       => 'Ajouter 1 clé par ligne, sans le préfixe de groupe',
-    'addsuffixes'               => 'Ensemble De Suffixes',
-    'addsuffixes-placeholder'   => 'ajouter chaque touche suffixé par des lignes entré ici',
-    'auto-fill'                 => 'Remplissage Automatique',
+    'addsuffixes'               => 'Ensemble de suffixes',
+    'addsuffixes-placeholder'   => 'Ajouter chaque touche suffixé par des lignes entré ici',
+    'auto-fill'                 => 'Remplissage automatique',
     'auto-fill-disabled'        => 'Remplissage...',
-    'auto-translate'            => 'Traduction Auto.',
+    'auto-prop-case-disabled'   => 'L\'application de...',
+    'auto-translate'            => 'Traduction auto.',
     'auto-translate-disabled'   => 'La traduction...',
     'changed'                   => 'Changé',
     'check-all'                 => 'Tous',

@@ -49,25 +49,8 @@ jQuery(document).ready(function ($) {
     };
 
     successReporter('import-group');
-    //$('.form-import-group').on('ajax:success', function (e, data) {
-    //    var elem = $('div.success-import-group');
-    //    elem.html(elem.html().replace(/:count\b/, data.counter));
-    //    elem.closest('div.alert').slideDown();
-    //});
-
     successReporter('import-all');
-    //$('.form-import-all').on('ajax:success', function (e, data) {
-    //    var elem = $('div.success-import-all');
-    //    elem.html(elem.html().replace(/:count\b/, data.counter));
-    //    elem.closest('div.alert').slideDown();
-    //});
-
     successReporter('find');
-    //$('.form-find').on('ajax:success', function (e, data) {
-    //    var elem = $('div.success-find');
-    //    elem.html(elem.html().replace(/:count\b/, data.counter));
-    //    elem.closest('div.alert').slideDown();
-    //});
 
     $('.form-publish-group').on('ajax:success', function (e, data) {
         if (data.status === 'errors') {
@@ -96,11 +79,8 @@ jQuery(document).ready(function ($) {
     });
 
     $('#form-keyops').on('ajax:success', function (e, data) {
-        //                var elemModal = $('#keyOpModal').first();
-        //                var elem = elemModal.find('.results');
         var elem = $('#wildcard-keyops-results').first();
         elem.html(data);
-        //                elemModal.modal({show: true, keyboard: true/*, backdrop: 'static'*/});
         elem.find('.vsch_editable').vsch_editable();
     });
 
@@ -177,8 +157,7 @@ jQuery(document).ready(function ($) {
         });
     }
 
-    function showAll() {
-        var table = $('#translations');
+    function showAll(table) {
         table.find('tr').removeClass('hidden');
     }
 
@@ -190,7 +169,7 @@ jQuery(document).ready(function ($) {
             matched, totalKeys, filteredKeys, matchedKeys, keyFilterSpan;
 
         totalKeys = table.find('tr').length;
-        updateTranslationList();
+        updateTranslationList(table);
         matchedKeys = filteredKeys = totalKeys - table.find('tr.hidden').length;
 
         if (matchedText.length > 0) {
@@ -228,8 +207,7 @@ jQuery(document).ready(function ($) {
 
     $('#show-unpublished').on('click', function (e) {
         //e.preventDefault();
-        updateTranslationList = function () {
-            var table = $('#translations').find('tbody').first();
+        updateTranslationList = function (table) {
             table.find('tr').addClass('hidden');
             table.find('tr.has-empty-translation').removeClass('hidden');
             table.find('tr.deleted-translation').removeClass('hidden');
@@ -240,8 +218,7 @@ jQuery(document).ready(function ($) {
 
     $('#show-empty').on('click', function (e) {
         //e.preventDefault();
-        updateTranslationList = function () {
-            var table = $('#translations').find('tbody').first();
+        updateTranslationList = function (table) {
             table.find('tr').addClass('hidden');
             table.find('tr.has-empty-translation').removeClass('hidden');
         };
@@ -250,8 +227,7 @@ jQuery(document).ready(function ($) {
 
     $('#show-nonempty').on('click', function (e) {
         //e.preventDefault();
-        updateTranslationList = function () {
-            var table = $('#translations').find('tbody').first();
+        updateTranslationList = function (table) {
             table.find('tr').addClass('hidden');
             table.find('tr.has-nonempty-translation').removeClass('hidden');
         };
@@ -260,8 +236,7 @@ jQuery(document).ready(function ($) {
 
     $('#show-used').on('click', function (e) {
         //e.preventDefault();
-        updateTranslationList = function () {
-            var table = $('#translations').find('tbody').first();
+        updateTranslationList = function (table) {
             table.find('tr').addClass('hidden');
             table.find('tr.has-used-translation').removeClass('hidden');
         };
@@ -270,8 +245,7 @@ jQuery(document).ready(function ($) {
 
     $('#show-deleted').on('click', function (e) {
         //e.preventDefault();
-        updateTranslationList = function () {
-            var table = $('#translations').find('tbody').first();
+        updateTranslationList = function (table) {
             table.find('tr').addClass('hidden');
             table.find('tr.deleted-translation').removeClass('hidden');
         };
@@ -280,28 +254,17 @@ jQuery(document).ready(function ($) {
 
     $('#show-changed').on('click', function (e) {
         //e.preventDefault();
-        updateTranslationList = function () {
-            var table = $('#translations').find('tbody').first();
+        updateTranslationList = function (table) {
             table.find('tr').addClass('hidden');
             table.find('tr.has-changed-translation').removeClass('hidden');
         };
         updateMatching();
     });
 
-    //var showMatching = $('#show-matching');
-    //showMatching.on('click', function () {
-    //    updateMatching();
-    //});
-    //
     var updateMatchingTimer = null,
         matchingText = $('#show-matching-text');
 
     matchingText.on('keyup change', function () {
-        //if (showMatching.length > 0 && !showMatching.prop('checked')) {
-        //    showMatching.prop('checked', true);
-        //} else {
-        //    updateMatching();
-        //}
         if (updateMatchingTimer) {
             window.clearTimeout(updateMatchingTimer);
             updateMatchingTimer = null;
@@ -314,7 +277,7 @@ jQuery(document).ready(function ($) {
     });
 
     $('#show-matching-clear').on('click', function () {
-        if (matchingText.length){
+        if (matchingText.length) {
             matchingText[0].value = '';
             matchingText.focus();
             updateMatching();
@@ -354,6 +317,7 @@ jQuery(document).ready(function ($) {
                                 t.dstElem.addClass('status-1');
                                 t.dstElem.text(text);
                                 t.dstElem.editable('setValue', text, false);
+                                t.dstElem.closest('tr').addClass('has-changed-translation');
                             }
                             else {
                                 elemButton.removeAttr('disabled');
@@ -435,10 +399,11 @@ jQuery(document).ready(function ($) {
 
             (function (fromLoc, toLoc, btnElem) {
                 postTranslationValues(autoTranslate, btnElem, function (text, storeText) {
-                    xtranslateText(xtranslateService, fromLoc, text, toLoc, storeText);
+                    xtranslateText(xtranslateService, fromLoc, text, toLoc, function (text, trans) {
+                        storeText(text.toLocaleProperCase(), trans);
+                    });
                 });
             })(PRIMARY_LOCALE, dstLoc, btnElem);
-
         });
     });
 
@@ -474,6 +439,81 @@ jQuery(document).ready(function ($) {
                 storeText(value, '');
             });
         })(elemAutoFill);
+    });
+
+    $('.auto-delete-key').on('click', function () {
+        var table = $('#translations').find('tbody').first(),
+            keys = table.find('.delete-key');
+
+        keys.each(function () {
+            var row = $(this).closest('tr');
+            if (!row.hasClass('hidden') && !$(this).hasClass('hidden')) {
+                $(this).trigger('click');
+            }
+        });
+    });
+
+    $('.auto-undelete-key').on('click', function () {
+        var table = $('#translations').find('tbody').first(),
+            keys = table.find('.undelete-key');
+
+        keys.each(function () {
+            var row = $(this).closest('tr');
+            if (!row.hasClass('hidden') && !$(this).hasClass('hidden')) {
+                $(this).trigger('click');
+            }
+        });
+    });
+
+    var elemAutoPropCase = $('.btn.auto-prop-case');
+    elemAutoPropCase.each(function () {
+        var colNum = $(this).data('trans');
+        var dstLoc = $(this).data('locale');
+        var btnElem = $(this);
+
+        btnElem.on('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var autoPropCase = [];
+
+            // step through all the definitions in the second column and auto translate empty ones
+            // here we make a log of assumptions about where the data is.
+            // we assume that the source is the child element immediately preceding this one and it is a <td> containing
+            // <a> containing the source text
+            $(".auto-translatable-" + dstLoc).each(function () {
+                var row = $(this).closest('tr');
+                if (!row.hasClass('hidden')) {
+                    var editable = $(this).parent().find('.vsch_editable');
+                    // exclude filtered out rows, give a bit of control over what will change
+                    if (editable.length > 1) {
+                        var srcElem = $(editable[0]),
+                            dstElem = $(editable[colNum]);
+
+                        if (dstElem.length) {
+                            if (!dstElem.hasClass('editable-empty')) {
+                                var text = dstElem.text();
+                                if (text !== text.toLocaleProperCase()) {
+                                    autoPropCase.push({
+                                        srcText: dstElem.text(),
+                                        dataUrl: dstElem.data('url'),
+                                        dataName: dstElem.data('name'),
+                                        dstElem: dstElem
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (autoPropCase.length > 0) {
+                (function (fromLoc, toLoc, btnElem) {
+                    postTranslationValues(autoPropCase, btnElem, function (text, storeText) {
+                        storeText(text.toLocaleProperCase(), '');
+                    });
+                })(dstLoc, dstLoc, btnElem);
+            }
+        });
     });
 
     function textareaTandemResize(src, dst, liveupdate) {

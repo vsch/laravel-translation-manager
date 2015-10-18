@@ -678,7 +678,7 @@
                     <thead>
                         <tr>
                             <?php if($adminEnabled): ?>
-                            <th width="1%">&nbsp;</th>
+                            <th width="1%"><a href="#" class="auto-delete-key"><span class="glyphicon glyphicon-trash"></span></a>&nbsp;<a href="#" class="auto-undelete-key"><span class="glyphicon glyphicon-thumbs-up"></span></a></th>
                             <?php endif; ?>
                             <?php
                                 $setWidth = count($displayLocales);
@@ -706,7 +706,7 @@
                                 <?= ifEditTrans($package . '::messages.auto-fill') ?>
                                 <a class="btn btn-xs btn-primary" id="auto-fill" role="button"
                                         data-disable-with="<?=noEditTrans($package . '::messages.auto-fill-disabled')?>"
-                                        href="#') ?>"><?= noEditTrans($package . '::messages.auto-fill') ?></a>
+                                        href="#"><?= noEditTrans($package . '::messages.auto-fill') ?></a>
                             </th>
                                 <?php elseif (isset($yandex_key) && $yandex_key): ?>
                             <th width="<?=$mainWidth?>%"><?= $locale ?>&nbsp;
@@ -714,7 +714,28 @@
                                 <?= ifEditTrans($package . '::messages.auto-translate') ?>
                                 <a class="btn btn-xs btn-primary auto-translate" role="button" data-trans="<?=$col?>" data-locale="<?=$locale?>"
                                         data-disable-with="<?=noEditTrans($package . '::messages.auto-translate-disabled')?>"
-                                        href="#') ?>"><?= noEditTrans($package . '::messages.auto-translate') ?></a>
+                                        href="#"><?= noEditTrans($package . '::messages.auto-translate') ?></a>
+                                <?= ifEditTrans($package . '::messages.auto-prop-case-disabled') ?>
+                                <a class="btn btn-xs btn-primary auto-prop-case" role="button" data-trans="<?=$col?>" data-locale="<?=$locale?>"
+                                        data-disable-with="<?=noEditTrans($package . '::messages.auto-prop-case-disabled')?>"
+                                        href="#">Ab Ab <i class="glyphicon glyphicon-share-alt"></i> Ab ab</a>
+                                <!-- split button -->
+                                <!--
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-xs btn-primary">< ? = noEditTrans($package . '::messages.auto-translate') ? ></button>
+                                    <button type="button" class="btn btn-xs btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <span class="caret"></span>
+                                        <span class="sr-only">Toggle Dropdown</span>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a href="#">ab abc<i class="glyphicon glyphicon-share-alt"></i> Ab Abc</a></li>
+                                        <li><a href="#">Ab Abc <i class="glyphicon glyphicon-share-alt"></i> ab abc</a></li>
+                                        <li><a href="#">Ab Abc <i class="glyphicon glyphicon-share-alt"></i> Ab abc</a></li>
+                                        <li role="separator" class="divider"></li>
+                                        <li><a href="#">< ? = noEditTrans($package . '::messages.auto-translate') ? ></a></li>
+                                    </ul>
+                                </div>
+                                -->
                             </th>
                                 <?php else: ?>
                             <th width="<?=$mainWidth?>%"><?= $locale ?></th><?php endif;?>
@@ -724,7 +745,12 @@
                                 <?= ifEditTrans($package . '::messages.auto-translate') ?>
                                 <a class="btn btn-xs btn-primary auto-translate" role="button" data-trans="<?=$col?>" data-locale="<?=$locale?>"
                                         data-disable-with="<?=noEditTrans($package . '::messages.auto-translate-disabled')?>"
-                                        href="#') ?>"><?= noEditTrans($package . '::messages.auto-translate') ?></a>
+                                        href="#"><?= noEditTrans($package . '::messages.auto-translate') ?></a>
+
+                                <?= ifEditTrans($package . '::messages.auto-prop-case-disabled') ?>
+                                <a class="btn btn-xs btn-primary auto-prop-case" role="button" data-trans="<?=$col?>" data-locale="<?=$locale?>"
+                                        data-disable-with="<?=noEditTrans($package . '::messages.auto-prop-case-disabled')?>"
+                                        href="#">Ab Ab <i class="glyphicon glyphicon-share-alt"></i> Ab ab</a>
                             </th>
                                 <?php endif;
                                 $col++; ?>

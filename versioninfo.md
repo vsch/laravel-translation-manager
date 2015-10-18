@@ -5,6 +5,11 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 #### x.0.32
 
 - fix move keys would fail if destination had existing key. Now conflicting destination keys are deleted and replaced by the moved keys.
+- fix translation edit pop-up to caps now lower cases the affected text then proper caps it.
+- add translation edit pop-up button to cap just the first character of the translation and the rest lowercase.
+- change auto-translations now only set first cap and the rest lowercase, regardless of english case.
+- add auto-prop case for visisble translations
+- add mark visible translations as deleted, and unmark visible translations as deleted
 
 #### x.0.31
 
@@ -15,7 +20,7 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 - add filtered key stats display in the translations table key column. Shows total displayed after regex filtering vs total from radio buttons vs total keys.
 - add `show_locales` config option to limit the locales to ones contained in the option. If empty or not provided then all locales from the database will be shown. Only affects locales shown. All locales are imported and exported regardless of this setting.
 
-#### x.0.30
+#### 1.0.30 - 2.0.30
 
 - fix import of locale sub-directories. Note that in L4 you access translations in sub-directories by using the `.` as separator in L5 this is `/`. In translation manager the group will have a period in all Laravel Versions. For example for directory structure like the following:
 
@@ -28,12 +33,12 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
             └── subtest.php
     ```
 
-    You would access translations:      
-    
+    You would access translations:
+
     - in L5 as `@lang('test/subtest.translation-key')` for `subtest.php` and as `@lang('test/sub-dir/sub-sub-test.translation-key')` for `sub-sub-test.php`.
-    
+
     - in L4 as `@lang('test.subtest.translation-key')` for `subtest.php` and as `@lang('test.sub-dir.sub-sub-test.translation-key')` for `sub-sub-test.php`.
-    
+
     In both cases the group in translation manager will show as `test.subtest` and `test.sub-dir.sub-sub-test`. It was too big a pain to support `/` in group names because these are passed in the URL as parameters and having slashes messes things up. URL encoding is no help because Laravel cannot resolve the path.
 
 #### x.0.29
@@ -42,8 +47,8 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 - fix moved csrf meta from index.blade.php to layouts.master.blade.php so that all pages that extend layouts.master can use in-place-edit mode.
 - move most of the details from the readme to the wiki.
 - fix runtime exception if workbench projects are present but the config has an empty include for workbench config.
-- fix replace deprecated \Route::after() 
-- add key usage logging. Similar to missing keys except it logs keys that were accessed. 
+- fix replace deprecated \Route::after()
+- add key usage logging. Similar to missing keys except it logs keys that were accessed.
 - add alternate database connection to config and to web interface. Can manage production translations from local dev environment.
 - fix keyOps to handle group names for wbn: and vnd: prefixed names. Now can move/copy keys from normal groups to these ones.
 - fix translations page now redirects to 'no group selected' url if the requested group no longer exists.
