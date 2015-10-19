@@ -643,7 +643,7 @@
                     </div>
                     <div class="input-group input-group-sm">
                         <label class="radio-inline">
-                            <input id="show-all" type="radio" name="show-options" value="show-all" checked> @lang($package . '::messages.show-all')
+                            <input id="show-all" type="radio" name="show-options" value="show-all"> @lang($package . '::messages.show-all')
                         </label>
                         <label class="radio-inline">
                             <input id="show-nonempty" type="radio" name="show-options" value="show-nonempty"> @lang($package . '::messages.show-nonempty')
@@ -865,18 +865,15 @@
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header modal-primary">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
-                                    aria-hidden="true">&times;</span></button>
-                        <h4 class="modal-title"
-                                id="keyOpModalLabel">@lang($package . '::messages.keyop-header')</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="keyOpModalLabel">@lang($package . '::messages.keyop-header')</h4>
                     </div>
                     <div class="modal-body">
                         <div class="results"></div>
                     </div>
                     <div class="modal-footer">
                         <?= ifEditTrans($package . '::messages.close') ?>
-                        <button type="button" class="btn btn-sm btn-default"
-                                data-dismiss="modal"><?= noEditTrans($package . '::messages.close') ?></button>
+                        <button type="button" class="btn btn-sm btn-default" data-dismiss="modal"><?= noEditTrans($package . '::messages.close') ?></button>
                     </div>
                 </div>
             </div>
@@ -892,9 +889,15 @@
         var TRANSLATING_LOCALE = '{{$translatingLocale}}';
         var URL_TRANSLATOR_GROUP = '<?= action($controller . '@getView') ?>/';
         var URL_TRANSLATOR_ALL = '<?= action($controller . '@getIndex') ?>';
+        var URL_TRANSLATOR_FILTERS = '<?= action($controller . '@getTransFilters') ?>';
     </script>
 
     <!-- Moved out to allow auto-format in PhpStorm w/o screwing up HTML format -->
+    <script src="<?=  $public_prefix . $package ?>/js/xregexp-all.js"></script>
     <script src="<?=  $public_prefix . $package ?>/js/translations_page.js"></script>
+
+    <script>
+        var TRANS_FILTERS = ({ filter: "<?= $transFilters['filter'] ?>", regex: "<?= $transFilters['regex'] ?>" });
+    </script>
 @stop
 

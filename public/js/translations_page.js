@@ -10,8 +10,10 @@ var CURRENT_LOCALE;
 var TRANSLATING_LOCALE;
 var URL_TRANSLATOR_GROUP;
 var URL_TRANSLATOR_ALL;
+var URL_TRANSLATOR_FILTERS;
 var xtranslateText;
 var xtranslateService;
+var TRANS_FILTERS;
 
 jQuery(document).ready(function ($) {
     $('.group-select').on('change', function () {
@@ -162,22 +164,39 @@ jQuery(document).ready(function ($) {
     }
 
     var updateTranslationList = showAll;
+    var updateTranslationFilter = 'show-all';
 
-    function updateMatching() {
+    function updateMatching(elem) {
         var table = $('#translations').find('tbody').first(),
             matchedText = $('#show-matching-text'),
-            matched, totalKeys, filteredKeys, matchedKeys, keyFilterSpan;
+            matched, totalKeys, filteredKeys, matchedKeys, keyFilterSpan, pattern = '', elemName;
+
+        if (elem !== null) {
+            updateTranslationFilter = $(elem).prop('id');
+        }
 
         totalKeys = table.find('tr').length;
         updateTranslationList(table);
         matchedKeys = filteredKeys = totalKeys - table.find('tr.hidden').length;
 
         if (matchedText.length > 0) {
-            var pattern = matchedText[0].value.trim();
+            pattern = matchedText[0].value.trim();
             matched = new RegExp(pattern, 'i');
             showMatched(table, matched);
             matchedKeys = totalKeys - table.find('tr.hidden').length;
         }
+
+        var jqxhr = $.ajax({
+            type: 'GET',
+            url: URL_TRANSLATOR_FILTERS,
+            data: {'filter': updateTranslationFilter, 'regex': pattern},
+
+            success: function (json) {
+                if (json.status === 'ok') {
+                }
+            },
+            encode: true
+        });
 
         keyFilterSpan = $('#key-filter').first();
         if (keyFilterSpan.length > 0) {
@@ -202,7 +221,7 @@ jQuery(document).ready(function ($) {
     $('#show-all').on('click', function (e) {
         //e.preventDefault();
         updateTranslationList = showAll;
-        updateMatching();
+        updateMatching(this);
     });
 
     $('#show-unpublished').on('click', function (e) {
@@ -213,7 +232,7 @@ jQuery(document).ready(function ($) {
             table.find('tr.deleted-translation').removeClass('hidden');
             table.find('tr.has-changed-translation').removeClass('hidden');
         };
-        updateMatching();
+        updateMatching(this);
     });
 
     $('#show-empty').on('click', function (e) {
@@ -222,7 +241,7 @@ jQuery(document).ready(function ($) {
             table.find('tr').addClass('hidden');
             table.find('tr.has-empty-translation').removeClass('hidden');
         };
-        updateMatching();
+        updateMatching(this);
     });
 
     $('#show-nonempty').on('click', function (e) {
@@ -231,7 +250,7 @@ jQuery(document).ready(function ($) {
             table.find('tr').addClass('hidden');
             table.find('tr.has-nonempty-translation').removeClass('hidden');
         };
-        updateMatching();
+        updateMatching(this);
     });
 
     $('#show-used').on('click', function (e) {
@@ -240,7 +259,7 @@ jQuery(document).ready(function ($) {
             table.find('tr').addClass('hidden');
             table.find('tr.has-used-translation').removeClass('hidden');
         };
-        updateMatching();
+        updateMatching(this);
     });
 
     $('#show-deleted').on('click', function (e) {
@@ -249,7 +268,7 @@ jQuery(document).ready(function ($) {
             table.find('tr').addClass('hidden');
             table.find('tr.deleted-translation').removeClass('hidden');
         };
-        updateMatching();
+        updateMatching(this);
     });
 
     $('#show-changed').on('click', function (e) {
@@ -258,7 +277,7 @@ jQuery(document).ready(function ($) {
             table.find('tr').addClass('hidden');
             table.find('tr.has-changed-translation').removeClass('hidden');
         };
-        updateMatching();
+        updateMatching(this);
     });
 
     var updateMatchingTimer = null,
@@ -400,7 +419,7 @@ jQuery(document).ready(function ($) {
             (function (fromLoc, toLoc, btnElem) {
                 postTranslationValues(autoTranslate, btnElem, function (text, storeText) {
                     xtranslateText(xtranslateService, fromLoc, text, toLoc, function (text, trans) {
-                        storeText(text.toLocaleProperCase(), trans);
+                        storeText(text, trans);
                     });
                 });
             })(PRIMARY_LOCALE, dstLoc, btnElem);
@@ -474,7 +493,8 @@ jQuery(document).ready(function ($) {
         btnElem.on('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            var autoPropCase = [];
+            var autoPropCase = [],
+                regex = /^\p{Alnum}+(\p{Blank}+\p{Alnum}+)+$/;
 
             // step through all the definitions in the second column and auto translate empty ones
             // here we make a log of assumptions about where the data is.
@@ -492,7 +512,9 @@ jQuery(document).ready(function ($) {
                         if (dstElem.length) {
                             if (!dstElem.hasClass('editable-empty')) {
                                 var text = dstElem.text();
-                                if (text !== text.toLocaleProperCase()) {
+                                var simpleWords = regex.exec(text);
+                                window.console.log(text + " simple " + simpleWords);
+                                if (text !== text.toLocaleProperCase() && simpleWords) {
                                     autoPropCase.push({
                                         srcText: dstElem.text(),
                                         dataUrl: dstElem.data('url'),
@@ -597,4 +619,15 @@ jQuery(document).ready(function ($) {
     textareaTandemResize(elem.find("textarea[name=keys]"), elem.find("textarea[name=suffixes]"), true)();
     textareaTandemResize($("#primary-text"), $("#current-text"), true)();
     textareaTandemResize($("#srckeys"), $("#dstkeys"), true)();
+
+    if (TRANS_FILTERS) {
+        var filter = TRANS_FILTERS.filter;
+        var regex = TRANS_FILTERS.regex;
+        if (filter !== 'show-all' || regex) {
+            $('#show-matching-text')[0].value = regex;
+            var elemRadio = $('#' + filter);
+            elemRadio.prop('checked', 'checked');
+            elemRadio.trigger('click');
+        }
+    }
 });

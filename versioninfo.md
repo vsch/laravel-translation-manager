@@ -7,14 +7,14 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 - fix move keys would fail if destination had existing key. Now conflicting destination keys are deleted and replaced by the moved keys.
 - fix translation edit pop-up to caps now lower cases the affected text then proper caps it.
 - add translation edit pop-up button to cap just the first character of the translation and the rest lowercase.
-- change auto-translations now only set first cap and the rest lowercase, regardless of english case.
-- add auto-prop case for visisble translations
-- add mark visible translations as deleted, and unmark visible translations as deleted
+- add auto lower case all except the first character of translations only if translation text contains only letters, digits or white space, optionally terminated by a period.
+- add mark visible translations as deleted, and un-mark visible translations as deleted.
+- add persistence of translation filter selection between page refreshes.
 
 #### x.0.31
 
-- fix error reporting for wild card key operations would show empty alert
-- fix discrepancy between changed status in dashboard view and show changed radio button translation results
+- fix error reporting for wild card key operations would show empty alert.
+- fix discrepancy between changed status in dashboard view and show changed radio button translation results.
 - add unpublished radio button to show translations that need attention or will be modified on next publish. These are: deleted, changed or missing.
 - add text box for regex to show translations whose keys match regex in the text box. Applied on top of other radio button filtering.
 - add filtered key stats display in the translations table key column. Shows total displayed after regex filtering vs total from radio buttons vs total keys.

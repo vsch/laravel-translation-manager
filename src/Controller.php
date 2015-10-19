@@ -22,6 +22,7 @@ class Controller extends BaseController
     private $displayLocales;
     private $showUsageInfo;
     private $locales;
+    private $transFilters;
 
     const COOKIE_LANG_LOCALE = 'lang';
     const COOKIE_TRANS_LOCALE = 'trans';
@@ -29,6 +30,7 @@ class Controller extends BaseController
     const COOKIE_DISP_LOCALES = 'disp';
     const COOKIE_SHOW_USAGE = 'show-usage';
     const COOKIE_CONNECTION_NAME = 'connection-name';
+    const COOKIE_TRANS_FILTERS = 'trans-filters';
 
     protected $connectionList;
 
@@ -91,6 +93,7 @@ class Controller extends BaseController
 
         $this->translatingLocale = \Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE));
         $this->showUsageInfo = \Cookie::get($this->cookieName(self::COOKIE_SHOW_USAGE));
+        $this->transFilters = \Cookie::get($this->cookieName(self::COOKIE_TRANS_FILTERS), ['filter' => 'show-all', 'regex' => '']);
 
         if (!$this->translatingLocale || ($this->translatingLocale === $this->primaryLocale && count($this->locales) > 1)) {
             $this->translatingLocale = count($this->locales) > 1 ? $this->locales[1] : $this->locales[0];
@@ -342,6 +345,7 @@ SQL
             ->with('show_usage', $this->showUsageInfo && $show_usage_enabled)
             ->with('usage_info_enabled', $show_usage_enabled)
             ->with('connection_list', $this->connectionList)
+            ->with('transFilters', $this->transFilters)
             ->with('connection_name', $this->getConnectionName());
     }
 
@@ -938,6 +942,34 @@ SQL
         }
 
         if (\App::runningUnitTests()) return \Redirect::to('/');
+        return !is_null(\Request::header('referer')) ? \Redirect::back() : \Redirect::to('/');
+    }
+
+    public
+    function getTransFilters()
+    {
+        $filter = null;
+        $regex = null;
+
+        if (\Input::has('filter')) {
+            $filter = \Input::get("filter");
+            $this->transFilters['filter'] = $filter;
+        }
+
+        $regex = \Input::get("regex", null);
+        if ($regex !== null) {
+            $this->transFilters['regex'] = $regex;
+        }
+
+        \Cookie::queue($this->cookieName(self::COOKIE_TRANS_FILTERS), $this->transFilters, 60 * 24 * 365 * 1);
+
+        if (\Request::wantsJson()) {
+            return \Response::json(array(
+                'status' => 'ok',
+                'transFilters' => $this->transFilters,
+            ));
+        }
+
         return !is_null(\Request::header('referer')) ? \Redirect::back() : \Redirect::to('/');
     }
 
