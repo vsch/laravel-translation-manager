@@ -7,8 +7,7 @@
  */
 use Vsch\TranslationManager\Translator;
 
-if (!function_exists('mapTrans'))
-{
+if (!function_exists('mapTrans')) {
     /**
      * @param       $string
      * @param       $prefix
@@ -25,8 +24,7 @@ if (!function_exists('mapTrans'))
     }
 }
 
-if (!function_exists('transLang'))
-{
+if (!function_exists('transLang')) {
     /**
      * @param       $key
      * @param array $replace
@@ -42,8 +40,7 @@ if (!function_exists('transLang'))
     }
 }
 
-if (!function_exists('noEditTransEmptyUndefined'))
-{
+if (!function_exists('noEditTransEmptyUndefined')) {
     /**
      * @param       $key
      * @param array $replace
@@ -55,23 +52,19 @@ if (!function_exists('noEditTransEmptyUndefined'))
     function noEditTransEmptyUndefined($key, array $replace = array(), $locale = null, $useDB = null)
     {
         $trans = App::make('translator');
-        if ($trans->inPlaceEditing())
-        {
+        if ($trans->inPlaceEditing()) {
             /* @var $trans Translator */
             $trans->suspendInPlaceEditing();
             $text = $trans->get($key, $replace, $locale, $useDB);
             $trans->resumeInPlaceEditing();
-        }
-        else
-        {
+        } else {
             $text = $trans->get($key, $replace, $locale, $useDB);
         }
         return $text === $key ? '' : $text;
     }
 }
 
-if (!function_exists('transChoice'))
-{
+if (!function_exists('transChoice')) {
     /**
      * @param       $key
      * @param       $number
@@ -88,8 +81,7 @@ if (!function_exists('transChoice'))
     }
 }
 
-if (!function_exists('noEditTrans'))
-{
+if (!function_exists('noEditTrans')) {
     /**
      * @param       $key
      * @param array $parameters
@@ -102,8 +94,7 @@ if (!function_exists('noEditTrans'))
     function noEditTrans($key, $parameters = null, $locale = null, $useDB = null)
     {
         $trans = App::make('translator');
-        if ($trans->inPlaceEditing())
-        {
+        if ($trans->inPlaceEditing()) {
             /* @var $trans Translator */
             $trans->suspendInPlaceEditing();
             $text = $trans->get($key, $parameters ?: [], $locale, $useDB);
@@ -114,8 +105,7 @@ if (!function_exists('noEditTrans'))
     }
 }
 
-if (!function_exists('ifEditTrans'))
-{
+if (!function_exists('ifEditTrans')) {
     /**
      * @param       $key
      * @param array $parameters
@@ -128,8 +118,7 @@ if (!function_exists('ifEditTrans'))
     function ifEditTrans($key, $parameters = null, $locale = null, $useDB = null, $noWrap = null)
     {
         $trans = App::make('translator');
-        if ($trans->inPlaceEditing())
-        {
+        if ($trans->inPlaceEditing()) {
             /* @var $trans Translator */
             $text = $trans->getInPlaceEditLink($key, $parameters ?: [], $locale, $useDB);
             return $noWrap ? $text : "<br>[$text]";
@@ -138,8 +127,7 @@ if (!function_exists('ifEditTrans'))
     }
 }
 
-if (!function_exists('ifInPlaceEdit'))
-{
+if (!function_exists('ifInPlaceEdit')) {
     /**
      * @param       $text
      * @param array $replace
@@ -153,10 +141,8 @@ if (!function_exists('ifInPlaceEdit'))
     {
         /* @var $trans Translator */
         $trans = App::make('translator');
-        if ($trans->inPlaceEditing())
-        {
-            while (preg_match('/@lang\(\'([^\']+)\'\)/', $text, $matches))
-            {
+        if ($trans->inPlaceEditing()) {
+            while (preg_match('/@lang\(\'([^\']+)\'\)/', $text, $matches)) {
 
                 $repl = $trans->getInPlaceEditLink($matches[1], $replace, $locale, $useDB);
                 $text = str_replace($matches[0], $repl, $text);
@@ -167,8 +153,7 @@ if (!function_exists('ifInPlaceEdit'))
     }
 }
 
-if (!function_exists('inPlaceEditing'))
-{
+if (!function_exists('inPlaceEditing')) {
     /**
      * @return string
      *
@@ -180,23 +165,19 @@ if (!function_exists('inPlaceEditing'))
     }
 }
 
-if (!function_exists('formSubmit'))
-{
+if (!function_exists('formSubmit')) {
     function formSubmit($value = null, $options = array())
     {
-        if (inPlaceEditing())
-        {
+        if (inPlaceEditing()) {
             $innerText = $value;
-            if (preg_match('/^\s*(<a\s*[^>]*>[^<]*<\/a>)\s*\[(.*)\]$/', $value, $matches))
-            {
+            if (preg_match('/^\s*(<a\s*[^>]*>[^<]*<\/a>)\s*\[(.*)\]$/', $value, $matches)) {
                 $innerText = $matches[2];
                 $value = $matches[1];
             } else if (preg_match('/^\s*(<a\s*[^>]*>([^<]*)<\/a>)\s*$/', $value, $matches)) {
                 $innerText = $matches[2];
                 $value = $matches[1];
             }
-            if ($innerText !== $value)
-            {
+            if ($innerText !== $value) {
                 return "[$value]" . Form::submit($innerText, $options);
             }
         }
@@ -204,26 +185,20 @@ if (!function_exists('formSubmit'))
     }
 }
 
-if (!function_exists('mb_str_replace'))
-{
+if (!function_exists('mb_str_replace')) {
     function mb_str_replace($search, $replace, $subject, &$count = 0)
     {
-        if (!is_array($subject))
-        {
+        if (!is_array($subject)) {
             $searches = is_array($search) ? array_values($search) : array($search);
             $replacements = is_array($replace) ? array_values($replace) : array($replace);
             $replacements = array_pad($replacements, count($searches), '');
-            foreach ($searches as $key => $search)
-            {
+            foreach ($searches as $key => $search) {
                 $parts = mb_split(preg_quote($search), $subject);
                 $count += count($parts) - 1;
                 $subject = implode($replacements[$key], $parts);
             }
-        }
-        else
-        {
-            foreach ($subject as $key => $value)
-            {
+        } else {
+            foreach ($subject as $key => $value) {
                 $subject[$key] = mb_str_replace($search, $replace, $value, $count);
             }
         }
@@ -231,15 +206,13 @@ if (!function_exists('mb_str_replace'))
     }
 }
 
-if (!function_exists('mb_chunk_split'))
-{
+if (!function_exists('mb_chunk_split')) {
     function mb_chunk_split($body, $chunklen = 76, $end = "\r\n")
     {
         $split = '';
         $pos = 0;
         $len = mb_strlen($body);
-        while ($pos < $len)
-        {
+        while ($pos < $len) {
             $split .= mb_substr($body, $pos, $chunklen) . $end;
             $pos += $chunklen;
         }
@@ -247,27 +220,23 @@ if (!function_exists('mb_chunk_split'))
     }
 }
 
-if (!function_exists('mb_unsplit'))
-{
+if (!function_exists('mb_unsplit')) {
     function mb_unsplit($body, $end = "\r\n")
     {
         $split = '';
         $pos = 0;
         $len = mb_strlen($body);
         $skip = mb_strlen($end);
-        while ($pos < $len)
-        {
+        while ($pos < $len) {
             $next = strpos($body, $end, $pos);
-            if ($next === false)
-            {
+            if ($next === false) {
                 $split .= mb_substr($body, $pos);
                 break;
             }
 
             $split .= mb_substr($body, $pos, $next - $pos);
             $pos = $next + $skip;
-            if (mb_substr($body, $pos, $skip) === $end)
-            {
+            if (mb_substr($body, $pos, $skip) === $end) {
                 // keep the second
                 $split .= mb_substr($body, $pos, $skip);
                 $pos += $skip;
@@ -277,8 +246,7 @@ if (!function_exists('mb_unsplit'))
     }
 }
 
-if (!function_exists('mb_renderDiffHtml'))
-{
+if (!function_exists('mb_renderDiffHtml')) {
 
     /**
      * @param      $from_text
@@ -294,8 +262,7 @@ if (!function_exists('mb_renderDiffHtml'))
         if ($from_text == $to_text) return $to_text;
 
         $removeSpaces = false;
-        if ($charDiff === null)
-        {
+        if ($charDiff === null) {
             $charDiff = mb_strtolower($from_text) === mb_strtolower($to_text)
                 || abs(mb_strlen($from_text) - mb_strlen($to_text)) <= 2
                 || ($from_text && $to_text
@@ -303,8 +270,7 @@ if (!function_exists('mb_renderDiffHtml'))
                         || ($to_text && strpos($to_text, $from_text) !== false)));
         }
 
-        if ($charDiff)
-        {
+        if ($charDiff) {
             //use word diff but space all entities so that we get char diff
             $removeSpaces = true;
             $from_text = mb_chunk_split($from_text, 1, ' ');
@@ -315,28 +281,24 @@ if (!function_exists('mb_renderDiffHtml'))
         $opcodes = \FineDiff::getDiffOpcodes($from_text, $to_text, \FineDiff::$wordGranularity);
         $diff = \FineDiff::renderDiffToHTMLFromOpcodes($from_text, $opcodes);
         $diff = mb_convert_encoding($diff, 'UTF-8', 'HTML-ENTITIES');
-        if ($removeSpaces)
-        {
+        if ($removeSpaces) {
             $diff = mb_unsplit($diff, ' ');
         }
         return $diff;
     }
 }
 
-if (!function_exists('appendPath'))
-{
+if (!function_exists('appendPath')) {
     function appendPath($path, $part)
     {
-        if ($path !== '' && $part !== '')
-        {
+        if ($path !== '' && $part !== '') {
             // have both, combine them
             $pathTerminated = $path[strlen($path) - 1] === '/';
             $partPrefixed = $part[0] === '/';
             return $path . ($pathTerminated || $partPrefixed ? '' : '/') . ($pathTerminated && $partPrefixed ? substr($part, 1) : $part);
-        }
-        else
-        {
+        } else {
             return $path ?: $part;
         }
     }
 }
+
