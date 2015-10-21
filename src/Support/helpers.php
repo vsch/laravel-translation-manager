@@ -28,9 +28,10 @@ if (!function_exists('mapTrans'))
 if (!function_exists('transLang'))
 {
     /**
-     * @param       $string
-     * @param       $prefix
-     * @param array $params
+     * @param       $key
+     * @param array $replace
+     * @param null  $locale
+     * @param null  $useDB
      *
      * @return mixed
      */
@@ -44,9 +45,10 @@ if (!function_exists('transLang'))
 if (!function_exists('noEditTransEmptyUndefined'))
 {
     /**
-     * @param       $string
-     * @param       $prefix
-     * @param array $params
+     * @param       $key
+     * @param array $replace
+     * @param null  $locale
+     * @param null  $useDB
      *
      * @return mixed
      */
@@ -71,9 +73,11 @@ if (!function_exists('noEditTransEmptyUndefined'))
 if (!function_exists('transChoice'))
 {
     /**
-     * @param       $string
-     * @param       $prefix
-     * @param array $params
+     * @param       $key
+     * @param       $number
+     * @param array $replace
+     * @param null  $locale
+     * @param null  $useDB
      *
      * @return mixed
      */
@@ -137,9 +141,11 @@ if (!function_exists('ifEditTrans'))
 if (!function_exists('ifInPlaceEdit'))
 {
     /**
-     * @param       $string
-     * @param       $prefix
-     * @param array $params
+     * @param       $text
+     * @param array $replace
+     * @param null  $locale
+     * @param null  $useDB
+     * @param null  $noWrap
      *
      * @return mixed
      */

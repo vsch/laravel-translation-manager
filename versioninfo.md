@@ -10,6 +10,9 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 - add auto lower case all except the first character of translations only if translation text contains only letters, digits or white space, optionally terminated by a period.
 - add mark visible translations as deleted, and un-mark visible translations as deleted.
 - add persistence of translation filter selection between page refreshes.
+- change 'Show Unpublished' to only show changed or deleted translations. Used to also show missing translations.
+- add 'Need Attention' filter option to show missing, changed or deleted translations. This used to be what 'Show Unpublished' displayed.
+- fix importing with 'delete all then import' was not preserving usage information.
 
 #### x.0.31
 

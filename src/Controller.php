@@ -844,10 +844,8 @@ SQL
     function postImport($group)
     {
         $replace = \Input::get('replace', false);
-        if ($replace == 2) $this->manager->truncateTranslations($group);
-        //$counter = $this->manager->importTranslations($group !== '*' ? true : $replace, false, $group === '*' ? null : [$group]);
-        $counter = $this->manager->importTranslations(($group !== '*' ? !$this->manager->inDatabasePublishing() : $replace), $group === '*' ? null : [$group]);
-
+        $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : 1)
+            , $group === '*' ? null : [$group]);
         return \Response::json(array('status' => 'ok', 'counter' => $counter));
     }
 
@@ -856,9 +854,8 @@ SQL
     {
         $replace = \Input::get('replace', false);
         $group = \Input::get('group', '*');
-        //$counter = $this->manager->importTranslations(($group !== '*' ? !$this->manager->inDatabasePublishing() : $replace), false, $group === '*' ? null : [$group]);
-        $counter = $this->manager->importTranslations(($group !== '*' ? !$this->manager->inDatabasePublishing() : $replace), $group === '*' ? null : [$group]);
-
+        $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : 1)
+            , $group === '*' ? null : [$group]);
         return \Response::json(array('status' => 'ok', 'counter' => $counter));
     }
 

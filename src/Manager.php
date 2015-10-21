@@ -1,5 +1,6 @@
 <?php namespace Vsch\TranslationManager;
 
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\Expression;
@@ -163,7 +164,7 @@ class Manager
         // Laravel 5
         $events = \App::make('events');
         $events->listen('router.after', function () use ($manager) {
-        // Common 4-5
+            // Common 4-5
             $manager->saveCache();
             $manager->saveUsageCache();
         });
@@ -479,10 +480,10 @@ SQL
     public
     function missingKey($namespace, $group, $key, $locale = null, $useLottery = false, $findOrNew = false)
     {
-        // Fucking L5 changes
-        $group = self::fixGroup($group);
-        $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
         if (!$useLottery || $this->config(self::LOG_MISSING_KEYS_KEY)) {
+            // Fucking L5 changes
+            $group = self::fixGroup($group);
+            $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
             if (!in_array($group, $this->config(self::EXCLUDE_GROUPS_KEY))) {
                 $lottery = 1;
                 if ($useLottery && $this->config(self::MISSING_KEYS_LOTTERY_KEY) !== 1) {
@@ -531,15 +532,12 @@ SQL
      *
      * @param null $locale
      * @param bool $useLottery
-     * @param bool $findOrNew
-     *
-     * @return void
      */
     public
     function usingKey($namespace, $group, $key, $locale = null, $useLottery = false)
     {
-        $group = self::fixGroup($group);
-        if (!$useLottery || $this->config(self::LOG_KEY_USAGE_INFO_KEY)) {
+        if ($this->config(self::LOG_KEY_USAGE_INFO_KEY)) {
+            $group = self::fixGroup($group);
             $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
 
             if (!in_array($group, $this->config(self::EXCLUDE_GROUPS_KEY))) {
@@ -583,7 +581,7 @@ SQL
         });
 
         $values = [];
-
+        $statusChangeOnly = [];
         foreach ($translations as $key => $value) {
             $value = (string)$value;
 
@@ -633,21 +631,50 @@ SQL
 
                 $values[] = $sql;
             } else if ($translation->isDirty()) {
-                $translation->save();
+                if ($translation->isDirty(['value', 'source', 'saved_value', 'was_used',])) {
+                    $translation->save();
+                } else {
+                    if (!array_key_exists($translation->status, $statusChangeOnly)) $statusChangeOnly[$translation->status] = $translation->id;
+                    else $statusChangeOnly[$translation->status] .= ',' . $translation->id;
+                }
             }
 
             $this->imported++;
         }
 
-        //$sql = "INSERT INTO `ltm_translations`(status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used) VALUES ";
+        // now batch update those with status changes only
+        $updated_at = new Carbon();
+        foreach ($statusChangeOnly as $status => $translationIds) {
+            $this->getConnection()->affectingStatement(<<<SQL
+UPDATE ltm_translations SET status = ?, is_deleted = 0, updated_at = ? WHERE id IN ($translationIds)
+SQL
+            , [$status, $updated_at]);
+        }
 
-        // now process all the new translations that are not in the files
-        // batch them into a multi-row insert
-        foreach ($dbTransMap as $translation) {
-            // mark it as saved cached or changed
-            if (((int)$translation->status) === Translation::STATUS_SAVED) {
-                $translation->status = Translation::STATUS_SAVED_CACHED;
-                $translation->save();
+        //$sql = "INSERT INTO `ltm_translations`(status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used) VALUES ";
+        // now process all the new translations that were not in the files
+        if ($replace == 2) {
+            // we delete all translations that were not in the files
+            if ($dbTransMap) {
+                $translationIds = '';
+                foreach ($dbTransMap as $translation) {
+                    $translationIds .= ',' . $translation->id;
+                }
+
+                $translationIds = trim_prefix($translationIds, ',');
+                $this->getConnection()->unprepared(<<<SQL
+DELETE FROM ltm_translations WHERE id IN ($translationIds)
+SQL
+                );
+            }
+        } else {
+            // update their status
+            foreach ($dbTransMap as $translation) {
+                // mark it as saved cached or changed
+                if (((int)$translation->status) === Translation::STATUS_SAVED) {
+                    $translation->status = Translation::STATUS_SAVED_CACHED;
+                    $translation->save();
+                }
             }
         }
 
@@ -684,6 +711,12 @@ SQL
         } else {
             $groups = self::fixGroup($groups);
         }
+
+        // if we don't track usage information and replace == 2 we can truncate the translations for the groups or group
+        if (!$this->config(self::LOG_KEY_USAGE_INFO_KEY) && $replace == 2) {
+            $this->truncateTranslations($groups);
+        }
+
         $this->imported = 0;
         $this->clearCache($groups);
         $this->clearUsageCache(false, $groups);
@@ -975,9 +1008,9 @@ SQL
     }
 
     public
-    function truncateTranslations($group = '*')
+    function truncateTranslations($group = null)
     {
-        if ($group === '*') {
+        if ($group === '*' || $group === null) {
             $this->translation->truncate();
         } else {
             $this->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE `group` = ?", [$group]);
@@ -993,6 +1026,5 @@ SQL
         }
         return $array;
     }
-
 
 }
