@@ -48,6 +48,11 @@ String.prototype.toLocaleProperCase = function () {
     });
 };
 
+String.prototype.toLocaleProperCaseOrLowerCase = function () {
+    "use strict";
+    return this.substr(0,1) + this.substr(1).toLocaleLowerCase();
+};
+
 function translateYandex(fromLoc, fromText, toLoc, onTranslate) {
     var ERR_OK = 200,
         ERR_KEY_INVALID = 401,

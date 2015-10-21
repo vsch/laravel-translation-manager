@@ -224,11 +224,21 @@ jQuery(document).ready(function ($) {
         updateMatching(this);
     });
 
-    $('#show-unpublished').on('click', function (e) {
+    $('#show-need-attention').on('click', function (e) {
         //e.preventDefault();
         updateTranslationList = function (table) {
             table.find('tr').addClass('hidden');
             table.find('tr.has-empty-translation').removeClass('hidden');
+            table.find('tr.deleted-translation').removeClass('hidden');
+            table.find('tr.has-changed-translation').removeClass('hidden');
+        };
+        updateMatching(this);
+    });
+
+    $('#show-unpublished').on('click', function (e) {
+        //e.preventDefault();
+        updateTranslationList = function (table) {
+            table.find('tr').addClass('hidden');
             table.find('tr.deleted-translation').removeClass('hidden');
             table.find('tr.has-changed-translation').removeClass('hidden');
         };
@@ -494,7 +504,7 @@ jQuery(document).ready(function ($) {
             e.preventDefault();
             e.stopPropagation();
             var autoPropCase = [],
-                regex = /^\p{Alnum}+(\p{Blank}+\p{Alnum}+)+$/;
+                regex = XRegExp("^(\\p{Alphabetic}|\\p{Number})+(\\p{Space_Separator}+(\\p{Alphabetic}|\\p{Number})+)+\\.?$");
 
             // step through all the definitions in the second column and auto translate empty ones
             // here we make a log of assumptions about where the data is.
@@ -512,9 +522,9 @@ jQuery(document).ready(function ($) {
                         if (dstElem.length) {
                             if (!dstElem.hasClass('editable-empty')) {
                                 var text = dstElem.text();
-                                var simpleWords = regex.exec(text);
+                                var simpleWords = regex.test(text);
                                 window.console.log(text + " simple " + simpleWords);
-                                if (text !== text.toLocaleProperCase() && simpleWords) {
+                                if (text !== text.toLocaleProperCaseOrLowerCase() && simpleWords) {
                                     autoPropCase.push({
                                         srcText: dstElem.text(),
                                         dataUrl: dstElem.data('url'),
@@ -531,7 +541,7 @@ jQuery(document).ready(function ($) {
             if (autoPropCase.length > 0) {
                 (function (fromLoc, toLoc, btnElem) {
                     postTranslationValues(autoPropCase, btnElem, function (text, storeText) {
-                        storeText(text.toLocaleProperCase(), '');
+                        storeText(text.toLocaleProperCaseOrLowerCase(), '');
                     });
                 })(dstLoc, dstLoc, btnElem);
             }
@@ -623,10 +633,11 @@ jQuery(document).ready(function ($) {
     if (TRANS_FILTERS) {
         var filter = TRANS_FILTERS.filter;
         var regex = TRANS_FILTERS.regex;
+        var elemRadio = $('#' + filter);
+        elemRadio.prop('checked', 'checked');
+
         if (filter !== 'show-all' || regex) {
             $('#show-matching-text')[0].value = regex;
-            var elemRadio = $('#' + filter);
-            elemRadio.prop('checked', 'checked');
             elemRadio.trigger('click');
         }
     }
