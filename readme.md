@@ -19,7 +19,7 @@ This package is used to comfortably manage, view, edit and translate Laravel lan
 > New file layout configuration can handle non-standard location and layout of translation files. The main motivator for the change was to eliminate differences in code between the two Laravel versions to ease maintenance, the added benefit is that now Translation Manager can import and publish translations located anywhere in the project tree and is configured to handle vendor and workbench subdirectories. This does require publishing of the new configuration files to your project and manually applying any changes you have made to them. You should rename your current configuration file before publishing a new one so you can merge your changes into the new file. [publishing configuration](../../wiki/Installation#publish-config)
 
 > **Initial Localizations Added**
-> Only en and ru locales were manually verified. All others are there as a starter set and were automatically generated  via Yandex by using the new Auto Translate feature in the web interface.
+> Only en and ru locales were manually verified. All others are there as a starter set and were automatically generated via Yandex by using the Auto Translate feature in the web interface.
 > Any help in cleaning them up would be greatly appreciated.
 
 #### Screenshot

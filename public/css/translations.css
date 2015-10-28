@@ -234,3 +234,7 @@ ins {
     font-weight: bold;
     color: #be0031;
 }
+
+.panel .table:last-child {
+    margin-bottom: 0;
+}
