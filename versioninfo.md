@@ -12,7 +12,10 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 - add persistence of translation filter selection between page refreshes.
 - change 'Show Unpublished' to only show changed or deleted translations. Used to also show missing translations.
 - add 'Need Attention' filter option to show missing, changed or deleted translations. This used to be what 'Show Unpublished' displayed.
+- add 'New' filter option to show only rows that have no translations.
+- Change remove 'Show' prefix from all filter radio buttons to save real-estate.
 - fix importing with 'delete all then import' was not preserving usage information.
+- fix Auto Translate and Auto Fill to only affect rows that are visible, ie. not filtered out.
 
 #### x.0.31
 

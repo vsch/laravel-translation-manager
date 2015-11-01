@@ -642,8 +642,12 @@
                         </span>
                     </div>
                     <div class="input-group input-group-sm">
+                        {{--<label>@lang($package . '::messages.show'):&nbsp;</label>--}}
                         <label class="radio-inline">
                             <input id="show-all" type="radio" name="show-options" value="show-all"> @lang($package . '::messages.show-all')
+                        </label>
+                        <label class="radio-inline">
+                            <input id="show-new" type="radio" name="show-options" value="show-new"> @lang($package . '::messages.show-new')
                         </label>
                         <label class="radio-inline">
                             <input id="show-need-attention" type="radio" name="show-options" value="show-need-attention"> @lang($package . '::messages.show-need-attention')
