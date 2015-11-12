@@ -795,8 +795,8 @@
                                     }
                                     else $has_empty = true;
 
-                                    if (!$is_deleted && $trans->status !== 0) {
-                                        if ($trans->status == 1) $has_changed[$locale] = true;
+                                    if ($trans->status !== 0) {
+                                        if ($trans->status == 1 || $trans->value != $trans->saved_value) $has_changed[$locale] = true;
                                         else $has_changes_cached[$locale] = $trans->value != '' && $trans->status === 2;
                                     }
                                 }

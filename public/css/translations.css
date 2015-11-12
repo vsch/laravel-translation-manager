@@ -171,31 +171,27 @@ textarea.editable-input {
 /*text-decoration: line-through;*/
 /*}*/
 
-.table-translations tr.deleted-translation {
-    background-color: rgba(255, 130, 147, 0.31);
-}
-
-.table-translations > tbody > tr.deleted-translation:nth-of-type(even) {
+.table-translations > tbody > tr.deleted-translation:not(.editing):nth-of-type(even) {
     background-color: #edd3ed;
 }
 
-.table-translations > tbody > tr.deleted-translation:nth-of-type(odd) {
+.table-translations > tbody > tr.deleted-translation:not(.editing):nth-of-type(odd) {
     background-color: #ffe0ff;
 }
 
-.table-translations > tbody > tr:nth-of-type(even) > td.has-unpublished-translation {
+.table-translations > tbody > tr:not(.deleted-translation):not(.editing):nth-of-type(even) > td.has-unpublished-translation {
     background-color: #ebf7e4;
 }
 
-.table-translations > tbody > tr:nth-of-type(odd) > td.has-unpublished-translation {
+.table-translations > tbody > tr:not(.deleted-translation):not(.editing):nth-of-type(odd) > td.has-unpublished-translation {
     background-color: #f3ffed;
 }
 
-.table-translations > tbody > tr:nth-of-type(even) > td.has-cached-translation {
+.table-translations > tbody > tr:not(.deleted-translation):not(.editing):nth-of-type(even) > td.has-cached-translation {
     background-color: #e9f7f7;
 }
 
-.table-translations > tbody > tr:nth-of-type(odd) > td.has-cached-translation {
+.table-translations > tbody > tr:not(.deleted-translation):not(.editing):nth-of-type(odd) > td.has-cached-translation {
     background-color: #f2feff;
 }
 
