@@ -10,6 +10,7 @@ return [
     'auto-prop-case-disabled'   => 'Применение...',
     'auto-translate'            => 'Авто перевод',
     'auto-translate-disabled'   => 'Перевод...',
+    'cached'                    => 'Кэшированные',
     'changed'                   => 'Измененны',
     'check-all'                 => '<i class="glyphicon glyphicon-ok"></i>',
     'check-none'                => '<i class="glyphicon glyphicon-remove"></i>',

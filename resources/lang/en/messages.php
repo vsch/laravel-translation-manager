@@ -10,6 +10,7 @@ return [
     'auto-prop-case-disabled'   => 'Applying...',
     'auto-translate'            => 'Auto Translate',
     'auto-translate-disabled'   => 'Translating...',
+    'cached'                    => 'Cached',
     'changed'                   => 'Changed',
     'check-all'                 => 'All',
     'check-none'                => 'None',

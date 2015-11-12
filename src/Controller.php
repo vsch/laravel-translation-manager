@@ -215,6 +215,7 @@ SQL
                 $item = $summary[$stat->group] = new \stdClass();
                 $item->missing = '';
                 $item->changed = '';
+                $item->cached = '';
                 $item->deleted = '';
                 $item->group = $stat->group;
             }
@@ -222,6 +223,7 @@ SQL
             $item = $summary[$stat->group];
             if ($stat->missing) $item->missing .= $stat->locale . ":" . $stat->missing . " ";
             if ($stat->changed) $item->changed .= $stat->locale . ":" . $stat->changed . " ";
+            if ($stat->cached) $item->cached .= $stat->locale . ":" . $stat->cached . " ";
             if ($stat->deleted) $item->deleted .= $stat->locale . ":" . $stat->deleted . " ";
         }
 

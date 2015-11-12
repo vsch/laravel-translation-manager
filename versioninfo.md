@@ -2,6 +2,14 @@
 
 The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
+#### x.0.33
+
+- add cached column to dashboard to show translations that were published to the cache, but have not been saved to server files
+- fix a bunch of typos in translation.css attributes
+- change translations that have changes published to the cached have table cell background hue matching cached stats colors in dashboard
+- change deleted column in dashboard to hot-pink-purple and show stats in bold and color so they stand out
+- change deleted unpublished translation rows in table to match hue of the dashboard color 
+
 #### x.0.32
 
 - fix translations were not using selected remote connection for edit and default connection values were being displayed in the translation table for empty remote translations

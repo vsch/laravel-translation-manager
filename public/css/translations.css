@@ -90,12 +90,6 @@ h6 .editable-click, h6 a.editable-click, h6 a.editable-click:hover {
     padding: 2px 6px 2px 6px;
 }
 
-.table.translation-stats > thead > tr > th.missing
-.table.translation-stats > tbody > tr > td.changed {
-    text-align: right;
-    padding-right: 8px;
-}
-
 .table.translation-stats > tbody > tr > td.group {
     text-align: left;
     font-weight: bold;
@@ -108,9 +102,11 @@ h6 .editable-click, h6 a.editable-click, h6 a.editable-click:hover {
 }
 
 .table.translation-stats > thead > tr > th.deleted,
+.table.translation-stats > tbody > tr > td.deleted,
 .table.translation-stats > tbody > tr > td.group.deleted > a
 {
-    color: #3399f3;
+    color: #c200c1;
+    font-weight: bold;
 }
 
 .table.translation-stats > thead > tr > th.missing,
@@ -121,6 +117,11 @@ h6 .editable-click, h6 a.editable-click, h6 a.editable-click:hover {
 .table.translation-stats > thead > tr > th.changed,
 .table.translation-stats > tbody > tr > td.group.changed > a {
     color: #00A030;
+}
+
+.table.translation-stats > thead > tr > th.cached,
+.table.translation-stats > tbody > tr > td.group.cached > a {
+    color: #3399f3;
 }
 
 textarea.editable-input {
@@ -174,24 +175,12 @@ textarea.editable-input {
     background-color: rgba(255, 130, 147, 0.31);
 }
 
-.table-striped > tbody > tr.deleted-translation:nth-of-type(even) {
-    background-color: #f5e1e3;
+.table-translations > tbody > tr.deleted-translation:nth-of-type(even) {
+    background-color: #edd3ed;
 }
 
-.table-striped > tbody > tr.deleted-translation:nth-of-type(odd) {
-    background-color: #ffebec;
-}
-
-.table-translations tr.editing.deleted-translation {
-    background-color: rgba(255, 136, 77, 0.41);
-}
-
-.table-translations > tbody > tr.editing.deleted-translation:nth-of-type(even) {
-    background-color: #f5d3c4;
-}
-
-.table-translations > tbody > tr.editing.deleted-translation:nth-of-type(odd) {
-    background-color: #ffdccc;
+.table-translations > tbody > tr.deleted-translation:nth-of-type(odd) {
+    background-color: #ffe0ff;
 }
 
 .table-translations > tbody > tr:nth-of-type(even) > td.has-unpublished-translation {
