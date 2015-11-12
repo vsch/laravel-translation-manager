@@ -155,7 +155,7 @@ textarea.editable-input {
 }
 
 .table-translations tr.editing {
-    backround-color: rgba(255, 255, 100, .3);
+    background-color: rgba(255, 255, 100, .3);
 }
 
 .table-striped > tbody > tr.editing:nth-of-type(even) {
@@ -171,7 +171,7 @@ textarea.editable-input {
 /*}*/
 
 .table-translations tr.deleted-translation {
-    backround-color: rgba(255, 130, 147, 0.31);
+    background-color: rgba(255, 130, 147, 0.31);
 }
 
 .table-striped > tbody > tr.deleted-translation:nth-of-type(even) {
@@ -183,15 +183,31 @@ textarea.editable-input {
 }
 
 .table-translations tr.editing.deleted-translation {
-    backround-color: rgba(255, 136, 77, 0.41);
+    background-color: rgba(255, 136, 77, 0.41);
 }
 
-.table-striped > tbody > tr.editing.deleted-translation:nth-of-type(even) {
+.table-translations > tbody > tr.editing.deleted-translation:nth-of-type(even) {
     background-color: #f5d3c4;
 }
 
-.table-striped > tbody > tr.editing.deleted-translation:nth-of-type(odd) {
+.table-translations > tbody > tr.editing.deleted-translation:nth-of-type(odd) {
     background-color: #ffdccc;
+}
+
+.table-translations > tbody > tr:nth-of-type(even) > td.has-unpublished-translation {
+    background-color: #ebf7e4;
+}
+
+.table-translations > tbody > tr:nth-of-type(odd) > td.has-unpublished-translation {
+    background-color: #f3ffed;
+}
+
+.table-translations > tbody > tr:nth-of-type(even) > td.has-cached-translation {
+    background-color: #e9f7f7;
+}
+
+.table-translations > tbody > tr:nth-of-type(odd) > td.has-cached-translation {
+    background-color: #f2feff;
 }
 
 a.status-1 {
@@ -212,7 +228,7 @@ ins {
 }
 
 #accordion.panel-group .panel > .panel-heading a.collapsed:not(.in):before {
-    content: "▶ ";
+    content: "▶ " ;
     display: inline;
 }
 

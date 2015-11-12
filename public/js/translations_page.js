@@ -245,6 +245,15 @@ jQuery(document).ready(function ($) {
         updateMatching(this);
     });
 
+    $('#show-new').on('click', function (e) {
+        //e.preventDefault();
+        updateTranslationList = function (table) {
+            table.find('tr').removeClass('hidden');
+            table.find('tr.has-nonempty-translation').addClass('hidden');
+        };
+        updateMatching(this);
+    });
+
     $('#show-empty').on('click', function (e) {
         //e.preventDefault();
         updateTranslationList = function (table) {
@@ -411,9 +420,10 @@ jQuery(document).ready(function ($) {
                 var row = $(this).parent().find('.vsch_editable');
                 if (row.length > 1) {
                     var srcElem = $(row[0]),
-                        dstElem = $(row[colNum]);
+                        dstElem = $(row[colNum]),
+                        tr = row.closest('tr');
 
-                    if (dstElem.length && srcElem.length) {
+                    if (!tr.hasClass('hidden') && dstElem.length && srcElem.length) {
                         if (dstElem.hasClass('editable-empty') && !srcElem.hasClass('editable-empty')) {
                             autoTranslate.push({
                                 srcText: srcElem.text(),
@@ -448,9 +458,10 @@ jQuery(document).ready(function ($) {
         // we assume that the source is the child element immediately preceeding this one and it is a <td> containing
         // <a> containing the source text
         $(".auto-fillable").each(function () {
-            var dstElem = $(this).find("a.vsch_editable.editable-empty");
+            var dstElem = $(this).find("a.vsch_editable.editable-empty"),
+                tr = dstElem.closest('tr');
 
-            if (dstElem.length) {
+            if (dstElem.length && !tr.hasClass('hidden')) {
                 autoFill.push({
                     srcText: dstElem.data('name').substr(PRIMARY_LOCALE.length + 1),
                     dataUrl: dstElem.data('url'),

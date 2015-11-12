@@ -773,10 +773,15 @@
                             $has_empty = false;
                             $has_nonempty = false;
                             $has_changes = false;
+                            $has_changed = [];
+                            $has_changes_cached = [];
                             $has_used = false;
                             foreach($locales as $locale)
                             {
                                 if (!array_key_exists($locale, $displayLocales)) continue;
+
+                                $has_changed[$locale] = false;
+                                $has_changes_cached[$locale] = false;
 
                                 if (isset($translation[$locale])) {
                                     $trans = $translation[$locale];
@@ -784,9 +789,16 @@
                                     if ($trans->was_used) $has_used = true;
                                     if ($trans->value != '') {
                                         $has_nonempty = true;
-                                        if ($trans->status != 0 || $trans->value != $trans->saved_value) $has_changes = true;
+                                        if ($trans->status != 0 || $trans->value != $trans->saved_value) {
+                                            $has_changes = true;
+                                        }
                                     }
                                     else $has_empty = true;
+
+                                    if (!$is_deleted && $trans->status !== 0) {
+                                        if ($trans->status == 1) $has_changed[$locale] = true;
+                                        else $has_changes_cached[$locale] = $trans->value != '' && $trans->status === 2;
+                                    }
                                 }
                             }
                         ?>
@@ -825,7 +837,7 @@
                             <?php foreach($locales as $locale): ?>
                             <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
                             <?php $t = isset($translation[$locale]) ? $translation[$locale] : null ?>
-                            <td <?= $locale !== $primaryLocale ? 'class="auto-translatable-'. $locale . '"' :  ($locale === $primaryLocale ? 'class="auto-fillable"' : '') ?>>
+                            <td class="<?= $locale !== $primaryLocale ? 'auto-translatable-'. $locale :  ($locale === $primaryLocale ? 'auto-fillable' : '') ?><?= ($has_changed[$locale] ? ' has-unpublished-translation' :'') . ($has_changes_cached[$locale] ? ' has-cached-translation' :'') ?>">
                                 <?= $translator->inPlaceEditLink(!$t ? $t : ($t->value == '' ? null : $t), true, "$group.$key", $locale, null, $group) ?>
                             </td>
                             <?php endforeach; ?>

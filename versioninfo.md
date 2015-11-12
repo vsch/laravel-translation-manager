@@ -4,6 +4,12 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
 #### x.0.32
 
+- fix translations were not using selected remote connection for edit and default connection values were being displayed in the translation table for empty remote translations
+- add cache translations for the group being edited for the session so that all translations for the page are loaded in one db query
+- fix empty translations would show in the dashboard as unpublished when in-database-publish mode is used
+- add table cell highlight of unpublished changed translations so that they are easier to locate
+- add table cell highlight of cached published translations so that they stand out from actual unpublished changes
+- fix dashboard no longer shows cached published translations as changed
 - fix move keys would fail if destination had existing key. Now conflicting destination keys are deleted and replaced by the moved keys.
 - fix translation edit pop-up to caps now lower cases the affected text then proper caps it.
 - add translation edit pop-up button to cap just the first character of the translation and the rest lowercase.

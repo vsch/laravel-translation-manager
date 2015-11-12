@@ -2,6 +2,7 @@
 
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Events\Dispatcher;
@@ -57,14 +58,18 @@ class Manager
     protected $indatabase_publish;
     protected $default_connection;
     protected $default_indatabase_publish;
-    private $package;
     protected $groupList;
     protected $augmentedGroupList;
+    protected $preloadedGroupKeys;
+    protected $preloadedGroup;
+    protected $preloadedGroupLocales;
 
     /**
      * @var   \ZipArchive
      */
     protected $zipExporting;
+
+    private $package;
 
     public
     function setConnectionName($connection = null)
@@ -137,6 +142,65 @@ class Manager
         return $this->zipExporting ? 3 : $this->indatabase_publish;
     }
 
+    function firstOrNewTranslation($attributes = null)
+    {
+        $checkDB = true;
+
+        /* @var $query Builder */
+
+        $translation = null;
+
+        if ($this->preloadedGroupKeys && array_key_exists('group', $attributes) && $this->preloadedGroup === $attributes['group']
+            && array_key_exists('locale', $attributes) && array_key_exists('key', $attributes)
+            && array_key_exists($attributes['locale'], $this->preloadedGroupLocales)
+        ) {
+            $checkDB = false;
+
+            if (array_key_exists($attributes['key'], $this->preloadedGroupKeys)
+                && array_key_exists($attributes['locale'], $this->preloadedGroupKeys[$attributes['key']])
+            ) {
+                $translation = $this->preloadedGroupKeys[$attributes['key']][$attributes['locale']];
+            }
+        }
+
+        if ($checkDB) {
+            $query = $this->translation->on($this->getConnectionName());
+
+            foreach ($attributes as $attribute => $value) {
+                $query = $query->where($attribute, $value);
+            }
+
+            $translation = $query->first();
+        }
+
+        if (!$translation) {
+            $translation = new Translation();
+            $translation->fill($attributes);
+            $translation->setConnection($this->getConnectionName());
+        }
+
+        return $translation;
+    }
+
+    function firstOrCreateTranslation($attributes = null)
+    {
+        $translation = $this->firstOrNewTranslation($attributes);
+        if (!$translation->exists) {
+            $translation->save();
+        }
+
+        return $translation;
+    }
+
+    public
+    function cacheGroupTranslations($group, $locales, $translations)
+    {
+        $this->preloadedGroupKeys = $translations;
+        $this->preloadedGroup = $group;
+        $locales = explode(',', $locales);
+        $this->preloadedGroupLocales = array_combine($locales, $locales);
+    }
+
     public
     function __construct(Application $app, Filesystem $files, Dispatcher $events, Translation $translation)
     {
@@ -145,6 +209,8 @@ class Manager
         $this->events = $events;
         $this->translation = $translation;
         $this->default_connection = $translation->getConnectionName();
+        $this->preloadedGroupKeys = null;
+        $this->preloadedGroup = null;
 
         $this->persistentPrefix = null;
         $this->cache = null;
@@ -505,13 +571,13 @@ SQL
                     $locale = $locale ?: $this->app['config']['app.locale'];
 
                     if ($findOrNew) {
-                        $translation = $this->translation->firstOrNew(array(
+                        $translation = $this->firstOrNewTranslation(array(
                             'locale' => $locale,
                             'group' => $group,
                             'key' => $key,
                         ));
                     } else {
-                        $translation = $this->translation->firstOrCreate(array(
+                        $translation = $this->firstOrCreateTranslation(array(
                             'locale' => $locale,
                             'group' => $group,
                             'key' => $key,
@@ -648,7 +714,7 @@ SQL
             $this->getConnection()->affectingStatement(<<<SQL
 UPDATE ltm_translations SET status = ?, is_deleted = 0, updated_at = ? WHERE id IN ($translationIds)
 SQL
-            , [$status, $updated_at]);
+                , [$status, $updated_at]);
         }
 
         //$sql = "INSERT INTO `ltm_translations`(status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used) VALUES ";

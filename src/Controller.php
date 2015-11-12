@@ -185,14 +185,21 @@ SQL
             $translations[$translation->key][$translation->locale] = $translation;
         }
 
+        $this->manager->cacheGroupTranslations($group, $this->displayLocales, $translations);
+
         $stats = $this->getConnection()->select(<<<SQL
-SELECT (mx.total_keys - lcs.total) missing, lcs.changed, lcs.deleted, lcs.locale, lcs.`group`
+SELECT (mx.total_keys - lcs.total) missing, lcs.changed, lcs.cached, lcs.deleted, lcs.locale, lcs.`group`
 FROM
-    (SELECT sum(total) total, sum(changed) changed, sum(deleted) deleted, `group`, locale
+    (SELECT sum(total) total, sum(changed) changed, sum(cached) cached, sum(deleted) deleted, `group`, locale
      FROM
-         (SELECT count(value) total, sum(status) changed, sum(is_deleted) deleted, `group`, locale FROM ltm_translations lt WHERE 1=1 $displayWhere GROUP BY `group`, locale
+         (SELECT count(value) total,
+          sum(CASE WHEN status = 1 THEN 1 ELSE 0 END) changed,
+          sum(CASE WHEN status = 2 AND value IS NOT NULL THEN 1 ELSE 0 END) cached,
+         sum(is_deleted) deleted,
+         `group`, locale
+                FROM ltm_translations lt WHERE 1=1 $displayWhere GROUP BY `group`, locale
           UNION ALL
-          SELECT DISTINCT 0, 0, 0, `group`, locale FROM (SELECT DISTINCT locale FROM ltm_translations WHERE 1=1 $displayWhere) lc
+          SELECT DISTINCT 0, 0, 0, 0, `group`, locale FROM (SELECT DISTINCT locale FROM ltm_translations WHERE 1=1 $displayWhere) lc
               CROSS JOIN (SELECT DISTINCT `group` FROM ltm_translations) lg) a
      GROUP BY `group`, locale) lcs
     JOIN (SELECT count(DISTINCT `key`) total_keys, `group` FROM ltm_translations WHERE 1=1 $displayWhere GROUP BY `group`) mx
@@ -483,7 +490,7 @@ SQL
             $value = \Input::get('value');
 
             list($locale, $key) = explode('|', $name, 2);
-            $translation = $this->getTranslation()->firstOrNew(array(
+            $translation = $this->manager->firstOrNewTranslation(array(
                 'locale' => $locale,
                 'group' => $group,
                 'key' => $key,
