@@ -1,6 +1,11 @@
 ### Version Notes
 
-The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
+The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
+
+#### x.0.34
+
+- fix cached entries were filtered out by query so they never showed in web UI
+- add merge PR from @killtw for Laravel 5.2 support in composer.json
 
 #### x.0.33
 
