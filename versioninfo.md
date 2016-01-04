@@ -2,6 +2,10 @@
 
 The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
 
+#### x.0.35
+
+- add database table prefix handling in hand rolled queries
+
 #### x.0.34
 
 - fix cached entries were filtered out by query so they never showed in web UI
