@@ -155,8 +155,9 @@ class Controller extends BaseController
         // translations, otherwise we don't know what the group and key looks like.
         //$allTranslations = $this->getTranslation()->where('group', $group)->orderBy('key', 'asc')->get();
         $displayWhere = $this->displayLocales ? ' AND locale IN (\'' . implode("','", explode(',', $this->displayLocales)) . "')" : '';
+        $ltm_translations = $this->manager->getTranslationsTableName();
         $allTranslations = $this->getTranslation()->hydrateRaw($sql = <<<SQL
-SELECT * FROM ltm_translations WHERE `group` = ? $displayWhere
+SELECT * FROM $ltm_translations WHERE `group` = ? $displayWhere
 UNION ALL
 SELECT DISTINCT
     NULL id,
@@ -172,9 +173,9 @@ SELECT DISTINCT
     NULL is_deleted,
     NULL was_used
 FROM
-(SELECT * FROM (SELECT DISTINCT locale FROM ltm_translations WHERE 1=1 $displayWhere) lcs
-    CROSS JOIN (SELECT DISTINCT `group`, `key` FROM ltm_translations WHERE `group` = ? $displayWhere) grp) m
-WHERE NOT EXISTS(SELECT * FROM ltm_translations t WHERE t.locale = m.locale AND t.`group` = m.`group` AND t.`key` = m.`key`)
+(SELECT * FROM (SELECT DISTINCT locale FROM $ltm_translations WHERE 1=1 $displayWhere) lcs
+    CROSS JOIN (SELECT DISTINCT `group`, `key` FROM $ltm_translations WHERE `group` = ? $displayWhere) grp) m
+WHERE NOT EXISTS(SELECT * FROM $ltm_translations t WHERE t.locale = m.locale AND t.`group` = m.`group` AND t.`key` = m.`key`)
 ORDER BY `key` ASC
 SQL
             , [$group, $group], $this->getConnectionName());
@@ -197,12 +198,12 @@ FROM
           sum(CASE WHEN status = 2 AND value IS NOT NULL THEN 1 ELSE 0 END) cached,
          sum(is_deleted) deleted,
          `group`, locale
-                FROM ltm_translations lt WHERE 1=1 $displayWhere GROUP BY `group`, locale
+                FROM $ltm_translations lt WHERE 1=1 $displayWhere GROUP BY `group`, locale
           UNION ALL
-          SELECT DISTINCT 0, 0, 0, 0, `group`, locale FROM (SELECT DISTINCT locale FROM ltm_translations WHERE 1=1 $displayWhere) lc
-              CROSS JOIN (SELECT DISTINCT `group` FROM ltm_translations) lg) a
+          SELECT DISTINCT 0, 0, 0, 0, `group`, locale FROM (SELECT DISTINCT locale FROM $ltm_translations WHERE 1=1 $displayWhere) lc
+              CROSS JOIN (SELECT DISTINCT `group` FROM $ltm_translations) lg) a
      GROUP BY `group`, locale) lcs
-    JOIN (SELECT count(DISTINCT `key`) total_keys, `group` FROM ltm_translations WHERE 1=1 $displayWhere GROUP BY `group`) mx
+    JOIN (SELECT count(DISTINCT `key`) total_keys, `group` FROM $ltm_translations WHERE 1=1 $displayWhere GROUP BY `group`) mx
         ON lcs.`group` = mx.`group`
 WHERE lcs.total < mx.total_keys OR lcs.changed > 0 OR lcs.cached > 0 OR lcs.deleted > 0
 SQL
@@ -234,21 +235,21 @@ SQL
             // get mismatches
             $mismatches = $this->getConnection()->select(<<<SQL
 SELECT DISTINCT lt.*, ft.ru, ft.en
-FROM (SELECT * FROM ltm_translations WHERE 1=1 $displayWhere) lt
+FROM (SELECT * FROM $ltm_translations WHERE 1=1 $displayWhere) lt
     JOIN
     (SELECT DISTINCT mt.`key`, BINARY mt.ru ru, BINARY mt.en en
      FROM (SELECT lt.`group`, lt.`key`, group_concat(CASE lt.locale WHEN '$primaryLocale' THEN VALUE ELSE NULL END) en, group_concat(CASE lt.locale WHEN '$translatingLocale' THEN VALUE ELSE NULL END) ru
-           FROM (SELECT value, `group`, `key`, locale FROM ltm_translations WHERE 1=1 $displayWhere
+           FROM (SELECT value, `group`, `key`, locale FROM $ltm_translations WHERE 1=1 $displayWhere
                  UNION ALL
-                 SELECT NULL, `group`, `key`, locale FROM ((SELECT DISTINCT locale FROM ltm_translations WHERE 1=1 $displayWhere) lc
-                     CROSS JOIN (SELECT DISTINCT `group`, `key` FROM ltm_translations WHERE 1=1 $displayWhere) lg)
+                 SELECT NULL, `group`, `key`, locale FROM ((SELECT DISTINCT locale FROM $ltm_translations WHERE 1=1 $displayWhere) lc
+                     CROSS JOIN (SELECT DISTINCT `group`, `key` FROM $ltm_translations WHERE 1=1 $displayWhere) lg)
                 ) lt
            GROUP BY `group`, `key`) mt
          JOIN (SELECT lt.`group`, lt.`key`, group_concat(CASE lt.locale WHEN '$primaryLocale' THEN VALUE ELSE NULL END) en, group_concat(CASE lt.locale WHEN '$translatingLocale' THEN VALUE ELSE NULL END) ru
-               FROM (SELECT value, `group`, `key`, locale FROM ltm_translations WHERE 1=1 $displayWhere
+               FROM (SELECT value, `group`, `key`, locale FROM $ltm_translations WHERE 1=1 $displayWhere
                      UNION ALL
-                     SELECT NULL, `group`, `key`, locale FROM ((SELECT DISTINCT locale FROM ltm_translations WHERE 1=1 $displayWhere) lc
-                         CROSS JOIN (SELECT DISTINCT `group`, `key` FROM ltm_translations WHERE 1=1 $displayWhere) lg)
+                     SELECT NULL, `group`, `key`, locale FROM ((SELECT DISTINCT locale FROM $ltm_translations WHERE 1=1 $displayWhere) lc
+                         CROSS JOIN (SELECT DISTINCT `group`, `key` FROM $ltm_translations WHERE 1=1 $displayWhere) lg)
                     ) lt
                GROUP BY `group`, `key`) ht ON mt.`key` = ht.`key`
      WHERE (mt.ru NOT LIKE BINARY ht.ru AND mt.en LIKE BINARY ht.en) OR (mt.ru LIKE BINARY ht.ru AND mt.en NOT LIKE BINARY ht.en)
@@ -361,6 +362,7 @@ SQL
     public
     function getSearch()
     {
+        $ltm_translations = $this->manager->getTranslationsTableName();
         $q = \Input::get('q');
 
         if ($q === '') $translations = [];
@@ -373,12 +375,12 @@ SQL
 
             // need to fill-in missing locale's that match the key
             $translations = $this->getConnection()->select(<<<SQL
-SELECT * FROM ltm_translations rt WHERE (`key` LIKE ? OR value LIKE ?) $displayWhere
+SELECT * FROM $ltm_translations rt WHERE (`key` LIKE ? OR value LIKE ?) $displayWhere
 UNION ALL
 SELECT NULL id, 0 status, lt.locale, kt.`group`, kt.`key`, NULL value, NULL created_at, NULL updated_at, NULL source, NULL saved_value, NULL is_deleted, NULL was_used
-FROM (SELECT DISTINCT locale FROM ltm_translations WHERE 1=1 $displayWhere) lt
-    CROSS JOIN (SELECT DISTINCT `key`, `group` FROM ltm_translations WHERE 1=1 $displayWhere) kt
-WHERE NOT exists(SELECT * FROM ltm_translations tr WHERE tr.`key` = kt.`key` AND tr.`group` = kt.`group` AND tr.locale = lt.locale)
+FROM (SELECT DISTINCT locale FROM $ltm_translations WHERE 1=1 $displayWhere) lt
+    CROSS JOIN (SELECT DISTINCT `key`, `group` FROM $ltm_translations WHERE 1=1 $displayWhere) kt
+WHERE NOT exists(SELECT * FROM $ltm_translations tr WHERE tr.`key` = kt.`key` AND tr.`group` = kt.`group` AND tr.locale = lt.locale)
       AND `key` LIKE ?
 ORDER BY `key`, `group`, locale
 SQL
@@ -453,6 +455,7 @@ SQL
     public
     function postDeleteSuffixedKeys($group)
     {
+        $ltm_translations = $this->manager->getTranslationsTableName();
         if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
             $keys = explode("\n", trim(\Input::get('keys')));
             $suffixes = explode("\n", trim(\Input::get('suffixes')));
@@ -466,14 +469,14 @@ SQL
                         foreach ($suffixes as $suffix) {
                             //$this->getTranslation()->where('group', $group)->where('key', $key . trim($suffix))->delete();
                             $result = $this->getConnection()->update(<<<SQL
-UPDATE ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
+UPDATE $ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
 SQL
                                 , [$group, $key . trim($suffix)]);
                         }
                     } else {
                         //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
                         $result = $this->getConnection()->update(<<<SQL
-UPDATE ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
+UPDATE $ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
 SQL
                             , [$group, $key]);
                     }
@@ -511,10 +514,11 @@ SQL
     public
     function postDelete($group, $key)
     {
+        $ltm_translations = $this->manager->getTranslationsTableName();
         if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
             //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
             $result = $this->getConnection()->update(<<<SQL
-UPDATE ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
+UPDATE $ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
 SQL
                 , [$group, $key]);
         }
@@ -524,10 +528,11 @@ SQL
     public
     function postUndelete($group, $key)
     {
+        $ltm_translations = $this->manager->getTranslationsTableName();
         if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
             //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
             $result = $this->getConnection()->update(<<<SQL
-UPDATE ltm_translations SET is_deleted = 0 WHERE is_deleted = 1 AND `group` = ? AND `key` = ?
+UPDATE $ltm_translations SET is_deleted = 0 WHERE is_deleted = 1 AND `group` = ? AND `key` = ?
 SQL
                 , [$group, $key]);
         }
@@ -571,6 +576,7 @@ SQL
         $keymap = [];
         $this->logSql = 1;
         $this->sqltraces = [];
+        $ltm_translations = $this->manager->getTranslationsTableName();
 
         if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
             $srckeys = explode("\n", trim(\Input::get('srckeys')));
@@ -628,7 +634,7 @@ SQL
                     if ((substr($src, 0, 1) === '*')) {
                         if ($dst === null) {
                             $rows = $this->getConnection()->select($sql = <<<SQL
-SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM ltm_translations t1
+SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM $ltm_translations t1
 WHERE `group` = ? AND `key` LIKE BINARY ?
 ORDER BY locale, `key`
 
@@ -639,9 +645,9 @@ SQL
                                 ]);
                         } else {
                             $rows = $this->getConnection()->select($sql = <<<SQL
-SELECT DISTINCT `group`, `key`, locale, id, CONCAT(SUBSTR(`key`, 1, CHAR_LENGTH(`key`)-?), ?) dst, ? dstgrp FROM ltm_translations t1
+SELECT DISTINCT `group`, `key`, locale, id, CONCAT(SUBSTR(`key`, 1, CHAR_LENGTH(`key`)-?), ?) dst, ? dstgrp FROM $ltm_translations t1
 WHERE `group` = ? AND `key` LIKE BINARY ?
-AND NOT exists(SELECT * FROM ltm_translations t2 WHERE t2.value IS NOT NULL AND t2.`group` = ? AND t1.locale = t2.locale
+AND NOT exists(SELECT * FROM $ltm_translations t2 WHERE t2.value IS NOT NULL AND t2.`group` = ? AND t1.locale = t2.locale
                 AND t2.`key` LIKE BINARY CONCAT(SUBSTR(t1.`key`, 1, CHAR_LENGTH(t1.`key`)-?), ?))
 ORDER BY locale, `key`
 
@@ -660,7 +666,7 @@ SQL
                     } elseif ((substr($src, -1, 1) === '*')) {
                         if ($dst === null) {
                             $rows = $this->getConnection()->select($sql = <<<SQL
-SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM ltm_translations t1
+SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM $ltm_translations t1
 WHERE `group` = ? AND `key` LIKE BINARY ?
 ORDER BY locale, `key`
 
@@ -671,9 +677,9 @@ SQL
                                 ]);
                         } else {
                             $rows = $this->getConnection()->select($sql = <<<SQL
-SELECT DISTINCT `group`, `key`, locale, id, CONCAT(?, SUBSTR(`key`, ?+1, CHAR_LENGTH(`key`)-?)) dst, ? dstgrp FROM ltm_translations t1
+SELECT DISTINCT `group`, `key`, locale, id, CONCAT(?, SUBSTR(`key`, ?+1, CHAR_LENGTH(`key`)-?)) dst, ? dstgrp FROM $ltm_translations t1
 WHERE `group` = ? AND `key` LIKE BINARY ?
-AND NOT exists(SELECT * FROM ltm_translations t2 WHERE t2.value IS NOT NULL AND t2.`group` = ? AND t1.locale = t2.locale
+AND NOT exists(SELECT * FROM $ltm_translations t2 WHERE t2.value IS NOT NULL AND t2.`group` = ? AND t1.locale = t2.locale
                 AND t2.`key` LIKE BINARY CONCAT(?, SUBSTR(t1.`key`, ?+1, CHAR_LENGTH(t1.`key`)-?)))
 ORDER BY locale, `key`
 
@@ -694,7 +700,7 @@ SQL
                     } else {
                         if ($dst === null) {
                             $rows = $this->getConnection()->select($sql = <<<SQL
-SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM ltm_translations t1
+SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM $ltm_translations t1
 WHERE `group` = ? AND `key` LIKE BINARY ?
 ORDER BY locale, `key`
 
@@ -705,9 +711,9 @@ SQL
                                 ]);
                         } else {
                             $rows = $this->getConnection()->select($sql = <<<SQL
-SELECT DISTINCT `group`, `key`, locale, id, ? dst, ? dstgrp FROM ltm_translations t1
+SELECT DISTINCT `group`, `key`, locale, id, ? dst, ? dstgrp FROM $ltm_translations t1
 WHERE `group` = ? AND `key` LIKE BINARY ?
-AND NOT exists(SELECT * FROM ltm_translations t2 WHERE t2.value IS NOT NULL AND t2.`group` = ? AND t1.locale = t2.locale AND t2.`key` LIKE BINARY ?)
+AND NOT exists(SELECT * FROM $ltm_translations t2 WHERE t2.value IS NOT NULL AND t2.`group` = ? AND t1.locale = t2.locale AND t2.`key` LIKE BINARY ?)
 ORDER BY locale, `key`
 
 SQL
@@ -739,7 +745,7 @@ SQL
                             foreach ($rows as $row) {
                                 list($dstgrp, $dstkey) = self::keyGroup($row->dstgrp, $row->dst);
                                 $to_delete = $this->getConnection()->select(<<<SQL
-SELECT GROUP_CONCAT(id SEPARATOR ',') ids FROM ltm_translations tr
+SELECT GROUP_CONCAT(id SEPARATOR ',') ids FROM $ltm_translations tr
 WHERE `group` = ? AND `key` = ? AND locale = ? AND id NOT IN ($rowids)
 
 SQL
@@ -751,22 +757,22 @@ SQL
                                         //$this->getConnection()->update("UPDATE ltm_translations SET is_deleted = 1 WHERE id IN ($to_delete)");
                                         // have to delete right away, we will be bringing another key here
                                         // TODO: copy value to new key's saved value
-                                        $this->getConnection()->delete("DELETE FROM ltm_translations WHERE id IN ($to_delete)");
+                                        $this->getConnection()->delete("DELETE FROM $ltm_translations WHERE id IN ($to_delete)");
                                     }
                                 }
 
-                                $this->getConnection()->update("UPDATE ltm_translations SET `group` = ?, `key` = ?, status = 1 WHERE id = ?"
+                                $this->getConnection()->update("UPDATE $ltm_translations SET `group` = ?, `key` = ?, status = 1 WHERE id = ?"
                                     , [$dstgrp, $dstkey, $row->id]);
                             }
                         } elseif ($op === 'delete') {
                             //$this->getConnection()->delete("DELETE FROM ltm_translations WHERE id IN ($rowids)");
-                            $this->getConnection()->update("UPDATE ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND id IN ($rowids)");
+                            $this->getConnection()->update("UPDATE $ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND id IN ($rowids)");
                         } elseif ($op === 'copy') {
                             // TODO: split operation into update and insert so that conflicting keys get new values instead of being replaced
                             foreach ($rows as $row) {
                                 list($dstgrp, $dstkey) = self::keyGroup($row->dstgrp, $row->dst);
                                 $to_delete = $this->getConnection()->select(<<<SQL
-SELECT GROUP_CONCAT(id SEPARATOR ',') ids FROM ltm_translations tr
+SELECT GROUP_CONCAT(id SEPARATOR ',') ids FROM $ltm_translations tr
 WHERE `group` = ? AND `key` = ? AND locale = ? AND id NOT IN ($rowids)
 
 SQL
@@ -776,12 +782,12 @@ SQL
                                     $to_delete = $to_delete[0]->ids;
                                     if ($to_delete) {
                                         //$this->getConnection()->update("UPDATE ltm_translations SET is_deleted = 1 WHERE id IN ($to_delete)");
-                                        $this->getConnection()->delete("DELETE FROM ltm_translations WHERE id IN ($to_delete)");
+                                        $this->getConnection()->delete("DELETE FROM $ltm_translations WHERE id IN ($to_delete)");
                                     }
                                 }
 
                                 $this->getConnection()->insert($sql = <<<SQL
-INSERT INTO ltm_translations
+INSERT INTO $ltm_translations
 SELECT
     NULL id,
     1 status,
@@ -795,7 +801,7 @@ SELECT
     saved_value,
     is_deleted,
     was_used
-FROM ltm_translations t1
+FROM $ltm_translations t1
 WHERE id = ?
 
 SQL

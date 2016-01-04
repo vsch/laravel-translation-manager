@@ -115,6 +115,13 @@ class Manager
     }
 
     public
+    function getTranslationsTableName()
+    {
+        $prefix = $this->translation->getConnection()->getTablePrefix();
+        return $prefix . $this->translation->getTable();
+    }
+
+    public
     function getConnectionInfo($connection, $key = null, $default = null)
     {
         if ($key === null) {
@@ -363,6 +370,7 @@ class Manager
             //\Cache::put($this->usageCacheTransKey, $this->usageCache, 60 * 24 * 365);
             \Cache::put($this->usageCacheTransKey, [], 60 * 24 * 365);
             $this->usageCacheIsDirty = false;
+            $ltm_translations = $this->getTranslationsTableName();
 
             // now update the keys in the database
             foreach ($this->usageCache as $group => $keys) {
@@ -380,13 +388,13 @@ class Manager
 
                 if ($setKeys) {
                     $this->getConnection()->affectingStatement(<<<SQL
-UPDATE ltm_translations SET was_used = 1 WHERE was_used <> 1 AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?) AND `key` IN ($setKeys)
+UPDATE $ltm_translations SET was_used = 1 WHERE was_used <> 1 AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?) AND `key` IN ($setKeys)
 SQL
                         , [$group, 'vnd:%.' . $group, 'wbn:%.' . $group]);
                 }
                 if ($resetKeys) {
                     $this->getConnection()->affectingStatement(<<<SQL
-UPDATE ltm_translations SET was_used = 0 WHERE was_used <> 0 AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?) AND `key` IN ($resetKeys)
+UPDATE $ltm_translations SET was_used = 0 WHERE was_used <> 0 AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?) AND `key` IN ($resetKeys)
 SQL
                         , [$group, 'vnd:%.' . $group, 'wbn:%.' . $group]);
                 }
@@ -415,6 +423,7 @@ SQL
     public
     function clearUsageCache($clearDatabase, $groups = null)
     {
+        $ltm_translations = $this->getTranslationsTableName();
         if (!$groups || $groups === '*') {
             $this->usageCache();
             $this->usageCache = [];
@@ -423,7 +432,7 @@ SQL
 
             if ($clearDatabase) {
                 $this->getConnection()->affectingStatement(<<<SQL
-UPDATE ltm_translations SET was_used = 0 WHERE was_used <> 0
+UPDATE $ltm_translations SET was_used = 0 WHERE was_used <> 0
 SQL
                 );
             }
@@ -439,7 +448,7 @@ SQL
 
                 if ($clearDatabase) {
                     $this->getConnection()->affectingStatement(<<<SQL
-UPDATE ltm_translations SET was_used = 0 WHERE was_used <> 0 AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?)
+UPDATE $ltm_translations SET was_used = 0 WHERE was_used <> 0 AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?)
 SQL
                         , [$group, 'vnd:%.' . $group, 'wbn:%.' . $group]);
                 }
@@ -634,8 +643,9 @@ SQL
     function importTranslationFile($locale, $db_group, $translations, $replace)
     {
         $connectionName = $this->getConnectionName();
+        $ltm_translations = $this->getTranslationsTableName();
         $dbTranslations = $this->translation->hydrateRaw(<<<SQL
-SELECT * FROM ltm_translations WHERE locale = ? AND `group` = ?
+SELECT * FROM $ltm_translations WHERE locale = ? AND `group` = ?
 
 SQL
             , [$locale, $db_group], $connectionName);
@@ -712,7 +722,7 @@ SQL
         $updated_at = new Carbon();
         foreach ($statusChangeOnly as $status => $translationIds) {
             $this->getConnection()->affectingStatement(<<<SQL
-UPDATE ltm_translations SET status = ?, is_deleted = 0, updated_at = ? WHERE id IN ($translationIds)
+UPDATE $ltm_translations SET status = ?, is_deleted = 0, updated_at = ? WHERE id IN ($translationIds)
 SQL
                 , [$status, $updated_at]);
         }
@@ -729,7 +739,7 @@ SQL
 
                 $translationIds = trim_prefix($translationIds, ',');
                 $this->getConnection()->unprepared(<<<SQL
-DELETE FROM ltm_translations WHERE id IN ($translationIds)
+DELETE FROM $ltm_translations WHERE id IN ($translationIds)
 SQL
                 );
             }
@@ -745,7 +755,7 @@ SQL
         }
 
         if ($values) {
-            $sql = "INS" . "ERT INTO `ltm_translations`(status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used) VALUES " . implode(",", $values);
+            $sql = "INS" . "ERT INTO `$ltm_translations`(status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used) VALUES " . implode(",", $values);
 
             //$this->getConnection()->unprepared('LOCK TABLES `ltm_translations` WRITE');
             try {
@@ -913,22 +923,23 @@ SQL
     {
         // TODO: clean up this recursion crap
         // this can come from the command line
+        $ltm_translations = $this->getTranslationsTableName();
         if (!$recursing) {
             $this->clearErrors();
             $group = self::fixGroup($group);
         }
 
         if ($group && $group !== '*') {
-            $this->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE is_deleted = 1");
+            $this->getConnection()->affectingStatement("DELETE FROM $ltm_translations WHERE is_deleted = 1");
         } elseif (!$recursing) {
-            $this->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE is_deleted = 1 AND `group` = ?", [$group]);
+            $this->getConnection()->affectingStatement("DELETE FROM $ltm_translations WHERE is_deleted = 1 AND `group` = ?", [$group]);
         }
 
         $inDatabasePublishing = $this->inDatabasePublishing();
         if ($inDatabasePublishing < 3 && $inDatabasePublishing && ($inDatabasePublishing < 2 || !$recursing)) {
             if ($group && $group !== '*') {
                 $this->getConnection()->affectingStatement(<<<SQL
-UPDATE ltm_translations SET saved_value = value, status = ? WHERE (saved_value <> value || status <> ?) AND `group` = ?
+UPDATE $ltm_translations SET saved_value = value, status = ? WHERE (saved_value <> value || status <> ?) AND `group` = ?
 SQL
                     , [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED, $group]);
 
@@ -940,7 +951,7 @@ SQL
                 ]);
             } else {
                 $this->getConnection()->affectingStatement(<<<SQL
-UPDATE ltm_translations SET saved_value = value, status = ? WHERE (saved_value <> value || status <> ?)
+UPDATE $ltm_translations SET saved_value = value, status = ? WHERE (saved_value <> value || status <> ?)
 SQL
                     , [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED]);
                 $translations = $this->translation->query()->where('status', '<>', Translation::STATUS_SAVED)->get([
@@ -1079,7 +1090,8 @@ SQL
         if ($group === '*' || $group === null) {
             $this->translation->truncate();
         } else {
-            $this->getConnection()->affectingStatement("DELETE FROM ltm_translations WHERE `group` = ?", [$group]);
+            $ltm_translations = $this->getTranslationsTableName();
+            $this->getConnection()->affectingStatement("DELETE FROM $ltm_translations WHERE `group` = ?", [$group]);
         }
     }
 
@@ -1092,5 +1104,4 @@ SQL
         }
         return $array;
     }
-
 }
