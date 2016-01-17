@@ -32,8 +32,13 @@ This package is used to comfortably manage, view, edit and translate Laravel lan
 
 [wiki]: ../../wiki
 
-[publishing configuration]: ../../wiki/Installation#publish-config
 [Translation Manager Screenshot]: ../../wiki/images/ScreenShot_main.png
 [Features]: ../../wiki/#features
 [barryvdh]: https://github.com/barryvdh/laravel-translation-manager
 [issue #14]: ../../issues/14
+[publishing configuration]: ../../wiki/Installation#publish-config
+
+
+
+
+
