@@ -997,6 +997,9 @@ SQL
 
         // extension on AWS should be .gz because it is a gz archive not a zip archive
         $fileContents = file_get_contents($file, null, null, 0, 2);
+
+        \Log::info("ZipFile prefix chars '$fileContents' " . ord($fileContents[0]) . ' ' . ord($fileContents[1]));
+
         switch ($fileContents) {
             case 'PK' :
                 $ext = ".zip";
