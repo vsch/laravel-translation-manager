@@ -989,9 +989,10 @@ SQL
     function getZippedTranslations($group = null)
     {
         // disable gzip compression of this page, this causes wrapping of the zip file in gzip format
-        if(ini_get('zlib.output_compression')){
-            ini_set('zlib.output_compression', 'Off');
-        }
+        // does not work the zip is still gzip compressed
+        //if(ini_get('zlib.output_compression')){
+        //    ini_set('zlib.output_compression', 'Off');
+        //}
 
         $file = $this->manager->zipTranslations($group);
         if ($group && $group !== '*') {
@@ -1042,6 +1043,7 @@ SQL
         flush();
         readfile($file);
         unlink($file);
+        flush();
     }
 
     public
