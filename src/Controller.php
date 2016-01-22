@@ -1003,7 +1003,7 @@ SQL
         switch ($fileContents) {
             case 'PK' :
                 $ext = ".zip";
-                $ctype = "zip";
+                $ctype = "x-zip-compressed";
                 break;
             case "\x1F\x8B" :
                 $ext = ".gz";
