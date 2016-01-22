@@ -988,6 +988,11 @@ SQL
     public
     function getZippedTranslations($group = null)
     {
+        // disable gzip compression of this page, this causes wrapping of the zip file in gzip format
+        if(ini_get('zlib.output_compression')){
+            ini_set('zlib.output_compression', 'Off');
+        }
+
         $file = $this->manager->zipTranslations($group);
         if ($group && $group !== '*') {
             $zip_name = "Translations_${group}_"; // Zip name
@@ -1032,11 +1037,6 @@ SQL
         header('Content-Length: ' . filesize($file));
         header('Content-Disposition: attachment; filename="' . $zip_name . date('Ymd-His') . '.zip"');
         header('Content-Transfer-Encoding: binary');
-
-        // disable gzip compression of this page, this causes wrapping of the zip file in gzip format
-        if(ini_get('zlib.output_compression')){
-            ini_set('zlib.output_compression', 'Off');
-        }
 
         ob_clean();
         flush();
