@@ -1029,6 +1029,7 @@ SQL
         header('Content-Type: application/' . $ctype);
         header('Content-Length: ' . filesize($file));
         header('Content-Disposition: attachment; filename="' . $zip_name . date('Ymd-His') . $ext . '"');
+        header('Content-Transfer-Encoding: binary');
         ob_clean();
         flush();
         readfile($file);
