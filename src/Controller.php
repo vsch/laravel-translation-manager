@@ -990,9 +990,10 @@ SQL
     {
         // disable gzip compression of this page, this causes wrapping of the zip file in gzip format
         // does not work the zip is still gzip compressed
-        //if(ini_get('zlib.output_compression')){
-        //    ini_set('zlib.output_compression', 'Off');
-        //}
+        if (ini_get('zlib.output_compression')) {
+            ini_set('zlib.output_compression', 'Off');
+            \Log::info("after turning off zlib.compression current setting " . ini_get('zlib.output_compression'));
+        }
 
         $file = $this->manager->zipTranslations($group);
         if ($group && $group !== '*') {
@@ -1043,7 +1044,7 @@ SQL
         flush();
         readfile($file);
         unlink($file);
-        flush();
+        \Log::info("sending file, zlib.compression current setting " . ini_get('zlib.output_compression'));
     }
 
     public
