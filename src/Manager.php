@@ -999,11 +999,11 @@ SQL
                         $translations = $groups[$group];
 
                         // use the new path mapping
-                        $computedPath = $base_path . $pathTemplateResolver->groupFilePath($group, $locale);
-                        $path = $computedPath;
+                        $computedPath = $pathTemplateResolver->groupFilePath($group, $locale);
+                        $path = $base_path . $computedPath;
 
-                        if ($path) {
-                            $configRewriter->parseSource($this->files->exists($path) ? $this->files->get($path) : '');
+                        if ($computedPath) {
+                            $configRewriter->parseSource($this->files->exists($path) && $this->files->isFile($path) ? $this->files->get($path) : '');
                             $output = $configRewriter->formatForExport($translations, $exportOptions);
 
                             if ($this->zipExporting) {

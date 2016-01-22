@@ -173,7 +173,9 @@ class PathTemplateResolver
                 $vars = array_combine(['{vendor}', '{package}'], explode('/', $custom));
                 if (static::isPathIncluded($default, $vars))
                 {
-                    $config[$custom] = array_replace_recursive($config[$mergeWith], $config[$custom]);
+                    // recursive will create a shared instance of array contents that $config[$custom]['include'] = array($custom) overwrites changing the value in $config[$mergeWith]['include'], which we do not want
+                    $mergeWithCopy = arrayCopy($config[$mergeWith]);
+                    $config[$custom] = array_replace_recursive($mergeWithCopy, $config[$custom]);
 
                     // add the vendor, package, variables
                     if (!array_key_exists('vars', $config[$custom])) $config[$custom]['vars'] = [];
