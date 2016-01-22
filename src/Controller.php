@@ -989,10 +989,43 @@ SQL
     function getZippedTranslations($group = null)
     {
         $file = $this->manager->zipTranslations($group);
+        if ($group && $group !== '*') {
+            $zip_name = "Translations_${group}_"; // Zip name
+        } else {
+            $zip_name = "Translations_"; // Zip name
+        }
 
-        header('Content-Type: application/zip');
+        // extension on AWS should be .gz because it is a gz archive not a zip archive
+        $fileContents = file_get_contents($file, null, null, 0, 2);
+        switch ($fileContents) {
+            case 'PK' :
+                $ext = ".zip";
+                $ctype = "zip";
+                break;
+            case "\x1F\x8B" :
+                $ext = ".gz";
+                $ctype = "x-gzip";
+                break;
+            case "7z" :
+                $ext = ".7z";
+                $ctype = "x-7z-compressed";
+                break;
+
+            case "\x1F\x9D" :
+            case "\x1F\xA0" :
+                $ext = ".z";
+                $ctype = "x-compressed";
+                break;
+
+            default:
+                $ext = ".zip";
+                $ctype = "zip";
+                break;
+        }
+
+        header('Content-Type: application/' . $ctype);
         header('Content-Length: ' . filesize($file));
-        header('Content-Disposition: attachment; filename="Translations_' . date('Ymd-His') . '.zip"');
+        header('Content-Disposition: attachment; filename="' . $zip_name . date('Ymd-His') . $ext . '"');
         ob_clean();
         flush();
         readfile($file);

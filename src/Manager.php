@@ -1050,20 +1050,7 @@ SQL
     public
     function zipTranslations($groups)
     {
-        if (!is_array($groups)) {
-            if ($groups === '*') {
-                $zip_name = tempnam("Translations_" . time(), "zip"); // Zip name
-            } else {
-                $zip_name = tempnam("Translations_${groups}_" . time(), "zip"); // Zip name
-            }
-        } else {
-            if (count($groups) === 1) {
-                $zip_name = tempnam("Translations_${groups[0]}_" . time(), "zip"); // Zip name
-            } else {
-                $zip_name = tempnam("Translations_partial_" . time(), "zip"); // Zip name
-            }
-        }
-
+        $zip_name = tempnam("Translations_" . time(), "zip"); // Zip name
         $this->zipExporting = new ZipArchive();
         $this->zipExporting->open($zip_name, ZipArchive::OVERWRITE);
 
