@@ -1002,39 +1002,6 @@ SQL
             $zip_name = "Translations_"; // Zip name
         }
 
-        //// extension on AWS should be .gz because it is a gz archive not a zip archive
-        //$fileContents = file_get_contents($file, null, null, 0, 2);
-        //
-        //\Log::info("ZipFile prefix chars '$fileContents' " . ord($fileContents[0]) . ' ' . ord($fileContents[1]));
-        //
-        //switch ($fileContents) {
-        //    case 'PK' :
-        //        $ext = ".zip";
-        //        $ctype = "x-zip-compressed";
-        //        break;
-        //    case "\x1F\x8B" :
-        //        $ext = ".gz";
-        //        $ctype = "x-gzip";
-        //        break;
-        //    case "7z" :
-        //        $ext = ".7z";
-        //        $ctype = "x-7z-compressed";
-        //        break;
-        //
-        //    case "\x1F\x9D" :
-        //    case "\x1F\xA0" :
-        //        $ext = ".z";
-        //        $ctype = "x-compressed";
-        //        break;
-        //
-        //    default:
-        //        $ext = ".zip";
-        //        $ctype = "zip";
-        //        break;
-        //}
-        //header('Content-Type: application/' . $ctype);
-        //header('Content-Disposition: attachment; filename="' . $zip_name . date('Ymd-His') . $ext . '"');
-
         header('Content-Type: application/zip');
         header('Content-Length: ' . filesize($file));
         header('Content-Disposition: attachment; filename="' . $zip_name . date('Ymd-His') . '.zip"');
