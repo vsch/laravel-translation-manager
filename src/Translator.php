@@ -316,4 +316,26 @@ class Translator extends LaravelTranslator
             }
         }
     }
+
+    public
+    function getLocales()
+    {
+        //Set the default locale as the first one.
+        $currentLocale = \Config::get('app.locale');
+        $locales = ManagerServiceProvider::getLists($this->manager->getTranslation()->groupBy('locale')->lists('locale')) ?: [];
+
+        // limit the locale list to what is in the config
+        $configShowLocales = $this->manager->config(Manager::SHOW_LOCALES_KEY, []);
+        if ($configShowLocales) {
+            if (!is_array($configShowLocales)) $configShowLocales = array($configShowLocales);
+            $locales = array_intersect($locales, $configShowLocales);
+        }
+
+        $configLocales = $this->manager->config(Manager::ADDITIONAL_LOCALES_KEY, []);
+        if (!is_array($configLocales)) $configLocales = array($configLocales);
+
+        $locales = array_merge(array($currentLocale), $configLocales, $locales);
+        return array_flatten(array_unique($locales));
+    }
+
 }
