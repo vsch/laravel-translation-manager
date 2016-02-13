@@ -363,7 +363,7 @@ SQL
     function getSearch()
     {
         $ltm_translations = $this->manager->getTranslationsTableName();
-        $q = \Input::get('q');
+        $q = \Request::get('q');
 
         if ($q === '') $translations = [];
         else {
@@ -429,8 +429,8 @@ SQL
     public
     function postAdd($group)
     {
-        $keys = explode("\n", trim(\Input::get('keys')));
-        $suffixes = explode("\n", trim(\Input::get('suffixes')));
+        $keys = explode("\n", trim(\Request::get('keys')));
+        $suffixes = explode("\n", trim(\Request::get('suffixes')));
         $group = explode('::', $group, 2);
         $namespace = '*';
         if (count($group) > 1) $namespace = array_shift($group);
@@ -448,7 +448,7 @@ SQL
                 }
             }
         }
-        //Session::flash('_old_data', \Input::except('keys'));
+        //Session::flash('_old_data', \Request::except('keys'));
         return \Redirect::back()->withInput();
     }
 
@@ -457,8 +457,8 @@ SQL
     {
         $ltm_translations = $this->manager->getTranslationsTableName();
         if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
-            $keys = explode("\n", trim(\Input::get('keys')));
-            $suffixes = explode("\n", trim(\Input::get('suffixes')));
+            $keys = explode("\n", trim(\Request::get('keys')));
+            $suffixes = explode("\n", trim(\Request::get('suffixes')));
 
             if (count($suffixes) === 1 && $suffixes[0] === '') $suffixes = [];
 
@@ -491,8 +491,8 @@ SQL
     function postEdit($group)
     {
         if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY))) {
-            $name = \Input::get('name');
-            $value = \Input::get('value');
+            $name = \Request::get('name');
+            $value = \Request::get('value');
 
             list($locale, $key) = explode('|', $name, 2);
             $translation = $this->manager->firstOrNewTranslation(array(
@@ -579,8 +579,8 @@ SQL
         $ltm_translations = $this->manager->getTranslationsTableName();
 
         if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
-            $srckeys = explode("\n", trim(\Input::get('srckeys')));
-            $dstkeys = explode("\n", trim(\Input::get('dstkeys')));
+            $srckeys = explode("\n", trim(\Request::get('srckeys')));
+            $dstkeys = explode("\n", trim(\Request::get('dstkeys')));
 
             array_walk($srckeys, function (&$val, $key) use (&$srckeys) {
                 $val = trim($val);
@@ -858,7 +858,7 @@ SQL
     public
     function postImport($group)
     {
-        $replace = \Input::get('replace', false);
+        $replace = \Request::get('replace', false);
         $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : 1)
             , $group === '*' ? null : [$group]);
         return \Response::json(array('status' => 'ok', 'counter' => $counter));
@@ -867,8 +867,8 @@ SQL
     public
     function getImport()
     {
-        $replace = \Input::get('replace', false);
-        $group = \Input::get('group', '*');
+        $replace = \Request::get('replace', false);
+        $group = \Request::get('group', '*');
         $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : 1)
             , $group === '*' ? null : [$group]);
         return \Response::json(array('status' => 'ok', 'counter' => $counter));
@@ -918,11 +918,11 @@ SQL
     public
     function getInterfaceLocale()
     {
-        $locale = \Input::get("l");
-        $translating = \Input::get("t");
-        $primary = \Input::get("p");
-        $connection = \Input::get("c");
-        $displayLocales = \Input::get("d");
+        $locale = \Request::get("l");
+        $translating = \Request::get("t");
+        $primary = \Request::get("p");
+        $connection = \Request::get("c");
+        $displayLocales = \Request::get("d");
         $display = implode(',', $displayLocales ?: []);
 
         \App::setLocale($locale);
@@ -940,9 +940,9 @@ SQL
     public
     function getUsageInfo()
     {
-        $group = \Input::get("group");
-        $reset = \Input::get("reset-usage-info");
-        $show = \Input::get("show-usage-info");
+        $group = \Request::get("group");
+        $reset = \Request::get("reset-usage-info");
+        $show = \Request::get("show-usage-info");
 
         // need to store this so that it can be displayed again
         \Cookie::queue($this->cookieName(self::COOKIE_SHOW_USAGE), $show, 60 * 24 * 365 * 1);
@@ -963,12 +963,12 @@ SQL
         $filter = null;
         $regex = null;
 
-        if (\Input::has('filter')) {
-            $filter = \Input::get("filter");
+        if (\Request::has('filter')) {
+            $filter = \Request::get("filter");
             $this->transFilters['filter'] = $filter;
         }
 
-        $regex = \Input::get("regex", null);
+        $regex = \Request::get("regex", null);
         if ($regex !== null) {
             $this->transFilters['regex'] = $regex;
         }

@@ -6,6 +6,9 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
 
 - fix workbench language files were not saved and caused a server exception, suspect this was introduced with upgrade to PHP 7.0 which handles array_replace_recursive differently than PHP 5.6. It appears that 7.0 does a copy by reference not by value if there is only one reference to an item in an array.
 - fix improper test for existence of language file was not testing if the path was a directory.
+- change laravelcollective/html dependency to 5.2 to make it Laravel 5.2 compatible
+- change all Input:: to Request:: for Laravel 5.2 compatibility 
+- add 'web' to middleware in config otherwise Laravel 5.2 does not initialize session object
 
 #### x.0.35
 

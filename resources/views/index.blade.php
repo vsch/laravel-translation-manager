@@ -416,12 +416,12 @@
                                         <div class="row">
                                             <div class="col-sm-6">
                                                 <label for="keys">@lang($package . '::messages.keys'):</label><?= ifEditTrans($package . '::messages.addkeys-placeholder') ?>
-                                                <?=  Form::textarea('keys', Input::old('keys'), ['class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
+                                                <?=  Form::textarea('keys', Request::old('keys'), ['class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
                                                         'placeholder'=>noEditTrans($package . '::messages.addkeys-placeholder')]) ?>
                                             </div>
                                             <div class="col-sm-6">
                                                 <label for="suffixes">@lang($package . '::messages.suffixes'):</label><?= ifEditTrans($package . '::messages.addsuffixes-placeholder') ?>
-                                                <?=  Form::textarea('suffixes', Input::old('suffixes'), ['class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
+                                                <?=  Form::textarea('suffixes', Request::old('suffixes'), ['class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
                                                         'placeholder'=> noEditTrans($package . '::messages.addsuffixes-placeholder')]) ?>
                                             </div>
                                         </div>
@@ -503,12 +503,12 @@
                                     <div class="row">
                                         <div class="col-sm-6">
                                             <label for="srckeys">@lang($package . '::messages.srckeys'):</label><?= ifEditTrans($package . '::messages.srckeys-placeholder') ?>
-                                            <?=  Form::textarea('srckeys', Input::old('srckeys'), ['id' => 'srckeys', 'class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
+                                            <?=  Form::textarea('srckeys', Request::old('srckeys'), ['id' => 'srckeys', 'class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
                                                     'placeholder'=>noEditTrans($package . '::messages.srckeys-placeholder')]) ?>
                                         </div>
                                         <div class="col-sm-6">
                                             <label for="dstkeys">@lang($package . '::messages.dstkeys'):</label><?= ifEditTrans($package . '::messages.dstkeys-placeholder') ?>
-                                            <?=  Form::textarea('dstkeys', Input::old('dstkeys'), ['id' => 'dstkeys', 'class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
+                                            <?=  Form::textarea('dstkeys', Request::old('dstkeys'), ['id' => 'dstkeys', 'class'=>"form-control", 'rows'=>"4", 'style'=>"resize: vertical",
                                                     'placeholder'=> noEditTrans($package . '::messages.dstkeys-placeholder')]) ?>
                                         </div>
                                     </div>

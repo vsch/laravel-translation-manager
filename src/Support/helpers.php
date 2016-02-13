@@ -319,3 +319,45 @@ if (!function_exists('appendPath')) {
     }
 }
 
+if (!function_exists('trim_prefix')) {
+    /**
+     * @param $text   string
+     * @param $prefix array|string
+     *
+     * @return string
+     */
+    function trim_prefix($text, $prefix)
+    {
+        if (!is_array($prefix)) $prefix = array($prefix);
+        foreach ($prefix as $pre) {
+            if (strpos($text, $pre) === 0) {
+                $text = substr($text, strlen($pre));
+                break;
+            }
+        }
+        return $text;
+    }
+}
+
+if (!function_exists('trim_suffix')) {
+    /**
+     * @param $text   string
+     * @param $suffix array|string
+     *
+     * @return string
+     */
+    function trim_suffix($text, $suffix)
+    {
+        if (!is_array($suffix)) $suffix = array($suffix);
+        $textLen = strlen($text);
+
+        foreach ($suffix as $suff) {
+            if (strpos($text, $suff) === $textLen - strlen($suff)) {
+                $text = substr($text, 0, -strlen($suff));
+                break;
+            }
+        }
+        return $text;
+    }
+}
+
