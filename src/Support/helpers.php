@@ -361,3 +361,27 @@ if (!function_exists('trim_suffix')) {
     }
 }
 
+if (!function_exists('encodeKey')) {
+    /**
+     * @param $text   string
+     *
+     * @return string
+     */
+    function encodeKey($text)
+    {
+        return urlencode(urlencode($text));
+    }
+}
+
+if (!function_exists('decodeKey')) {
+    /**
+     * @param $text   string
+     *
+     * @return string
+     */
+    function decodeKey($text)
+    {
+        return urldecode(urldecode($text));
+    }
+}
+

@@ -514,6 +514,7 @@ SQL
     public
     function postDelete($group, $key)
     {
+        $key = decodeKey($key);
         $ltm_translations = $this->manager->getTranslationsTableName();
         if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
             //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
@@ -528,6 +529,7 @@ SQL
     public
     function postUndelete($group, $key)
     {
+        $key = decodeKey($key);
         $ltm_translations = $this->manager->getTranslationsTableName();
         if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
             //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();

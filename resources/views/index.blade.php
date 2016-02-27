@@ -806,12 +806,12 @@
                                 ">
                             <?php if($adminEnabled): ?>
                             <td>
-                                <a href="<?= action($controller . '@postUndelete', [$group, $key]) ?>"
+                                <a href="<?= action($controller . '@postUndelete', [$group, encodeKey($key)]) ?>"
                                         class="undelete-key <?= $is_deleted ? "" : "hidden" ?>" data-method="POST"
                                         data-remote="true">
                                     <span class="glyphicon glyphicon-thumbs-up"></span>
                                 </a>
-                                <a href="<?= action($controller . '@postDelete', [$group, $key]) ?>"
+                                <a href="<?= action($controller . '@postDelete', [$group, encodeKey($key)]) ?>"
                                         class="delete-key <?= !$is_deleted ? "" : "hidden" ?>" data-method="POST"
                                         data-remote="true">
                                     <span class="glyphicon glyphicon-trash"></span>
