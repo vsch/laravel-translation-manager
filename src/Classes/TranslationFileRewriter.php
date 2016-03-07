@@ -364,7 +364,7 @@ class TranslationFileRewriter
                 $max = 0;
                 foreach ($trans as $key => $val)
                 {
-                    if (!is_int($key) && strlen($key) > $max) $max = strlen($key) + 1;
+                    if (strlen($key) > $max) $max = strlen($key) + 1;
                 }
                 $max += (($max + 2) & 3) ? 4 - (($max + 2) & 3) : 0;
 
@@ -378,16 +378,10 @@ class TranslationFileRewriter
                 {
                     $val = $trans[$key];
                     $val = $this->formatSection($val, $options, $indent + 1);
-                    if (is_int($key))
-                    {
-                        $text .= $indT . $val . ",\n";
-                    }
-                    else
-                    {
-                        $pad = str_repeat(' ', $max - strlen($key));
-                        $str = self::wrapQuotes($key, $options);
-                        $text .= $indT . "$str$pad=> $val,\n";
-                    }
+
+                    $pad = str_repeat(' ', $max - strlen($key));
+                    $str = self::wrapQuotes($key, $options);
+                    $text .= $indT . "$str$pad=> $val,\n";
                 }
 
                 if ($indent) $text .= $ind . (($options & self::OPT_USE_SHORT_ARRAY) ? "]" : ")");
