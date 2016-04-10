@@ -2,6 +2,10 @@
 
 The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+ 
 
+#### 2.0.38
+
+- merge #26, handling of numeric translation keys
+
 #### 2.0.37
 
 - fix#25, Delete button not working for some keys, solved by double url encoding translation key 
