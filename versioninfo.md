@@ -2,6 +2,13 @@
 
 The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+ 
 
+#### 2.0.39
+
+- Fix: #28, name of DB connection should be definable in config file - feature request. Now can 
+  add `database_name` to package config which will override the database name defined for the 
+  connection. Similarly, alternate connections can have their own database name settings, use 
+  the globally defined one in package config file or use the connection's database name. 
+
 #### 2.0.38
 
 - merge #26, handling of numeric translation keys

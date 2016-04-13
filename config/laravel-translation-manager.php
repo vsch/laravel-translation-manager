@@ -145,6 +145,10 @@ return array(
      * @type array      list of alternate database connections and their properties indexed by app()->environment() value,
      *                  default connection settings are taken from config, so only add alternate connections
      *
+     *                  NOTE: If database_name is missing then the globally defined database_name will be used for that connection.
+     *                  If database_name is blank then connection's database name will be used. Otherwise the given
+     *                  database name will be used for all translation tables
+     *
      *                  description is used to display the connection name, default connection is displayed as 'default' in
      *                  the web interface.
      */
@@ -153,10 +157,22 @@ return array(
         //    'mysql_prd' => array(
         //        'description' => 'production',
         //        'indatabase_publish' => 2,
+        //        'database_name' => '',
         //    ),
         //),
     ),
 
+    /**
+     * used to provide an alternate database for the translation related tables 
+     *
+     * @type string     Database name alternate to the default
+     *
+     * if blank or not defined then default connection's database name will be used.
+     *
+     */
+
+    'database_name' => '',
+    
     /**
      * used to provide the Yandex key for use in automatic Yandex translations
      *

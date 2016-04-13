@@ -23,6 +23,7 @@ use ZipArchive;
 class Manager
 {
     const INDATABASE_PUBLISH_KEY = 'indatabase_publish';
+    const DATABASE_NAME_KEY = 'database_name';
     const DB_CONNECTIONS_KEY = 'db_connections';
     const PERSISTENT_PREFIX_KEY = 'persistent_prefix';
     const EXCLUDE_PAGE_EDIT_GROUPS_KEY = 'exclude_page_edit_groups';
@@ -63,6 +64,7 @@ class Manager
     protected $preloadedGroupKeys;
     protected $preloadedGroup;
     protected $preloadedGroupLocales;
+    protected $databaseName;
 
     /**
      * @var   \ZipArchive
@@ -81,6 +83,9 @@ class Manager
 
         $this->translation->setConnection($connection);
         $this->indatabase_publish = $this->getConnectionInDatabasePublish($connection);
+        $this->databaseName = $this->getConnectionDatabaseName($connection);
+        if ($this->databaseName !== null && $this->databaseName !== '') $this->translation->getConnection()->setDatabaseName($this->databaseName);
+
         $this->clearCache();
     }
 
@@ -115,10 +120,22 @@ class Manager
     }
 
     public
+    function getConnectionDatabaseName($connection)
+    {
+        if ($connection === null || $connection === '') {
+            return $this->config(self::DATABASE_NAME_KEY, 0);
+        }
+        return $this->getConnectionInfo($connection, self::DATABASE_NAME_KEY, $this->config(self::DATABASE_NAME_KEY, 0));
+    }
+
+    public
     function getTranslationsTableName()
     {
+        //$databaseName = null;
+        $databaseName = $this->databaseName ? $this->databaseName . '.' : '';
+
         $prefix = $this->translation->getConnection()->getTablePrefix();
-        return $prefix . $this->translation->getTable();
+        return $databaseName . $prefix . $this->translation->getTable();
     }
 
     public
@@ -184,6 +201,7 @@ class Manager
             $translation = new Translation();
             $translation->fill($attributes);
             $translation->setConnection($this->getConnectionName());
+            if ($this->databaseName !== null && $this->databaseName !== '') $translation->getConnection()->setDatabaseName($this->databaseName);
         }
 
         return $translation;
@@ -229,6 +247,11 @@ class Manager
 
         $this->groupList = null;
         $this->augmentedGroupList = null;
+
+        $this->databaseName = $this->config(self::DATABASE_NAME_KEY);
+
+        // configure database connection
+        if ($this->databaseName !== null && $this->databaseName !== '') $this->translation->getConnection()->setDatabaseName($this->databaseName);
 
         $manager = $this;
         // Laravel 4
@@ -672,6 +695,8 @@ SQL
                 ));
 
                 $translation->setConnection($connectionName);
+                if ($this->databaseName !== null && $this->databaseName !== '') $translation->getConnection()->setDatabaseName($this->databaseName);
+                $tmp = 0;
             }
 
             // Importing from the source, status is always saved. When it is changed by the user, then it is changed.
@@ -755,7 +780,7 @@ SQL
         }
 
         if ($values) {
-            $sql = "INS" . "ERT INTO `$ltm_translations`(status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used) VALUES " . implode(",", $values);
+            $sql = "INS" . "ERT INTO $ltm_translations (status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used) VALUES " . implode(",", $values);
 
             //$this->getConnection()->unprepared('LOCK TABLES `ltm_translations` WRITE');
             try {

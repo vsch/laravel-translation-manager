@@ -39,6 +39,15 @@ class Translator extends LaravelTranslator
         $this->app = $app;
     }
 
+    /**
+     * @return Manager
+     */
+    public
+    function getManager()
+    {
+        return $this->manager;
+    }
+
     public
     function inPlaceEditing($inPlaceEditing = null)
     {

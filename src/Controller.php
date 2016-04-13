@@ -37,7 +37,8 @@ class Controller extends BaseController
     protected
     function getConnection()
     {
-        return $this->manager->getConnection();
+        $connection = $this->manager->getConnection();
+        return $connection;
     }
 
     public
