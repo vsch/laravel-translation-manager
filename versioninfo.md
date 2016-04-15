@@ -2,6 +2,13 @@
 
 The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+ 
 
+#### 2.0.41
+
+- Fix: #24, Translation Work Orders: Allow users to access only some languages. For now the
+  logic and functionality is there but no UI is implemented for managing per locale access.
+- Fix: access control for non-admin users so that they cannot inadvertently delete keys or
+  modify locales to which they have no access.
+
 #### 2.0.40
 
 - Fix: #28, name of DB connection should be definable in config file - feature request. Now can 
