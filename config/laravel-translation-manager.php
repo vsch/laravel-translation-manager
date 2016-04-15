@@ -151,6 +151,13 @@ return array(
      *
      *                  description is used to display the connection name, default connection is displayed as 'default' in
      *                  the web interface.
+     *
+     *                  indatabase_publish of:
+     *                  0 - means use files only.
+     *                  1 - means use cache for publishing modifications. No files are written out
+     *                  2 - means use cache for publishing modifications but also write out the files.
+     *                      useful for publishing to files while leaving all flags in the database as
+     *                      they would be after publishing only to cache.
      */
     'db_connections' => array(
         //'local' => array(
