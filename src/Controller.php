@@ -2,6 +2,7 @@
 
 use Illuminate\Routing\Controller as BaseController;
 use Vsch\TranslationManager\Models\Translation;
+use Vsch\TranslationManager\Models\UserLocales;
 use Vsch\UserPrivilegeMapper\Facade\Privilege as UserCan;
 
 // Laravel 4
@@ -34,11 +35,24 @@ class Controller extends BaseController
 
     protected $connectionList;
 
+    // list of locales that the user is allowed to modify
+    protected $userLocales;
+
     protected
     function getConnection()
     {
         $connection = $this->manager->getConnection();
         return $connection;
+    }
+
+    public
+    function isLocaleEnabled($locale)
+    {
+        if (!is_array($locale)) $locale = array($locale);
+        foreach ($locale as $item) {
+            if (!str_contains($this->userLocales, ',' . $item . ',')) return false;
+        }
+        return true;
     }
 
     public
@@ -91,6 +105,21 @@ class Controller extends BaseController
         $this->primaryLocale = \Cookie::get($this->cookieName(self::COOKIE_PRIM_LOCALE), $this->manager->config('primary_locale', 'en'));
 
         $this->locales = $this->loadLocales();
+        $locales = $this->locales;
+
+        if ((!UserCan::admin_translations()) && $this->manager->areUserLocalesEnabled()) {
+            // see what locales are available for this user
+            $user = \Auth::getUser();
+            if ($user) {
+                $userLocales = UserLocales::query()->where('user_email', $user->email)->first();
+                if ($userLocales) {
+                    $locales = explode(',', $userLocales->locales);
+                }
+            }
+        }
+
+        $packedLocales = implode(',', array_intersect($this->locales, $locales));
+        $this->userLocales = $packedLocales ? ',' . $packedLocales . ',' : '';
 
         $this->translatingLocale = \Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE));
         $this->showUsageInfo = \Cookie::get($this->cookieName(self::COOKIE_SHOW_USAGE));
@@ -210,7 +239,7 @@ WHERE lcs.total < mx.total_keys OR lcs.changed > 0 OR lcs.cached > 0 OR lcs.dele
 SQL
         );
 
-        // returned result set lists mising, changed, group, locale
+        // returned result set lists missing, changed, group, locale
         $summary = [];
         foreach ($stats as $stat) {
             if (!isset($summary[$stat->group])) {
@@ -357,6 +386,7 @@ SQL
             ->with('usage_info_enabled', $show_usage_enabled)
             ->with('connection_list', $this->connectionList)
             ->with('transFilters', $this->transFilters)
+            ->with('userLocales', $this->userLocales)
             ->with('connection_name', $this->getConnectionName());
     }
 
@@ -392,6 +422,7 @@ SQL
 
         return \View::make($this->packagePrefix . 'search')
             ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
+            ->with('userLocales', $this->userLocales)
             ->with('package', $this->package)
             ->with('translations', $translations)
             ->with('numTranslations', $numTranslations);
@@ -430,22 +461,24 @@ SQL
     public
     function postAdd($group)
     {
-        $keys = explode("\n", trim(\Request::get('keys')));
-        $suffixes = explode("\n", trim(\Request::get('suffixes')));
-        $group = explode('::', $group, 2);
-        $namespace = '*';
-        if (count($group) > 1) $namespace = array_shift($group);
-        $group = $group[0];
+        if (UserCan::admin_translations()) {
+            $keys = explode("\n", trim(\Request::get('keys')));
+            $suffixes = explode("\n", trim(\Request::get('suffixes')));
+            $group = explode('::', $group, 2);
+            $namespace = '*';
+            if (count($group) > 1) $namespace = array_shift($group);
+            $group = $group[0];
 
-        foreach ($keys as $key) {
-            $key = trim($key);
-            if ($group && $key) {
-                if ($suffixes) {
-                    foreach ($suffixes as $suffix) {
-                        $this->manager->missingKey($namespace, $group, $key . trim($suffix));
+            foreach ($keys as $key) {
+                $key = trim($key);
+                if ($group && $key) {
+                    if ($suffixes) {
+                        foreach ($suffixes as $suffix) {
+                            $this->manager->missingKey($namespace, $group, $key . trim($suffix));
+                        }
+                    } else {
+                        $this->manager->missingKey($namespace, $group, $key);
                     }
-                } else {
-                    $this->manager->missingKey($namespace, $group, $key);
                 }
             }
         }
@@ -456,34 +489,35 @@ SQL
     public
     function postDeleteSuffixedKeys($group)
     {
-        $ltm_translations = $this->manager->getTranslationsTableName();
-        if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
-            $keys = explode("\n", trim(\Request::get('keys')));
-            $suffixes = explode("\n", trim(\Request::get('suffixes')));
+        if (UserCan::admin_translations()) {
+            $ltm_translations = $this->manager->getTranslationsTableName();
+            if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
+                $keys = explode("\n", trim(\Request::get('keys')));
+                $suffixes = explode("\n", trim(\Request::get('suffixes')));
 
-            if (count($suffixes) === 1 && $suffixes[0] === '') $suffixes = [];
+                if (count($suffixes) === 1 && $suffixes[0] === '') $suffixes = [];
 
-            foreach ($keys as $key) {
-                $key = trim($key);
-                if ($group && $key) {
-                    if ($suffixes) {
-                        foreach ($suffixes as $suffix) {
-                            //$this->getTranslation()->where('group', $group)->where('key', $key . trim($suffix))->delete();
+                foreach ($keys as $key) {
+                    $key = trim($key);
+                    if ($group && $key) {
+                        if ($suffixes) {
+                            foreach ($suffixes as $suffix) {
+                                //$this->getTranslation()->where('group', $group)->where('key', $key . trim($suffix))->delete();
+                                $result = $this->getConnection()->update(<<<SQL
+UPDATE $ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
+SQL
+                                    , [$group, $key . trim($suffix)]);
+                            }
+                        } else {
+                            //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
                             $result = $this->getConnection()->update(<<<SQL
 UPDATE $ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
 SQL
-                                , [$group, $key . trim($suffix)]);
+                                , [$group, $key]);
                         }
-                    } else {
-                        //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
-                        $result = $this->getConnection()->update(<<<SQL
-UPDATE $ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
-SQL
-                            , [$group, $key]);
                     }
                 }
             }
-            return \Redirect::back()->withInput();
         }
         return \Redirect::back()->withInput();
     }
@@ -496,18 +530,20 @@ SQL
             $value = \Request::get('value');
 
             list($locale, $key) = explode('|', $name, 2);
-            $translation = $this->manager->firstOrNewTranslation(array(
-                'locale' => $locale,
-                'group' => $group,
-                'key' => $key,
-            ));
-            // strip off trailing spaces and eol's and &nbsps; that seem to be added when multiple spaces are entered in the x-editable textarea
-            $value = trim(str_replace("\xc2\xa0", ' ', $value));
-            $value = $value !== '' ? $value : null;
+            if ($this->isLocaleEnabled($locale)) {
+                $translation = $this->manager->firstOrNewTranslation(array(
+                    'locale' => $locale,
+                    'group' => $group,
+                    'key' => $key,
+                ));
+                // strip off trailing spaces and eol's and &nbsps; that seem to be added when multiple spaces are entered in the x-editable textarea
+                $value = trim(str_replace("\xc2\xa0", ' ', $value));
+                $value = $value !== '' ? $value : null;
 
-            $translation->value = $value;
-            $translation->status = (($translation->isDirty() && $value != $translation->saved_value) ? Translation::STATUS_CHANGED : Translation::STATUS_SAVED);
-            $translation->save();
+                $translation->value = $value;
+                $translation->status = (($translation->isDirty() && $value != $translation->saved_value) ? Translation::STATUS_CHANGED : Translation::STATUS_SAVED);
+                $translation->save();
+            }
         }
         return array('status' => 'ok');
     }
@@ -515,14 +551,16 @@ SQL
     public
     function postDelete($group, $key)
     {
-        $key = decodeKey($key);
-        $ltm_translations = $this->manager->getTranslationsTableName();
-        if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
-            //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
-            $result = $this->getConnection()->update(<<<SQL
+        if (UserCan::admin_translations()) {
+            $key = decodeKey($key);
+            $ltm_translations = $this->manager->getTranslationsTableName();
+            if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
+                //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
+                $result = $this->getConnection()->update(<<<SQL
 UPDATE $ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
 SQL
-                , [$group, $key]);
+                    , [$group, $key]);
+            }
         }
         return array('status' => 'ok');
     }
@@ -530,14 +568,16 @@ SQL
     public
     function postUndelete($group, $key)
     {
-        $key = decodeKey($key);
-        $ltm_translations = $this->manager->getTranslationsTableName();
-        if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
-            //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
-            $result = $this->getConnection()->update(<<<SQL
+        if (UserCan::admin_translations()) {
+            $key = decodeKey($key);
+            $ltm_translations = $this->manager->getTranslationsTableName();
+            if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
+                //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
+                $result = $this->getConnection()->update(<<<SQL
 UPDATE $ltm_translations SET is_deleted = 0 WHERE is_deleted = 1 AND `group` = ? AND `key` = ?
 SQL
-                , [$group, $key]);
+                    , [$group, $key]);
+            }
         }
         return array('status' => 'ok');
     }
@@ -580,8 +620,10 @@ SQL
         $this->logSql = 1;
         $this->sqltraces = [];
         $ltm_translations = $this->manager->getTranslationsTableName();
+        $userLocales = $this->userLocales;
+        if ($userLocales) $userLocales = "'" . str_replace(',',"','", substr($userLocales, 1, -1)) . "'";
 
-        if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
+        if ($userLocales && !in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
             $srckeys = explode("\n", trim(\Request::get('srckeys')));
             $dstkeys = explode("\n", trim(\Request::get('dstkeys')));
 
@@ -638,7 +680,7 @@ SQL
                         if ($dst === null) {
                             $rows = $this->getConnection()->select($sql = <<<SQL
 SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM $ltm_translations t1
-WHERE `group` = ? AND `key` LIKE BINARY ?
+WHERE `group` = ? AND `key` LIKE BINARY ? AND locale IN ($userLocales)
 ORDER BY locale, `key`
 
 SQL
@@ -649,7 +691,7 @@ SQL
                         } else {
                             $rows = $this->getConnection()->select($sql = <<<SQL
 SELECT DISTINCT `group`, `key`, locale, id, CONCAT(SUBSTR(`key`, 1, CHAR_LENGTH(`key`)-?), ?) dst, ? dstgrp FROM $ltm_translations t1
-WHERE `group` = ? AND `key` LIKE BINARY ?
+WHERE `group` = ? AND `key` LIKE BINARY ? AND locale IN ($userLocales)
 AND NOT exists(SELECT * FROM $ltm_translations t2 WHERE t2.value IS NOT NULL AND t2.`group` = ? AND t1.locale = t2.locale
                 AND t2.`key` LIKE BINARY CONCAT(SUBSTR(t1.`key`, 1, CHAR_LENGTH(t1.`key`)-?), ?))
 ORDER BY locale, `key`
@@ -670,7 +712,7 @@ SQL
                         if ($dst === null) {
                             $rows = $this->getConnection()->select($sql = <<<SQL
 SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM $ltm_translations t1
-WHERE `group` = ? AND `key` LIKE BINARY ?
+WHERE `group` = ? AND `key` LIKE BINARY ? AND locale IN ($userLocales)
 ORDER BY locale, `key`
 
 SQL
@@ -681,7 +723,7 @@ SQL
                         } else {
                             $rows = $this->getConnection()->select($sql = <<<SQL
 SELECT DISTINCT `group`, `key`, locale, id, CONCAT(?, SUBSTR(`key`, ?+1, CHAR_LENGTH(`key`)-?)) dst, ? dstgrp FROM $ltm_translations t1
-WHERE `group` = ? AND `key` LIKE BINARY ?
+WHERE `group` = ? AND `key` LIKE BINARY ? AND locale IN ($userLocales)
 AND NOT exists(SELECT * FROM $ltm_translations t2 WHERE t2.value IS NOT NULL AND t2.`group` = ? AND t1.locale = t2.locale
                 AND t2.`key` LIKE BINARY CONCAT(?, SUBSTR(t1.`key`, ?+1, CHAR_LENGTH(t1.`key`)-?)))
 ORDER BY locale, `key`
@@ -704,7 +746,7 @@ SQL
                         if ($dst === null) {
                             $rows = $this->getConnection()->select($sql = <<<SQL
 SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM $ltm_translations t1
-WHERE `group` = ? AND `key` LIKE BINARY ?
+WHERE `group` = ? AND `key` LIKE BINARY ? AND locale IN ($userLocales)
 ORDER BY locale, `key`
 
 SQL
@@ -715,7 +757,7 @@ SQL
                         } else {
                             $rows = $this->getConnection()->select($sql = <<<SQL
 SELECT DISTINCT `group`, `key`, locale, id, ? dst, ? dstgrp FROM $ltm_translations t1
-WHERE `group` = ? AND `key` LIKE BINARY ?
+WHERE `group` = ? AND `key` LIKE BINARY ? AND locale IN ($userLocales)
 AND NOT exists(SELECT * FROM $ltm_translations t2 WHERE t2.value IS NOT NULL AND t2.`group` = ? AND t1.locale = t2.locale AND t2.`key` LIKE BINARY ?)
 ORDER BY locale, `key`
 
@@ -746,26 +788,28 @@ SQL
                         list($srcgrp, $srckey) = self::keyGroup($group, $src);
                         if ($op === 'move') {
                             foreach ($rows as $row) {
-                                list($dstgrp, $dstkey) = self::keyGroup($row->dstgrp, $row->dst);
-                                $to_delete = $this->getConnection()->select(<<<SQL
+                                if ($this->isLocaleEnabled($row->locale)) {
+                                    list($dstgrp, $dstkey) = self::keyGroup($row->dstgrp, $row->dst);
+                                    $to_delete = $this->getConnection()->select(<<<SQL
 SELECT GROUP_CONCAT(id SEPARATOR ',') ids FROM $ltm_translations tr
 WHERE `group` = ? AND `key` = ? AND locale = ? AND id NOT IN ($rowids)
 
 SQL
-                                    , [$dstgrp, $dstkey, $row->locale]);
+                                        , [$dstgrp, $dstkey, $row->locale]);
 
-                                if (!empty($to_delete)) {
-                                    $to_delete = $to_delete[0]->ids;
-                                    if ($to_delete) {
-                                        //$this->getConnection()->update("UPDATE ltm_translations SET is_deleted = 1 WHERE id IN ($to_delete)");
-                                        // have to delete right away, we will be bringing another key here
-                                        // TODO: copy value to new key's saved value
-                                        $this->getConnection()->delete("DELETE FROM $ltm_translations WHERE id IN ($to_delete)");
+                                    if (!empty($to_delete)) {
+                                        $to_delete = $to_delete[0]->ids;
+                                        if ($to_delete) {
+                                            //$this->getConnection()->update("UPDATE ltm_translations SET is_deleted = 1 WHERE id IN ($to_delete)");
+                                            // have to delete right away, we will be bringing another key here
+                                            // TODO: copy value to new key's saved value
+                                            $this->getConnection()->delete("DELETE FROM $ltm_translations WHERE id IN ($to_delete)");
+                                        }
                                     }
-                                }
 
-                                $this->getConnection()->update("UPDATE $ltm_translations SET `group` = ?, `key` = ?, status = 1 WHERE id = ?"
-                                    , [$dstgrp, $dstkey, $row->id]);
+                                    $this->getConnection()->update("UPDATE $ltm_translations SET `group` = ?, `key` = ?, status = 1 WHERE id = ?"
+                                        , [$dstgrp, $dstkey, $row->id]);
+                                }
                             }
                         } elseif ($op === 'delete') {
                             //$this->getConnection()->delete("DELETE FROM ltm_translations WHERE id IN ($rowids)");
@@ -773,23 +817,24 @@ SQL
                         } elseif ($op === 'copy') {
                             // TODO: split operation into update and insert so that conflicting keys get new values instead of being replaced
                             foreach ($rows as $row) {
-                                list($dstgrp, $dstkey) = self::keyGroup($row->dstgrp, $row->dst);
-                                $to_delete = $this->getConnection()->select(<<<SQL
+                                if ($this->isLocaleEnabled($row->locale)) {
+                                    list($dstgrp, $dstkey) = self::keyGroup($row->dstgrp, $row->dst);
+                                    $to_delete = $this->getConnection()->select(<<<SQL
 SELECT GROUP_CONCAT(id SEPARATOR ',') ids FROM $ltm_translations tr
 WHERE `group` = ? AND `key` = ? AND locale = ? AND id NOT IN ($rowids)
 
 SQL
-                                    , [$dstgrp, $dstkey, $row->locale]);
+                                        , [$dstgrp, $dstkey, $row->locale]);
 
-                                if (!empty($to_delete)) {
-                                    $to_delete = $to_delete[0]->ids;
-                                    if ($to_delete) {
-                                        //$this->getConnection()->update("UPDATE ltm_translations SET is_deleted = 1 WHERE id IN ($to_delete)");
-                                        $this->getConnection()->delete("DELETE FROM $ltm_translations WHERE id IN ($to_delete)");
+                                    if (!empty($to_delete)) {
+                                        $to_delete = $to_delete[0]->ids;
+                                        if ($to_delete) {
+                                            //$this->getConnection()->update("UPDATE ltm_translations SET is_deleted = 1 WHERE id IN ($to_delete)");
+                                            $this->getConnection()->delete("DELETE FROM $ltm_translations WHERE id IN ($to_delete)");
+                                        }
                                     }
-                                }
 
-                                $this->getConnection()->insert($sql = <<<SQL
+                                    $this->getConnection()->insert($sql = <<<SQL
 INSERT INTO $ltm_translations
 SELECT
     NULL id,
@@ -808,7 +853,8 @@ FROM $ltm_translations t1
 WHERE id = ?
 
 SQL
-                                    , [$dstgrp, $dstkey, $row->id]);
+                                        , [$dstgrp, $dstkey, $row->id]);
+                                }
                             }
                         }
                     }

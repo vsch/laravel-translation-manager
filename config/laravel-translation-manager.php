@@ -50,6 +50,17 @@ return array(
      */
     'admin_enabled' => true,
     /**
+     * Enable management of translations for editors by locales
+     * 
+     * Only applies to users that are not translation admins
+     * 
+     * If not defined then by locale access is disabled and all locales can be 
+     * modified by any editor. 
+     *
+     * @type boolean
+     */
+    'user_locales_enabled' => false,
+    /**
      * Specify export formatting options:
      *
      * PRESERVE_EMPTY_ARRAYS - preserve first level translations that are empty arrays

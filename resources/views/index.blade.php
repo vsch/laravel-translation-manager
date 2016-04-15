@@ -8,6 +8,7 @@
                     <div class="col-sm-12">
                         <h1>@lang($package . '::messages.translation-manager')</h1>
                         {{-- csrf_token() --}}
+                        {{--{!! $userLocales !!}--}}
                     </div>
                 </div>
                 <div class="row">
@@ -287,6 +288,7 @@
                                     </div>
                                 </div>
                                 <div class=" col-sm-3">
+                                    <?php if(str_contains($userLocales, ','.$currentLocale.',')): ?>
                                     <div class="input-group input-group-sm" style="float:right; display:inline">
                                         <?= ifEditTrans($package . '::messages.in-place-edit') ?>
                                         <label for="edit-in-place">&nbsp;</label><br>
@@ -294,6 +296,7 @@
                                             <?= noEditTrans($package . '::messages.in-place-edit') ?>
                                         </a>
                                     </div>
+                                    <?php endif ?>
                                 </div>
                             </div>
                             <div style="min-height: 10px"></div>
@@ -321,6 +324,7 @@
                                 <div class=" col-sm-9">
                                     <div class="input-group-sm">
                                         @foreach($locales as $locale)
+                                            <?php $isLocaleEnabled = str_contains($userLocales, ','.$locale.','); ?>
                                             <label>
                                                 <input <?= $locale !== $primaryLocale && $locale !== $translatingLocale ? ' class="display-locale" ' : '' ?> name="d[]"
                                                         type="checkbox"
@@ -351,6 +355,7 @@
                                             <div class="row">
                                                 <div class=" col-sm-12">
                                                     <?= formSubmit(trans($package . '::messages.set-usage-info'), ['class' => "btn btn-sm btn-primary"]) ?>&nbsp;&nbsp;
+                                                    <br>
                                                 </div>
                                             </div>
                                         </div>
@@ -397,6 +402,7 @@
         <div class="row">
             <div class="col-sm-12 ">
                 <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+                    <?php if($adminEnabled): ?>
                     <div class="panel panel-default">
                         <div class="panel-heading" role="tab" id="headingOne">
                             <?= ifEditTrans($package . '::messages.suffixed-keyops') ?>
@@ -572,9 +578,10 @@
                                                 <?= ifEditTrans($package . '::messages.movekeys') ?>
                                                 <button class="btn btn-sm btn-warning" onclick="postMoveKeys(event)">
                                                     <?= noEditTrans($package . '::messages.movekeys') ?>
-                                                </button><?= ifEditTrans($package . '::messages.deletekeys') ?>
+                                                </button>
+                                                <?= ifEditTrans($package . '::messages.deletekeys') ?>
                                                 <button class="btn btn-sm btn-danger" onclick="postDeleteKeys(event)">
-                                                    <?= noEditTrans($package . '::messages.deletekeys') ?>
+                                                <?= noEditTrans($package . '::messages.deletekeys') ?>
                                                 </button>
                                             </div>
                                         </div>
@@ -583,43 +590,46 @@
                             </div>
                         </div>
                     </div>
-                    </div>@if($yandex_key)
-                        <div class="panel panel-default">
-                            <div class="panel-heading" role="tab" id="headingThree">
-                                <?= ifEditTrans($package . '::messages.translation-ops') ?>
-                                <h4 class="panel-title">
-                                    <a class="collapsed" data-toggle="collapse" data-parent="#accordion"
-                                            href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-                                        <?= noEditTrans($package . '::messages.translation-ops') ?>
-                                    </a>
-                                </h4>
-                            </div>
-                            <div id="collapseThree" class="panel-collapse collapse" role="tabpanel"
-                                    aria-labelledby="headingThree">
-                                <div class="panel-body">
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <textarea id="primary-text" class="form-control" rows="3" name="keys"
-                                                    style="resize: vertical;" placeholder="<?= $primaryLocale ?>"></textarea>
-                                            <div style="min-height: 10px"></div>
-                                            <span style="float:right; display:inline">
-                                                <button id="translate-primary-current" type="button" class="btn btn-sm btn-primary">
-                                                    <?= $primaryLocale ?>&nbsp;<i class="glyphicon glyphicon-share-alt"></i>&nbsp;<?= $translatingLocale ?>
-                                                </button>
-                                            </span>
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <textarea id="current-text" class="form-control" rows="3" name="keys"
-                                                style="resize: vertical;" placeholder="<?= $translatingLocale ?>"></textarea>
-                                            <div style="min-height: 10px"></div>
-                                            <button id="translate-current-primary" type="button" class="btn btn-sm btn-primary">
-                                                <?= $translatingLocale ?>&nbsp;<i class="glyphicon glyphicon-share-alt"></i>&nbsp;<?= $primaryLocale ?>
+
+                    </div>
+                    <?php endif ?>
+                    @if($yandex_key)
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="headingThree">
+                            <?= ifEditTrans($package . '::messages.translation-ops') ?>
+                            <h4 class="panel-title">
+                                <a class="collapsed" data-toggle="collapse" data-parent="#accordion"
+                                        href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                    <?= noEditTrans($package . '::messages.translation-ops') ?>
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapseThree" class="panel-collapse collapse" role="tabpanel"
+                                aria-labelledby="headingThree">
+                            <div class="panel-body">
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <textarea id="primary-text" class="form-control" rows="3" name="keys"
+                                                style="resize: vertical;" placeholder="<?= $primaryLocale ?>"></textarea>
+                                        <div style="min-height: 10px"></div>
+                                        <span style="float:right; display:inline">
+                                            <button id="translate-primary-current" type="button" class="btn btn-sm btn-primary">
+                                                <?= $primaryLocale ?>&nbsp;<i class="glyphicon glyphicon-share-alt"></i>&nbsp;<?= $translatingLocale ?>
                                             </button>
-                                        </div>
+                                        </span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <textarea id="current-text" class="form-control" rows="3" name="keys"
+                                            style="resize: vertical;" placeholder="<?= $translatingLocale ?>"></textarea>
+                                        <div style="min-height: 10px"></div>
+                                        <button id="translate-current-primary" type="button" class="btn btn-sm btn-primary">
+                                            <?= $translatingLocale ?>&nbsp;<i class="glyphicon glyphicon-share-alt"></i>&nbsp;<?= $primaryLocale ?>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
                     @endif
                 </div>
             </div>
@@ -705,13 +715,14 @@
                             ?>
                             <th width="15%">@lang($package . '::messages.key')<span class="key-filter" id="key-filter"><?=$translationRows?></span></th>
                             <?php foreach($locales as $locale): ?>
+                            <?php $isLocaleEnabled = str_contains($userLocales, ','.$locale.','); ?>
                             <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
                             <?php if ($col < 3): ?>
                                 <?php if ($col === 0): ?>
                             <th width="<?=$mainWidth?>%"><?= $locale ?>&nbsp;
                                 <?= ifEditTrans($package . '::messages.auto-fill-disabled') ?>
                                 <?= ifEditTrans($package . '::messages.auto-fill') ?>
-                                <a class="btn btn-xs btn-primary" id="auto-fill" role="button"
+                                <a class="btn btn-xs btn-primary" id="auto-fill" role="button" <?= $isLocaleEnabled ? '' : 'disabled' ?>
                                         data-disable-with="<?=noEditTrans($package . '::messages.auto-fill-disabled')?>"
                                         href="#"><?= noEditTrans($package . '::messages.auto-fill') ?></a>
                             </th>
@@ -719,11 +730,11 @@
                             <th width="<?=$mainWidth?>%"><?= $locale ?>&nbsp;
                                 <?= ifEditTrans($package . '::messages.auto-translate-disabled') ?>
                                 <?= ifEditTrans($package . '::messages.auto-translate') ?>
-                                <a class="btn btn-xs btn-primary auto-translate" role="button" data-trans="<?=$col?>" data-locale="<?=$locale?>"
+                                <a class="btn btn-xs btn-primary auto-translate" role="button" data-trans="<?=$col?>" data-locale="<?=$locale?>" <?= $isLocaleEnabled ? '' : 'disabled' ?>
                                         data-disable-with="<?=noEditTrans($package . '::messages.auto-translate-disabled')?>"
                                         href="#"><?= noEditTrans($package . '::messages.auto-translate') ?></a>
                                 <?= ifEditTrans($package . '::messages.auto-prop-case-disabled') ?>
-                                <a class="btn btn-xs btn-primary auto-prop-case" role="button" data-trans="<?=$col?>" data-locale="<?=$locale?>"
+                                <a class="btn btn-xs btn-primary auto-prop-case" role="button" data-trans="<?=$col?>" data-locale="<?=$locale?>" <?= $isLocaleEnabled ? '' : 'disabled' ?>
                                         data-disable-with="<?=noEditTrans($package . '::messages.auto-prop-case-disabled')?>"
                                         href="#">Ab Ab <i class="glyphicon glyphicon-share-alt"></i> Ab ab</a>
                                 <!-- split button -->
@@ -835,10 +846,13 @@
                             ?>
                             <td class="key<?= $was_used ? ' used-key' : ' unused-key' ?>" ><?= $key ?></td>
                             <?php foreach($locales as $locale): ?>
+                            <?php $isLocaleEnabled = str_contains($userLocales, ','.$locale.','); ?>
                             <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
                             <?php $t = isset($translation[$locale]) ? $translation[$locale] : null ?>
                             <td class="<?= $locale !== $primaryLocale ? 'auto-translatable-'. $locale :  ($locale === $primaryLocale ? 'auto-fillable' : '') ?><?= ($has_changed[$locale] ? ' has-unpublished-translation' :'') . ($has_changes_cached[$locale] ? ' has-cached-translation' :'') ?>">
-                                <?= $translator->inPlaceEditLink(!$t ? $t : ($t->value == '' ? null : $t), true, "$group.$key", $locale, null, $group) ?>
+                                <?=
+                                $isLocaleEnabled ? $translator->inPlaceEditLink(!$t ? $t : ($t->value == '' ? null : $t), true, "$group.$key", $locale, null, $group) : $t->value
+                                ?>
                             </td>
                             <?php endforeach; ?>
                         </tr>

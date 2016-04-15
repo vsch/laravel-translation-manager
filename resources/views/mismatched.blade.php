@@ -9,8 +9,8 @@
                     <thead>
                         <tr>
                             <th class="key" width="20%">@lang($package . '::messages.key')</th>
-                            <th width="20%" colspan="2">ru</th>
-                            <th width="20%">en</th>
+                            <th width="20%" colspan="2"><?=$translatingLocale?></th>
+                            <th width="20%"><?=$primaryLocale?></th>
                             <th class="group" width="20%">@lang($package . '::messages.group')</th>
                         </tr>
                     </thead>
@@ -18,8 +18,9 @@
                         <?php
                         $key = '';
                         $mismatches[] = null;
-                        $locale = 'ru';
+                        $locale = $translatingLocale;
                         $translator = App::make('translator');
+                        $isLocaleEnabled = str_contains($userLocales, ','.$locale.',');
                         foreach($mismatches as $mismatch)
                         {
                         if ($mismatch === null) break;
@@ -36,13 +37,13 @@
                         }
                         $link = action($controller . '@getView', $mismatch->group) . '#' . $mismatch->key;
                         $mismatch->value = $mismatch->ru_value;
-                        $mismatch->locale = 'ru';
-                        $mismatch->status = 'ru';
+                        $mismatch->locale = $locale;
+                        $mismatch->status = $locale;
                         ?>
                         <tr<?= $borderTop?>>
                             <td width="20%" class="missing"><?= $keyText?></td>
                             <td>
-                                <?= $translator->inPlaceEditLink($mismatch, false) ?>
+                                <?= $isLocaleEnabled ? $translator->inPlaceEditLink($mismatch, false) : $mismatch->value ?>
                             </td>
                             <td width="20%" class="missing"><?= $mismatch->ru?></td>
                             <td width="20%" class="missing"><?= $mismatch->en?></td>

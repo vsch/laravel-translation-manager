@@ -98,7 +98,7 @@ TEXT
     'search-header'             => 'Résultats trouvés: :count',
     'search-translations'       => 'Recherche de traductions',
     'searching'                 => 'Recherche en cours...',
-    'set-usage-info'            => 'Définir Des Informations D\'Utilisation',
+    'set-usage-info'            => 'Info d\'utilisation',
     'show'                      => 'Afficher',
     'show-all'                  => 'Tous',
     'show-changed'              => 'Changé',

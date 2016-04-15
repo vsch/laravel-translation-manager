@@ -24,6 +24,7 @@ class Manager
 {
     const INDATABASE_PUBLISH_KEY = 'indatabase_publish';
     const DATABASE_NAME_KEY = 'database_name';
+    const USER_LOCALES_ENABLED = 'user_locales_enabled';
     const DB_CONNECTIONS_KEY = 'db_connections';
     const PERSISTENT_PREFIX_KEY = 'persistent_prefix';
     const EXCLUDE_PAGE_EDIT_GROUPS_KEY = 'exclude_page_edit_groups';
@@ -164,6 +165,15 @@ class Manager
     function inDatabasePublishing()
     {
         return $this->zipExporting ? 3 : $this->indatabase_publish;
+    }
+
+    /**
+     * @return bool
+     */
+    public
+    function areUserLocalesEnabled()
+    {
+        return $this->config(self::USER_LOCALES_ENABLED, false);
     }
 
     function firstOrNewTranslation($attributes = null)
