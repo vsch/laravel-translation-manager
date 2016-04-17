@@ -254,11 +254,15 @@ $(document).ready(function () {
     $.fn.editableContainer.defaults.validate = function (value) {
         return validateXEdit(value);
     };
+
     $.fn.editableform.template = '' +
         '<form class="form-inline editableform">' +
         '<div class="control-group">' +
-        '<div><div class="editable-buttons"></div><br><br><div id="x-trans-edit" class="editable-input"></div></div>' +
-        '<div class="editable-error-block"></div>' +
+        ' <div>' +
+        '  <div class="editable-buttons" style="display: block"></div>' +
+        '  <div id="x-trans-edit" class="editable-input"></div>' +
+        '  <div class="editable-error-block"></div>' +
+        ' </div>' +
         '</div>' +
         '</form>';
 
@@ -275,7 +279,7 @@ $(document).ready(function () {
         '<button id="x-paste" type="button" class="editable-translate btn btn-sm btn-primary"><i class="glyphicon glyphicon-paste"></i></button>' +
         '&nbsp;&nbsp;<button id="x-reset-open" type="button" class="editable-translate btn btn-sm btn-success"><i class="glyphicon glyphicon-open"></i></button>' +
         '<button id="x-reset-saved" type="button" class="editable-translate btn btn-sm btn-success"><i class="glyphicon glyphicon-floppy-open"></i></button>' +
-        '';
+        '<br>&nbsp;';
 
     function textAreaSelectedText(elemTextArea) {
         var selectedText;

@@ -1,5 +1,6 @@
 <?php namespace Vsch\TranslationManager;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Routing\Controller as BaseController;
 use Vsch\TranslationManager\Models\Translation;
 use Vsch\TranslationManager\Models\UserLocales;
@@ -107,12 +108,14 @@ class Controller extends BaseController
         $this->locales = $this->loadLocales();
         $locales = $this->locales;
 
-        if ((!UserCan::admin_translations()) && $this->manager->areUserLocalesEnabled()) {
+        if ((true || !UserCan::admin_translations()) && $this->manager->areUserLocalesEnabled()) {
             // see what locales are available for this user
-            $user = \Auth::getUser();
-            if ($user) {
-                $userLocales = UserLocales::query()->where('user_email', $user->email)->first();
-                if ($userLocales) {
+            $userId = \Auth::id();
+            if ($userId !== null) {
+                $userLocale = new UserLocales();
+                $userLocale->setConnection($connectionName);
+                $userLocales = $userLocale->query()->where('user_id', $userId)->first();
+                if ($userLocales && trim($userLocales->locales)) {
                     $locales = explode(',', $userLocales->locales);
                 }
             }
@@ -363,6 +366,34 @@ SQL
 
         $show_usage_enabled = $this->manager->config('log_key_usage_info', false);
 
+        $userList = [];
+        $admin_translations = UserCan::admin_translations();
+        if ($admin_translations && $this->manager->areUserLocalesEnabled()) {
+            $connection_name = $this->getConnectionName();
+            $userListProvider = $this->manager->getUserListProvider($connection_name);
+            if ($userListProvider !== null && is_a($userListProvider, "Closure")) {
+                $userList = $userListProvider(\Auth::user(), $this->manager->getUserListConnection($connection_name));
+
+                /* @var $connection_name string */
+                /* @var $query  \Illuminate\Database\Eloquent\Builder */
+                $userLocalesModel = new UserLocales();
+                $userLocaleList = $userLocalesModel->on($connection_name)->get();
+
+                $userLocales = [];
+                foreach ($userLocaleList as $userLocale) {
+                    $userLocales[$userLocale->user_id] = $userLocale;
+                }
+
+                foreach ($userList as $user) {
+                    if (array_key_exists($user->id, $userLocales)) {
+                        $user->locales = $userLocales[$user->id]->locales;
+                    } else {
+                        $user->locales = '';
+                    }
+                }
+            }
+        }
+
         return \View::make($this->packagePrefix . 'index')
             ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
             ->with('package', $this->package)
@@ -380,6 +411,7 @@ SQL
             ->with('numChanged', $numChanged)
             ->with('adminEnabled', $this->manager->config('admin_enabled') && UserCan::admin_translations())
             ->with('mismatchEnabled', $mismatchEnabled)
+            ->with('userLocalesEnabled', $this->manager->areUserLocalesEnabled())
             ->with('stats', $summary)
             ->with('mismatches', $mismatches)
             ->with('show_usage', $this->showUsageInfo && $show_usage_enabled)
@@ -387,7 +419,8 @@ SQL
             ->with('connection_list', $this->connectionList)
             ->with('transFilters', $this->transFilters)
             ->with('userLocales', $this->userLocales)
-            ->with('connection_name', $this->getConnectionName());
+            ->with('userList', $userList)
+            ->with('connection_name', ($this->manager->isDefaultTranslationConnection($this->getConnectionName()) ? '' : $this->getConnectionName()));
     }
 
     public
@@ -621,7 +654,7 @@ SQL
         $this->sqltraces = [];
         $ltm_translations = $this->manager->getTranslationsTableName();
         $userLocales = $this->userLocales;
-        if ($userLocales) $userLocales = "'" . str_replace(',',"','", substr($userLocales, 1, -1)) . "'";
+        if ($userLocales) $userLocales = "'" . str_replace(',', "','", substr($userLocales, 1, -1)) . "'";
 
         if ($userLocales && !in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
             $srckeys = explode("\n", trim(\Request::get('srckeys')));
@@ -1070,5 +1103,28 @@ SQL
             'status' => 'ok',
             'yandex_key' => $this->manager->config('yandex_translator_key', null)
         ));
+    }
+
+    public
+    function postUserLocales()
+    {
+        $user_id = \Request::get("pk");
+        $values = \Request::get("value") ?: [];
+        $userLocale = new UserLocales();
+
+        $connection_name = $this->getConnectionName();
+        /* @var $userLocales UserLocales */
+        $userLocales = $userLocale->on($connection_name)->where('user_id', $user_id)->first();
+        if (!$userLocales) {
+            $userLocales = $userLocale;
+            $userLocales->setConnection($connection_name);
+            $userLocales->user_id = $user_id;
+        }
+
+        $userLocales->setConnection($connection_name);
+        $userLocales->locales = implode(",", $values);
+        $userLocales->save();
+        $errors = "";
+        return \Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
     }
 }

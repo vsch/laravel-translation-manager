@@ -16,9 +16,9 @@ class CreateUserLocalesTable extends Migration
     {
         Schema::create('ltm_user_locales', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('user_email', 255);
+            $table->integer('user_id', false, true);
             $table->text('locales')->nullable();
-            $table->index(['user_email'], 'ix_ltm_user_locales_user_email');
+            $table->index(['user_id'], 'ix_ltm_user_locales_user_id');
             $table->timestamps();
         });
     }

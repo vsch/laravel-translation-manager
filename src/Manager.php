@@ -13,6 +13,7 @@ use Symfony\Component\Finder\Finder;
 use Vsch\TranslationManager\Classes\PathTemplateResolver;
 use Vsch\TranslationManager\Classes\TranslationFileRewriter;
 use Vsch\TranslationManager\Models\Translation;
+use Vsch\TranslationManager\Models\UserLocales;
 use ZipArchive;
 
 /**
@@ -23,8 +24,9 @@ use ZipArchive;
 class Manager
 {
     const INDATABASE_PUBLISH_KEY = 'indatabase_publish';
-    const DATABASE_NAME_KEY = 'database_name';
+    const DEFAULT_DB_CONNECTION_KEY = 'default_connection';
     const USER_LOCALES_ENABLED = 'user_locales_enabled';
+    const USER_LIST_PROVIDER_KEY = 'user_list_provider';
     const DB_CONNECTIONS_KEY = 'db_connections';
     const PERSISTENT_PREFIX_KEY = 'persistent_prefix';
     const EXCLUDE_PAGE_EDIT_GROUPS_KEY = 'exclude_page_edit_groups';
@@ -59,13 +61,13 @@ class Manager
     protected $errors;
     protected $indatabase_publish;
     protected $default_connection;
+    protected $default_translation_connection;
     protected $default_indatabase_publish;
     protected $groupList;
     protected $augmentedGroupList;
     protected $preloadedGroupKeys;
     protected $preloadedGroup;
     protected $preloadedGroupLocales;
-    protected $databaseName;
 
     /**
      * @var   \ZipArchive
@@ -79,13 +81,11 @@ class Manager
     {
         if ($connection === null || $connection === '') {
             // resetting to default
-            $connection = $this->default_connection;
+            $connection = $this->default_translation_connection;
         }
 
         $this->translation->setConnection($connection);
         $this->indatabase_publish = $this->getConnectionInDatabasePublish($connection);
-        $this->databaseName = $this->getConnectionDatabaseName($connection);
-        if ($this->databaseName !== null && $this->databaseName !== '') $this->translation->getConnection()->setDatabaseName($this->databaseName);
 
         $this->clearCache();
     }
@@ -93,7 +93,19 @@ class Manager
     public
     function getConnectionName()
     {
-        return $this->translation->getConnectionName();
+        $connectionName = $this->translation->getConnectionName();
+        return $connectionName;
+    }
+
+    /**
+     * @param $connection
+     *
+     * @return bool
+     */
+    public
+    function isDefaultTranslationConnection($connection)
+    {
+        return $connection == null || $connection == $this->default_translation_connection;
     }
 
     public
@@ -114,29 +126,47 @@ class Manager
     public
     function getConnectionInDatabasePublish($connection)
     {
-        if ($connection === null || $connection === '') {
+        if ($connection === null || $connection === '' || $this->isDefaultTranslationConnection($connection)) {
             return $this->config(self::INDATABASE_PUBLISH_KEY, 0);
         }
         return $this->getConnectionInfo($connection, self::INDATABASE_PUBLISH_KEY, $this->config(self::INDATABASE_PUBLISH_KEY, 0));
     }
 
     public
-    function getConnectionDatabaseName($connection)
+    function getUserListConnection($connection)
     {
-        if ($connection === null || $connection === '') {
-            return $this->config(self::DATABASE_NAME_KEY, 0);
+        if ($connection === null || $connection === '' || $this->isDefaultTranslationConnection($connection)) {
+            // use the default connection for the user list
+            return '';
         }
-        return $this->getConnectionInfo($connection, self::DATABASE_NAME_KEY, $this->config(self::DATABASE_NAME_KEY, 0));
+
+        $userListConnection = $this->getConnectionInfo($connection, self::DEFAULT_DB_CONNECTION_KEY, $connection);
+        if (!$userListConnection) $userListConnection = $connection;
+        return $userListConnection;
+    }
+
+    public
+    function getUserListProvider($connection)
+    {
+        if ($connection === null || $connection === '' || $this->isDefaultTranslationConnection($connection)) {
+            return $this->config(self::USER_LIST_PROVIDER_KEY, null);
+        }
+        return $this->getConnectionInfo($connection, self::USER_LIST_PROVIDER_KEY, $this->config(self::USER_LIST_PROVIDER_KEY, null));
     }
 
     public
     function getTranslationsTableName()
     {
-        //$databaseName = null;
-        $databaseName = $this->databaseName ? $this->databaseName . '.' : '';
-
         $prefix = $this->translation->getConnection()->getTablePrefix();
-        return $databaseName . $prefix . $this->translation->getTable();
+        return $prefix . $this->translation->getTable();
+    }
+
+    public
+    function getUserLocalesTableName()
+    {
+        $userLocales = new UserLocales();
+        $prefix = $this->translation->getConnection()->getTablePrefix();
+        return $prefix . $userLocales->getTable();
     }
 
     public
@@ -211,7 +241,6 @@ class Manager
             $translation = new Translation();
             $translation->fill($attributes);
             $translation->setConnection($this->getConnectionName());
-            if ($this->databaseName !== null && $this->databaseName !== '') $translation->getConnection()->setDatabaseName($this->databaseName);
         }
 
         return $translation;
@@ -240,28 +269,28 @@ class Manager
     function __construct(Application $app, Filesystem $files, Dispatcher $events, Translation $translation)
     {
         $this->app = $app;
+        $this->package = ManagerServiceProvider::PACKAGE;
+        $this->config = $this->app['config'][$this->package];
+
         $this->files = $files;
         $this->events = $events;
         $this->translation = $translation;
         $this->default_connection = $translation->getConnectionName();
+        $this->default_translation_connection = $this->config(self::DEFAULT_DB_CONNECTION_KEY, null);
+        if (!$this->default_translation_connection) $this->default_translation_connection = $this->default_connection;
+        else $this->setConnectionName($this->default_translation_connection);
+
         $this->preloadedGroupKeys = null;
         $this->preloadedGroup = null;
 
         $this->persistentPrefix = null;
         $this->cache = null;
         $this->usageCache = null;
-        $this->package = ManagerServiceProvider::PACKAGE;
 
-        $this->config = $this->app['config'][$this->package];
-        $this->indatabase_publish = $this->getConnectionInDatabasePublish($this->default_connection);
+        $this->indatabase_publish = $this->getConnectionInDatabasePublish($this->default_translation_connection);
 
         $this->groupList = null;
         $this->augmentedGroupList = null;
-
-        $this->databaseName = $this->config(self::DATABASE_NAME_KEY);
-
-        // configure database connection
-        if ($this->databaseName !== null && $this->databaseName !== '') $this->translation->getConnection()->setDatabaseName($this->databaseName);
 
         $manager = $this;
         // Laravel 4
@@ -563,8 +592,8 @@ SQL
     function excludedPageEditGroup($group)
     {
         return
-            in_array($group, $this->config(self::EXCLUDE_PAGE_EDIT_GROUPS_KEY))
-            || in_array($group, $this->config(self::EXCLUDE_GROUPS_KEY));
+            in_array($group, $this->config(self::EXCLUDE_PAGE_EDIT_GROUPS_KEY, []))
+            || in_array($group, $this->config(self::EXCLUDE_GROUPS_KEY, []));
     }
 
     public static
@@ -705,7 +734,6 @@ SQL
                 ));
 
                 $translation->setConnection($connectionName);
-                if ($this->databaseName !== null && $this->databaseName !== '') $translation->getConnection()->setDatabaseName($this->databaseName);
                 $tmp = 0;
             }
 
@@ -1139,4 +1167,5 @@ SQL
         }
         return $array;
     }
+
 }

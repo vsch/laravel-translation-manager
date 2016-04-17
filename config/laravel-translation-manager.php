@@ -1,5 +1,7 @@
 <?php
 
+use app\User;
+
 return array(
 
     /*
@@ -51,15 +53,39 @@ return array(
     'admin_enabled' => true,
     /**
      * Enable management of translations for editors by locales
-     * 
+     *
      * Only applies to users that are not translation admins
-     * 
-     * If not defined then by locale access is disabled and all locales can be 
-     * modified by any editor. 
+     *
+     * If not defined then by locale access is disabled and all locales can be
+     * modified by any editor.
      *
      * @type boolean
      */
     'user_locales_enabled' => false,
+    /**
+     * Closure used to retrieve a list of users for per user locale management
+     * Only used if user_locales_enabled is true
+     *
+     * Default definition will retrieve all records using the object returned by
+     * Auth::user(). It is assumed that it is a Model.
+     *
+     * Only id, email and optional name are used.
+     *
+     * This should be modified to return only users who have access to the
+     * translation manager web UI.
+     *
+     * @type Closure    returning an array of Objects with id, email and optional name
+     *
+     * @param $user  Illuminate\Database\Eloquent\Model
+     * @param $connection  string
+     */
+    'user_list_provider' => function ($user, $connection_name) {
+        /* @var $connection_name string */
+        /* @var $user  Illuminate\Database\Eloquent\Model */
+        /* @var $query  Illuminate\Database\Eloquent\Builder */
+        $query = $user->on($connection_name);
+        return $query->orderby('id')->get(['id', 'email']);
+    },
     /**
      * Specify export formatting options:
      *
@@ -156,9 +182,10 @@ return array(
      * @type array      list of alternate database connections and their properties indexed by app()->environment() value,
      *                  default connection settings are taken from config, so only add alternate connections
      *
-     *                  NOTE: If database_name is missing then the globally defined database_name will be used for that connection.
-     *                  If database_name is blank then connection's database name will be used. Otherwise the given
-     *                  database name will be used for all translation tables
+     *                  If user_list_connection is missing, null or empty then the connection will also be used 
+     *                  to obtain the user list for user locale management
+     *
+     *                  If user_list_provider is missing then the globally defined user_list_provider will be used for that connection.
      *
      *                  description is used to display the connection name, default connection is displayed as 'default' in
      *                  the web interface.
@@ -175,22 +202,22 @@ return array(
         //    'mysql_prd' => array(
         //        'description' => 'production',
         //        'indatabase_publish' => 2,
-        //        'database_name' => '',
         //    ),
         //),
     ),
 
     /**
-     * used to provide an alternate database for the translation related tables 
+     * used to provide an alternate default connection name for translation
+     * tables
      *
-     * @type string     Database name alternate to the default
+     * @type string     connection name to use for the default connection 
      *
-     * if blank or not defined then default connection's database name will be used.
+     * if blank, null or not defined then default connection will be used.
      *
      */
 
-    'database_name' => '',
-    
+    'default_connection' => null,
+
     /**
      * used to provide the Yandex key for use in automatic Yandex translations
      *

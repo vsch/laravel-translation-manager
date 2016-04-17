@@ -4,17 +4,18 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
 
 #### 2.0.41
 
-- Fix: #24, Translation Work Orders: Allow users to access only some languages. For now the
-  logic and functionality is there but no UI is implemented for managing per locale access.
+- Fix: #24, Translation Work Orders: Allow users to access only some languages. Basic user per
+  locale access management available to users for whom `UserCan::admin_translations()` return
+  true. See [Enabling per locale user access control](../../wiki/Configuration#enabling-per-locale-user-access-control)
 - Fix: access control for non-admin users so that they cannot inadvertently delete keys or
   modify locales to which they have no access.
 
 #### 2.0.40
 
-- Fix: #28, name of DB connection should be definable in config file - feature request. Now can 
-  add `database_name` to package config which will override the database name defined for the 
-  connection. Similarly, alternate connections can have their own database name settings, use 
-  the globally defined one in package config file or use the connection's database name. 
+- Fix: #28, name of DB connection should be definable in config file - feature request. Now can
+  add `database_name` to package config which will override the database name defined for the
+  connection. Similarly, alternate connections can have their own database name settings, use
+  the globally defined one in package config file or use the connection's database name.
 
 #### 2.0.39
 #### 2.0.38

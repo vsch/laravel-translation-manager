@@ -7,6 +7,7 @@ var YANDEX_TRANSLATOR_KEY;
 var URL_YANDEX_TRANSLATOR_KEY;
 var PRIMARY_LOCALE;
 var CURRENT_LOCALE;
+var CURRENT_GROUP;
 var TRANSLATING_LOCALE;
 var URL_TRANSLATOR_GROUP;
 var URL_TRANSLATOR_ALL;
@@ -641,7 +642,7 @@ jQuery(document).ready(function ($) {
     textareaTandemResize($("#primary-text"), $("#current-text"), true)();
     textareaTandemResize($("#srckeys"), $("#dstkeys"), true)();
 
-    if (TRANS_FILTERS) {
+    if (TRANS_FILTERS && CURRENT_GROUP != '') {
         var filter = TRANS_FILTERS.filter;
         var regex = TRANS_FILTERS.regex;
         var elemRadio = $('#' + filter);

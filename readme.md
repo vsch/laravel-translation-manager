@@ -25,13 +25,15 @@ practical functionality. [Features]
 > would like to share them with others please do so. It will be greatly 
 > appreciated. 
 
-### Your Input Is Needed
+### Per Locale User Access Control
 
-I am working on adding translation work-orders to this package to allow 
-both translation modification access management and keeping track of 
-what outstanding translation are unassigned, assigned but not yet 
-provided, etc. Please provide your insight/requirements in issue #24, 
-**Translation Work Orders: Allow users to access only some languages** 
+Per locale user access control was added to version 2.0.41. By default it is turned off and any
+user who does not have `UserCan::admin_translate()` return true can modify any locale. With this
+option enabled you can control which locales a user is allowed to modify. Default for all users
+is all locales, unless you specifically change that through the web UI, see
+[User Admin](../../wiki/Web-Interface#user-admin) or by populating the `ltm_user_locales` table
+appropriately. See
+[Enabling per locale user access control](../../wiki/Configuration#enabling-per-locale-user-access-control)
 
 #### Screen Shot
 
