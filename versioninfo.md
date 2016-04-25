@@ -2,11 +2,29 @@
 
 The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+ 
 
+#### 2.1.0
+
+- Add: LtmPolicy to handle all LTM related abilities and providing a list of translation 
+  editors. Abilities:
+    - `ltm-admin-translations` true/false
+    - `ltm-edit-translations` true/false
+    - `ltm-bypass-lottery` true/false
+    - `ltm-editors` array of objects with `id`, `email` and optional `name` fields used for
+      managing per locale access. `connection` parameter is the current connection name that can 
+      used to modify how the list is generated.
+
+#### 2.0.42
+
+- Fix: #29, Closure in config file breaks config:cache, removed the config closure. Per locale
+  access control implemented using LtmPolicy with all abilities in version 2.1.0. LTM provides 
+  an empty user list for locale management by default. 
+
 #### 2.0.41
 
 - Fix: #24, Translation Work Orders: Allow users to access only some languages. Basic user per
   locale access management available to users for whom `UserCan::admin_translations()` return
-  true. See [Enabling per locale user access control](../../wiki/Configuration#enabling-per-locale-user-access-control)
+  true. See
+  [Enabling per locale user access control](../../wiki/Configuration#enabling-per-locale-user-access-control) 
 - Fix: access control for non-admin users so that they cannot inadvertently delete keys or
   modify locales to which they have no access.
 
