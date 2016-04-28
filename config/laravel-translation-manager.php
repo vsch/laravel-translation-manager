@@ -1,6 +1,6 @@
 <?php
 
-use app\User;
+use App\User;
 
 return array(
 

@@ -4,6 +4,8 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
 
 #### 2.1.0
 
+- Change: upgrade to Laravel 5.2 (.31 to be exact) 
+
 - Add: LtmPolicy to handle all LTM related abilities and providing a list of translation 
   editors. Abilities:
     - `ltm-admin-translations` true/false for users that can administer LTM through web UI
@@ -20,6 +22,9 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
     
 - Change: remove dependency on UserPrivilegeManager package. It was only needed for
   Laravel 4.
+
+- Add: Middleware to handle equivalent of `listen('route.after'...)` event so that translation
+  manager's cached translations can be persisted to a cache.
 
 #### 2.0.42
 

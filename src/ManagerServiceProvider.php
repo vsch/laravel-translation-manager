@@ -11,8 +11,11 @@ class ManagerServiceProvider extends ServiceProvider
     const CONTROLLER_PREFIX = '\\';
     const PUBLIC_PREFIX = '/vendor/';
 
-    public static function getLists($query) { return $query->all(); }
-
+    public static
+    function getLists($query)
+    {
+        return $query->all();
+    }
 
     /**
      * Indicates if loading of the provider is deferred.
@@ -34,39 +37,33 @@ class ManagerServiceProvider extends ServiceProvider
         $this->mergeConfigFrom($configPath, self::PACKAGE);
         $this->publishes([$configPath => config_path(self::PACKAGE . '.php')], 'config');
 
-        $this->app[self::PACKAGE] = $this->app->share(function ($app)
-        {
+        $this->app[self::PACKAGE] = $this->app->share(function ($app) {
             /* @var $manager \Vsch\TranslationManager\Manager */
             $manager = $app->make('Vsch\TranslationManager\Manager');
             return $manager;
         });
 
-        $this->app['command.translation-manager.reset'] = $this->app->share(function ($app)
-        {
+        $this->app['command.translation-manager.reset'] = $this->app->share(function ($app) {
             return new Console\ResetCommand($app[self::PACKAGE]);
         });
         $this->commands('command.translation-manager.reset');
 
-        $this->app['command.translation-manager.import'] = $this->app->share(function ($app)
-        {
+        $this->app['command.translation-manager.import'] = $this->app->share(function ($app) {
             return new Console\ImportCommand($app[self::PACKAGE]);
         });
         $this->commands('command.translation-manager.import');
 
-        $this->app['command.translation-manager.find'] = $this->app->share(function ($app)
-        {
+        $this->app['command.translation-manager.find'] = $this->app->share(function ($app) {
             return new Console\FindCommand($app[self::PACKAGE]);
         });
         $this->commands('command.translation-manager.find');
 
-        $this->app['command.translation-manager.export'] = $this->app->share(function ($app)
-        {
+        $this->app['command.translation-manager.export'] = $this->app->share(function ($app) {
             return new Console\ExportCommand($app[self::PACKAGE]);
         });
         $this->commands('command.translation-manager.export');
 
-        $this->app['command.translation-manager.clean'] = $this->app->share(function ($app)
-        {
+        $this->app['command.translation-manager.clean'] = $this->app->share(function ($app) {
             return new Console\CleanCommand($app[self::PACKAGE]);
         });
         $this->commands('command.translation-manager.clean');
@@ -106,11 +103,13 @@ class ManagerServiceProvider extends ServiceProvider
         $config = $this->app['config']->get(self::PACKAGE . '.route', []);
         $config['namespace'] = 'Vsch\TranslationManager';
 
-        $router->group($config, function ($router)
-        {
+        $router->group($config, function ($router) {
             $router->get('view/{group}', 'Controller@getView');
             $router->controller('/', 'Controller');
         });
+
+        // Register Middleware so we can save our cached translations
+        $router->pushMiddlewareToGroup('web', 'Vsch\TranslationManager\RouteAfterMiddleware');
     }
 
     /**

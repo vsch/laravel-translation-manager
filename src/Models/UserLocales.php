@@ -5,9 +5,9 @@ namespace Vsch\TranslationManager\Models;
 use Illuminate\Database\Eloquent\Model as Eloquent;
 
 /**
- * app\UserLocale
+ * App\UserLocale
  *
- * @property-read \app\User $user
+ * @property-read \App\User $user
  * @mixin \Eloquent
  */
 class UserLocales extends Eloquent

@@ -1,4 +1,6 @@
-<?php namespace Vsch\TranslationManager;
+<?php 
+
+namespace Vsch\TranslationManager;
 
 use Carbon\Carbon;
 use Exception;
@@ -291,18 +293,13 @@ class Manager
 
         $this->groupList = null;
         $this->augmentedGroupList = null;
+    }
 
-        $manager = $this;
-        // Laravel 4
-        //$app->after(function () use ($manager) {
-
-        // Laravel 5
-        $events = \App::make('events');
-        $events->listen('router.after', function () use ($manager) {
-            // Common 4-5
-            $manager->saveCache();
-            $manager->saveUsageCache();
-        });
+    public
+    function afterRoute($request, $response)
+    {
+        $this->saveCache();
+        $this->saveUsageCache();
     }
 
     public

@@ -1074,7 +1074,7 @@ SQL
         // does not work the zip is still gzip compressed
         if (ini_get('zlib.output_compression')) {
             ini_set('zlib.output_compression', 'Off');
-            \Log::info("after turning off zlib.compression current setting " . ini_get('zlib.output_compression'));
+            //\Log::info("after turning off zlib.compression current setting " . ini_get('zlib.output_compression'));
         }
 
         $file = $this->manager->zipTranslations($group);
@@ -1093,7 +1093,7 @@ SQL
         flush();
         readfile($file);
         unlink($file);
-        \Log::info("sending file, zlib.compression current setting " . ini_get('zlib.output_compression'));
+        //\Log::info("sending file, zlib.compression current setting " . ini_get('zlib.output_compression'));
     }
 
     public
