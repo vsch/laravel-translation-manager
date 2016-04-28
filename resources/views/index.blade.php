@@ -3,7 +3,7 @@
 @section('content')
     <div class="col-sm-12 translation-manager">
         <div class="row">
-            <div class="col-sm-7">
+            <div class="col-sm-8">
                 <div class="row">
                     <div class="col-sm-12">
                         <h1>@lang($package . '::messages.translation-manager')</h1>
@@ -248,7 +248,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-sm-5">
+            <div class="col-sm-4">
                 <div class="row">
                     <div class="col-sm-12">
                         <div style="min-height: 10px"></div>
@@ -321,7 +321,7 @@
                             </div>
                             <div style="min-height: 10px"></div>
                             <div class="row">
-                                <div class=" col-sm-3">
+                                <div class=" col-sm-4">
                                     <div class="row">
                                         <div class=" col-sm-12">
                                             <?= formSubmit(trans($package . '::messages.display-locales')
@@ -340,7 +340,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class=" col-sm-9">
+                                <div class=" col-sm-8">
                                     <div class="input-group-sm">
                                         @foreach($locales as $locale)
                                             <?php $isLocaleEnabled = str_contains($userLocales, ',' . $locale . ','); ?>
@@ -369,7 +369,7 @@
                                 <div class="row">
                                     <div class=" col-sm-12">
                                         <div class="row">
-                                            <div class=" col-sm-3">
+                                            <div class=" col-sm-4">
                                                 <div class="row">
                                                     <div class=" col-sm-12">
                                                         <?= formSubmit(trans($package . '::messages.set-usage-info'), ['class' => "btn btn-sm btn-primary"]) ?>&nbsp;&nbsp;
@@ -377,7 +377,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class=" col-sm-9">
+                                            <div class=" col-sm-8">
                                                 <label>
                                                     <input id="show-usage-info" name="show-usage-info" type="checkbox" value="1" {!! $show_usage ? 'checked' : '' !!}>
                                                     {!! trans($package . '::messages.show-usage-info') !!}

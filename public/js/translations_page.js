@@ -185,6 +185,18 @@ jQuery(document).ready(function ($) {
             matched = new RegExp(pattern, 'i');
             showMatched(table, matched);
             matchedKeys = totalKeys - table.find('tr.hidden').length;
+            if (pattern.length > 0) {
+                if (matchedKeys > 0) {
+                    matchedText.parent('div').removeClass('has-error has-success').addClass('has-success');
+                    matchedText.removeClass('bg-danger bg-success').addClass('bg-success');
+                } else {
+                    matchedText.parent('div').removeClass('has-error has-success').addClass('has-error');
+                    matchedText.removeClass('bg-danger bg-success').addClass('bg-danger');
+                }
+            } else {
+                matchedText.parent('div').removeClass('has-error has-success');
+                matchedText.removeClass('bg-danger bg-success');
+            }
         }
 
         var jqxhr = $.ajax({

@@ -6,18 +6,31 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
 
 - Add: LtmPolicy to handle all LTM related abilities and providing a list of translation 
   editors. Abilities:
-    - `ltm-admin-translations` true/false
-    - `ltm-edit-translations` true/false
-    - `ltm-bypass-lottery` true/false
+    - `ltm-admin-translations` true/false for users that can administer LTM through web UI
+    
+    - `ltm-bypass-lottery` true/false for users that bypass the missing key lottery. For these
+      users all sessions track missing keys.
+    
     - `ltm-editors` array of objects with `id`, `email` and optional `name` fields used for
       managing per locale access. `connection` parameter is the current connection name that can 
       used to modify how the list is generated.
+    
+    See [Enabling per locale user access
+    control](../../wiki/Configuration#enabling-per-locale-user-access-control)
+    
+- Change: remove dependency on UserPrivilegeManager package. It was only needed for
+  Laravel 4.
 
 #### 2.0.42
 
 - Fix: #29, Closure in config file breaks config:cache, removed the config closure. Per locale
   access control implemented using LtmPolicy with all abilities in version 2.1.0. LTM provides 
   an empty user list for locale management by default. 
+- Add: color highlight for key regex filter text box to visually signal when key list is
+  incomplete:
+    - no filter: normal
+    - filter with matched keys: green
+    - filter with no matched keys: red
 
 #### 2.0.41
 
