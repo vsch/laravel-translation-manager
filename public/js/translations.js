@@ -50,7 +50,7 @@ String.prototype.toLocaleProperCase = function () {
 
 String.prototype.toLocaleProperCaseOrLowerCase = function () {
     "use strict";
-    return this.substr(0,1) + this.substr(1).toLocaleLowerCase();
+    return this.substr(0, 1) + this.substr(1).toLocaleLowerCase();
 };
 
 function translateYandex(fromLoc, fromText, toLoc, onTranslate) {
@@ -267,8 +267,8 @@ $(document).ready(function () {
         '</form>';
 
     $.fn.editableform.buttons = '' +
-        '<button type="submit" class="editable-submit btn btn-sm btn-success"><i class="glyphicon glyphicon-ok"></i></button>' +
-        '&nbsp;<button type="button" class="editable-cancel btn btn-sm btn-danger"><i class="glyphicon glyphicon-remove"></i></button>' +
+        '<button type="submit" id="x-submit" class="editable-submit btn btn-sm btn-success"><i class="glyphicon glyphicon-ok"></i></button>' +
+        '&nbsp;<button type="button" id="x-cancel" class="editable-cancel btn btn-sm btn-danger"><i class="glyphicon glyphicon-remove"></i></button>' +
         '&nbsp;&nbsp;<button id="x-translate" type="button" class="editable-translate btn btn-sm btn-warning hidden"><i class="glyphicon glyphicon-share-alt"></i></button>' +
         '<button id="x-nodash" type="button" class="editable-translate btn btn-sm btn-warning hidden">❉ <i class="glyphicon glyphicon-share-alt"></i> Ab</button>' +
         '&nbsp;&nbsp;<button id="x-plurals" type="button" class="editable-translate btn btn-sm btn-warning hidden">|</i></button>' +
@@ -299,6 +299,27 @@ $(document).ready(function () {
                 return selectedText;
             }
         }
+    }
+
+    $.fn.editableform.formElements = function (elem) {
+        var divElem = $(elem).find('+ div.editable-container');
+        if (divElem.length > 0) {
+            return {
+                elemInput: divElem.find('#x-trans-edit').first().find('textarea.editable-input').first(),
+                elemError: divElem.find('.editable-error-block').first(),
+                btnTranslate: divElem.find('#x-translate').first(),
+                btnCapitalize: divElem.find('#x-capitalize').first(),
+                btnLowercase: divElem.find('#x-lowercase').first(),
+                btnPlurals: divElem.find('#x-plurals').first(),
+                btnPropCap: divElem.find('#x-propcap').first(),
+                btnNoDash: divElem.find('#x-nodash').first(),
+                btnCopy: divElem.find('#x-copy').first(),
+                btnPaste: divElem.find('#x-paste').first(),
+                btnResetOpen: divElem.find('#x-reset-open').first(),
+                btnResetSaved: divElem.find('#x-reset-saved').first()
+            };
+        }
+        return null;
     }
 
     var srcText, srcLoc, dstLoc, dstElem, elemRow, inEditable = 0,
@@ -411,7 +432,7 @@ $(document).ready(function () {
 
             elem.editable().off('shown');
             elem.editable().on('shown.vsch', function (e, editable) {
-                var key, srcId, elemXerr, elemXtrans, elemXcap, elemXlow, elemXprop, elemXnodash, elemXcopy, elemXpaste, elemXresetopen, elemXresetsaved, elemXplurals, srcElem,
+                var key, srcId, srcElem,
                     savedValue = $(this).data('saved_value'), openedValue,
                     dstId = $(this).attr('id'),
                     regexnodash = /-|_/g,
@@ -428,20 +449,9 @@ $(document).ready(function () {
                 elemRow = $('tr#' + key.replace(/\./, '-')).first();
                 value = key.replace(regexnodash, ' ').toCapitalCase();
 
-                var divElem = $(this).find('+ div.editable-container');
+                var xElem = $.fn.editableform.formElements(this);
 
-                dstElem = divElem.find('#x-trans-edit').first().find('textarea.editable-input').first();
-                elemXerr = divElem.find('.editable-error-block').first();
-                elemXtrans = divElem.find('#x-translate').first();
-                elemXcap = divElem.find('#x-capitalize').first();
-                elemXlow = divElem.find('#x-lowercase').first();
-                elemXprop = divElem.find('#x-propcap').first();
-                elemXnodash = divElem.find('#x-nodash').first();
-                elemXcopy = divElem.find('#x-copy').first();
-                elemXpaste = divElem.find('#x-paste').first();
-                elemXresetopen = divElem.find('#x-reset-open').first();
-                elemXresetsaved = divElem.find('#x-reset-saved').first();
-                elemXplurals = divElem.find('#x-plurals').first();
+                dstElem = xElem.elemInput;
                 openedValue = dstElem.val().trim();
                 dstElem.val(openedValue);
 
@@ -450,58 +460,58 @@ $(document).ready(function () {
                     elemRow.addClass('editing');
                 }
 
-                if (elemXtrans.length && dstElem.length && YANDEX_TRANSLATOR_KEY !== '') {
+                if (xElem.btnTranslate.length && dstElem.length && YANDEX_TRANSLATOR_KEY !== '') {
                     if (srcLoc !== '') {
                         srcElem = elemRow.find('#' + srcId.replace(/\./, '-')).first();
                         if (srcElem.length) {
                             srcText = srcElem.text();
 
-                            elemXtrans.html(srcLoc + ' <i class="glyphicon glyphicon-share-alt"></i> ' + dstLoc);
-                            elemXtrans.removeClass('hidden');
-                            elemXtrans.on('click', xtranslate(srcLoc, srcText, dstLoc, dstElem, elemXerr));
+                            xElem.btnTranslate.html(srcLoc + ' <i class="glyphicon glyphicon-share-alt"></i> ' + dstLoc);
+                            xElem.btnTranslate.removeClass('hidden');
+                            xElem.btnTranslate.on('click', xtranslate(srcLoc, srcText, dstLoc, dstElem, xElem.elemError));
                         }
                     }
                 }
-                if (elemXnodash.length && dstLoc === PRIMARY_LOCALE) {
-                    elemXnodash.removeClass('hidden');
-                    elemXnodash.on('click', xfull(dstElem, function () {
+                if (xElem.btnNoDash.length && dstLoc === PRIMARY_LOCALE) {
+                    xElem.btnNoDash.removeClass('hidden');
+                    xElem.btnNoDash.on('click', xfull(dstElem, function () {
                         return value;
                     }));
                 }
-                if (elemXcap.length) {
-                    elemXcap.on('click', xeditplurals(dstElem, String.prototype.toLocaleCapitalCase));
+                if (xElem.btnCapitalize.length) {
+                    xElem.btnCapitalize.on('click', xeditplurals(dstElem, String.prototype.toLocaleCapitalCase));
                 }
-                if (elemXlow.length) {
-                    elemXlow.on('click', xedit(dstElem, String.prototype.toLocaleLowerCase));
+                if (xElem.btnLowercase.length) {
+                    xElem.btnLowercase.on('click', xedit(dstElem, String.prototype.toLocaleLowerCase));
                 }
-                if (elemXprop.length) {
-                    elemXprop.on('click', xedit(dstElem, String.prototype.toLocaleProperCase));
+                if (xElem.btnPropCap.length) {
+                    xElem.btnPropCap.on('click', xedit(dstElem, String.prototype.toLocaleProperCase));
                 }
-                if (elemXcopy.length) {
-                    elemXcopy.on('click', xedit(dstElem, function () {
+                if (xElem.btnCopy.length) {
+                    xElem.btnCopy.on('click', xedit(dstElem, function () {
                         CLIP_TEXT = this;
                         return this;
                     }));
                 }
-                if (elemXpaste.length) {
-                    elemXpaste.on('click', xedit(dstElem, function () {
+                if (xElem.btnPaste.length) {
+                    xElem.btnPaste.on('click', xedit(dstElem, function () {
                         return CLIP_TEXT;
                     }));
                 }
-                if (elemXresetopen.length) {
-                    elemXresetopen.on('click', xfull(dstElem, function () {
+                if (xElem.btnResetOpen.length) {
+                    xElem.btnResetOpen.on('click', xfull(dstElem, function () {
                         return openedValue;
                     }));
                 }
-                if (elemXresetsaved.length) {
-                    elemXresetsaved.on('click', xfull(dstElem, function () {
+                if (xElem.btnResetSaved.length) {
+                    xElem.btnResetSaved.on('click', xfull(dstElem, function () {
                         return savedValue;
                     }));
                 }
-                if (elemXplurals.length) {
+                if (xElem.btnPlurals.length) {
                     if (dstLoc === PRIMARY_LOCALE || YANDEX_TRANSLATOR_KEY !== '') {
-                        elemXplurals.removeClass('hidden');
-                        elemXplurals.on('click', xfull(dstElem, function () {
+                        xElem.btnPlurals.removeClass('hidden');
+                        xElem.btnPlurals.on('click', xfull(dstElem, function () {
                             var val = this;
                             if (val.indexOf('|') === -1) {
                                 switch (dstLoc) {
@@ -535,5 +545,4 @@ $(document).ready(function () {
 
     $('.vsch_editable').vsch_editable();
 
-})
-;
+});

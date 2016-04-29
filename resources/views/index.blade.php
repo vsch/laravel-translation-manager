@@ -1001,12 +1001,6 @@
     <script src="<?=  $public_prefix . $package ?>/js/xregexp-all.js"></script>
     <script src="<?=  $public_prefix . $package ?>/js/translations_page.js"></script>
 
-    <script>
-        var TRANS_FILTERS = ({
-            filter: "<?= $transFilters['filter'] ?>",
-            regex: "<?= $transFilters['regex'] ?>"
-        });
-    </script>
 <?php
     $userLocaleList = [];
     foreach ($userList as $user) {
@@ -1024,40 +1018,19 @@
 
     natsort($userLocaleList);
 ?>
-    <script>
-        $(function () {
-            $('.user-locales').editable({
-                template: '' +
-                '<form class="form-inline editableform">' +
-                '<div class="control-group">' +
-                '<div><div id="x-trans-edit" class="editable-input"></div></div>' +
-                '<div class="editable-error-block"></div>' +
-                '</div>' +
-                '</form>',
 
-                source: [
+    <script>
+        var TRANS_FILTERS = ({
+            filter: "<?= $transFilters['filter'] ?>",
+            regex: "<?= $transFilters['regex'] ?>"
+        });
+
+        var USER_LOCALES = [
 <?php $addComma = false; ?>
 <?php foreach ($userLocaleList as $locale): ?>
-<?php if ($addComma) echo ","; else $addComma = true; ?> {
-value: '<?= $locale ?>', text: '<?= $locale ?>'
-                    }
-                    <?php endforeach; ?>
-                ]
-                , emptytext: 'All'
-                , showbuttons: false
-                , display: function(value, sourceData) {
-                    //display checklist as comma-separated values
-                    var html = [],
-                            checked = $.fn.editableutils.itemsByValue(value, sourceData);
-
-                    if(checked.length) {
-                        $.each(checked, function(i, v) { html.push($.fn.editableutils.escape(v.text)); });
-                        $(this).html(html.join(','));
-                    } else {
-                        $(this).empty();
-                    }
-                }            });
-        });
+<?php if ($addComma) echo ","; else $addComma = true; ?> { value: '<?= $locale ?>', text: '<?= $locale ?>' }
+<?php endforeach; ?>
+                ];
     </script>
 @stop
 

@@ -15,6 +15,7 @@ var URL_TRANSLATOR_FILTERS;
 var xtranslateText;
 var xtranslateService;
 var TRANS_FILTERS;
+var USER_LOCALES;
 
 jQuery(document).ready(function ($) {
     $('.group-select').on('change', function () {
@@ -665,4 +666,36 @@ jQuery(document).ready(function ($) {
             elemRadio.trigger('click');
         }
     }
+
+    $(function () {
+        $('.user-locales').editable({
+            template: '' +
+            '<form class="form-inline editableform">' +
+            '<div class="control-group">' +
+            '<div><div id="x-trans-edit" class="editable-input"></div></div>' +
+            '<div class="editable-error-block"></div>' +
+            '</div>' +
+            '</form>'
+
+            , source: USER_LOCALES
+
+            , emptytext: 'All'
+            , showbuttons: false
+            , display: function (value, sourceData) {
+                //display checklist as comma-separated values
+                var html = [],
+                    checked = $.fn.editableutils.itemsByValue(value, sourceData);
+
+                if (checked.length) {
+                    $.each(checked, function (i, v) {
+                        html.push($.fn.editableutils.escape(v.text));
+                    });
+                    $(this).html(html.join(' '));
+                } else {
+                    $(this).empty();
+                }
+            }
+        });
+    });
+
 });
