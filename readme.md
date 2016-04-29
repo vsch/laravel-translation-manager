@@ -29,10 +29,11 @@ Now using Laravel 5 authorization API to handle all LTM related authorizations.
 
 **If you are upgrading from version 2.0.x of LTM** you need to: 
  
-1. Remove the dependency to `UserPrivilegeMapper` from your application: service providers.
-   [Installation step 2](../../wiki/Installation#step2) and facade alias array
-   [Installation step 3](../../wiki/Installation#step3)
-2. Define the abilities used by LTM: [Installation step 8](../../wiki/Installation#step8)
+1. Remove the dependency to `UserPrivilegeMapper` from your application:
+   [Removing dependency on UserPrivilegeMapper from service providers array](../../wiki/Installation#removing-dependency-on-userprivilegemapper-from-service-providers-array)
+   and
+   [Removing dependency on UserPrivilegeMapper from facade alias array](../../wiki/Installation#removing-dependency-on-userprivilegemapper-from-facade-alias-array)
+2. Define the abilities used by LTM: [Setting up user authorization](../../wiki/Installation#setting-up-user-authorization)
 
 ### Per Locale User Access Control
 
@@ -62,7 +63,7 @@ appropriately.
 [Features]: ../../wiki/#features
 [barryvdh]: https://github.com/barryvdh/laravel-translation-manager
 [issue #14]: ../../issues/14
-[publishing configuration]: ../../wiki/Installation#publish-config
+[publishing configuration]: ../../wiki/Installation#publishing-the-configuration
 
 
 
