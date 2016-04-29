@@ -311,7 +311,7 @@ class Translator extends LaravelTranslator
     {
         list($namespace, $group, $item) = $this->parseKey($key);
         if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
-            $this->manager->missingKey($namespace, $group, $item, $locale, !UserCan::bypass_translations_lottery());
+            $this->manager->missingKey($namespace, $group, $item, $locale, !\Gate::allows(Manager::ABILITY_BYPASS_LOTTERY));
         }
     }
 
@@ -321,7 +321,7 @@ class Translator extends LaravelTranslator
         if (!$this->suspendUsageLogging) {
             list($namespace, $group, $item) = $this->parseKey($key);
             if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
-                $this->manager->usingKey($namespace, $group, $item, $locale, !UserCan::bypass_translations_lottery());
+                $this->manager->usingKey($namespace, $group, $item, $locale, !\Gate::allows(Manager::ABILITY_BYPASS_LOTTERY));
             }
         }
     }

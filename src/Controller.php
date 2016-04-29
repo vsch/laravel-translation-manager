@@ -1,15 +1,9 @@
 <?php namespace Vsch\TranslationManager;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Routing\Controller as BaseController;
 use Vsch\TranslationManager\Models\Translation;
 use Vsch\TranslationManager\Models\UserLocales;
-use Vsch\UserPrivilegeMapper\Facade\Privilege as UserCan;
 
-// Laravel 4
-//include_once(__DIR__ . '/../../../scripts/finediff.php');
-
-// Laravel 5
 include_once(__DIR__ . '/Support/finediff.php');
 
 class Controller extends BaseController
@@ -108,7 +102,7 @@ class Controller extends BaseController
         $this->locales = $this->loadLocales();
         $locales = $this->locales;
 
-        if ((true || !UserCan::admin_translations()) && $this->manager->areUserLocalesEnabled()) {
+        if ((!\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) && $this->manager->areUserLocalesEnabled()) {
             // see what locales are available for this user
             $userId = \Auth::id();
             if ($userId !== null) {
@@ -367,29 +361,32 @@ SQL
         $show_usage_enabled = $this->manager->config('log_key_usage_info', false);
 
         $userList = [];
-        $admin_translations = UserCan::admin_translations();
+        $admin_translations = \Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS);
         if ($admin_translations && $this->manager->areUserLocalesEnabled()) {
             $connection_name = $this->getConnectionName();
             $userListProvider = $this->manager->getUserListProvider($connection_name);
             if ($userListProvider !== null && is_a($userListProvider, "Closure")) {
-                $userList = $userListProvider(\Auth::user(), $this->manager->getUserListConnection($connection_name));
+                $userList = null;
+                if ($userListProvider(\Auth::user(), $this->manager->getUserListConnection($connection_name), $userList) && is_array($userList)) {
+                    /* @var $connection_name string */
+                    /* @var $query  \Illuminate\Database\Eloquent\Builder */
+                    $userLocalesModel = new UserLocales();
+                    $userLocaleList = $userLocalesModel->on($connection_name)->get();
 
-                /* @var $connection_name string */
-                /* @var $query  \Illuminate\Database\Eloquent\Builder */
-                $userLocalesModel = new UserLocales();
-                $userLocaleList = $userLocalesModel->on($connection_name)->get();
-
-                $userLocales = [];
-                foreach ($userLocaleList as $userLocale) {
-                    $userLocales[$userLocale->user_id] = $userLocale;
-                }
-
-                foreach ($userList as $user) {
-                    if (array_key_exists($user->id, $userLocales)) {
-                        $user->locales = $userLocales[$user->id]->locales;
-                    } else {
-                        $user->locales = '';
+                    $userLocales = [];
+                    foreach ($userLocaleList as $userLocale) {
+                        $userLocales[$userLocale->user_id] = $userLocale;
                     }
+
+                    foreach ($userList as $user) {
+                        if (array_key_exists($user->id, $userLocales)) {
+                            $user->locales = $userLocales[$user->id]->locales;
+                        } else {
+                            $user->locales = '';
+                        }
+                    }
+                } else {
+                    $userList = [];
                 }
             }
         }
@@ -409,9 +406,9 @@ SQL
             ->with('group', $group)
             ->with('numTranslations', $numTranslations)
             ->with('numChanged', $numChanged)
-            ->with('adminEnabled', $this->manager->config('admin_enabled') && UserCan::admin_translations())
+            ->with('adminEnabled', $this->manager->config('admin_enabled') && \Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS))
             ->with('mismatchEnabled', $mismatchEnabled)
-            ->with('userLocalesEnabled', $this->manager->areUserLocalesEnabled())
+            ->with('userLocalesEnabled', $this->manager->areUserLocalesEnabled() && $userList)
             ->with('stats', $summary)
             ->with('mismatches', $mismatches)
             ->with('show_usage', $this->showUsageInfo && $show_usage_enabled)
@@ -494,7 +491,7 @@ SQL
     public
     function postAdd($group)
     {
-        if (UserCan::admin_translations()) {
+        if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $keys = explode("\n", trim(\Request::get('keys')));
             $suffixes = explode("\n", trim(\Request::get('suffixes')));
             $group = explode('::', $group, 2);
@@ -522,7 +519,7 @@ SQL
     public
     function postDeleteSuffixedKeys($group)
     {
-        if (UserCan::admin_translations()) {
+        if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $ltm_translations = $this->manager->getTranslationsTableName();
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
                 $keys = explode("\n", trim(\Request::get('keys')));
@@ -584,7 +581,7 @@ SQL
     public
     function postDelete($group, $key)
     {
-        if (UserCan::admin_translations()) {
+        if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $key = decodeKey($key);
             $ltm_translations = $this->manager->getTranslationsTableName();
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
@@ -601,7 +598,7 @@ SQL
     public
     function postUndelete($group, $key)
     {
-        if (UserCan::admin_translations()) {
+        if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $key = decodeKey($key);
             $ltm_translations = $this->manager->getTranslationsTableName();
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {

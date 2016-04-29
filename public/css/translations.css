@@ -239,3 +239,16 @@ ins {
 .panel .table:last-child {
     margin-bottom: 0;
 }
+
+input.bg-success {
+    background-color: #dff0d8;
+}
+input.bg-info {
+    background-color: #d9edf7;
+}
+input.bg-warning {
+    background-color: #fcf8e3;
+}
+input.bg-danger {
+    background-color: #f2dede;
+}

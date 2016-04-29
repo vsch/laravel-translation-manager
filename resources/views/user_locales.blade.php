@@ -12,7 +12,7 @@
                     <tr>
                         <td><?= $user->id ?: '&nbsp;'?></td>
                         <td><?= $user->email ?: '&nbsp;'?></td>
-                        <td><?= $user->name ?: '&nbsp;'?></td>
+                        <td><?= isset($user->name) && $user->name ? $user->name : '&nbsp;'?></td>
                         <td>
                             <a href="#" class="user-locales" data-type="checklist" data-pk="<?= $user->id ?>" data-url="<?= action($controller . '@postUserLocales') ?>" data-title="Select User Locales"
                                     data-value="<?= $user->locales ?>"

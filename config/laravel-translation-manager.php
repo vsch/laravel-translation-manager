@@ -63,29 +63,13 @@ return array(
      */
     'user_locales_enabled' => false,
     /**
-     * Closure used to retrieve a list of users for per user locale management
-     * Only used if user_locales_enabled is true
+     * No Longer used. Must implement 'ltm-editors-list' ability that will return true
+     * if the user can manage per locale access with an array of objects with: id, email,
+     * and name fields that correspond to the list of users to be displayed in the web UI
+     * to allow the current admin user to manage per locale access.
      *
-     * Default definition will retrieve all records using the object returned by
-     * Auth::user(). It is assumed that it is a Model.
-     *
-     * Only id, email and optional name are used.
-     *
-     * This should be modified to return only users who have access to the
-     * translation manager web UI.
-     *
-     * @type Closure    returning an array of Objects with id, email and optional name
-     *
-     * @param $user  Illuminate\Database\Eloquent\Model
-     * @param $connection  string
      */
-    'user_list_provider' => function ($user, $connection_name) {
-        /* @var $connection_name string */
-        /* @var $user  Illuminate\Database\Eloquent\Model */
-        /* @var $query  Illuminate\Database\Eloquent\Builder */
-        $query = $user->on($connection_name);
-        return $query->orderby('id')->get(['id', 'email']);
-    },
+    //'user_list_provider' => null,
     /**
      * Specify export formatting options:
      *
@@ -182,10 +166,9 @@ return array(
      * @type array      list of alternate database connections and their properties indexed by app()->environment() value,
      *                  default connection settings are taken from config, so only add alternate connections
      *
-     *                  If user_list_connection is missing, null or empty then the connection will also be used 
-     *                  to obtain the user list for user locale management
-     *
-     *                  If user_list_provider is missing then the globally defined user_list_provider will be used for that connection.
+     *                  If user_list_connection is missing, null or empty then the connection will also be used
+     *                  to obtain the user list for user locale management, otherwise the given connection name will be user
+     *                  to obtain the user list when managing translations on this connection.
      *
      *                  description is used to display the connection name, default connection is displayed as 'default' in
      *                  the web interface.
@@ -210,7 +193,7 @@ return array(
      * used to provide an alternate default connection name for translation
      * tables
      *
-     * @type string     connection name to use for the default connection 
+     * @type string     connection name to use for the default connection
      *
      * if blank, null or not defined then default connection will be used.
      *

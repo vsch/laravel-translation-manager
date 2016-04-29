@@ -13,12 +13,12 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
     - `ltm-bypass-lottery` true/false for users that bypass the missing key lottery. For these
       users all sessions track missing keys.
     
-    - `ltm-editors` array of objects with `id`, `email` and optional `name` fields used for
+    - `ltm-list-editors` array of objects with `id`, `email` and optional `name` fields used for
       managing per locale access. `connection` parameter is the current connection name that can 
       used to modify how the list is generated.
     
-    See [Enabling per locale user access
-    control](../../wiki/Configuration#enabling-per-locale-user-access-control)
+    See
+    [Enabling per locale user access control](../../wiki/Configuration#enabling-per-locale-user-access-control)
     
 - Change: remove dependency on UserPrivilegeManager package. It was only needed for
   Laravel 4.

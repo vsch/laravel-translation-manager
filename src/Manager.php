@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Vsch\TranslationManager;
 
@@ -28,7 +28,7 @@ class Manager
     const INDATABASE_PUBLISH_KEY = 'indatabase_publish';
     const DEFAULT_DB_CONNECTION_KEY = 'default_connection';
     const USER_LOCALES_ENABLED = 'user_locales_enabled';
-    const USER_LIST_PROVIDER_KEY = 'user_list_provider';
+    //const USER_LIST_PROVIDER_KEY = 'user_list_provider';
     const DB_CONNECTIONS_KEY = 'db_connections';
     const PERSISTENT_PREFIX_KEY = 'persistent_prefix';
     const EXCLUDE_PAGE_EDIT_GROUPS_KEY = 'exclude_page_edit_groups';
@@ -39,6 +39,10 @@ class Manager
     const LOG_KEY_USAGE_INFO_KEY = 'log_key_usage_info';
     const ADDITIONAL_LOCALES_KEY = 'locales';
     const SHOW_LOCALES_KEY = 'show_locales';
+
+    const ABILITY_ADMIN_TRANSLATIONS = 'ltm-admin-translations';
+    const ABILITY_BYPASS_LOTTERY = 'ltm-bypass-lottery';
+    const ABILITY_LIST_EDITORS = 'ltm-list-editors';
 
     /** @var \Illuminate\Foundation\Application */
     protected $app;
@@ -150,10 +154,9 @@ class Manager
     public
     function getUserListProvider($connection)
     {
-        if ($connection === null || $connection === '' || $this->isDefaultTranslationConnection($connection)) {
-            return $this->config(self::USER_LIST_PROVIDER_KEY, null);
-        }
-        return $this->getConnectionInfo($connection, self::USER_LIST_PROVIDER_KEY, $this->config(self::USER_LIST_PROVIDER_KEY, null));
+        return function ($user, $connection_name, &$user_list) {
+            return \Gate::forUser($user)->allows(self::ABILITY_LIST_EDITORS, [$connection_name, &$user_list]);
+        };
     }
 
     public
