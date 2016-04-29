@@ -6,16 +6,18 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
 
 - Change: upgrade to Laravel 5.2 (.31 to be exact) 
 
-- Add: LtmPolicy to handle all LTM related abilities and providing a list of translation 
-  editors. Abilities:
+- Change: using abilities to handle all LTM related authorization and providing a list of
+  translation editors. Abilities:
     - `ltm-admin-translations` true/false for users that can administer LTM through web UI
     
     - `ltm-bypass-lottery` true/false for users that bypass the missing key lottery. For these
       users all sessions track missing keys.
     
-    - `ltm-list-editors` array of objects with `id`, `email` and optional `name` fields used for
-      managing per locale access. `connection` parameter is the current connection name that can 
-      used to modify how the list is generated.
+    - `ltm-list-editors` true/false
+    
+    Takes a reference argument in which to return an array of objects with `id`, `email` and
+    optional `name` fields used for managing per locale access. `connection` parameter is the
+    current connection name that can used to modify how the list is generated.
     
     See
     [Enabling per locale user access control](../../wiki/Configuration#enabling-per-locale-user-access-control)
@@ -26,15 +28,14 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
 - Add: Middleware to handle equivalent of `listen('route.after'...)` event so that translation
   manager's cached translations can be persisted to a cache.
 
-#### 2.0.42
-
 - Fix: #29, Closure in config file breaks config:cache, removed the config closure. Per locale
   access control implemented using LtmPolicy with all abilities in version 2.1.0. LTM provides 
   an empty user list for locale management by default. 
-- Add: color highlight for key regex filter text box to visually signal when key list is
-  incomplete:
+
+- Add: color highlight for key regex text box and radio button translation filters to visually
+  signal when key list is incomplete and which filter is responsible:
     - no filter: normal
-    - filter with matched keys: green
+    - filter with matched keys: blue
     - filter with no matched keys: red
 
 #### 2.0.41

@@ -403,13 +403,13 @@
             <div class="col-sm-12">
                 <div class="row">
                     <div class="col-sm-12">
-@include($package . '::dashboard')
+                        @include($package . '::dashboard')
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-sm-12">
                         @if($mismatchEnabled && !empty($mismatches))
-@include($package . '::mismatched')
+                            @include($package . '::mismatched')
                         @endif
                     </div>
                 </div>
@@ -421,7 +421,7 @@
                                     <h3 class="panel-title">@lang($package . '::messages.user-admin')</h3>
                                 </div>
                                 <div class="panel-body">
-@include($package . '::user_locales')
+                                    @include($package . '::user_locales')
                                 </div>
                             </div>
                         @endif
@@ -439,264 +439,264 @@
             <div class="col-sm-12 ">
                 <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
                     @if($adminEnabled && $userLocalesEnabled)
-                    <div class="panel panel-default">
-                        <div class="panel-heading" role="tab" id="headingUserAdmin">
-                            <?= ifEditTrans($package . '::messages.user-admin') ?>
-                            <h4 class="panel-title">
-                                <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseUserAdmin"
-                                        aria-expanded="false" aria-controls="collapseUserAdmin">
-                                    <?= noEditTrans($package . '::messages.user-admin') ?>
-                                </a>
-                            </h4>
-                        </div>
-                        <div id="collapseUserAdmin" class="panel-collapse collapse" role="tabpanel"
-                                aria-labelledby="headingUserAdmin">
-                            <div class="panel-body">
-                                <div class="col-sm-12">
-@include($package . '::user_locales')
+                        <div class="panel panel-default">
+                            <div class="panel-heading" role="tab" id="headingUserAdmin">
+                                <?= ifEditTrans($package . '::messages.user-admin') ?>
+                                <h4 class="panel-title">
+                                    <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseUserAdmin"
+                                            aria-expanded="false" aria-controls="collapseUserAdmin">
+                                        <?= noEditTrans($package . '::messages.user-admin') ?>
+                                    </a>
+                                </h4>
+                            </div>
+                            <div id="collapseUserAdmin" class="panel-collapse collapse" role="tabpanel"
+                                    aria-labelledby="headingUserAdmin">
+                                <div class="panel-body">
+                                    <div class="col-sm-12">
+                                        @include($package . '::user_locales')
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <?php endif; ?>
-                    <?php if($adminEnabled): ?>
-                    <div class="panel panel-default">
-                        <div class="panel-heading" role="tab" id="headingOne">
-                            <?= ifEditTrans($package . '::messages.suffixed-keyops') ?>
-                            <h4 class="panel-title">
-                                <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseOne"
-                                        aria-expanded="false" aria-controls="collapseOne">
-                                    <?= noEditTrans($package . '::messages.suffixed-keyops') ?>
-                                </a>
-                            </h4>
-                        </div>
-                        <div id="collapseOne" class="panel-collapse collapse" role="tabpanel"
-                                aria-labelledby="headingOne">
-                            <div class="panel-body">
-                                <!-- Add Keys Form -->
-                                <div class="col-sm-12">
-                                    <?=  Form::open(['id' => 'form-addkeys', 'method' => 'POST', 'action' => [$controller . '@postAdd', $group]]) ?>
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <label for="keys">@lang($package . '::messages.keys'):</label><?= ifEditTrans($package . '::messages.addkeys-placeholder') ?>
-                                            <?=  Form::textarea('keys', Request::old('keys'), [
-                                                    'class' => "form-control", 'rows' => "4", 'style' => "resize: vertical",
-                                                    'placeholder' => noEditTrans($package . '::messages.addkeys-placeholder')
-                                            ]) ?>
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <label for="suffixes">@lang($package . '::messages.suffixes'):</label><?= ifEditTrans($package . '::messages.addsuffixes-placeholder') ?>
-                                            <?=  Form::textarea('suffixes', Request::old('suffixes'), [
-                                                    'class' => "form-control", 'rows' => "4", 'style' => "resize: vertical",
-                                                    'placeholder' => noEditTrans($package . '::messages.addsuffixes-placeholder')
-                                            ]) ?>
-                                        </div>
-                                    </div>
-                                    <div style="min-height: 10px"></div>
-                                    <script>
-                                        var currentGroup = '{{$group}}';
-                                        function addStandardSuffixes(event) {
-                                            event.preventDefault();
-                                            $("#form-addkeys").first().find("textarea[name='suffixes']")[0].value = "-type\n-header\n-heading\n-description\n-footer" + (currentGroup === 'systemmessage-texts' ? '\n-footing' : '');
-                                        }
-                                        function clearSuffixes(event) {
-                                            event.preventDefault();
-                                            $("#form-addkeys").first().find("textarea[name='suffixes']")[0].value = "";
-                                        }
-                                        function clearKeys(event) {
-                                            event.preventDefault();
-                                            $("#form-addkeys").first().find("textarea[name='keys']")[0].value = "";
-                                        }
-                                        function postDeleteSuffixedKeys(event) {
-                                            event.preventDefault();
-                                            var elem = $("#form-addkeys").first();
-                                            elem[0].action = "<?= action($controller . '@postDeleteSuffixedKeys', $group)?>";
-                                            elem[0].submit();
-                                        }
-                                    </script>
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <?= formSubmit(trans($package . '::messages.addkeys'), ['class' => "btn btn-sm btn-primary"]) ?>
-                                            <?= ifEditTrans($package . '::messages.clearkeys') ?>
-                                            <button class="btn btn-sm btn-primary"
-                                                    onclick="clearKeys(event)"><?= noEditTrans($package . '::messages.clearkeys') ?>
-                                            </button>
-                                            <div class="input-group" style="float:right; display:inline">
-                                                <?= ifEditTrans($package . '::messages.deletekeys') ?>
-                                                <button class="btn btn-sm btn-danger"
-                                                        onclick="postDeleteSuffixedKeys(event)">
-                                                    <?= noEditTrans($package . '::messages.deletekeys') ?>
-                                                </button>
+                        <?php endif; ?>
+                        <?php if($adminEnabled): ?>
+                        <div class="panel panel-default">
+                            <div class="panel-heading" role="tab" id="headingOne">
+                                <?= ifEditTrans($package . '::messages.suffixed-keyops') ?>
+                                <h4 class="panel-title">
+                                    <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseOne"
+                                            aria-expanded="false" aria-controls="collapseOne">
+                                        <?= noEditTrans($package . '::messages.suffixed-keyops') ?>
+                                    </a>
+                                </h4>
+                            </div>
+                            <div id="collapseOne" class="panel-collapse collapse" role="tabpanel"
+                                    aria-labelledby="headingOne">
+                                <div class="panel-body">
+                                    <!-- Add Keys Form -->
+                                    <div class="col-sm-12">
+                                        <?=  Form::open(['id' => 'form-addkeys', 'method' => 'POST', 'action' => [$controller . '@postAdd', $group]]) ?>
+                                        <div class="row">
+                                            <div class="col-sm-6">
+                                                <label for="keys">@lang($package . '::messages.keys'):</label><?= ifEditTrans($package . '::messages.addkeys-placeholder') ?>
+                                                <?=  Form::textarea('keys', Request::old('keys'), [
+                                                        'class' => "form-control", 'rows' => "4", 'style' => "resize: vertical",
+                                                        'placeholder' => noEditTrans($package . '::messages.addkeys-placeholder')
+                                                ]) ?>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <label for="suffixes">@lang($package . '::messages.suffixes'):</label><?= ifEditTrans($package . '::messages.addsuffixes-placeholder') ?>
+                                                <?=  Form::textarea('suffixes', Request::old('suffixes'), [
+                                                        'class' => "form-control", 'rows' => "4", 'style' => "resize: vertical",
+                                                        'placeholder' => noEditTrans($package . '::messages.addsuffixes-placeholder')
+                                                ]) ?>
                                             </div>
                                         </div>
-                                        <div class="col-sm-4">
-                                            <?= ifEditTrans($package . '::messages.addsuffixes') ?>
-                                            <button class="btn btn-sm btn-primary"
-                                                    onclick="addStandardSuffixes(event)"><?= noEditTrans($package . '::messages.addsuffixes') ?></button>
-                                            <?= ifEditTrans($package . '::messages.clearsuffixes') ?>
-                                            <button class="btn btn-sm btn-primary"
-                                                    onclick="clearSuffixes(event)"><?= noEditTrans($package . '::messages.clearsuffixes') ?></button>
-                                        </div>
-                                        <div class="col-sm-2">
+                                        <div style="min-height: 10px"></div>
+                                        <script>
+                                            var currentGroup = '{{$group}}';
+                                            function addStandardSuffixes(event) {
+                                                event.preventDefault();
+                                                $("#form-addkeys").first().find("textarea[name='suffixes']")[0].value = "-type\n-header\n-heading\n-description\n-footer" + (currentGroup === 'systemmessage-texts' ? '\n-footing' : '');
+                                            }
+                                            function clearSuffixes(event) {
+                                                event.preventDefault();
+                                                $("#form-addkeys").first().find("textarea[name='suffixes']")[0].value = "";
+                                            }
+                                            function clearKeys(event) {
+                                                event.preventDefault();
+                                                $("#form-addkeys").first().find("textarea[name='keys']")[0].value = "";
+                                            }
+                                            function postDeleteSuffixedKeys(event) {
+                                                event.preventDefault();
+                                                var elem = $("#form-addkeys").first();
+                                                elem[0].action = "<?= action($controller . '@postDeleteSuffixedKeys', $group)?>";
+                                                elem[0].submit();
+                                            }
+                                        </script>
+                                        <div class="row">
+                                            <div class="col-sm-6">
+                                                <?= formSubmit(trans($package . '::messages.addkeys'), ['class' => "btn btn-sm btn-primary"]) ?>
+                                                <?= ifEditTrans($package . '::messages.clearkeys') ?>
+                                                <button class="btn btn-sm btn-primary"
+                                                        onclick="clearKeys(event)"><?= noEditTrans($package . '::messages.clearkeys') ?>
+                                                </button>
+                                                <div class="input-group" style="float:right; display:inline">
+                                                    <?= ifEditTrans($package . '::messages.deletekeys') ?>
+                                                    <button class="btn btn-sm btn-danger"
+                                                            onclick="postDeleteSuffixedKeys(event)">
+                                                        <?= noEditTrans($package . '::messages.deletekeys') ?>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-4">
+                                                <?= ifEditTrans($package . '::messages.addsuffixes') ?>
+                                                <button class="btn btn-sm btn-primary"
+                                                        onclick="addStandardSuffixes(event)"><?= noEditTrans($package . '::messages.addsuffixes') ?></button>
+                                                <?= ifEditTrans($package . '::messages.clearsuffixes') ?>
+                                                <button class="btn btn-sm btn-primary"
+                                                        onclick="clearSuffixes(event)"><?= noEditTrans($package . '::messages.clearsuffixes') ?></button>
+                                            </div>
+                                            <div class="col-sm-2">
                                                 <span style="float:right; display:inline">
                                                     <?= ifEditTrans($package . '::messages.search'); ?>
                                                     <button type="button" class="btn btn-sm btn-primary" data-toggle="modal"
                                                             data-target="#searchModal"><?= noEditTrans($package . '::messages.search') ?></button>
                                                 </span>
+                                            </div>
                                         </div>
+                                        <?=  Form::close() ?>
                                     </div>
-                                    <?=  Form::close() ?>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="panel panel-default">
-                        <div class="panel-heading" role="tab" id="headingTwo">
-                            <?= ifEditTrans($package . '::messages.wildcard-keyops') ?>
-                            <h4 class="panel-title">
-                                <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo"
-                                        aria-expanded="false" aria-controls="collapseTwo">
-                                    <?= noEditTrans($package . '::messages.wildcard-keyops') ?>
-                                </a>
-                            </h4>
-                        </div>
-                        <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
-                            <div class="panel-body">
-                                <div class="col-sm-12">
-                                    <!-- Key Ops Form -->
-                                    <div id="wildcard-keyops-results" class="results"></div>
-                                    <?=  Form::open([
-                                            'id' => 'form-keyops', 'data-remote' => "true", 'method' => 'POST',
-                                            'action' => [$controller . '@postPreviewKeys', $group]
-                                    ]) ?>
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <label for="srckeys">@lang($package . '::messages.srckeys'):</label><?= ifEditTrans($package . '::messages.srckeys-placeholder') ?>
-                                            <?=  Form::textarea('srckeys', Request::old('srckeys'), [
-                                                    'id' => 'srckeys', 'class' => "form-control", 'rows' => "4", 'style' => "resize: vertical",
-                                                    'placeholder' => noEditTrans($package . '::messages.srckeys-placeholder')
-                                            ]) ?>
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <label for="dstkeys">@lang($package . '::messages.dstkeys'):</label><?= ifEditTrans($package . '::messages.dstkeys-placeholder') ?>
-                                            <?=  Form::textarea('dstkeys', Request::old('dstkeys'), [
-                                                    'id' => 'dstkeys', 'class' => "form-control", 'rows' => "4", 'style' => "resize: vertical",
-                                                    'placeholder' => noEditTrans($package . '::messages.dstkeys-placeholder')
-                                            ]) ?>
-                                        </div>
-                                    </div>
-                                    <div style="min-height: 10px"></div>
-                                    <script>
-                                        var currentGroup = '{{$group}}';
-                                        function clearDstKeys(event) {
-                                            event.preventDefault();
-                                            $("#form-keyops").first().find("textarea[name='dstkeys']")[0].value = "";
-                                        }
-                                        function clearSrcKeys(event) {
-                                            event.preventDefault();
-                                            $("#form-keyops").first().find("textarea[name='srckeys']")[0].value = "";
-                                        }
-                                        function postPreviewKeys(event) {
-                                            //event.preventDefault();
-                                            var elem = $("#form-keyops").first();
-                                            elem[0].action = "<?= action($controller . '@postPreviewKeys', $group)?>";
-                                            //elem[0].submit();
-                                        }
-                                        function postMoveKeys(event) {
-                                            //event.preventDefault();
-                                            var elem = $("#form-keyops").first();
-                                            elem[0].action = "<?= action($controller . '@postMoveKeys', $group)?>";
-                                            //elem[0].submit();
-                                        }
-                                        function postCopyKeys(event) {
-                                            //event.preventDefault();
-                                            var elem = $("#form-keyops").first();
-                                            elem[0].action = "<?= action($controller . '@postCopyKeys', $group)?>";
-                                            //elem[0].submit();
-                                        }
-                                        function postDeleteKeys(event) {
-                                            //event.preventDefault();
-                                            var elem = $("#form-keyops").first();
-                                            elem[0].action = "<?= action($controller . '@postDeleteKeys', $group)?>";
-                                            //elem[0].submit();
-                                        }
-                                    </script>
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <?= ifEditTrans($package . '::messages.clearsrckeys') ?>
-                                            <button class="btn btn-sm btn-primary"
-                                                    onclick="clearSrcKeys(event)"><?= noEditTrans($package . '::messages.clearsrckeys') ?></button>
-                                            <div class="input-group" style="float:right; display:inline">
-                                                <?= formSubmit(trans($package . '::messages.preview'), [
-                                                        'class' => "btn btn-sm btn-primary",
-                                                        'onclick' => 'postPreviewKeys(event)'
-                                                ]) ?>
-                                                <?= ifEditTrans($package . '::messages.copykeys'); ?>
-                                                <button class="btn btn-sm btn-primary" onclick="postCopyKeys(event)">
-                                                    <?= noEditTrans($package . '::messages.copykeys') ?>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <?= ifEditTrans($package . '::messages.cleardstkeys') ?>
-                                            <button class="btn btn-sm btn-primary"
-                                                    onclick="clearDstKeys(event)"><?= noEditTrans($package . '::messages.cleardstkeys') ?></button>
-                                            <div class="input-group" style="float:right; display:inline">
-                                                <?= ifEditTrans($package . '::messages.movekeys') ?>
-                                                <button class="btn btn-sm btn-warning" onclick="postMoveKeys(event)">
-                                                    <?= noEditTrans($package . '::messages.movekeys') ?>
-                                                </button>
-                                                <?= ifEditTrans($package . '::messages.deletekeys') ?>
-                                                <button class="btn btn-sm btn-danger" onclick="postDeleteKeys(event)">
-                                                    <?= noEditTrans($package . '::messages.deletekeys') ?>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <?=  Form::close() ?>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <?php endif ?>
-                    @if($yandex_key)
                         <div class="panel panel-default">
-                            <div class="panel-heading" role="tab" id="headingThree">
-                                <?= ifEditTrans($package . '::messages.translation-ops') ?>
+                            <div class="panel-heading" role="tab" id="headingTwo">
+                                <?= ifEditTrans($package . '::messages.wildcard-keyops') ?>
                                 <h4 class="panel-title">
-                                    <a class="collapsed" data-toggle="collapse" data-parent="#accordion"
-                                            href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-                                        <?= noEditTrans($package . '::messages.translation-ops') ?>
+                                    <a class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo"
+                                            aria-expanded="false" aria-controls="collapseTwo">
+                                        <?= noEditTrans($package . '::messages.wildcard-keyops') ?>
                                     </a>
                                 </h4>
                             </div>
-                            <div id="collapseThree" class="panel-collapse collapse" role="tabpanel"
-                                    aria-labelledby="headingThree">
+                            <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
                                 <div class="panel-body">
-                                    <div class="row">
-                                        <div class="col-sm-6">
+                                    <div class="col-sm-12">
+                                        <!-- Key Ops Form -->
+                                        <div id="wildcard-keyops-results" class="results"></div>
+                                        <?=  Form::open([
+                                                'id' => 'form-keyops', 'data-remote' => "true", 'method' => 'POST',
+                                                'action' => [$controller . '@postPreviewKeys', $group]
+                                        ]) ?>
+                                        <div class="row">
+                                            <div class="col-sm-6">
+                                                <label for="srckeys">@lang($package . '::messages.srckeys'):</label><?= ifEditTrans($package . '::messages.srckeys-placeholder') ?>
+                                                <?=  Form::textarea('srckeys', Request::old('srckeys'), [
+                                                        'id' => 'srckeys', 'class' => "form-control", 'rows' => "4", 'style' => "resize: vertical",
+                                                        'placeholder' => noEditTrans($package . '::messages.srckeys-placeholder')
+                                                ]) ?>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <label for="dstkeys">@lang($package . '::messages.dstkeys'):</label><?= ifEditTrans($package . '::messages.dstkeys-placeholder') ?>
+                                                <?=  Form::textarea('dstkeys', Request::old('dstkeys'), [
+                                                        'id' => 'dstkeys', 'class' => "form-control", 'rows' => "4", 'style' => "resize: vertical",
+                                                        'placeholder' => noEditTrans($package . '::messages.dstkeys-placeholder')
+                                                ]) ?>
+                                            </div>
+                                        </div>
+                                        <div style="min-height: 10px"></div>
+                                        <script>
+                                            var currentGroup = '{{$group}}';
+                                            function clearDstKeys(event) {
+                                                event.preventDefault();
+                                                $("#form-keyops").first().find("textarea[name='dstkeys']")[0].value = "";
+                                            }
+                                            function clearSrcKeys(event) {
+                                                event.preventDefault();
+                                                $("#form-keyops").first().find("textarea[name='srckeys']")[0].value = "";
+                                            }
+                                            function postPreviewKeys(event) {
+                                                //event.preventDefault();
+                                                var elem = $("#form-keyops").first();
+                                                elem[0].action = "<?= action($controller . '@postPreviewKeys', $group)?>";
+                                                //elem[0].submit();
+                                            }
+                                            function postMoveKeys(event) {
+                                                //event.preventDefault();
+                                                var elem = $("#form-keyops").first();
+                                                elem[0].action = "<?= action($controller . '@postMoveKeys', $group)?>";
+                                                //elem[0].submit();
+                                            }
+                                            function postCopyKeys(event) {
+                                                //event.preventDefault();
+                                                var elem = $("#form-keyops").first();
+                                                elem[0].action = "<?= action($controller . '@postCopyKeys', $group)?>";
+                                                //elem[0].submit();
+                                            }
+                                            function postDeleteKeys(event) {
+                                                //event.preventDefault();
+                                                var elem = $("#form-keyops").first();
+                                                elem[0].action = "<?= action($controller . '@postDeleteKeys', $group)?>";
+                                                //elem[0].submit();
+                                            }
+                                        </script>
+                                        <div class="row">
+                                            <div class="col-sm-6">
+                                                <?= ifEditTrans($package . '::messages.clearsrckeys') ?>
+                                                <button class="btn btn-sm btn-primary"
+                                                        onclick="clearSrcKeys(event)"><?= noEditTrans($package . '::messages.clearsrckeys') ?></button>
+                                                <div class="input-group" style="float:right; display:inline">
+                                                    <?= formSubmit(trans($package . '::messages.preview'), [
+                                                            'class' => "btn btn-sm btn-primary",
+                                                            'onclick' => 'postPreviewKeys(event)'
+                                                    ]) ?>
+                                                    <?= ifEditTrans($package . '::messages.copykeys'); ?>
+                                                    <button class="btn btn-sm btn-primary" onclick="postCopyKeys(event)">
+                                                        <?= noEditTrans($package . '::messages.copykeys') ?>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <?= ifEditTrans($package . '::messages.cleardstkeys') ?>
+                                                <button class="btn btn-sm btn-primary"
+                                                        onclick="clearDstKeys(event)"><?= noEditTrans($package . '::messages.cleardstkeys') ?></button>
+                                                <div class="input-group" style="float:right; display:inline">
+                                                    <?= ifEditTrans($package . '::messages.movekeys') ?>
+                                                    <button class="btn btn-sm btn-warning" onclick="postMoveKeys(event)">
+                                                        <?= noEditTrans($package . '::messages.movekeys') ?>
+                                                    </button>
+                                                    <?= ifEditTrans($package . '::messages.deletekeys') ?>
+                                                    <button class="btn btn-sm btn-danger" onclick="postDeleteKeys(event)">
+                                                        <?= noEditTrans($package . '::messages.deletekeys') ?>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <?=  Form::close() ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endif ?>
+                        @if($yandex_key)
+                            <div class="panel panel-default">
+                                <div class="panel-heading" role="tab" id="headingThree">
+                                    <?= ifEditTrans($package . '::messages.translation-ops') ?>
+                                    <h4 class="panel-title">
+                                        <a class="collapsed" data-toggle="collapse" data-parent="#accordion"
+                                                href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                            <?= noEditTrans($package . '::messages.translation-ops') ?>
+                                        </a>
+                                    </h4>
+                                </div>
+                                <div id="collapseThree" class="panel-collapse collapse" role="tabpanel"
+                                        aria-labelledby="headingThree">
+                                    <div class="panel-body">
+                                        <div class="row">
+                                            <div class="col-sm-6">
                                         <textarea id="primary-text" class="form-control" rows="3" name="keys"
                                                 style="resize: vertical;" placeholder="<?= $primaryLocale ?>"></textarea>
-                                            <div style="min-height: 10px"></div>
+                                                <div style="min-height: 10px"></div>
                                         <span style="float:right; display:inline">
                                             <button id="translate-primary-current" type="button" class="btn btn-sm btn-primary">
                                                 <?= $primaryLocale ?>&nbsp;<i class="glyphicon glyphicon-share-alt"></i>&nbsp;<?= $translatingLocale ?>
                                             </button>
                                         </span>
-                                        </div>
-                                        <div class="col-sm-6">
+                                            </div>
+                                            <div class="col-sm-6">
                                         <textarea id="current-text" class="form-control" rows="3" name="keys"
                                                 style="resize: vertical;" placeholder="<?= $translatingLocale ?>"></textarea>
-                                            <div style="min-height: 10px"></div>
-                                            <button id="translate-current-primary" type="button" class="btn btn-sm btn-primary">
-                                                <?= $translatingLocale ?>&nbsp;<i class="glyphicon glyphicon-share-alt"></i>&nbsp;<?= $primaryLocale ?>
-                                            </button>
+                                                <div style="min-height: 10px"></div>
+                                                <button id="translate-current-primary" type="button" class="btn btn-sm btn-primary">
+                                                    <?= $translatingLocale ?>&nbsp;<i class="glyphicon glyphicon-share-alt"></i>&nbsp;<?= $primaryLocale ?>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    @endif
+                        @endif
                 </div>
             </div>
         </div>
@@ -717,32 +717,48 @@
                             </button>
                         </span>
                     </div>
-                    <div class="input-group input-group-sm">
+                    <div class="input-group input-group-sm translation-filter">
                         {{--<label>@lang($package . '::messages.show'):&nbsp;</label>--}}
                         <label class="radio-inline">
                             <input id="show-all" type="radio" name="show-options" value="show-all"> @lang($package . '::messages.show-all')
                         </label>
+                    </div>
+                    <div class="input-group input-group-sm translation-filter">
                         <label class="radio-inline">
                             <input id="show-new" type="radio" name="show-options" value="show-new"> @lang($package . '::messages.show-new')
                         </label>
+                    </div>
+                    <div class="input-group input-group-sm translation-filter">
                         <label class="radio-inline">
                             <input id="show-need-attention" type="radio" name="show-options" value="show-need-attention"> @lang($package . '::messages.show-need-attention')
                         </label>
+                    </div>
+                    <div class="input-group input-group-sm translation-filter">
                         <label class="radio-inline">
                             <input id="show-nonempty" type="radio" name="show-options" value="show-nonempty"> @lang($package . '::messages.show-nonempty')
                         </label>
+                    </div>
+                    <div class="input-group input-group-sm translation-filter">
                         <label class="radio-inline">
                             <input id="show-used" type="radio" name="show-options" value="show-used"> @lang($package . '::messages.show-used')
                         </label>
+                    </div>
+                    <div class="input-group input-group-sm translation-filter">
                         <label class="radio-inline">
                             <input id="show-unpublished" type="radio" name="show-options" value="show-unpublished"> @lang($package . '::messages.show-unpublished')
                         </label>
+                    </div>
+                    <div class="input-group input-group-sm translation-filter">
                         <label class="radio-inline">
                             <input id="show-empty" type="radio" name="show-options" value="show-empty"> @lang($package . '::messages.show-empty')
                         </label>
+                    </div>
+                    <div class="input-group input-group-sm translation-filter">
                         <label class="radio-inline">
                             <input id="show-changed" type="radio" name="show-options" value="show-changed"> @lang($package . '::messages.show-changed')
                         </label>
+                    </div>
+                    <div class="input-group input-group-sm translation-filter">
                         <label class="radio-inline">
                             <input id="show-deleted" type="radio" name="show-options" value="show-deleted"> @lang($package . '::messages.show-deleted')
                         </label>
@@ -806,8 +822,7 @@
                                 <?= ifEditTrans($package . '::messages.auto-prop-case-disabled') ?>
                                 <a class="btn btn-xs btn-primary auto-prop-case" role="button" data-trans="<?=$col?>" data-locale="<?=$locale?>" <?= $isLocaleEnabled ? '' : 'disabled' ?>
                                 data-disable-with="<?=noEditTrans($package . '::messages.auto-prop-case-disabled')?>"
-                                        href="#">Ab Ab
-                                    <i class="glyphicon glyphicon-share-alt"></i> Ab ab
+                                        href="#">Ab Ab <i class="glyphicon glyphicon-share-alt"></i> Ab ab
                                 </a>
                                 <!-- split button -->
                                 <!--
@@ -839,8 +854,7 @@
                                 <?= ifEditTrans($package . '::messages.auto-prop-case-disabled') ?>
                                 <a class="btn btn-xs btn-primary auto-prop-case" role="button" data-trans="<?=$col?>" data-locale="<?=$locale?>"
                                         data-disable-with="<?=noEditTrans($package . '::messages.auto-prop-case-disabled')?>"
-                                        href="#">Ab Ab
-                                    <i class="glyphicon glyphicon-share-alt"></i> Ab ab
+                                        href="#">Ab Ab <i class="glyphicon glyphicon-share-alt"></i> Ab ab
                                 </a>
                             </th>
                             <?php endif;
@@ -1001,7 +1015,7 @@
     <script src="<?=  $public_prefix . $package ?>/js/xregexp-all.js"></script>
     <script src="<?=  $public_prefix . $package ?>/js/translations_page.js"></script>
 
-<?php
+    <?php
     $userLocaleList = [];
     foreach ($userList as $user) {
         if ($user->locales) {
@@ -1017,7 +1031,7 @@
     }
 
     natsort($userLocaleList);
-?>
+    ?>
 
     <script>
         var TRANS_FILTERS = ({
@@ -1026,11 +1040,13 @@
         });
 
         var USER_LOCALES = [
-<?php $addComma = false; ?>
-<?php foreach ($userLocaleList as $locale): ?>
-<?php if ($addComma) echo ","; else $addComma = true; ?> { value: '<?= $locale ?>', text: '<?= $locale ?>' }
-<?php endforeach; ?>
-                ];
+                <?php $addComma = false; ?>
+                <?php foreach ($userLocaleList as $locale): ?>
+                <?php if ($addComma) echo ","; else $addComma = true; ?> {
+                value: '<?= $locale ?>', text: '<?= $locale ?>'
+            }
+            <?php endforeach; ?>
+        ];
     </script>
 @stop
 

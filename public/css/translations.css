@@ -252,3 +252,45 @@ input.bg-warning {
 input.bg-danger {
     background-color: #f2dede;
 }
+
+input.bg-highlight {
+    background-color: #d9edf7;
+}
+.has-highlight .help-block,
+.has-highlight .control-label,
+.has-highlight .radio,
+.has-highlight .checkbox,
+.has-highlight .radio-inline,
+.has-highlight .checkbox-inline,
+.has-highlight.radio label,
+.has-highlight.checkbox label,
+.has-highlight.radio-inline label,
+.has-highlight.checkbox-inline label {
+    color: #337ab7;
+}
+.has-highlight .form-control {
+    border-color: #337ab7;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+}
+.has-highlight .form-control:focus {
+    border-color: #286090;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 6px #337ab7;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 6px #337ab7;
+}
+.has-highlight .input-group-addon {
+    color: #337ab7;
+    background-color: #d9edf7;
+    border-color: #337ab7;
+}
+.has-highlight .form-control-feedback {
+    color: #337ab7;
+}
+
+.translation-filter.has-feedback label,
+.translation-filter.has-highlight label,
+.translation-filter.has-error label,
+.translation-filter.has-success label,
+.translation-filter.has-warning label {
+    font-weight: bold;
+}

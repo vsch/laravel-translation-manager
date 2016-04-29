@@ -173,30 +173,51 @@ jQuery(document).ready(function ($) {
             matchedText = $('#show-matching-text'),
             matched, totalKeys, filteredKeys, matchedKeys, keyFilterSpan, pattern = '', elemName;
 
-        if (elem !== null) {
-            updateTranslationFilter = $(elem).prop('id');
+        elem = $(elem);
+        if (elem.length > 0) {
+            updateTranslationFilter = elem.prop('id');
         }
 
         totalKeys = table.find('tr').length;
         updateTranslationList(table);
         matchedKeys = filteredKeys = totalKeys - table.find('tr.hidden').length;
 
+        if (elem.length > 0) {
+            var elemDiv = elem.parent().parent();
+
+            $('.translation-filter').removeClass('has-success has-error has-feedback has-highlight');
+            if (updateTranslationFilter != 'show-all') {
+                if (filteredKeys > 0) {
+                    // turn the filter green
+                    if (filteredKeys == totalKeys) {
+                        elemDiv.addClass('has-feedback');
+                    } else {
+                        elemDiv.addClass('has-highlight');
+                    }
+                } else {
+                    // turn the filter red
+                    elemDiv.addClass('has-error');
+                }
+            }
+        }
+
         if (matchedText.length > 0) {
             pattern = matchedText[0].value.trim();
             matched = new RegExp(pattern, 'i');
             showMatched(table, matched);
             matchedKeys = totalKeys - table.find('tr.hidden').length;
-            if (pattern.length > 0) {
-                if (matchedKeys > 0) {
-                    matchedText.parent('div').removeClass('has-error has-success').addClass('has-success');
-                    matchedText.removeClass('bg-danger bg-success').addClass('bg-success');
-                } else {
-                    matchedText.parent('div').removeClass('has-error has-success').addClass('has-error');
-                    matchedText.removeClass('bg-danger bg-success').addClass('bg-danger');
+            var matchedTextParent = matchedText.parent('div');
+
+            matchedTextParent.removeClass('has-error has-success has-feedback has-highlight');
+            matchedText.removeClass('bg-danger bg-success bg-highlight');
+            if (pattern.length > 0 && filteredKeys > 0) {
+                if (matchedKeys == 0) {
+                    matchedTextParent.addClass('has-error');
+                    matchedText.addClass('bg-danger');
+                } else if (matchedKeys < filteredKeys) {
+                    matchedTextParent.addClass('has-highlight');
+                    matchedText.addClass('bg-highlight');
                 }
-            } else {
-                matchedText.parent('div').removeClass('has-error has-success');
-                matchedText.removeClass('bg-danger bg-success');
             }
         }
 
