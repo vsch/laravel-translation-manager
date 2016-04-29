@@ -25,7 +25,7 @@ system with a ton of practical functionality. [Features]
 
 ### Version 2.1.0 released
 
-Now using Laravel 5 authorization provisions to handle all LTM related authorizations.
+Now using Laravel 5 authorization API to handle all LTM related authorizations.
 
 **If you are upgrading from version 2.0.x of LTM** you need to: 
  
