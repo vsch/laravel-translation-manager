@@ -1,5 +1,5 @@
 
-# Laravel 5.1 Translation Manager
+# Laravel 5.2 Translation Manager
 
 This package is used to comfortably manage, view, edit and translate Laravel language files with
 translation assistance through the Yandex Translation API. It augments the Laravel Translator
