@@ -23,9 +23,9 @@ system with a ton of practical functionality. [Features]
 > with others please do so. It will be greatly appreciated.
 
 
-### Version 2.1 released
+### Version 2.1.0 released
 
-Now using Laravel 5 authorizations to handle all LTM related authorizations.
+Now using Laravel 5 authorization provisions to handle all LTM related authorizations.
 
 **If you are upgrading from version 2.0.x of LTM** you need to: 
  
@@ -36,15 +36,14 @@ Now using Laravel 5 authorizations to handle all LTM related authorizations.
 
 ### Per Locale User Access Control
 
-Implementation changed from the last release because using a closure in config file is not
+Implementation changed from the last release since using a closure in config file is not
 supported by the framework. Now using abilities to do the same. See
 [Enabling per locale user access control](../../wiki/Configuration#enabling-per-locale-user-access-control)
     
-Per locale user access control was added to version 2.0.41 but re-implemented not to use a
-closure in the config file in 2.1.0. By default it is turned off and any user who does not have
-`ltm-admin-translations` ability can modify any locale. With `user_locales_enabled` option
-enabled you can control which locales a user is allowed to modify. Default for all users is all
-locales, unless you specifically change that through the web UI, see
+By default this option is turned off and any user who does not have `ltm-admin-translations`
+ability can modify any locale. With `user_locales_enabled` option enabled you can control which
+locales a user is allowed to modify. Default for all users is all locales, unless you
+specifically change that through the web UI, see
 [User Admin](../../wiki/Web-Interface#user-admin) or by populating the `ltm_user_locales` table
 appropriately.
 
