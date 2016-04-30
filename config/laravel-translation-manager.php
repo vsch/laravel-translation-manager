@@ -63,6 +63,33 @@ return array(
      */
     'user_locales_enabled' => false,
     /**
+     * Enable markdown translation to html on the fly
+     *
+     * With this option set to a suffix string, all keys that end in this suffix, will
+     * have their text converted to HTML via facade \Markdown::convertToHtml(translationText)
+     * graham-cambell/Laravel-Markdown package serves this purpose well.
+     *
+     * The resulting HTML text will be saved in a key, with the suffix removed.
+     *
+     * This conversion is ONLY done when the translation for the markdown key is modified
+     * via the web UI. Keys already in the translation files or in the database are assumed to
+     * be properly converted.
+     *
+     * Set this to a reasonable suffix that will not conflict with normal keys in your application
+     * and with laravel translation key convention.
+     *
+     * Do not use '.md' or anything with a period. It denotes a nested array key for translations.
+     * Do not use multi-byte characters in the suffix. non-multi-byte string operations are used in manipulating the key.
+     * Do not use keys that will cause issues in jQuery because keys are used to create jQueries with keys assumed to be valid element id's
+     * Do not use colons since these are used to delimit package translation groups
+     * You get the picture. Try a suffix out and if it works for you great. If not try another one
+     *
+     * Some options that work are: '-md', '--md', '-md-'
+     *
+     * @type string
+     */
+    'markdown_key_suffix' => '',
+    /**
      * No Longer used. Must implement 'ltm-editors-list' ability that will return true
      * if the user can manage per locale access with an array of objects with: id, email,
      * and name fields that correspond to the list of users to be displayed in the web UI

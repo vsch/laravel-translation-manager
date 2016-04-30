@@ -273,7 +273,7 @@ $(document).ready(function () {
         '&nbsp;&nbsp;<button id="x-translate" type="button" class="editable-translate btn btn-sm btn-warning hidden"><i class="glyphicon glyphicon-share-alt"></i></button>' +
         '<button id="x-nodash" type="button" class="editable-translate btn btn-sm btn-warning hidden">❉ <i class="glyphicon glyphicon-share-alt"></i> Ab</button>' +
         '&nbsp;&nbsp;<button id="x-plurals" type="button" class="editable-translate btn btn-sm btn-warning hidden">|</i></button>' +
-        '&nbsp;&nbsp;<button id="x-clean-markdown" type="button" class="editable-translate btn btn-sm btn-warning hidden"><i class="glyphicon glyphicon-flash"></i></button>' +
+        '<button id="x-clean-markdown" type="button" class="editable-translate btn btn-sm btn-warning hidden"><i class="glyphicon glyphicon-flash"></i></button>' +
         '&nbsp;&nbsp;<button id="x-capitalize" type="button" class="editable-translate btn btn-sm btn-info">ab <i class="glyphicon glyphicon-share-alt"></i> Ab</button>' +
         '<button id="x-lowercase" type="button" class="editable-translate btn btn-sm btn-info">AB <i class="glyphicon glyphicon-share-alt"></i> ab</button>' +
         '<button id="x-propcap" type="button" class="editable-translate btn btn-sm btn-info">A B <i class="glyphicon glyphicon-share-alt"></i> A b</button>' +

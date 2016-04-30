@@ -2,6 +2,13 @@
 
 The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+ 
 
+#### 2.1.1
+
+- Fix: #30, mismatch in class names
+- Add: config option `markdown_key_suffix` and code to handle markdown to html conversion of
+  translations for keys ending in this suffix. Converted HTML is stored in a key with the suffix
+  removed. For now this is an experimental feature. 
+
 #### 2.1.0
 
 - Change: upgrade to Laravel 5.2 (.31 to be exact) 
