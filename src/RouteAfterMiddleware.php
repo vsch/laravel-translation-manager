@@ -4,7 +4,7 @@ namespace Vsch\TranslationManager;
 
 use Closure;
 
-class RouteAfterMiddleWare
+class RouteAfterMiddleware
 {
     /**
      * Handle an incoming request.
