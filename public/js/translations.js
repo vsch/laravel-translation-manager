@@ -455,6 +455,20 @@ $(document).ready(function () {
                 openedValue = dstElem.val().trim();
                 dstElem.val(openedValue);
 
+                dstElem.off('paste');
+                dstElem.on('paste', function (e) {
+                    var pastedText = undefined;
+                    if (window.clipboardData && window.clipboardData.getData) { // IE
+                        pastedText = window.clipboardData.getData('Text');
+                    } else {
+                        if (e.clipboardData && e.clipboardData.getData) {
+                            pastedText = e.clipboardData.getData('text/plain');
+                        }
+                    }
+                    alert(pastedText); // Process and handle text...
+                    return false; // Prevent the default handler from running.
+                });
+
                 if (elemRow.length) {
                     $(".editing").removeClass('editing');
                     elemRow.addClass('editing');

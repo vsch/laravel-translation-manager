@@ -323,8 +323,10 @@ class TranslationFileRewriter
     }
 
     protected
-    function wrapQuotes($str, $options = null)
+    function wrapQuotes($value, $options = null)
     {
+        // replace Unicode non-break space with a regular space
+        $str = str_replace("\xc2\xa0", ' ', $value);
         if (($options & self::OPT_USE_HEREDOC) && strpos($str, "\n") !== false)
         {
             $text = "<<<'TEXT'\n$str\nTEXT\n";

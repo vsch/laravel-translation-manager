@@ -1009,6 +1009,7 @@
         var URL_TRANSLATOR_ALL = '<?= action($controller . '@getIndex') ?>';
         var URL_TRANSLATOR_FILTERS = '<?= action($controller . '@getTransFilters') ?>';
         var CURRENT_GROUP = '<?= $group ?>';
+        var MARKDOWN_KEY_SUFFIX = '<?= $markdownKeySuffix ?>';
     </script>
 
     <!-- Moved out to allow auto-format in PhpStorm w/o screwing up HTML format -->

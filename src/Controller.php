@@ -416,6 +416,7 @@ SQL
             ->with('connection_list', $this->connectionList)
             ->with('transFilters', $this->transFilters)
             ->with('userLocales', $this->userLocales)
+            ->with('markdownKeySuffix', $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX))
             ->with('userList', $userList)
             ->with('connection_name', ($this->manager->isDefaultTranslationConnection($this->getConnectionName()) ? '' : $this->getConnectionName()));
     }
@@ -566,13 +567,39 @@ SQL
                     'group' => $group,
                     'key' => $key,
                 ));
-                // strip off trailing spaces and eol's and &nbsps; that seem to be added when multiple spaces are entered in the x-editable textarea
-                $value = trim(str_replace("\xc2\xa0", ' ', $value));
+
+                $markdownSuffix = $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX);
+                $isMarkdownKey = $markdownSuffix != '' && ends_with($key, $markdownSuffix) && $key !== $markdownSuffix;
+
+                if (!$isMarkdownKey) {
+                    // strip off trailing spaces and eol's and &nbsps; that seem to be added when multiple spaces are entered in the x-editable textarea
+                    $value = trim(str_replace("\xc2\xa0", ' ', $value));
+                }
+
                 $value = $value !== '' ? $value : null;
 
                 $translation->value = $value;
                 $translation->status = (($translation->isDirty() && $value != $translation->saved_value) ? Translation::STATUS_CHANGED : Translation::STATUS_SAVED);
                 $translation->save();
+
+                if ($isMarkdownKey) {
+                    $markdownKey = $key;
+                    $markdownValue = $value;
+
+                    $key = substr($markdownKey, 0, -strlen($markdownSuffix));
+
+                    $translation = $this->manager->firstOrNewTranslation(array(
+                        'locale' => $locale,
+                        'group' => $group,
+                        'key' => $key,
+                    ));
+
+                    $value = $markdownValue !== null ? \Markdown::convertToHtml(str_replace("\xc2\xa0", ' ', $markdownValue)) : null;
+
+                    $translation->value = $value;
+                    $translation->status = (($translation->isDirty() && $value != $translation->saved_value) ? Translation::STATUS_CHANGED : Translation::STATUS_SAVED);
+                    $translation->save();
+                }
             }
         }
         return array('status' => 'ok');

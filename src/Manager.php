@@ -39,6 +39,7 @@ class Manager
     const LOG_KEY_USAGE_INFO_KEY = 'log_key_usage_info';
     const ADDITIONAL_LOCALES_KEY = 'locales';
     const SHOW_LOCALES_KEY = 'show_locales';
+    const MARKDOWN_KEY_SUFFIX = 'markdown_key_suffix';
 
     const ABILITY_ADMIN_TRANSLATIONS = 'ltm-admin-translations';
     const ABILITY_BYPASS_LOTTERY = 'ltm-bypass-lottery';
