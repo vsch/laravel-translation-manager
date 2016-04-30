@@ -492,13 +492,13 @@ $(document).ready(function () {
                                             // we check if next line is blank, we keep eol
                                             if (i + 1 >= iMax || lines[i + 1].trim().length == 0) {
                                                 line += "\n";
-                                            } else {
-                                                if (fixedText.length > 0) {
-                                                    var lastChar = fixedText.charAt(fixedText.length - 1);
-                                                    if (lastChar != '\n' && lastChar != ' ' && line.charAt(0) != ' ') {
-                                                        // add a space, we will splice to previous line
-                                                        fixedText += ' ';
-                                                    }
+                                            }
+
+                                            if (fixedText.length > 0) {
+                                                var lastChar = fixedText.charAt(fixedText.length - 1);
+                                                if (lastChar != '\n' && lastChar != ' ' && line.charAt(0) != ' ') {
+                                                    // add a space, we will splice to previous line
+                                                    fixedText += ' ';
                                                 }
                                             }
                                         }
