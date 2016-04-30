@@ -11,6 +11,7 @@ var CURRENT_LOCALE;
 var TRANSLATING_LOCALE;
 var xtranslateText;
 var xtranslateService;
+var MARKDOWN_KEY_SUFFIX;
 
 function swapInClass(elem, toAdd, toRemove) {
     'use strict';
@@ -272,6 +273,7 @@ $(document).ready(function () {
         '&nbsp;&nbsp;<button id="x-translate" type="button" class="editable-translate btn btn-sm btn-warning hidden"><i class="glyphicon glyphicon-share-alt"></i></button>' +
         '<button id="x-nodash" type="button" class="editable-translate btn btn-sm btn-warning hidden">❉ <i class="glyphicon glyphicon-share-alt"></i> Ab</button>' +
         '&nbsp;&nbsp;<button id="x-plurals" type="button" class="editable-translate btn btn-sm btn-warning hidden">|</i></button>' +
+        '&nbsp;&nbsp;<button id="x-clean-markdown" type="button" class="editable-translate btn btn-sm btn-warning hidden"><i class="glyphicon glyphicon-flash"></i></button>' +
         '&nbsp;&nbsp;<button id="x-capitalize" type="button" class="editable-translate btn btn-sm btn-info">ab <i class="glyphicon glyphicon-share-alt"></i> Ab</button>' +
         '<button id="x-lowercase" type="button" class="editable-translate btn btn-sm btn-info">AB <i class="glyphicon glyphicon-share-alt"></i> ab</button>' +
         '<button id="x-propcap" type="button" class="editable-translate btn btn-sm btn-info">A B <i class="glyphicon glyphicon-share-alt"></i> A b</button>' +
@@ -316,11 +318,12 @@ $(document).ready(function () {
                 btnCopy: divElem.find('#x-copy').first(),
                 btnPaste: divElem.find('#x-paste').first(),
                 btnResetOpen: divElem.find('#x-reset-open').first(),
-                btnResetSaved: divElem.find('#x-reset-saved').first()
+                btnResetSaved: divElem.find('#x-reset-saved').first(),
+                btnCleanMarkdown: divElem.find('#x-clean-markdown').first()
             };
         }
         return null;
-    }
+    };
 
     var srcText, srcLoc, dstLoc, dstElem, elemRow, inEditable = 0,
         xtranslate = function (srcLoc, srcText, dstLoc, dstElem, errElem) {
@@ -452,22 +455,112 @@ $(document).ready(function () {
                 var xElem = $.fn.editableform.formElements(this);
 
                 dstElem = xElem.elemInput;
-                openedValue = dstElem.val().trim();
-                dstElem.val(openedValue);
+                openedValue = dstElem[0].value.trim();
+                dstElem[0].value = openedValue;
 
-                dstElem.off('paste');
-                dstElem.on('paste', function (e) {
-                    var pastedText = undefined;
-                    if (window.clipboardData && window.clipboardData.getData) { // IE
-                        pastedText = window.clipboardData.getData('Text');
-                    } else {
-                        if (e.clipboardData && e.clipboardData.getData) {
-                            pastedText = e.clipboardData.getData('text/plain');
+                if (MARKDOWN_KEY_SUFFIX !== '' && key.length > MARKDOWN_KEY_SUFFIX.length && key.substring(key.length - MARKDOWN_KEY_SUFFIX.length, key.length) == MARKDOWN_KEY_SUFFIX) {
+                    if (xElem.btnCleanMarkdown.length) {
+                        xElem.btnCleanMarkdown.removeClass('hidden');
+                        xElem.btnCleanMarkdown.on('click', xedit(dstElem, function (params) {
+                                // clean up wrapped lines which are not markdown hard breaks or blank lines
+                                // TODO: clean up this shit-ball. Check by lines not characrters
+                                // split into lines and step through
+                                var text = this;
+                                var lines = text.split('\n');
+                                var iMax = lines.length;
+                                var fixedText = "";
+                                var lastWasBlank = true;
+                                for (var i = 0; i < iMax; i++) {
+                                    var line = lines[i];
+                                    var isBlankLine = false;
+
+                                    if (line.trim().length == 0) {
+                                        if (!lastWasBlank) {
+                                            line = "\n";
+                                            isBlankLine = true;
+                                        } else {
+                                            line = "";
+                                            isBlankLine = lastWasBlank;
+                                        }
+                                    } else {
+                                        isBlankLine = false;
+
+                                        if (line.length > 2 && line.substring(line.length - 2, line.length) == "  ") {
+                                            // we keep the spaces and add an end of line
+                                            line += "\n";
+                                        } else {
+                                            // we check if next line is blank, we keep eol
+                                            if (i + 1 >= iMax || lines[i + 1].trim().length == 0) {
+                                                line += "\n";
+                                            } else {
+                                                if (fixedText.length > 0) {
+                                                    var lastChar = fixedText.charAt(fixedText.length - 1);
+                                                    if (lastChar != '\n' && lastChar != ' ' && line.charAt(0) != ' ') {
+                                                        // add a space, we will splice to previous line
+                                                        fixedText += ' ';
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    fixedText += line;
+                                    lastWasBlank = isBlankLine;
+                                }
+                                return fixedText;
+                            }
+                        ));
+                    }
+
+                    // // this is needed to prevent doubling funky stuff happening with markdown text and blank lines
+                    // dstElem.off('paste');
+                    // dstElem.on('paste', function (e) {
+                    //     var pastedText = undefined;
+                    //     if (window.clipboardData && window.clipboardData.getData) { // IE
+                    //         pastedText = window.clipboardData.getData('Text');
+                    //     } else {
+                    //         if (e.originalEvent.clipboardData && e.originalEvent.clipboardData.getData) {
+                    //             pastedText = e.originalEvent.clipboardData.getData('text/plain');
+                    //         }
+                    //     }
+                    //
+                    //     dstElem[0].value = pastedText;
+                    //     return false; // Prevent the default handler from running.
+                    // });
+                } else {
+                    // not markdown
+                    if (xElem.btnPlurals.length) {
+                        if (dstLoc === PRIMARY_LOCALE || YANDEX_TRANSLATOR_KEY !== '') {
+                            xElem.btnPlurals.removeClass('hidden');
+                            xElem.btnPlurals.on('click', xfull(dstElem, function () {
+                                var val = this;
+                                if (val.indexOf('|') === -1) {
+                                    switch (dstLoc) {
+                                        case 'ru' :
+                                            val = this + '|' + this + '|' + this;
+                                            break;
+
+                                        case 'en' :
+                                            if (PRIMARY_LOCALE === 'en') {
+                                                val = value.singularize() + '|' + value.pluralize();
+                                            }
+                                            else {
+                                                val = val.singularize() + '|' + val.pluralize();
+                                            }
+                                            break;
+
+                                        // TODO: add locale tests and code to create plural forms
+                                        default:
+                                            val = this + '|' + this;
+                                            break;
+                                    }
+                                    return val.toLocaleLowerCase();
+                                }
+                                return val;
+                            }));
                         }
                     }
-                    alert(pastedText); // Process and handle text...
-                    return false; // Prevent the default handler from running.
-                });
+                }
 
                 if (elemRow.length) {
                     $(".editing").removeClass('editing');
@@ -521,37 +614,6 @@ $(document).ready(function () {
                     xElem.btnResetSaved.on('click', xfull(dstElem, function () {
                         return savedValue;
                     }));
-                }
-                if (xElem.btnPlurals.length) {
-                    if (dstLoc === PRIMARY_LOCALE || YANDEX_TRANSLATOR_KEY !== '') {
-                        xElem.btnPlurals.removeClass('hidden');
-                        xElem.btnPlurals.on('click', xfull(dstElem, function () {
-                            var val = this;
-                            if (val.indexOf('|') === -1) {
-                                switch (dstLoc) {
-                                    case 'ru' :
-                                        val = this + '|' + this + '|' + this;
-                                        break;
-
-                                    case 'en' :
-                                        if (PRIMARY_LOCALE === 'en') {
-                                            val = value.singularize() + '|' + value.pluralize();
-                                        }
-                                        else {
-                                            val = val.singularize() + '|' + val.pluralize();
-                                        }
-                                        break;
-
-                                    // TODO: add locale tests and code to create plural forms
-                                    default:
-                                        val = this + '|' + this;
-                                        break;
-                                }
-                                return val.toLocaleLowerCase();
-                            }
-                            return val;
-                        }));
-                    }
                 }
             });
         });

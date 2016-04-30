@@ -127,6 +127,7 @@ h6 .editable-click, h6 a.editable-click, h6 a.editable-click:hover {
 textarea.editable-input {
     width: 600px !important;
     display: block !important;
+    white-space: pre-wrap;
 }
 
 .editable-container.editable-inline {
