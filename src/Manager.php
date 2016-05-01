@@ -722,6 +722,10 @@ SQL
         $values = [];
         $statusChangeOnly = [];
         foreach ($translations as $key => $value) {
+            if (is_array($value)) {
+                if ($value) $this->errors[] = "translation value is an array: $db_group.$key locale $locale";
+                continue;
+            }
             $value = (string)$value;
 
             if (array_key_exists($key, $dbTransMap)) {

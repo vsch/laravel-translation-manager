@@ -975,9 +975,11 @@ SQL
     {
         $replace = \Request::get('replace', false);
         $group = \Request::get('group', '*');
+        $this->manager->clearErrors();
         $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : 1)
             , $group === '*' ? null : [$group]);
-        return \Response::json(array('status' => 'ok', 'counter' => $counter));
+        $errors = $this->manager->errors();
+        return \Response::json(array('status' => 'ok', 'counter' => $counter, 'errors' => $errors));
     }
 
     public

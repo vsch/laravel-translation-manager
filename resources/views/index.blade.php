@@ -702,11 +702,7 @@
         </div>
         <div class="row">
             <div class="col-sm-12 ">
-                <div style="min-height: 10px"></div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-sm-12 ">
+                <label for="show-matching-text" id="show-matching-text-label" class="regex-error">&nbsp;</label>
                 <div class="form-inline">
                     <?= ifEditTrans($package . '::messages.show-matching-text') ?>
                     <div class="input-group input-group-sm">

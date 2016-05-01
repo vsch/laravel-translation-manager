@@ -254,6 +254,20 @@ input.bg-danger {
     background-color: #f2dede;
 }
 
+.regex-error {
+    color: #c70155;
+}
+
+#accordion.panel-group {
+    margin-bottom: 2px;
+}
+
+label.regex-error {
+    color: #c70155;
+    margin-top: -30px;
+    /*height: 30px;*/
+}
+
 input.bg-highlight {
     background-color: #d9edf7;
 }

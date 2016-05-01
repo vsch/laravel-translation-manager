@@ -171,6 +171,7 @@ jQuery(document).ready(function ($) {
     function updateMatching(elem) {
         var table = $('#translations').find('tbody').first(),
             matchedText = $('#show-matching-text'),
+            matchedTextLabel = $('#show-matching-text-label'),
             matched, totalKeys, filteredKeys, matchedKeys, keyFilterSpan, pattern = '', elemName;
 
         elem = $(elem);
@@ -203,20 +204,37 @@ jQuery(document).ready(function ($) {
 
         if (matchedText.length > 0) {
             pattern = matchedText[0].value.trim();
-            matched = new RegExp(pattern, 'i');
+            var regexError = false;
+
+            try {
+                matched = new RegExp(pattern, 'i');
+                matchedTextLabel.html("&nbsp;");
+            }
+            catch (e) {
+                matched = new RegExp("");
+                matchedTextLabel.text(e.message);
+                // matchedTextLabel.removeClass('hidden');
+                regexError = true;
+            }
+
             showMatched(table, matched);
             matchedKeys = totalKeys - table.find('tr.hidden').length;
             var matchedTextParent = matchedText.parent('div');
 
             matchedTextParent.removeClass('has-error has-success has-feedback has-highlight');
-            matchedText.removeClass('bg-danger bg-success bg-highlight');
-            if (pattern.length > 0 && filteredKeys > 0) {
-                if (matchedKeys == 0) {
-                    matchedTextParent.addClass('has-error');
-                    matchedText.addClass('bg-danger');
-                } else if (matchedKeys < filteredKeys) {
-                    matchedTextParent.addClass('has-highlight');
-                    matchedText.addClass('bg-highlight');
+            matchedText.removeClass('bg-danger bg-success bg-highlight regex-error');
+            if (regexError) {
+                matchedTextParent.addClass('has-error');
+                matchedText.addClass('regex-error');
+            } else {
+                if (pattern.length > 0 && filteredKeys > 0) {
+                    if (matchedKeys == 0) {
+                        matchedTextParent.addClass('has-error');
+                        matchedText.addClass('bg-danger');
+                    } else if (matchedKeys < filteredKeys) {
+                        matchedTextParent.addClass('has-highlight');
+                        matchedText.addClass('bg-highlight');
+                    }
                 }
             }
         }
