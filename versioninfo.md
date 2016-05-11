@@ -2,6 +2,13 @@
 
 The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+ 
 
+#### 2.1.2
+
+- Fix: #32, `user_list_connection` in `db_connections` configuration was ignored instead of being
+  used to retrieve the user list for the given connection.
+- Fix: change default config sample from `caouecs/laravel4-lang` to `caouecs/laravel-lang` as
+  needed by this package for Laravel 5.
+
 #### 2.1.1
 
 - Fix: #30, mismatch in class names

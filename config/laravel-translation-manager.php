@@ -360,9 +360,9 @@ return array(
          * package, then it will be expected to be in the vendor directory. If it is not then no language files will be
          * loaded for it. Therefore only include in vendor section if it is not actually located in workbench.
          */
-        'caouecs/laravel4-lang' => [
+        'caouecs/laravel-lang' => [
             '__merge' => ['vendor', 'workbench',],
-            'files' => '{locale}/{group}',
+            'files' => 'src/{locale}/{group}',
         ],
         /*
          * This one requires a very different definition. The file names are the locale.php, therefore more guts are

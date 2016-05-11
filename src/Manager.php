@@ -28,7 +28,7 @@ class Manager
     const INDATABASE_PUBLISH_KEY = 'indatabase_publish';
     const DEFAULT_DB_CONNECTION_KEY = 'default_connection';
     const USER_LOCALES_ENABLED = 'user_locales_enabled';
-    //const USER_LIST_PROVIDER_KEY = 'user_list_provider';
+    const USER_LIST_CONNECTION_KEY = 'user_list_connection';
     const DB_CONNECTIONS_KEY = 'db_connections';
     const PERSISTENT_PREFIX_KEY = 'persistent_prefix';
     const EXCLUDE_PAGE_EDIT_GROUPS_KEY = 'exclude_page_edit_groups';
@@ -147,7 +147,7 @@ class Manager
             return '';
         }
 
-        $userListConnection = $this->getConnectionInfo($connection, self::DEFAULT_DB_CONNECTION_KEY, $connection);
+        $userListConnection = $this->getConnectionInfo($connection, self::USER_LIST_CONNECTION_KEY, $connection);
         if (!$userListConnection) $userListConnection = $connection;
         return $userListConnection;
     }
