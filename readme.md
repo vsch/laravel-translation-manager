@@ -7,9 +7,9 @@ system with a ton of practical functionality. [Features]
 
 **Detailed information is now in the [wiki].**
 
-[Installation]  
-[Configuration]  
-[Version Notes]  
+[Installation][]  
+[Configuration][]  
+[Version Notes][]  
 
 > - For Laravel 5.2 use the master branch, or require: `"vsch/laravel-translation-manager":
 >   "~2.1"`
