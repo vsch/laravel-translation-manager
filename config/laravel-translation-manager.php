@@ -240,7 +240,7 @@ return array(
      * used to provide configuration on where the translation files are stored and where to write them out.
      *
      * This configuration provides the difference in layout between Laravel 4 & 5.
-     * It also can be used to inlcude language files from vendor directories without having to export them to the
+     * It also can be used to include language files from vendor directories without having to export them to the
      * standard lang/ directory for those cases where these files are modified directly so that a git commit can
      * be done in-place.
      *
@@ -304,7 +304,7 @@ return array(
      *                  The combined 'root' and 'file' strings are appended, and the resulting path searched with
      *                  {vendor}, {package}, {group}, {locale} being variables that will match any directory at that
      *                  position and the actual directory name will be used as the value for the corresponding variable
-     *                  in derriving the 'db_group' value. The last part of the path is expected to be a variable of the
+     *                  in deriving the 'db_group' value. The last part of the path is expected to be a variable of the
      *                  form {name} and its value will be the name of the file (minus the .php extension). If the last
      *                  element in the path is {group} then it will also contain . separated sub-directories. Any other
      *                  named element will only match files.
