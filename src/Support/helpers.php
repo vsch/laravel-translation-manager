@@ -128,6 +128,7 @@ if (!function_exists('ifEditTrans')) {
      * @param array $parameters
      * @param null  $locale
      * @param null  $useDB
+     * @param null  $noWrap
      *
      * @return mixed
      *
