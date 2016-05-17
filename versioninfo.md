@@ -2,6 +2,10 @@
 
 The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+ 
 
+#### 2.1.3
+
+- Fix: #31, translations:import is not working for windows based paths
+
 #### 2.1.2
 
 - Fix: #32, `user_list_connection` in `db_connections` configuration was ignored instead of being
