@@ -8,6 +8,7 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
   used to retrieve the user list for the given connection.
 - Fix: change default config sample from `caouecs/laravel4-lang` to `caouecs/laravel-lang` as
   needed by this package for Laravel 5.
+- Fix: #33, Laravel 5.2 - "symfony/finder": "2.8.*|3.0.*" dependency mismatch
 
 #### 2.1.1
 
