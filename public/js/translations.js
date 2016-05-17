@@ -458,7 +458,7 @@ $(document).ready(function () {
                 openedValue = dstElem[0].value.trim();
                 dstElem[0].value = openedValue;
 
-                if (MARKDOWN_KEY_SUFFIX !== '' && key.length > MARKDOWN_KEY_SUFFIX.length && key.substring(key.length - MARKDOWN_KEY_SUFFIX.length, key.length) == MARKDOWN_KEY_SUFFIX) {
+                if (MARKDOWN_KEY_SUFFIX !== undefined && MARKDOWN_KEY_SUFFIX !== '' && key.length > MARKDOWN_KEY_SUFFIX.length && key.substring(key.length - MARKDOWN_KEY_SUFFIX.length, key.length) == MARKDOWN_KEY_SUFFIX) {
                     if (xElem.btnCleanMarkdown.length) {
                         xElem.btnCleanMarkdown.removeClass('hidden');
                         xElem.btnCleanMarkdown.on('click', xedit(dstElem, function (params) {
