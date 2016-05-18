@@ -750,6 +750,7 @@ SQL
             }
 
             $translation->is_deleted = 0;
+            $translation->is_auto_added = 0;
             $translation->saved_value = $value;
 
             $newStatus = ($translation->value === $translation->saved_value ? Translation::STATUS_SAVED : ($translation->status === Translation::STATUS_SAVED ? Translation::STATUS_SAVED_CACHED : Translation::STATUS_CHANGED));
@@ -901,11 +902,11 @@ SQL
     public
     function findTranslations($path = null)
     {
-        $path = $path ?: $this->app['path'];
-        $keys = array();
         $functions = array(
             'trans',
             'trans_choice',
+            'noEditTrans',
+            'ifEditTrans',
             'Lang::get',
             'Lang::choice',
             'Lang::trans',
@@ -915,41 +916,95 @@ SQL
         );
         $pattern =                              // See http://regexr.com/392hu
             "(" . implode('|', $functions) . ")" .  // Must start with one of the functions
-            "\(" .                               // Match opening parenthese
-            "[\'\"]" .                           // Match " or '
+            "\\(" .                               // Match opening parentheses
+            "(['\"])" .                           // Match " or '
             "(" .                                // Start a new group to match:
             "[a-zA-Z0-9_-]+" .               // Must start with group
             "([.][^\1)]+)+" .                // Be followed by one or more items/keys
             ")" .                                // Close group
-            "[\'\"]" .                           // Closing quote
-            "[\),]";                            // Close parentheses or new parameter
+            "['\"]" .                           // Closing quote
+            "[\\),]";                            // Close parentheses or new parameter
 
         // Find all PHP + Twig files in the app folder, except for storage
-        $finder = new Finder();
-        $finder->in($path)->exclude('storage')->name('*.php')->name('*.twig')->files();
+        $paths = $path ? [$path] : array_merge([$this->app->basePath() . '/app'], $this->app['config']['view']['paths']);
+        $keys = array();
+        foreach ($paths as $path) {
+            $finder = new Finder();
+            $finder->in($path)->name('*.php')->name('*.twig')->files();
 
-        /** @var \Symfony\Component\Finder\SplFileInfo $file */
-        foreach ($finder as $file) {
-            // Search the current file for the pattern
-            if (preg_match_all("/$pattern/siU", $file->getContents(), $matches)) {
-                // Get all matches
-                foreach ($matches[2] as $key) {
-                    $keys[] = $key;
+            /** @var \Symfony\Component\Finder\SplFileInfo $file */
+            foreach ($finder as $file) {
+                // Search the current file for the pattern
+                $fileContents = $file->getContents();
+                if (preg_match_all("/$pattern/siU", $fileContents, $matches, PREG_PATTERN_ORDER | PREG_OFFSET_CAPTURE)) {
+                    // Get all matches
+                    $fileLines = null;
+                    foreach ($matches[3] as $index => $key) {
+                        $quote = $matches[2][$index][0];
+                        $keyValue = $key[0];
+                        if ($quote == '\'' && !str_contains($keyValue, ["\"", "'", "->", ]) ||
+                            $quote == '"' && !str_contains($keyValue, ["$", "\"", "'", "->", ])
+                        ) {
+                            if ($fileLines == null) {
+                                $fileLines = self::computeFileLines($fileContents);
+                            }
+                            $keys[$keyValue][$file->getPath() . '/' . $file->getFilename()][] = self::offsetLine($fileLines, $key[1]);
+                        }
+                    }
                 }
             }
         }
-        // Remove duplicates
-        $keys = array_unique($keys);
 
         // Add the translations to the database, if not existing.
-        foreach ($keys as $key) {
+        $count = 0;
+        foreach ($keys as $key => $filePathsAndLocation) {
             // Split the group and item
             list($group, $item) = explode('.', $key, 2);
-            $this->missingKey('', $group, $item);
+
+            $translation = $this->missingKey('', $group, $item, null, false, true);
+
+            // create references
+            $paths = '';
+            foreach ($filePathsAndLocation as $filePath => $locations) {
+                $paths .= $filePath . ':' . implode(',', $locations) . "\n";
+            }
+
+            if (!$translation->exists) {
+                // this one is new
+                $translation->is_auto_added = true;
+                $count++;
+            }
+
+            $translation->source = $paths;
+            $translation->save();
         }
 
         // Return the number of found translations
-        return count($keys);
+        return $count;
+    }
+
+    public static
+    function offsetLine($lines, $offset){
+        $iMax = count($lines);
+        for ($i = 0; $i < $iMax; $i++) {
+            if ($lines[$i] > $offset) {
+                return $i + 1;
+            }
+        }
+
+        return $iMax;
+    }
+
+    public static
+    function computeFileLines($fileContents)
+    {
+        $lines = [];
+        if (preg_match_all("/(\\n)/siU", $fileContents, $matches, PREG_PATTERN_ORDER | PREG_OFFSET_CAPTURE)) {
+            foreach ($matches[1] as $index => $key) {
+                $lines[] = $key[1];
+            }
+        }
+        return $lines;
     }
 
     public
@@ -1096,6 +1151,7 @@ SQL
                 if (!$inDatabasePublishing) {
                     $this->translation->where('group', $group)->update(array(
                         'status' => Translation::STATUS_SAVED,
+                        'is_auto_added' => 0,
                         'saved_value' => (new Expression('value'))
                     ));
                 }

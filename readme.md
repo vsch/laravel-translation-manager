@@ -23,9 +23,18 @@ system with a ton of practical functionality. [Features]
 > with others please do so. It will be greatly appreciated.
 
 
-### Version 2.1.0 released
+### Version 2.1.4 released
 
 Now using Laravel 5 authorization API to handle all LTM related authorizations.
+
+Find Translations now update source references for translation keys and add new keys with
+cleanup of dynamic keys. Need to publish and run migrations for this update
+[Installation: Publishing And Running Migrations]
+
+Now you can view source file and line number references for translations. See
+[Web Interface: Source References]
+
+![Screen Shot Show Source Refs](../../wiki/images/ScreenShot_ShowSourceRefs.png) 
 
 **If you are upgrading from version 2.0.x of LTM** you need to: 
  
@@ -70,3 +79,5 @@ appropriately.
 [Configuration]: ../../wiki/Configuration
 [Version Notes]: versioninfo.md
 [Removing dependency on UserPrivilegeMapper from facade alias array]: ../../wiki/Installation#removing-dependency-on-userprivilegemapper-from-facade-alias-array
+[Installation: Publishing And Running Migrations]: ../../wiki/Installation#publishing-and-running-migrations
+[Web Interface: Source References]: ../../wiki/Web-Interface#source-references

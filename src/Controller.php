@@ -184,7 +184,21 @@ class Controller extends BaseController
         $displayWhere = $this->displayLocales ? ' AND locale IN (\'' . implode("','", explode(',', $this->displayLocales)) . "')" : '';
         $ltm_translations = $this->manager->getTranslationsTableName();
         $allTranslations = $this->getTranslation()->hydrateRaw($sql = <<<SQL
-SELECT * FROM $ltm_translations WHERE `group` = ? $displayWhere
+SELECT  
+    ltm.id,
+    ltm.status,
+    ltm.locale,
+    ltm.`group`,
+    ltm.`key`,
+    ltm.value,
+    ltm.created_at,
+    ltm.updated_at,
+    ltm.saved_value,
+    ltm.is_deleted,
+    ltm.was_used,
+    ltm.source <> '' has_source,
+    ltm.is_auto_added
+FROM $ltm_translations ltm WHERE `group` = ? $displayWhere
 UNION ALL
 SELECT DISTINCT
     NULL id,
@@ -195,10 +209,11 @@ SELECT DISTINCT
     NULL value,
     NULL created_at,
     NULL updated_at,
-    NULL source,
     NULL saved_value,
     NULL is_deleted,
-    NULL was_used
+    NULL was_used,
+    NULL has_source,
+    NULL is_auto_added
 FROM
 (SELECT * FROM (SELECT DISTINCT locale FROM $ltm_translations WHERE 1=1 $displayWhere) lcs
     CROSS JOIN (SELECT DISTINCT `group`, `key` FROM $ltm_translations WHERE `group` = ? $displayWhere) grp) m
@@ -620,6 +635,32 @@ SQL
             }
         }
         return array('status' => 'ok');
+    }
+
+    public
+    function postShowSource($group, $key)
+    {
+        $key = decodeKey($key);
+        $ltm_translations = $this->manager->getTranslationsTableName();
+        $results = '';
+        if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
+            $result = $this->getConnection()->select(<<<SQL
+SELECT source FROM $ltm_translations WHERE `group` = ? AND `key` = ?
+SQL
+                , [$group, $key]);
+
+            foreach ($result as $item) {
+                $results .= $item->source;
+            }
+        }
+
+        foreach (explode("\n", $results) as $ref) {
+            if ($ref != '') {
+                $refs[] = $ref;
+            }
+        }
+        sort($refs);
+        return array('status' => 'ok', 'result' => $refs, 'key_name' => "$group.$key");
     }
 
     public

@@ -2,6 +2,14 @@
 
 The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+ 
 
+#### 2.1.4
+
+- Fix: #22, find function isn't supported in laravel 5
+- Add: show references for keys that have source reference information. Need to run `Add
+  References` to update source references and add new groups/keys from source files and views.
+  Currently app/ and all view paths are checked. Command line can give specific path to search.
+  need to run migrations for this update: [Installation: Publishing And Running Migrations]
+
 #### 2.1.3
 
 - Fix: #31, translations:import is not working for windows based paths
@@ -226,3 +234,5 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
   add locales by adding translations for them in translation manager without having to create 
   the directories with a single group file and a single translation key to get locales added to 
   your translations. 
+
+[Installation: Publishing And Running Migrations]: ../../wiki/Installation#publishing-and-running-migrations

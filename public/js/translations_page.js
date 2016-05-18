@@ -558,6 +558,16 @@ jQuery(document).ready(function ($) {
         });
     });
 
+    $('a.show-source-refs').on('ajax:success', function (e, data) {
+        var elemModal = $('#sourceRefsModal').first();
+        var elemHeader = elemModal.find('#key-name').first();
+        elemHeader.text(data.key_name);
+        var elemResults = elemModal.find('.results').first();
+        var result = data.result.join("<br>");
+        elemResults.html(result);
+        elemModal.modal('show');
+    });
+
     var elemAutoPropCase = $('.btn.auto-prop-case');
     elemAutoPropCase.each(function () {
         var colNum = $(this).data('trans');
