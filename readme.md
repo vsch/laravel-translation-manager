@@ -57,7 +57,7 @@ specifically change that through the web UI, see
 [User Admin] or by populating the `ltm_user_locales` table
 appropriately.
 
-#### Screen Shot
+### Screen Shot
 
 ![Translation Manager Screenshot]
 
