@@ -2,6 +2,12 @@
 
 The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+ 
 
+#### 2.1.5
+
+- Add: Powered by Yandex.Translate as required by their new terms. 
+- Fix: Yandex documentation url.
+- Fix: Update yandex supported languages.
+
 #### 2.1.4
 
 - Fix: #22, find function isn't supported in laravel 5

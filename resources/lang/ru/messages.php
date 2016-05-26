@@ -85,6 +85,7 @@ TEXT
     'missing'                   => 'Отсутствует',
     'missmatched-quotes'        => 'несоответствующие или отсутствующие кавычки в строковом атрибуте :string',
     'movekeys'                  => 'Переместить ключи',
+    'powered-by-yandex'         => '<a href="http://translate.yandex.com/">Powered by Yandex.Translate</a>',
     'preview'                   => 'Превью',
     'primary-locale'            => 'Первичная',
     'publish'                   => 'Опубликовать группу',

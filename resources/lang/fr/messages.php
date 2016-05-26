@@ -85,6 +85,7 @@ TEXT
     'missing'                   => 'Manquant',
     'missmatched-quotes'        => 'incompatibles ou manquant des citations en :attribut de chaîne',
     'movekeys'                  => 'Déplacer les touches',
+    'powered-by-yandex'         => '<a href="http://translate.yandex.com/">Powered by Yandex.Translate</a>',
     'preview'                   => 'Aperçu',
     'primary-locale'            => 'Primaire',
     'publish'                   => 'Publier groupe',
