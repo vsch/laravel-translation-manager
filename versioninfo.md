@@ -14,7 +14,7 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
 - Add: show references for keys that have source reference information. Need to run `Add
   References` to update source references and add new groups/keys from source files and views.
   Currently app/ and all view paths are checked. Command line can give specific path to search.
-  need to run migrations for this update: [Installation: Publishing And Running Migrations]
+  need to run migrations for this update: [Installation: Publishing And Running Migrations] 
 
 #### 2.1.3
 
@@ -22,8 +22,8 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
 
 #### 2.1.2
 
-- Fix: #32, `user_list_connection` in `db_connections` configuration was ignored instead of being
-  used to retrieve the user list for the given connection.
+- Fix: #32, `user_list_connection` in `db_connections` configuration was ignored instead of
+  being used to retrieve the user list for the given connection.
 - Fix: change default config sample from `caouecs/laravel4-lang` to `caouecs/laravel-lang` as
   needed by this package for Laravel 5.
 - Fix: #33, Laravel 5.2 - "symfony/finder": "2.8.*|3.0.*" dependency mismatch
@@ -62,8 +62,8 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
   manager's cached translations can be persisted to a cache.
 
 - Fix: #29, Closure in config file breaks config:cache, removed the config closure. Per locale
-  access control implemented using LtmPolicy with all abilities in version 2.1.0. LTM provides 
-  an empty user list for locale management by default. 
+  access control implemented using LtmPolicy with all abilities in version 2.1.0. LTM provides
+  an empty user list for locale management by default.
 
 - Add: color highlight for key regex text box and radio button translation filters to visually
   signal when key list is incomplete and which filter is responsible:
@@ -94,8 +94,8 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
 
 #### 2.0.37
 
-- fix#25, Delete button not working for some keys, solved by double url encoding translation key 
-  to get around Laravel url decoding before applying the routing logic to the URL. 
+- fix#25, Delete button not working for some keys, solved by double url encoding translation key
+  to get around Laravel url decoding before applying the routing logic to the URL.
 
 #### 2.0.36
 
