@@ -161,8 +161,7 @@ if (!function_exists('ifInPlaceEdit')) {
         $trans = App::make('translator');
         if ($trans->inPlaceEditing()) {
             while (preg_match('/@lang\(\'([^\']+)\'\)/', $text, $matches)) {
-
-                $repl = $trans->getInPlaceEditLink($matches[1], $replace, $locale, $useDB);
+                $repl = $trans->getInPlaceEditLink($matches[1], $replace, $locale, $noWrap, $useDB);
                 $text = str_replace($matches[0], $repl, $text);
             }
             return $noWrap ? $text : "<br>[$text]";
