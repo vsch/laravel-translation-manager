@@ -2,6 +2,13 @@
 
 The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
 
+#### 2.2.0
+
+- [ ] Add: routes entry for translations. Old routes handling no longer works
+- [x] Fix: if non-default db connection is set and it causes exception then connection is reset
+      to default. Otherwise, you have to delete the cookie from the browser.
+- [x] Fix: wild card key operation for copy was failing due to extra column in insert statement.
+
 #### 2.1.5
 
 - Add: Powered by Yandex.Translate as required by their new terms.
@@ -188,7 +195,7 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
             │ └── sub-sub-test.php
             └── subtest.php
     ```
-
+    
     You would access translations:
 
     - in L5 as `@lang('test/subtest.translation-key')` for `subtest.php` and as
@@ -242,3 +249,4 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
   your translations.
 
 [Installation: Publishing And Running Migrations]: ../../wiki/Installation#publishing-and-running-migrations
+
