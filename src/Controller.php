@@ -165,6 +165,20 @@ class Controller extends BaseController
     public
     function getIndex($group = null)
     {
+        try {
+            return $this->processIndex($group);
+        } catch (\Exception $e) {
+            // if have non default connection, reset it
+            if ($this->getConnectionName()) {
+                $this->setConnectionName('');
+            }
+        }
+        return $this->processIndex($group);
+    }
+
+    private
+    function processIndex($group = null)
+    {
         $locales = $this->locales;
         $currentLocale = \Lang::getLocale();
         $primaryLocale = $this->primaryLocale;
@@ -933,9 +947,8 @@ SQL
                                     }
 
                                     $this->getConnection()->insert($sql = <<<SQL
-INSERT INTO $ltm_translations
+INSERT INTO $ltm_translations (status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used) 
 SELECT
-    NULL id,
     1 status,
     locale,
     ? `group`,
