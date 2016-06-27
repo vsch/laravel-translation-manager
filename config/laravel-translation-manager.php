@@ -50,6 +50,12 @@ return array(
      */
     'admin_enabled' => true,
     /**
+     *  Inplace edit mode
+     *  1 - Using trans(), noEditTrans(), ifEditTrans() in all templates
+     *  2 - Only by modifying application template (disables ifEditTrans and reverts trans() to default functionality)
+     */
+    'inplace_edit_mode' => 2,
+    /**
      * Enable management of translations for editors by locales
      *
      * Only applies to users that are not translation admins

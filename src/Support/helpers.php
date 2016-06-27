@@ -136,12 +136,23 @@ if (!function_exists('ifEditTrans')) {
     function ifEditTrans($key, $parameters = null, $locale = null, $useDB = null, $noWrap = null)
     {
         $trans = App::make('translator');
-        if ($trans->inPlaceEditing()) {
+        if ($trans->inPlaceEditing() && $trans->getInPlaceEditingMode() == 1) {
             /* @var $trans Translator */
             $text = $trans->getInPlaceEditLink($key, $parameters ?: [], $locale, $useDB);
             return $noWrap ? $text : "<br>[$text]";
         }
         return '';
+    }
+}
+
+if (!function_exists('getEditableLinks')) {
+    /**
+     * @return string
+     *
+     */
+    function getEditableLinks() {
+        $trans = App::make('translator');
+        return $trans->getEditableLinks();
     }
 }
 
@@ -159,9 +170,9 @@ if (!function_exists('ifInPlaceEdit')) {
     {
         /* @var $trans Translator */
         $trans = App::make('translator');
-        if ($trans->inPlaceEditing()) {
+        if ($trans->inPlaceEditing() && $trans->getInPlaceEditingMode() == 1 ) {
             while (preg_match('/@lang\(\'([^\']+)\'\)/', $text, $matches)) {
-                $repl = $trans->getInPlaceEditLink($matches[1], $replace, $locale, $noWrap, $useDB);
+                $repl = $trans->getInPlaceEditLink($matches[1], $replace, $locale, $useDB);
                 $text = str_replace($matches[0], $repl, $text);
             }
             return $noWrap ? $text : "<br>[$text]";
@@ -179,6 +190,18 @@ if (!function_exists('inPlaceEditing')) {
     {
         $trans = App::make('translator');
         return $trans->inPlaceEditing($inPlaceEditing);
+    }
+}
+
+if (!function_exists('inPlaceEditingMode')) {
+    /**
+     * @return int
+     *
+     */
+    function inPlaceEditingMode()
+    {
+        $trans = App::make('translator');
+        return $trans->getInPlaceEditingMode();
     }
 }
 

@@ -25,6 +25,9 @@ class Translator extends LaravelTranslator
     protected $packagePrefix;
     protected $cookiePrefix;
 
+    // Storage used for used translation keys
+    protected $usedKeys = array();
+
     /**
      * Translator constructor.
      */
@@ -62,6 +65,12 @@ class Translator extends LaravelTranslator
             $this->inPlaceEditing = $session->get($this->cookiePrefix . 'lang_inplaceedit', 0);
         }
         return $this->inPlaceEditing;
+    }
+
+    public
+    function getInPlaceEditingMode()
+    {
+        return $this->manager->config('inplace_edit_mode');
     }
 
     public
@@ -177,7 +186,14 @@ class Translator extends LaravelTranslator
     public
     function get($key, array $replace = array(), $locale = null, $useDB = null)
     {
-        if (!$this->suspendInPlaceEdit && $this->inPlaceEditing()) {
+        $inplaceEditMode = $this->manager->config('inplace_edit_mode');
+
+        if ($this->inPlaceEditing() && $inplaceEditMode == 2) {
+            if(!in_array($key,$this->usedKeys)) {
+                $this->usedKeys[] = $key;
+            }
+        }
+        if (!$this->suspendInPlaceEdit && $this->inPlaceEditing() && $inplaceEditMode == 1) {
             $this->notifyUsingKey($key, $locale);
             return $this->inPlaceEditLink(null, true, $key, $locale);
         }
@@ -236,6 +252,53 @@ class Translator extends LaravelTranslator
         return $result;
     }
 
+
+    /**
+     * Make the translation popup from used keys when rendering a page
+     *
+     * @return string
+     */
+    public
+    function getEditableLinks()
+    {
+        $inplaceEditMode = $this->manager->config('inplace_edit_mode');
+        if ($this->inPlaceEditing() && $inplaceEditMode == 2) {
+            $keyDiv = '<div id="keys" style="padding:5px; padding-top:0px; white-space: nowrap;">' . PHP_EOL . '<b>Keys</b><br>' . PHP_EOL;
+            $textDiv = '<div id="keytexts" style="padding:5px; padding-top:0px; white-space: nowrap;">' . PHP_EOL . '<b>Translations</b><br>' . PHP_EOL;
+            if ($this->inPlaceEditing() || true) {
+                foreach ($this->usedKeys as $key) {
+                    $keyDiv .= $key . '<br>' . PHP_EOL;
+                    $textDiv .= $this->getInPlaceEditLink($key, [], $this->locale, $this->useDB) . '<br>' . PHP_EOL;
+                }
+            }
+            $keyDiv .= '</div>' . PHP_EOL;
+            $textDiv .= '</div>' . PHP_EOL;
+
+            // Top right corner button
+            $translateButton = '<a href="#"><i class="fa fa-language" style="position: fixed; right: 5px; top: 5px; z-index:99999;"' .
+                ' onclick="document.getElementById(\'transcontainer\').style.display = \'flex\';"></i></a>' . PHP_EOL;
+
+            // Buttons
+            $buttons = '<div style="display:flex; justify-content: flex-end;">' . PHP_EOL;
+            $buttons .= '<div style="margin: 5px;"><a href="#" style="text-decoration: none;" onclick="window.location.reload(true);">'.
+                '<i class="fa fa-btn fa-refresh" style="margin-right: 4px;"></i>Reload Page</a></div>' . PHP_EOL;
+            $buttons .= '<div style="margin: 5px;"><a href="#" style="text-decoration: none;"' .
+                ' onClick="document.getElementById(\'transcontainer\').style.display = \'none\';"><i class="fa fa-btn fa-times" style="margin-right: 4px;"></i>Close</a></div>' . PHP_EOL;
+            $buttons .= '</div>' . PHP_EOL;
+
+            // Translations
+            $translations = '<div style="display:flex;">' . PHP_EOL;
+            $translations .= $keyDiv . $textDiv;
+            $translations .= '</div>' . PHP_EOL;
+
+            $result = $translateButton . '<div id="transcontainer" style="display: none; position:fixed; top:0px; height: 100%; width: 100%; align-items: center; justify-content:center;" ><div id="transkeylist" class="transpopup">' .
+                PHP_EOL . $buttons . $translations . '</div>' . PHP_EOL . '</div>' . PHP_EOL;
+            return $result;
+        }
+        return null;
+    }
+
+
     /**
      * Get a translation according to an integer value.
      *
@@ -282,7 +345,13 @@ class Translator extends LaravelTranslator
     public
     function choice($key, $number, array $replace = array(), $locale = null, $useDB = null)
     {
-        if (!$this->suspendInPlaceEdit && $this->inPlaceEditing()) {
+        $inplaceEditMode = $this->manager->config('inplace_edit_mode');
+        if ($this->inPlaceEditing() && $inplaceEditMode == 2) {
+            if(!in_array($key,$this->usedKeys)) {
+                $this->usedKeys[] = $key;
+            }
+        }
+        if (!$this->suspendInPlaceEdit && $this->inPlaceEditing() && $inplaceEditMode == 1) {
             return $this->get($key, $replace, $locale, $useDB);
         } else {
             if ($useDB !== null) {
