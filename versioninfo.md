@@ -1,11 +1,22 @@
 ### Version Notes
 
-The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1+
+The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+m 2.2.x for Laravel
+5.3 compatibility.
 
 #### 2.2.0
 
-- [ ] Add: routes entry for translations. Old routes handling no longer works
-- [ ] Fix: remove Input:: facade because it is deprecated.
+- Change: Laravel 5.3 compatibility
+- Add: routes entry for translations. Old routes handling no longer works, now need to add a
+  call to `Translator::routes()` wrapped in appropriate middleware and prefix grouping:
+   
+        \Route::group(['middleware' => 'web', 'prefix' => 'translations'], function () {
+            Translator::routes();
+        });
+
+    to be added to routes/web.php to create translator routes
+- Fix: search to list columns explicitly
+- Fix: Controller cookie values initialization moved out of constructor, cookies were not
+  decrypted otherwise
 - Fix: if non-default db connection is set and it causes exception then connection is reset
       to default. Otherwise, you have to delete the cookie from the browser.
 - Fix: wild card key operation for copy was failing due to extra column in insert statement.

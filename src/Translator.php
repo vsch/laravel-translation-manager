@@ -2,10 +2,8 @@
 
 use Illuminate\Events\Dispatcher;
 use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Translation\LoaderInterface;
 use Illuminate\Translation\Translator as LaravelTranslator;
-use Vsch\UserPrivilegeMapper\Facade\Privilege as UserCan;
 
 class Translator extends LaravelTranslator
 {
@@ -24,6 +22,7 @@ class Translator extends LaravelTranslator
     protected $package;
     protected $packagePrefix;
     protected $cookiePrefix;
+    protected $useCookies;
 
     /**
      * Translator constructor.
@@ -53,15 +52,88 @@ class Translator extends LaravelTranslator
     {
         if ($inPlaceEditing !== null) {
             $this->inPlaceEditing = $inPlaceEditing;
-            $session = $this->app->make('session');
-            $session->put($this->cookiePrefix . 'lang_inplaceedit', $this->inPlaceEditing);
+            if ($this->useCookies) {
+                \Cookie::queue($this->cookiePrefix . 'lang_inplaceedit', $this->inPlaceEditing);
+            } else {
+                $session = $this->app->make('session');
+                if ($session->all()) {
+                    // only put a value if session has already has some value set, meaning its been loaded
+                    $session->put($this->cookiePrefix . 'lang_inplaceedit', $this->inPlaceEditing);
+                }
+            }
         }
 
         if ($this->inPlaceEditing === null) {
-            $session = $this->app->make('session');
-            $this->inPlaceEditing = $session->get($this->cookiePrefix . 'lang_inplaceedit', 0);
+            if ($this->useCookies) {
+                if (\Cookie::has($this->cookiePrefix . 'lang_inplaceedit')) {
+                    $this->inPlaceEditing = \Cookie::get($this->cookiePrefix . 'lang_inplaceedit', 0);
+                    $tmp = 0;
+                }
+            } else {
+                $session = $this->app->make('session');
+                $this->inPlaceEditing = $session->get($this->cookiePrefix . 'lang_inplaceedit', 0);
+            }
         }
         return $this->inPlaceEditing;
+    }
+
+    /**
+     * Get the default locale being used.
+     *
+     * @return string
+     */
+    public
+    function getLocale()
+    {
+        if ($this->useCookies) {
+            $locale = \Cookie::get($this->cookiePrefix . 'lang_locale', parent::getLocale());
+            if ($locale != parent::getLocale()) {
+                parent::setLocale($locale);
+            }
+        }
+        return parent::getLocale();
+    }
+
+    /**
+     * Set the default locale.
+     *
+     * @param  string $locale
+     *
+     * @return void
+     */
+    public
+    function setLocale($locale)
+    {
+        if ($this->useCookies) {
+            \Cookie::queue($this->cookiePrefix . 'lang_locale', $locale);
+        }
+        $this->locale = $locale;
+    }
+
+    /**
+     * Get the fallback locale being used.
+     *
+     * @return string
+     */
+    public
+    function getFallback()
+    {
+        //return $this->fallback;
+        return parent::getFallback();
+    }
+
+    /**
+     * Set the fallback locale being used.
+     *
+     * @param  string $fallback
+     *
+     * @return void
+     */
+    public
+    function setFallback($fallback)
+    {
+        //$this->fallback = $fallback;
+        parent::setFallback($fallback);
     }
 
     public
@@ -135,7 +207,18 @@ class Translator extends LaravelTranslator
                 $title = parent::get($this->packagePrefix . 'messages.enter-translation');
 
                 if ($t->value === null) $t->value = ''; //$t->value = parent::get($key, $replace, $locale);
-                $result = '<a href="#edit" class="vsch_editable status-' . ($t->status ?: 0) . ' locale-' . $t->locale . '" data-locale="' . $t->locale . '" ' . 'data-name="' . $t->locale . '|' . $t->key . '" id="' . $t->locale . "-" . str_replace('.', '-', $t->key) . '"  data-type="textarea" data-pk="' . ($t->id ?: 0) . '" ' . 'data-url="' . URL::action(ManagerServiceProvider::CONTROLLER_PREFIX . 'Vsch\TranslationManager\Controller@postEdit', array($t->group)) . '" ' . 'data-inputclass="editable-input" data-saved_value="' . htmlentities($t->saved_value, ENT_QUOTES, 'UTF-8', false) . '" ' . 'data-title="' . $title . ': [' . $t->locale . '] ' . $t->group . '.' . $t->key . '">' . ($t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '') . '</a> ' . $diff;
+
+                $action = \URL::action(ManagerServiceProvider::CONTROLLER_PREFIX . 'Vsch\TranslationManager\Controller@postEdit', array($t->group));
+
+                $result = '<a href="#edit" class="vsch_editable status-' . ($t->status ?: 0)
+                    . ' locale-' . $t->locale
+                    . '" data-locale="' . $t->locale . '" '
+                    . 'data-name="' . $t->locale . '|' . $t->key
+                    . '" id="' . $t->locale . "-" . str_replace('.', '-', $t->key)
+                    . '"  data-type="textarea" data-pk="' . ($t->id ?: 0) . '" '
+                    . 'data-url="' . $action
+                    . '" ' . 'data-inputclass="editable-input" data-saved_value="' . htmlentities($t->saved_value, ENT_QUOTES, 'UTF-8', false) . '" '
+                    . 'data-title="' . $title . ': [' . $t->locale . '] ' . $t->group . '.' . $t->key . '">' . ($t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '') . '</a> ' . $diff;
                 return $result;
             }
 
@@ -304,6 +387,7 @@ class Translator extends LaravelTranslator
         $this->package = \Vsch\TranslationManager\ManagerServiceProvider::PACKAGE;
         $this->packagePrefix = $this->package . '::';
         $this->cookiePrefix = $this->manager->config('persistent_prefix', $this->packagePrefix);
+        $this->useCookies = $this->manager->config('use_cookies', $this->packagePrefix);
     }
 
     protected
@@ -326,12 +410,18 @@ class Translator extends LaravelTranslator
         }
     }
 
+    public static
+    function routes()
+    {
+        Controller::routes();
+    }
+
     public
     function getLocales()
     {
         //Set the default locale as the first one.
         $currentLocale = \Config::get('app.locale');
-        $locales = ManagerServiceProvider::getLists($this->manager->getTranslation()->groupBy('locale')->lists('locale')) ?: [];
+        $locales = ManagerServiceProvider::getLists($this->manager->getTranslation()->groupBy('locale')->pluck('locale')) ?: [];
 
         // limit the locale list to what is in the config
         $configShowLocales = $this->manager->config(Manager::SHOW_LOCALES_KEY, []);

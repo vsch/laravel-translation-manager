@@ -887,8 +887,8 @@
 
     <script>
         var TRANS_FILTERS = ({
-            filter: "<?= $transFilters['filter'] ?>",
-            regex: "<?= $transFilters['regex'] ?>"
+            filter: "<?= isset($transFilters['filter']) ? $transFilters['filter'] :"" ?>",
+            regex: "<?= isset($transFilters['regex']) ? $transFilters['regex']:""  ?>"
         });
 
         var USER_LOCALES = [

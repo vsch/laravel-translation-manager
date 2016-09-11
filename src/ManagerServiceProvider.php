@@ -103,10 +103,10 @@ class ManagerServiceProvider extends ServiceProvider
         $config = $this->app['config']->get(self::PACKAGE . '.route', []);
         $config['namespace'] = 'Vsch\TranslationManager';
 
-        $router->group($config, function ($router) {
-            $router->get('view/{group}', 'Controller@getView');
-            $router->controller('/', 'Controller');
-        });
+        //$router->group($config, function ($router) {
+        //    $router->get('view/{group}', 'Controller@getView');
+        //    $router->controller('/', 'Controller');
+        //});
 
         // Register Middleware so we can save our cached translations
         $router->pushMiddlewareToGroup('web', 'Vsch\TranslationManager\RouteAfterMiddleware');

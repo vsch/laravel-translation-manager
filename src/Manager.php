@@ -311,13 +311,14 @@ class Manager
     {
         if ($this->groupList === null) {
             // read it in
+            /* @var Builder $groups */
             $groups = $this->getTranslation()->groupBy('group');
             $excludedGroups = $this->config(Manager::EXCLUDE_GROUPS_KEY);
             if ($excludedGroups) {
                 $groups = $groups->whereNotIn('group', $excludedGroups);
             }
 
-            $this->groupList = ManagerServiceProvider::getLists($groups->lists('group', 'group'));
+            $this->groupList = ManagerServiceProvider::getLists($groups->pluck('group','group'));
         }
         return $this->groupList;
     }

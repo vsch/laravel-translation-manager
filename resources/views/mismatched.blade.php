@@ -35,7 +35,7 @@
                             $key = $mismatch->key;
                             $keyText = $mismatch->key;
                         }
-                        $link = action($controller . '@getView', $mismatch->group) . '#' . $mismatch->key;
+                        $link = action($controller . '@getView') . '/'. $mismatch->group . '#' . $mismatch->key;
                         $mismatch->value = $mismatch->ru_value;
                         $mismatch->locale = $locale;
                         $mismatch->status = $locale;
