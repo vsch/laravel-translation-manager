@@ -3,6 +3,11 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+m 2.2.x for Laravel
 5.3 compatibility.
 
+#### 2.3.1
+
+- Fix: use `controller->middleware()` closure to handle controller constructor initialization
+  requiring middleware to be running.
+
 #### 2.3.0
 
 - Change: Laravel 5.3 compatibility

@@ -131,6 +131,11 @@ class Controller extends BaseController
         }
 
         $this->cookiePrefix = $this->manager->config('persistent_prefix', 'K9N6YPi9WHwKp6E3jGbx');
+
+        $this->middleware(function ($request, $next) {
+            $this->initialize();
+            return $next($request);
+        });
     }
 
     private
@@ -209,9 +214,7 @@ class Controller extends BaseController
     public
     function getIndex($group = null)
     {
-        $this->initialize();
-
-        try {
+       try {
             return $this->processIndex($group);
         } catch (\Exception $e) {
             // if have non default connection, reset it
@@ -505,9 +508,7 @@ SQL
     public
     function getSearch()
     {
-        $this->initialize();
-
-        $ltm_translations = $this->manager->getTranslationsTableName();
+       $ltm_translations = $this->manager->getTranslationsTableName();
         $q = \Request::get('q');
 
         if ($q === '') $translations = [];
@@ -577,9 +578,7 @@ SQL
     public
     function postAdd($group)
     {
-        $this->initialize();
-
-        if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+       if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $keys = explode("\n", trim(\Request::get('keys')));
             $suffixes = explode("\n", trim(\Request::get('suffixes')));
             $group = explode('::', $group, 2);
@@ -607,9 +606,7 @@ SQL
     public
     function postDeleteSuffixedKeys($group)
     {
-        $this->initialize();
-
-        if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+       if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $ltm_translations = $this->manager->getTranslationsTableName();
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
                 $keys = explode("\n", trim(\Request::get('keys')));
@@ -645,9 +642,7 @@ SQL
     public
     function postEdit($group)
     {
-        $this->initialize();
-
-        if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY))) {
+       if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY))) {
             $name = \Request::get('name');
             $value = \Request::get('value');
 
@@ -699,9 +694,7 @@ SQL
     public
     function postDelete($group, $key)
     {
-        $this->initialize();
-
-        if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+       if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $key = decodeKey($key);
             $ltm_translations = $this->manager->getTranslationsTableName();
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
@@ -718,9 +711,7 @@ SQL
     public
     function postShowSource($group, $key)
     {
-        $this->initialize();
-
-        $key = decodeKey($key);
+       $key = decodeKey($key);
         $ltm_translations = $this->manager->getTranslationsTableName();
         $results = '';
         if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
@@ -746,9 +737,7 @@ SQL
     public
     function postUndelete($group, $key)
     {
-        $this->initialize();
-
-        if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+       if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $key = decodeKey($key);
             $ltm_translations = $this->manager->getTranslationsTableName();
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
@@ -1056,49 +1045,37 @@ SQL
     public
     function getKeyop($group, $op = 'preview')
     {
-        $this->initialize();
-
-        return $this->keyOp($group, $op);
+       return $this->keyOp($group, $op);
     }
 
     public
     function postCopyKeys($group)
     {
-        $this->initialize();
-
-        return $this->keyOp($group, 'copy');
+       return $this->keyOp($group, 'copy');
     }
 
     public
     function postMoveKeys($group)
     {
-        $this->initialize();
-
-        return $this->keyOp($group, 'move');
+       return $this->keyOp($group, 'move');
     }
 
     public
     function postDeleteKeys($group)
     {
-        $this->initialize();
-
-        return $this->keyOp($group, 'delete');
+       return $this->keyOp($group, 'delete');
     }
 
     public
     function postPreviewKeys($group)
     {
-        $this->initialize();
-
-        return $this->keyOp($group, 'preview');
+       return $this->keyOp($group, 'preview');
     }
 
     public
     function postImport($group)
     {
-        $this->initialize();
-
-        $replace = \Request::get('replace', false);
+       $replace = \Request::get('replace', false);
         $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : 1)
             , $group === '*' ? null : [$group]);
         return \Response::json(array('status' => 'ok', 'counter' => $counter));
@@ -1107,9 +1084,7 @@ SQL
     public
     function getImport()
     {
-        $this->initialize();
-
-        $replace = \Request::get('replace', false);
+       $replace = \Request::get('replace', false);
         $group = \Request::get('group', '*');
         $this->manager->clearErrors();
         $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : 1)
@@ -1121,9 +1096,7 @@ SQL
     public
     function postFind()
     {
-        $this->initialize();
-
-        $numFound = $this->manager->findTranslations();
+       $numFound = $this->manager->findTranslations();
 
         return \Response::json(array('status' => 'ok', 'counter' => (int)$numFound));
     }
@@ -1131,9 +1104,7 @@ SQL
     public
     function postDeleteAll($group)
     {
-        $this->initialize();
-
-        $this->manager->truncateTranslations($group);
+       $this->manager->truncateTranslations($group);
 
         return \Response::json(array('status' => 'ok', 'counter' => (int)0));
     }
@@ -1141,9 +1112,7 @@ SQL
     public
     function getPublish($group)
     {
-        $this->initialize();
-
-        $this->manager->exportTranslations($group);
+       $this->manager->exportTranslations($group);
 
         return \Response::json(array('status' => 'ok'));
     }
@@ -1151,9 +1120,7 @@ SQL
     public
     function postPublish($group)
     {
-        $this->initialize();
-
-        $this->manager->exportTranslations($group);
+       $this->manager->exportTranslations($group);
         $errors = $this->manager->errors();
 
         return \Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
@@ -1162,9 +1129,7 @@ SQL
     public
     function getToggleInPlaceEdit()
     {
-        $this->initialize();
-
-        inPlaceEditing(!inPlaceEditing());
+       inPlaceEditing(!inPlaceEditing());
         if (\App::runningUnitTests()) return \Redirect::to('/');
         return !is_null(\Request::header('referer')) ? \Redirect::back() : \Redirect::to('/');
     }
@@ -1172,9 +1137,7 @@ SQL
     public
     function getInterfaceLocale()
     {
-        $this->initialize();
-
-        $locale = \Request::get("l");
+       $locale = \Request::get("l");
         $translating = \Request::get("t");
         $primary = \Request::get("p");
         $connection = \Request::get("c");
@@ -1196,9 +1159,7 @@ SQL
     public
     function getUsageInfo()
     {
-        $this->initialize();
-
-        $group = \Request::get("group");
+       $group = \Request::get("group");
         $reset = \Request::get("reset-usage-info");
         $show = \Request::get("show-usage-info");
 
@@ -1218,9 +1179,7 @@ SQL
     public
     function getTransFilters()
     {
-        $this->initialize();
-
-        $filter = null;
+       $filter = null;
         $regex = null;
 
         if (\Request::has('filter')) {
@@ -1248,9 +1207,7 @@ SQL
     public
     function getZippedTranslations($group = null)
     {
-        $this->initialize();
-
-        // disable gzip compression of this page, this causes wrapping of the zip file in gzip format
+       // disable gzip compression of this page, this causes wrapping of the zip file in gzip format
         // does not work the zip is still gzip compressed
         if (ini_get('zlib.output_compression')) {
             ini_set('zlib.output_compression', 'Off');
@@ -1279,9 +1236,7 @@ SQL
     public
     function postYandexKey()
     {
-        $this->initialize();
-
-        return \Response::json(array(
+       return \Response::json(array(
             'status' => 'ok',
             'yandex_key' => $this->manager->config('yandex_translator_key', null)
         ));
@@ -1290,9 +1245,7 @@ SQL
     public
     function postUserLocales()
     {
-        $this->initialize();
-
-        $user_id = \Request::get("pk");
+       $user_id = \Request::get("pk");
         $values = \Request::get("value") ?: [];
         $userLocale = new UserLocales();
 
