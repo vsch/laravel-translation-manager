@@ -91,6 +91,7 @@ TEXT
     'publish'                   => 'Publish Group',
     'publish-all'               => 'Publish All',
     'publishing'                => 'Publishing...',
+    'reload-page'               => 'Reload Page',
     'reset-usage-info'          => 'Reset Usage Info',
     'search'                    => 'Search',
     'search-done'               => 'Done searching for translations. Source references updated, added <strong>:count</strong> new translation items.',

@@ -16,7 +16,7 @@
         "illuminate/support": "5.0.x|5.1.x|5.2.x|5.3.x",
         "illuminate/translation": "5.0.x|5.1.x|5.2.x|5.3.x",
         "doctrine/dbal": "~2.3",
-        "laravelcollective/html": "~5.2",
+        "laravelcollective/html": "~5.3",
         "symfony/finder": "3.0.*"
     },
     "autoload": {

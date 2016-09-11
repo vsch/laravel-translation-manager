@@ -80,6 +80,11 @@ class Translator extends LaravelTranslator
         return $this->inPlaceEditing;
     }
 
+    public
+    function isInPlaceEditing($inPlaceEditing = null){
+        return $this->inPlaceEditing() && ($inPlaceEditing == null || $this->getInPlaceEditingMode() == $inPlaceEditing);
+    }
+
     /**
      * Get the default locale being used.
      *
@@ -272,10 +277,11 @@ class Translator extends LaravelTranslator
         $inplaceEditMode = $this->manager->config('inplace_edit_mode');
 
         if ($this->inPlaceEditing() && $inplaceEditMode == 2) {
-            if(!in_array($key,$this->usedKeys)) {
+            if (!in_array($key, $this->usedKeys)) {
                 $this->usedKeys[] = $key;
             }
         }
+
         if (!$this->suspendInPlaceEdit && $this->inPlaceEditing() && $inplaceEditMode == 1) {
             $this->notifyUsingKey($key, $locale);
             return $this->inPlaceEditLink(null, true, $key, $locale);
@@ -335,6 +341,52 @@ class Translator extends LaravelTranslator
         return $result;
     }
 
+    /**
+     * Make the translation popup from used keys when rendering a page
+     *
+     * @return string
+     */
+    public
+    function getEditableLinksOnly()
+    {
+        $inplaceEditMode = $this->manager->config('inplace_edit_mode');
+        if ($this->inPlaceEditing() && $inplaceEditMode == 2) {
+            $keyDiv = '<div id="keys" style="padding:5px; padding-top:0px; white-space: nowrap;">' . PHP_EOL . '<b>Keys</b><br>' . PHP_EOL;
+            $textDiv = '<div id="keytexts" style="padding:5px; padding-top:0px; white-space: nowrap;">' . PHP_EOL . '<b>Translations</b><br>' . PHP_EOL;
+
+            $sorted = $this->usedKeys;
+            sort($sorted);
+            foreach ($sorted as $key) {
+                $keyDiv .= $key . '<br>' . PHP_EOL;
+                $textDiv .= $this->getInPlaceEditLink($key, [], $this->locale, $this->useDB) . '<br>' . PHP_EOL;
+            }
+
+            $keyDiv .= '</div>' . PHP_EOL;
+            $textDiv .= '</div>' . PHP_EOL;
+
+            // Top right corner button
+            $translateButton = '<a href="#"><i class="fa fa-language" style="position: fixed; right: 5px; top: 5px; z-index:99999;"' .
+                ' onclick="document.getElementById(\'transcontainer\').style.display = \'flex\';"></i></a>' . PHP_EOL;
+
+            // Buttons
+            $buttons = '<div style="display:flex; justify-content: flex-end;">' . PHP_EOL;
+            $buttons .= '<div style="margin: 5px;"><a href="#" style="text-decoration: none;" onclick="window.location.reload(true);">' .
+                '<i class="fa fa-btn fa-refresh" style="margin-right: 4px;"></i>' . $this->trans($this->package . '::messages.reload-page') . '</a></div>' . PHP_EOL;
+            $buttons .= '<div style="margin: 5px;"><a href="#" style="text-decoration: none;"' .
+                ' onClick="document.getElementById(\'transcontainer\').style.display = \'none\';"><i class="fa fa-btn fa-times" style="margin-right: 4px;"></i>' . $this->trans($this->package . '::messages.close') . '</a></div>' . PHP_EOL;
+            $buttons .= '</div>' . PHP_EOL;
+
+            // Translations
+            $translations = '<div style="display:flex;">' . PHP_EOL;
+            $translations .= $keyDiv . $textDiv;
+            $translations .= '</div>' . PHP_EOL;
+
+            $result = '<div id="transcontainer" style="display: none; position:fixed; top:0px; height: 100%; width: 100%; align-items: center; justify-content:center;" ><div id="transkeylist" class="transpopup">' .
+                PHP_EOL . $buttons . $translations . '</div>' . PHP_EOL . '</div>' . PHP_EOL;
+            return $result;
+        }
+        return null;
+    }
 
     /**
      * Make the translation popup from used keys when rendering a page
@@ -346,41 +398,28 @@ class Translator extends LaravelTranslator
     {
         $inplaceEditMode = $this->manager->config('inplace_edit_mode');
         if ($this->inPlaceEditing() && $inplaceEditMode == 2) {
-            $keyDiv = '<div id="keys" style="padding:5px; padding-top:0px; white-space: nowrap;">' . PHP_EOL . '<b>Keys</b><br>' . PHP_EOL;
-            $textDiv = '<div id="keytexts" style="padding:5px; padding-top:0px; white-space: nowrap;">' . PHP_EOL . '<b>Translations</b><br>' . PHP_EOL;
-            if ($this->inPlaceEditing() || true) {
-                foreach ($this->usedKeys as $key) {
-                    $keyDiv .= $key . '<br>' . PHP_EOL;
-                    $textDiv .= $this->getInPlaceEditLink($key, [], $this->locale, $this->useDB) . '<br>' . PHP_EOL;
-                }
-            }
-            $keyDiv .= '</div>' . PHP_EOL;
-            $textDiv .= '</div>' . PHP_EOL;
-
-            // Top right corner button
-            $translateButton = '<a href="#"><i class="fa fa-language" style="position: fixed; right: 5px; top: 5px; z-index:99999;"' .
-                ' onclick="document.getElementById(\'transcontainer\').style.display = \'flex\';"></i></a>' . PHP_EOL;
-
-            // Buttons
-            $buttons = '<div style="display:flex; justify-content: flex-end;">' . PHP_EOL;
-            $buttons .= '<div style="margin: 5px;"><a href="#" style="text-decoration: none;" onclick="window.location.reload(true);">'.
-                '<i class="fa fa-btn fa-refresh" style="margin-right: 4px;"></i>Reload Page</a></div>' . PHP_EOL;
-            $buttons .= '<div style="margin: 5px;"><a href="#" style="text-decoration: none;"' .
-                ' onClick="document.getElementById(\'transcontainer\').style.display = \'none\';"><i class="fa fa-btn fa-times" style="margin-right: 4px;"></i>Close</a></div>' . PHP_EOL;
-            $buttons .= '</div>' . PHP_EOL;
-
-            // Translations
-            $translations = '<div style="display:flex;">' . PHP_EOL;
-            $translations .= $keyDiv . $textDiv;
-            $translations .= '</div>' . PHP_EOL;
-
-            $result = $translateButton . '<div id="transcontainer" style="display: none; position:fixed; top:0px; height: 100%; width: 100%; align-items: center; justify-content:center;" ><div id="transkeylist" class="transpopup">' .
-                PHP_EOL . $buttons . $translations . '</div>' . PHP_EOL . '</div>' . PHP_EOL;
-            return $result;
+            return getEditableTranslationsButton() . $this->getEditableLinksOnly();
         }
         return null;
     }
 
+    public
+    function getEditableTranslationsButton($style = null)
+    {
+        if ($style === null) {
+            $style = 'style="position: fixed; right: 5px; top: 5px; z-index:99999;"';
+        }
+
+        $inplaceEditMode = $this->manager->config('inplace_edit_mode');
+        if ($this->inPlaceEditing() && $inplaceEditMode == 2) {
+            // Top right corner button
+            $translateButton = '<a href="#"><i class="fa fa-language" ' . $style .
+                ' onclick="document.getElementById(\'transcontainer\').style.display = \'flex\';"></i></a>' . PHP_EOL;
+
+            return $translateButton;
+        }
+        return null;
+    }
 
     /**
      * Get a translation according to an integer value.
@@ -430,7 +469,7 @@ class Translator extends LaravelTranslator
     {
         $inplaceEditMode = $this->manager->config('inplace_edit_mode');
         if ($this->inPlaceEditing() && $inplaceEditMode == 2) {
-            if(!in_array($key,$this->usedKeys)) {
+            if (!in_array($key, $this->usedKeys)) {
                 $this->usedKeys[] = $key;
             }
         }

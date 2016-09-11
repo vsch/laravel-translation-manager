@@ -69,7 +69,7 @@ if (!function_exists('noEditTransEmptyUndefined')) {
     function noEditTransEmptyUndefined($key, array $replace = array(), $locale = null, $useDB = null)
     {
         $trans = App::make('translator');
-        if ($trans->inPlaceEditing()) {
+        if ($trans->isInPlaceEditing(1)) {
             /* @var $trans Translator */
             $trans->suspendInPlaceEditing();
             $text = $trans->get($key, $replace, $locale, $useDB);
@@ -111,7 +111,7 @@ if (!function_exists('noEditTrans')) {
     function noEditTrans($key, $parameters = null, $locale = null, $useDB = null)
     {
         $trans = App::make('translator');
-        if ($trans->inPlaceEditing()) {
+        if ($trans->isInPlaceEditing(1)) {
             /* @var $trans Translator */
             $trans->suspendInPlaceEditing();
             $text = $trans->get($key, $parameters ?: [], $locale, $useDB);
@@ -136,7 +136,7 @@ if (!function_exists('ifEditTrans')) {
     function ifEditTrans($key, $parameters = null, $locale = null, $useDB = null, $noWrap = null)
     {
         $trans = App::make('translator');
-        if ($trans->inPlaceEditing() && $trans->getInPlaceEditingMode() == 1) {
+        if ($trans->isInPlaceEditing(1)) {
             /* @var $trans Translator */
             $text = $trans->getInPlaceEditLink($key, $parameters ?: [], $locale, $useDB);
             return $noWrap ? $text : "<br>[$text]";
@@ -156,6 +156,29 @@ if (!function_exists('getEditableLinks')) {
     }
 }
 
+if (!function_exists('getEditableLinksOnly')) {
+    /**
+     * @return string
+     *
+     */
+    function getEditableLinksOnly() {
+        $trans = App::make('translator');
+        return $trans->getEditableLinksOnly();
+    }
+}
+
+if (!function_exists('getEditableTranslationsButton')) {
+    /**
+     * @param string|null $style style attribute to apply
+     *
+     * @return string
+     */
+    function getEditableTranslationsButton($style = null) {
+        $trans = App::make('translator');
+        return $trans->getEditableTranslationsButton($style);
+    }
+}
+
 if (!function_exists('ifInPlaceEdit')) {
     /**
      * @param       $text
@@ -170,7 +193,7 @@ if (!function_exists('ifInPlaceEdit')) {
     {
         /* @var $trans Translator */
         $trans = App::make('translator');
-        if ($trans->inPlaceEditing() && $trans->getInPlaceEditingMode() == 1 ) {
+        if ($trans->isInPlaceEditing(1)) {
             while (preg_match('/@lang\(\'([^\']+)\'\)/', $text, $matches)) {
                 $repl = $trans->getInPlaceEditLink($matches[1], $replace, $locale, $useDB);
                 $text = str_replace($matches[0], $repl, $text);
@@ -193,6 +216,19 @@ if (!function_exists('inPlaceEditing')) {
     }
 }
 
+if (!function_exists('isInPlaceEditing')) {
+    /**
+     * @param string|null $inPlaceEditing if null then only test to see if inplace eding is enabled, else test that the inplace edit mode == the passed value
+     *
+     * @return string
+     */
+    function isInPlaceEditing($inPlaceEditing = null)
+    {
+        $trans = App::make('translator');
+        return $trans->isInPlaceEditing($inPlaceEditing);
+    }
+}
+
 if (!function_exists('inPlaceEditingMode')) {
     /**
      * @return int
@@ -201,14 +237,15 @@ if (!function_exists('inPlaceEditingMode')) {
     function inPlaceEditingMode()
     {
         $trans = App::make('translator');
-        return $trans->getInPlaceEditingMode();
+        $inPlaceEditingMode = $trans->getInPlaceEditingMode();
+        return $inPlaceEditingMode;
     }
 }
 
 if (!function_exists('formSubmit')) {
     function formSubmit($value = null, $options = array())
     {
-        if (inPlaceEditing()) {
+        if (isInPlaceEditing(1)) {
             $innerText = $value;
             if (preg_match('/^\s*(<a\s*[^>]*>[^<]*<\/a>)\s*\[(.*)\]$/', $value, $matches)) {
                 $innerText = $matches[2];
