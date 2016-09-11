@@ -10,8 +10,11 @@ system with a ton of practical functionality. [Features]
 [Configuration][]  
 [Version Notes][]  
 
-> - For Laravel 5.2 use the master branch, or require: `"vsch/laravel-translation-manager":
->   "~2.1"`
+> - For Laravel 5.3 require: `"vsch/laravel-translation-manager": "~2.3"`
+>     
+>     [Upgrading from LTM 2.0 or 2.1 to 2.3](../../wiki/Upgrade-2.0-to-2.2) 
+>     
+> - For Laravel 5.2 require: `"vsch/laravel-translation-manager": "~2.1"`
 >     
 > #### Laravel version 4.2 is no longer supported. 
 > 

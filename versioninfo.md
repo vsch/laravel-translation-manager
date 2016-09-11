@@ -3,7 +3,7 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+m 2.2.x for Laravel
 5.3 compatibility.
 
-#### 2.2.0
+#### 2.3.0
 
 - Change: Laravel 5.3 compatibility
 - Add: routes entry for translations. Old routes handling no longer works, now need to add a
