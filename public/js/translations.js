@@ -268,19 +268,19 @@ $(document).ready(function () {
         '</form>';
 
     $.fn.editableform.buttons = '' +
-        '<button type="submit" id="x-submit" class="editable-submit btn btn-sm btn-success"><i class="glyphicon glyphicon-ok"></i></button>' +
-        '&nbsp;<button type="button" id="x-cancel" class="editable-cancel btn btn-sm btn-danger"><i class="glyphicon glyphicon-remove"></i></button>' +
-        '&nbsp;&nbsp;<button id="x-translate" type="button" class="editable-translate btn btn-sm btn-warning hidden"><i class="glyphicon glyphicon-share-alt"></i></button>' +
-        '<button id="x-nodash" type="button" class="editable-translate btn btn-sm btn-warning hidden">❉ <i class="glyphicon glyphicon-share-alt"></i> Ab</button>' +
-        '&nbsp;&nbsp;<button id="x-plurals" type="button" class="editable-translate btn btn-sm btn-warning hidden">|</i></button>' +
-        '<button id="x-clean-markdown" type="button" class="editable-translate btn btn-sm btn-warning hidden"><i class="glyphicon glyphicon-flash"></i></button>' +
-        '&nbsp;&nbsp;<button id="x-capitalize" type="button" class="editable-translate btn btn-sm btn-info">ab <i class="glyphicon glyphicon-share-alt"></i> Ab</button>' +
-        '<button id="x-lowercase" type="button" class="editable-translate btn btn-sm btn-info">AB <i class="glyphicon glyphicon-share-alt"></i> ab</button>' +
-        '<button id="x-propcap" type="button" class="editable-translate btn btn-sm btn-info">A B <i class="glyphicon glyphicon-share-alt"></i> A b</button>' +
-        '&nbsp;&nbsp;<button id="x-copy" type="button" class="editable-translate btn btn-sm btn-primary"><i class="glyphicon glyphicon-copy"></i></button>' +
-        '<button id="x-paste" type="button" class="editable-translate btn btn-sm btn-primary"><i class="glyphicon glyphicon-paste"></i></button>' +
-        '&nbsp;&nbsp;<button id="x-reset-open" type="button" class="editable-translate btn btn-sm btn-success"><i class="glyphicon glyphicon-open"></i></button>' +
-        '<button id="x-reset-saved" type="button" class="editable-translate btn btn-sm btn-success"><i class="glyphicon glyphicon-floppy-open"></i></button>' +
+        '<button type="submit" title="Save changes" id="x-submit" class="editable-submit btn btn-sm btn-success"><i class="glyphicon glyphicon-ok"></i></button>' +
+        '&nbsp;<button type="button" title="Cancel changes" id="x-cancel" class="editable-cancel btn btn-sm btn-danger"><i class="glyphicon glyphicon-remove"></i></button>' +
+        '&nbsp;&nbsp;<button id="x-translate" type="button" title="Translate" class="editable-translate btn btn-sm btn-warning hidden"><i class="glyphicon glyphicon-share-alt"></i></button>' +
+        '<button id="x-nodash" type="button" title="Convert translation key to text" class="editable-translate btn btn-sm btn-warning hidden">❉ <i class="glyphicon glyphicon-share-alt"></i> Ab</button>' +
+        '&nbsp;&nbsp;<button id="x-plurals" type="button" title="Generate plural forms" class="editable-translate btn btn-sm btn-warning hidden">|</i></button>' +
+        '<button id="x-clean-markdown" type="button" title="Clean HTML markdown" class="editable-translate btn btn-sm btn-warning hidden"><i class="glyphicon glyphicon-flash"></i></button>' +
+        '&nbsp;&nbsp;<button id="x-capitalize" type="button" title="Uppercase the first character of each word in the string" class="editable-translate btn btn-sm btn-info">ab <i class="glyphicon glyphicon-share-alt"></i> Ab</button>' +
+        '<button id="x-lowercase" type="button" title="Make the string lowercase" class="editable-translate btn btn-sm btn-info">AB <i class="glyphicon glyphicon-share-alt"></i> ab</button>' +
+        '<button id="x-propcap" type="button" title="Make the string\'s first character uppercase" class="editable-translate btn btn-sm btn-info">A B <i class="glyphicon glyphicon-share-alt"></i> A b</button>' +
+        '&nbsp;&nbsp;<button id="x-copy" type="button" title="Copy text to simulated clipboard (page refresh clears contents)" class="editable-translate btn btn-sm btn-primary"><i class="glyphicon glyphicon-copy"></i></button>' +
+        '<button id="x-paste" type="button" title="Paste text from simulated clipboard" class="editable-translate btn btn-sm btn-primary"><i class="glyphicon glyphicon-paste"></i></button>' +
+        '&nbsp;&nbsp;<button id="x-reset-open" type="button" title="Reset editor contents" class="editable-translate btn btn-sm btn-success"><i class="glyphicon glyphicon-open"></i></button>' +
+        '<button id="x-reset-saved" type="button" title="Load last published/imported value" class="editable-translate btn btn-sm btn-success"><i class="glyphicon glyphicon-floppy-open"></i></button>' +
         '<br>&nbsp;';
 
     function textAreaSelectedText(elemTextArea) {

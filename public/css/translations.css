@@ -1,3 +1,14 @@
+.transpopup {
+    overflow: auto;
+    max-width: 95%;
+    max-height: 95%;
+    display:flex;
+    padding-right: 20px;
+    flex-direction:column;
+    background-color: #f7f7f7;
+    border: 1px solid #c2e1f5 !important;
+}
+
 .editable-click,
 a.editable-click,
 a.editable-click:hover {
