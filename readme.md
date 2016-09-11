@@ -12,7 +12,7 @@ system with a ton of practical functionality. [Features]
 
 > - For Laravel 5.3 require: `"vsch/laravel-translation-manager": "~2.3"`
 >     
->     [Upgrading from LTM 2.0 or 2.1 to 2.3](../../wiki/Upgrade-2.0-to-2.2) 
+>     [Upgrading from LTM 2.0 or 2.1 to 2.3](../../wiki/Upgrade-2.0-to-2.3.md) 
 >     
 > - For Laravel 5.2 require: `"vsch/laravel-translation-manager": "~2.1"`
 >     
@@ -26,7 +26,10 @@ system with a ton of practical functionality. [Features]
 > If you have made correction to the auto-translated localization and would like to share them
 > with others please do so. It will be greatly appreciated.
 
-### Version 2.1.4 released
+### Version 2.3.0 released
+
+Laravel 5.3 compatible release. For upgrade instructions see
+[Upgrading 2.0, 2.1 to 2.3](../../wiki/Upgrade-2.0-to-2.3.md)
 
 Now using Laravel 5 authorization API to handle all LTM related authorizations.
 
