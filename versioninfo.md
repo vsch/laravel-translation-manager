@@ -3,6 +3,10 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+m 2.2.x for Laravel
 5.3 compatibility.
 
+#### 2.3.2
+
+- Fix: #48, Can't install this package for Laravel 5.3, updated composer dependency versions
+
 #### 2.3.1
 
 - Fix: use `controller->middleware()` closure to handle controller constructor initialization
