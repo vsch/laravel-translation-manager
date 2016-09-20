@@ -32,9 +32,9 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+m 2.2
 - Add: Powered by Yandex.Translate as required by their new terms.
 - Fix: Yandex documentation url.
 - Fix: Update yandex supported languages.
-- Add: Merged @yurtesen PR for in place edit mode requiring minimal view modifications. It is
+- Add: Merged [yurtesen](https://github.com/yurtesen) PR for in place edit mode requiring minimal view modifications. It is
   now the default in place edit mode.
-- Fix: Update laravelcollective/html version to 5.3
+- Fix: Update `laravelcollective/html` version to 5.3
 
 #### 2.1.4
 
