@@ -29,6 +29,10 @@ class Translator extends LaravelTranslator
 
     /**
      * Translator constructor.
+     *
+     * @param \Illuminate\Foundation\Application      $app
+     * @param \Illuminate\Translation\LoaderInterface $loader
+     * @param                                         $locale
      */
     public
     function __construct(Application $app, LoaderInterface $loader, $locale)

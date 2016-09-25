@@ -3,6 +3,10 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+m 2.2.x for Laravel
 5.3 compatibility.
 
+#### 2.3.3
+
+- Fix: #51, Completely overhaul German translations. Thanks to @pille1842.
+
 #### 2.3.2
 
 - Fix: #48, Can't install this package for Laravel 5.3, updated composer dependency versions
