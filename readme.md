@@ -8,14 +8,14 @@ system with a ton of practical functionality. [Features]
 
 [Installation][]  
 [Configuration][]  
-[Version Notes][]  
+[Version Notes][]
 
 > - For Laravel 5.3 require: `"vsch/laravel-translation-manager": "~2.3"`
 >     
->     [Upgrading from LTM 2.0 or 2.1 to 2.3](../../wiki/Upgrade-2.0-to-2.3) 
->     
+>     [Upgrading from LTM 2.0 or 2.1 to 2.3](../../wiki/Upgrade-2.0-to-2.3)
+> 
 > - For Laravel 5.2 require: `"vsch/laravel-translation-manager": "~2.1"`
->     
+> 
 > #### Laravel version 4.2 is no longer supported. 
 > 
 > You can still get access to the last updated version. Use the `laravel4` branch, or require:
@@ -23,8 +23,8 @@ system with a ton of practical functionality. [Features]
 > 
 > #### Initial Localizations Added
 > 
-> :exclamation: If you have made correction to the auto-translated localization and would like to share
-> them with others please do so. It will be greatly appreciated.
+> :exclamation: If you have made correction to the auto-translated localization and would like
+> to share them with others please do so. It will be greatly appreciated.
 
 ### Version 2.3.3 released
 
@@ -40,7 +40,7 @@ cleanup of dynamic keys. Need to publish and run migrations for this update
 Now you can view source file and line number references for translations. See
 [Web Interface: Source References]
 
-![Screen Shot Show Source Refs](../../wiki/images/ScreenShot_ShowSourceRefs.png)
+![Screen Shot Show Source Refs]
 
 **If you are upgrading from version 2.0.x of LTM** you need to:
 
@@ -69,18 +69,19 @@ specifically change that through the web UI, see [User Admin] or by populating t
 
 \* This package was originally based on Barry vd. Heuvel's excellent [barryvdh] package.
 
+[Configuration]: ../../wiki/Configuration
+[Enabling per locale user access control]: ../../wiki/Configuration#enabling-per-locale-user-access-control
+[Features]: ../../wiki/#features
+[Installation]: ../../wiki/Installation
+[Installation: Publishing And Running Migrations]: ../../wiki/Installation#publishing-and-running-migrations
+[Removing dependency on UserPrivilegeMapper from facade alias array]: ../../wiki/Installation#removing-dependency-on-userprivilegemapper-from-facade-alias-array
+[Removing dependency on UserPrivilegeMapper from service providers array]: ../../wiki/Installation#removing-dependency-on-userprivilegemapper-from-service-providers-array
+[Screen Shot Show Source Refs]: https://github.com/vsch/laravel-translation-manager/wiki/images/ScreenShot_ShowSourceRefs.png
+[Setting up user authorization]: ../../wiki/Installation#setting-up-user-authorization
+[Translation Manager Screenshot]: https://github.com/vsch/laravel-translation-manager/wiki/images/ScreenShot_main.png
+[User Admin]: ../../wiki/Web-Interface#user-admin
+[Version Notes]: versioninfo.md
+[Web Interface: Source References]: ../../wiki/Web-Interface#source-references
+[barryvdh]: https://github.com/barryvdh/laravel-translation-manager
 [wiki]: ../../wiki
 
-[Features]: ../../wiki/#features
-[barryvdh]: https://github.com/barryvdh/laravel-translation-manager
-[Translation Manager Screenshot]: ../../wiki/images/ScreenShot_main.png
-[Setting up user authorization]: ../../wiki/Installation#setting-up-user-authorization
-[Removing dependency on UserPrivilegeMapper from service providers array]: ../../wiki/Installation#removing-dependency-on-userprivilegemapper-from-service-providers-array
-[Enabling per locale user access control]: ../../wiki/Configuration#enabling-per-locale-user-access-control
-[User Admin]: ../../wiki/Web-Interface#user-admin
-[Installation]: ../../wiki/Installation
-[Configuration]: ../../wiki/Configuration
-[Version Notes]: versioninfo.md
-[Removing dependency on UserPrivilegeMapper from facade alias array]: ../../wiki/Installation#removing-dependency-on-userprivilegemapper-from-facade-alias-array
-[Installation: Publishing And Running Migrations]: ../../wiki/Installation#publishing-and-running-migrations
-[Web Interface: Source References]: ../../wiki/Web-Interface#source-references
