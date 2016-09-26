@@ -76,9 +76,9 @@ specifically change that through the web UI, see [User Admin] or by populating t
 [Installation: Publishing And Running Migrations]: ../../wiki/Installation#publishing-and-running-migrations
 [Removing dependency on UserPrivilegeMapper from facade alias array]: ../../wiki/Installation#removing-dependency-on-userprivilegemapper-from-facade-alias-array
 [Removing dependency on UserPrivilegeMapper from service providers array]: ../../wiki/Installation#removing-dependency-on-userprivilegemapper-from-service-providers-array
-[Screen Shot Show Source Refs]: https://github.com/vsch/laravel-translation-manager/wiki/images/ScreenShot_ShowSourceRefs.png
+[Screen Shot Show Source Refs]: https://raw.githubusercontent.com/wiki/vsch/laravel-translation-manager/images/ScreenShot_ShowSourceRefs.png
 [Setting up user authorization]: ../../wiki/Installation#setting-up-user-authorization
-[Translation Manager Screenshot]: https://github.com/vsch/laravel-translation-manager/wiki/images/ScreenShot_main.png
+[Translation Manager Screenshot]: https://raw.githubusercontent.com/wiki/vsch/laravel-translation-manager/images/ScreenShot_main.png
 [User Admin]: ../../wiki/Web-Interface#user-admin
 [Version Notes]: versioninfo.md
 [Web Interface: Source References]: ../../wiki/Web-Interface#source-references
