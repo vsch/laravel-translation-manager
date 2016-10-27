@@ -318,7 +318,7 @@ class Manager
                 $groups = $groups->whereNotIn('group', $excludedGroups);
             }
 
-            $this->groupList = ManagerServiceProvider::getLists($groups->pluck('group','group'));
+            $this->groupList = ManagerServiceProvider::getLists($groups->pluck('group', 'group'));
         }
         return $this->groupList;
     }
@@ -943,8 +943,8 @@ SQL
                     foreach ($matches[3] as $index => $key) {
                         $quote = $matches[2][$index][0];
                         $keyValue = $key[0];
-                        if ($quote == '\'' && !str_contains($keyValue, ["\"", "'", "->", ]) ||
-                            $quote == '"' && !str_contains($keyValue, ["$", "\"", "'", "->", ])
+                        if ($quote == '\'' && !str_contains($keyValue, ["\"", "'", "->",]) ||
+                            $quote == '"' && !str_contains($keyValue, ["$", "\"", "'", "->",])
                         ) {
                             if ($fileLines == null) {
                                 $fileLines = self::computeFileLines($fileContents);
@@ -985,7 +985,8 @@ SQL
     }
 
     public static
-    function offsetLine($lines, $offset){
+    function offsetLine($lines, $offset)
+    {
         $iMax = count($lines);
         for ($i = 0; $i < $iMax; $i++) {
             if ($lines[$i] > $offset) {
@@ -1017,9 +1018,20 @@ SQL
         $filename = array_pop($directories);
         $dirpath = "/";
 
-        // Build path and create dirrectories if needed
-        foreach ($directories as $directory) {
-            $dirpath .= $directory . "/";
+        $full = "/" . implode('/', $directories);
+        // find the first existing folder backwards
+        for ($i = count($directories); $i > 0; $i--) {
+            if ($this->files->exists($full)) {
+                break;
+            }
+            $lastpart = substr(strrchr($full, '/'), 1);
+            $full = substr($full, 0, -strlen($lastpart) - 1);
+        }
+
+        // Build path and create directories if needed
+        for ($k = 0; $k < count($directories); $k++) {
+            $dirpath .= $directories[$k] . "/";
+            if ($k < $i) continue;
             if (!$this->files->exists($dirpath)) {
                 try {
                     $this->files->makeDirectory($dirpath);
