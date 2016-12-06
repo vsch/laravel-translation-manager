@@ -499,7 +499,7 @@ class Translator extends LaravelTranslator
         $this->package = \Vsch\TranslationManager\ManagerServiceProvider::PACKAGE;
         $this->packagePrefix = $this->package . '::';
         $this->cookiePrefix = $this->manager->config('persistent_prefix', $this->packagePrefix);
-        $this->useCookies = $this->manager->config('use_cookies', $this->packagePrefix);
+        $this->useCookies = $this->manager->config('use_cookies', true);
     }
 
     protected
