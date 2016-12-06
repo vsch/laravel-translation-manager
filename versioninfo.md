@@ -3,6 +3,11 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+m 2.2.x for Laravel
 5.3 compatibility.
 
+#### 2.3.5
+
+- Fix: #55, Missing `use_cookies` configuration. Fix typo on default value from translation
+  manager package to `true`.
+
 #### 2.3.4
 
 - Fix: #52, Error when publishing translations with openbasedir active. Thanks to @lltyre.
