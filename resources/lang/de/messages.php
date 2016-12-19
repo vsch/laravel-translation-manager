@@ -1,4 +1,5 @@
 <?php
+
 return [
     'addkeys'                   => 'Schlüssel hinzufügen',
     'addkeys-placeholder'       => 'Einen Schlüssel pro Zeile hinzufügen, ohne das Gruppenpräfix',
@@ -52,7 +53,7 @@ TEXT
     'group'                     => 'Gruppe',
     'import-add'                => 'Nur neue Übersetzungen hinzufügen',
     'import-all-done'           => 'Import abgeschlossen, <strong>:count</strong> Elemente wurden verarbeitet. Laden Sie diese Seite neu, um das Ergebnis zu sehen.',
-    'import-done-head'          => 'Import abgeschlossen, ',
+    'import-done-head'          => 'Import abgeschlossen,',
     'import-done-tail'          => 'Elemente wurden verarbeitet. Laden Sie diese Seite neu, um das Ergebnis zu sehen.',
     'import-fresh'              => 'Alle löschen, dann importieren',
     'import-group'              => 'Importieren',
@@ -91,7 +92,7 @@ TEXT
     'reset-usage-info'          => 'Verwendungsinformationen zurücksetzen',
     'search'                    => 'Suchen',
     'search-done'               => 'Suche nach Übersetzungen abgeschlossen. Quellverweise wurden aktualisiert, <strong>:count</strong> neue Übersetzungselemente wurden hinzugefügt.',
-    'search-done-head'          => 'Suche nach Übersetzungen abgeschlossen, ',
+    'search-done-head'          => 'Suche nach Übersetzungen abgeschlossen,',
     'search-done-tail'          => 'Elemente gefunden.',
     'search-header'             => 'Gefundene Ergebnisse: :count',
     'search-translations'       => 'Übersetzungen durchsuchen',
