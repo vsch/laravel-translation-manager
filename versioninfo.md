@@ -3,6 +3,29 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+m 2.2.x for Laravel
 5.3 compatibility.
 
+#### 2.3.6
+
+- Add: #41, Editor button tooltips, translation passed from PHP to JS for tooltips for pop-up
+  editor button titles based on selected interface language.
+
+  Requires adding `{!! getWebUITranslations() !!}` to layout master before including
+  `translator.js`, otherwise english defaults will be used.
+
+  - title-save-changes: default "Save changes"
+  - title-cancel-changes: default "Cancel changes"
+  - title-translate: default "Translate"
+  - title-convert-key: default "Convert translation key to text"
+  - title-generate-plurals: default "Generate plural forms"
+  - title-clean-html-markdown: default "Clean HTML markdown"
+  - title-capitalize: default "Capitalize text"
+  - title-lowercase: default "Lowercase text"
+  - title-capitalize-first-word: default "Capitalize first word"
+  - title-simulated-copy: default "Copy text to simulated clipboard (page refresh clears
+    contents)"
+  - title-simulated-paste: default "Paste text from simulated clipboard"
+  - title-reset-editor: default "Reset editor contents"
+  - title-load-last: default "Load last published/imported value"
+  
 #### 2.3.5
 
 - Fix: #55, Missing `use_cookies` configuration. Fix typo on default value from translation
@@ -30,23 +53,23 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+m 2.2
 - Change: Laravel 5.3 compatibility
 - Add: routes entry for translations. Old routes handling no longer works, now need to add a
   call to `Translator::routes()` wrapped in appropriate middleware and prefix grouping:
-   
+
         \Route::group(['middleware' => 'web', 'prefix' => 'translations'], function () {
             Translator::routes();
         });
-
-    to be added to routes/web.php to create translator routes
+  
+  to be added to routes/web.php to create translator routes
 - Fix: search to list columns explicitly
 - Fix: Controller cookie values initialization moved out of constructor, cookies were not
   decrypted otherwise
-- Fix: if non-default db connection is set and it causes exception then connection is reset
-      to default. Otherwise, you have to delete the cookie from the browser.
+- Fix: if non-default db connection is set and it causes exception then connection is reset to
+  default. Otherwise, you have to delete the cookie from the browser.
 - Fix: wild card key operation for copy was failing due to extra column in insert statement.
 - Add: Powered by Yandex.Translate as required by their new terms.
 - Fix: Yandex documentation url.
 - Fix: Update yandex supported languages.
-- Add: Merged [yurtesen](https://github.com/yurtesen) PR for in place edit mode requiring minimal view modifications. It is
-  now the default in place edit mode.
+- Add: Merged [yurtesen](https://github.com/yurtesen) PR for in place edit mode requiring
+  minimal view modifications. It is now the default in place edit mode.
 - Fix: Update `laravelcollective/html` version to 5.3
 
 #### 2.1.4
@@ -82,19 +105,19 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+m 2.2
 
 - Change: using abilities to handle all LTM related authorization and providing a list of
   translation editors. Abilities:
-    - `ltm-admin-translations` true/false for users that can administer LTM through web UI
+  - `ltm-admin-translations` true/false for users that can administer LTM through web UI
+  
+  - `ltm-bypass-lottery` true/false for users that bypass the missing key lottery. For these
+    users all sessions track missing keys.
+  
+  - `ltm-list-editors` true/false
+  
+  Takes a reference argument in which to return an array of objects with `id`, `email` and
+  optional `name` fields used for managing per locale access. `connection` parameter is the
+  current connection name that can used to modify how the list is generated.
 
-    - `ltm-bypass-lottery` true/false for users that bypass the missing key lottery. For these
-      users all sessions track missing keys.
-
-    - `ltm-list-editors` true/false
-
-    Takes a reference argument in which to return an array of objects with `id`, `email` and
-    optional `name` fields used for managing per locale access. `connection` parameter is the
-    current connection name that can used to modify how the list is generated.
-
-    See
-    [Enabling per locale user access control](../../wiki/Configuration#enabling-per-locale-user-access-control)
+  See
+  [Enabling per locale user access control](../../wiki/Configuration#enabling-per-locale-user-access-control)
 
 - Change: remove dependency on UserPrivilegeManager package. It was only needed for Laravel 4.
 
@@ -107,10 +130,10 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+m 2.2
 
 - Add: color highlight for key regex text box and radio button translation filters to visually
   signal when key list is incomplete and which filter is responsible:
-    - no filter: normal
-    - filter with matched keys: blue
-    - filter with no matched keys: red
-
+  - no filter: normal
+  - filter with matched keys: blue
+  - filter with no matched keys: red
+  
 #### 2.0.41
 
 - Fix: #24, Translation Work Orders: Allow users to access only some languages. Basic user per
@@ -221,27 +244,27 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+m 2.2
   group will have a period in all Laravel Versions. For example for directory structure like the
   following:
 
-    ```text
-    lang
+```text
+lang
     └── en
         └── test
             ├── sub-dir
             │ └── sub-sub-test.php
             └── subtest.php
-    ```
-    
-    You would access translations:
+```
+  
+  You would access translations:
 
-    - in L5 as `@lang('test/subtest.translation-key')` for `subtest.php` and as
-      `@lang('test/sub-dir/sub-sub-test.translation-key')` for `sub-sub-test.php`.
-
-    - in L4 as `@lang('test.subtest.translation-key')` for `subtest.php` and as
-      `@lang('test.sub-dir.sub-sub-test.translation-key')` for `sub-sub-test.php`.
-
-    In both cases the group in translation manager will show as `test.subtest` and
-    `test.sub-dir.sub-sub-test`. It was too big a pain to support `/` in group names because
-    these are passed in the URL as parameters and having slashes messes things up. URL encoding
-    is no help because Laravel cannot resolve the path.
+  - in L5 as `@lang('test/subtest.translation-key')` for `subtest.php` and as
+    `@lang('test/sub-dir/sub-sub-test.translation-key')` for `sub-sub-test.php`.
+  
+  - in L4 as `@lang('test.subtest.translation-key')` for `subtest.php` and as
+    `@lang('test.sub-dir.sub-sub-test.translation-key')` for `sub-sub-test.php`.
+  
+  In both cases the group in translation manager will show as `test.subtest` and
+  `test.sub-dir.sub-sub-test`. It was too big a pain to support `/` in group names because these
+  are passed in the URL as parameters and having slashes messes things up. URL encoding is no
+  help because Laravel cannot resolve the path.
 
 #### x.0.29
 

@@ -355,8 +355,8 @@ class Translator extends LaravelTranslator
     {
         $inplaceEditMode = $this->manager->config('inplace_edit_mode');
         if ($this->inPlaceEditing() && $inplaceEditMode == 2) {
-            $keyDiv = '<div id="keys" style="padding:5px; padding-top:0px; white-space: nowrap;">' . PHP_EOL . '<b>Keys</b><br>' . PHP_EOL;
-            $textDiv = '<div id="keytexts" style="padding:5px; padding-top:0px; white-space: nowrap;">' . PHP_EOL . '<b>Translations</b><br>' . PHP_EOL;
+            $keyDiv = '<div id="keys" style="padding:5px; padding-top:0; white-space: nowrap;">' . PHP_EOL . '<b>Keys</b><br>' . PHP_EOL;
+            $textDiv = '<div id="keytexts" style="padding:5px; padding-top:0; white-space: nowrap;">' . PHP_EOL . '<b>Translations</b><br>' . PHP_EOL;
 
             $sorted = $this->usedKeys;
             sort($sorted);
@@ -385,11 +385,52 @@ class Translator extends LaravelTranslator
             $translations .= $keyDiv . $textDiv;
             $translations .= '</div>' . PHP_EOL;
 
-            $result = '<div id="transcontainer" style="display: none; position:fixed; top:0px; height: 100%; width: 100%; align-items: center; justify-content:center;" ><div id="transkeylist" class="transpopup">' .
+            $result = '<div id="transcontainer" style="display: none; position:fixed; top:0; height: 100%; width: 100%; align-items: center; justify-content:center;" ><div id="transkeylist" class="transpopup">' .
                 PHP_EOL . $buttons . $translations . '</div>' . PHP_EOL . '</div>' . PHP_EOL;
             return $result;
         }
         return null;
+    }
+
+    /**
+     * Output translation strings for WebUI used by JS
+     *
+     * @return string
+     */
+    public
+    function getWebUITranslations()
+    {
+        $TITLE_SAVE_CHANGES = $this->get($this->package . '::messages.title-save-changes');
+        $TITLE_CANCEL_CHANGES = $this->get($this->package . '::messages.title-cancel-changes');
+        $TITLE_TRANSLATE = $this->get($this->package . '::messages.title-translate');
+        $TITLE_CONVERT_KEY = $this->get($this->package . '::messages.title-convert-key');
+        $TITLE_GENERATE_PLURALS = $this->get($this->package . '::messages.title-generate-plurals');
+        $TITLE_CLEAN_HTML_MARKDOWN = $this->get($this->package . '::messages.title-clean-html-markdown');
+        $TITLE_CAPITALIZE = $this->get($this->package . '::messages.title-capitalize');
+        $TITLE_LOWERCASE = $this->get($this->package . '::messages.title-lowercase');
+        $TITLE_CAPITALIZE_FIRST_WORD = $this->get($this->package . '::messages.title-capitalize-first-word');
+        $TITLE_SIMULATED_COPY = $this->get($this->package . '::messages.title-simulated-copy');
+        $TITLE_SIMULATED_PASTE = $this->get($this->package . '::messages.title-simulated-paste');
+        $TITLE_RESET_EDITOR = $this->get($this->package . '::messages.title-reset-editor');
+        $TITLE_LOAD_LAST = $this->get($this->package . '::messages.title-load-last');
+
+        return <<<HTML
+<script>
+var TITLE_SAVE_CHANGES = "$TITLE_SAVE_CHANGES";
+var TITLE_CANCEL_CHANGES = "$TITLE_CANCEL_CHANGES";
+var TITLE_TRANSLATE = "$TITLE_TRANSLATE";
+var TITLE_CONVERT_KEY = "$TITLE_CONVERT_KEY";
+var TITLE_GENERATE_PLURALS = "$TITLE_GENERATE_PLURALS";
+var TITLE_CLEAN_HTML_MARKDOWN = "$TITLE_CLEAN_HTML_MARKDOWN";
+var TITLE_CAPITALIZE = "$TITLE_CAPITALIZE";
+var TITLE_LOWERCASE = "$TITLE_LOWERCASE";
+var TITLE_CAPITALIZE_FIRST_WORD = "$TITLE_CAPITALIZE_FIRST_WORD";
+var TITLE_SIMULATED_COPY = "$TITLE_SIMULATED_COPY";
+var TITLE_SIMULATED_PASTE = "$TITLE_SIMULATED_PASTE";
+var TITLE_RESET_EDITOR = "$TITLE_RESET_EDITOR";
+var TITLE_LOAD_LAST = "$TITLE_LOAD_LAST";
+</script>
+HTML;
     }
 
     /**

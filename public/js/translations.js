@@ -13,6 +13,20 @@ var xtranslateText;
 var xtranslateService;
 var MARKDOWN_KEY_SUFFIX;
 
+var TITLE_SAVE_CHANGES;
+var TITLE_CANCEL_CHANGES;
+var TITLE_TRANSLATE;
+var TITLE_CONVERT_KEY;
+var TITLE_GENERATE_PLURALS;
+var TITLE_CLEAN_HTML_MARKDOWN;
+var TITLE_CAPITALIZE;
+var TITLE_LOWERCASE;
+var TITLE_CAPITALIZE_FIRST_WORD;
+var TITLE_SIMULATED_COPY;
+var TITLE_SIMULATED_PASTE;
+var TITLE_RESET_EDITOR;
+var TITLE_LOAD_LAST;
+
 function swapInClass(elem, toAdd, toRemove) {
     'use strict';
     return elem.removeClass(toRemove).addClass(toAdd);
@@ -267,20 +281,34 @@ $(document).ready(function () {
         '</div>' +
         '</form>';
 
+    var title_save_changes = TITLE_SAVE_CHANGES || "Save changes";
+    var title_cancel_changes = TITLE_CANCEL_CHANGES || "Cancel changes";
+    var title_translate = TITLE_TRANSLATE || "Translate";
+    var title_convert_key = TITLE_CONVERT_KEY || "Convert translation key to text";
+    var title_generate_plurals = TITLE_GENERATE_PLURALS || "Generate plural forms";
+    var title_clean_html_markdown = TITLE_CLEAN_HTML_MARKDOWN || "Clean HTML markdown";
+    var title_capitalize = TITLE_CAPITALIZE || "Capitalize text";
+    var title_lowercase = TITLE_LOWERCASE || "Lowercase text";
+    var title_capitalize_first_word = TITLE_CAPITALIZE_FIRST_WORD || "Capitalize first word";
+    var title_simulated_copy = TITLE_SIMULATED_COPY || "Copy text to simulated clipboard (page refresh clears contents)";
+    var title_simulated_paste = TITLE_SIMULATED_PASTE || "Paste text from simulated clipboard";
+    var title_reset_editor = TITLE_RESET_EDITOR || "Reset editor contents";
+    var title_load_last = TITLE_LOAD_LAST || "Load last published/imported value";
+
     $.fn.editableform.buttons = '' +
-        '<button type="submit" title="Save changes" id="x-submit" class="editable-submit btn btn-sm btn-success"><i class="glyphicon glyphicon-ok"></i></button>' +
-        '&nbsp;<button type="button" title="Cancel changes" id="x-cancel" class="editable-cancel btn btn-sm btn-danger"><i class="glyphicon glyphicon-remove"></i></button>' +
-        '&nbsp;&nbsp;<button id="x-translate" type="button" title="Translate" class="editable-translate btn btn-sm btn-warning hidden"><i class="glyphicon glyphicon-share-alt"></i></button>' +
-        '<button id="x-nodash" type="button" title="Convert translation key to text" class="editable-translate btn btn-sm btn-warning hidden">❉ <i class="glyphicon glyphicon-share-alt"></i> Ab</button>' +
-        '&nbsp;&nbsp;<button id="x-plurals" type="button" title="Generate plural forms" class="editable-translate btn btn-sm btn-warning hidden">|</i></button>' +
-        '<button id="x-clean-markdown" type="button" title="Clean HTML markdown" class="editable-translate btn btn-sm btn-warning hidden"><i class="glyphicon glyphicon-flash"></i></button>' +
-        '&nbsp;&nbsp;<button id="x-capitalize" type="button" title="Uppercase the first character of each word in the string" class="editable-translate btn btn-sm btn-info">ab <i class="glyphicon glyphicon-share-alt"></i> Ab</button>' +
-        '<button id="x-lowercase" type="button" title="Make the string lowercase" class="editable-translate btn btn-sm btn-info">AB <i class="glyphicon glyphicon-share-alt"></i> ab</button>' +
-        '<button id="x-propcap" type="button" title="Make the string\'s first character uppercase" class="editable-translate btn btn-sm btn-info">A B <i class="glyphicon glyphicon-share-alt"></i> A b</button>' +
-        '&nbsp;&nbsp;<button id="x-copy" type="button" title="Copy text to simulated clipboard (page refresh clears contents)" class="editable-translate btn btn-sm btn-primary"><i class="glyphicon glyphicon-copy"></i></button>' +
-        '<button id="x-paste" type="button" title="Paste text from simulated clipboard" class="editable-translate btn btn-sm btn-primary"><i class="glyphicon glyphicon-paste"></i></button>' +
-        '&nbsp;&nbsp;<button id="x-reset-open" type="button" title="Reset editor contents" class="editable-translate btn btn-sm btn-success"><i class="glyphicon glyphicon-open"></i></button>' +
-        '<button id="x-reset-saved" type="button" title="Load last published/imported value" class="editable-translate btn btn-sm btn-success"><i class="glyphicon glyphicon-floppy-open"></i></button>' +
+        '<button type="submit" title="' + title_save_changes + '" id="x-submit" class="editable-submit btn btn-sm btn-success"><i class="glyphicon glyphicon-ok"></i></button>' +
+        '&nbsp;<button type="button" title="' + title_cancel_changes + '" id="x-cancel" class="editable-cancel btn btn-sm btn-danger"><i class="glyphicon glyphicon-remove"></i></button>' +
+        '&nbsp;&nbsp;<button id="x-translate" type="button" title="' + title_translate + '" class="editable-translate btn btn-sm btn-warning hidden"><i class="glyphicon glyphicon-share-alt"></i></button>' +
+        '<button id="x-nodash" type="button" title="' + title_convert_key + '" class="editable-translate btn btn-sm btn-warning hidden">❉ <i class="glyphicon glyphicon-share-alt"></i> Ab</button>' +
+        '&nbsp;&nbsp;<button id="x-plurals" type="button" title="' + title_generate_plurals + '" class="editable-translate btn btn-sm btn-warning hidden">|</i></button>' +
+        '<button id="x-clean-markdown" type="button" title="' + title_clean_html_markdown + '" class="editable-translate btn btn-sm btn-warning hidden"><i class="glyphicon glyphicon-flash"></i></button>' +
+        '&nbsp;&nbsp;<button id="x-capitalize" type="button" title="' + title_capitalize + '" class="editable-translate btn btn-sm btn-info">ab <i class="glyphicon glyphicon-share-alt"></i> Ab</button>' +
+        '<button id="x-lowercase" type="button" title="' + title_lowercase + '" class="editable-translate btn btn-sm btn-info">AB <i class="glyphicon glyphicon-share-alt"></i> ab</button>' +
+        '<button id="x-propcap" type="button" title="' + title_capitalize_first_word + '" class="editable-translate btn btn-sm btn-info">A B <i class="glyphicon glyphicon-share-alt"></i> A b</button>' +
+        '&nbsp;&nbsp;<button id="x-copy" type="button" title="' + title_simulated_copy + '" class="editable-translate btn btn-sm btn-primary"><i class="glyphicon glyphicon-copy"></i></button>' +
+        '<button id="x-paste" type="button" title="' + title_simulated_paste + '" class="editable-translate btn btn-sm btn-primary"><i class="glyphicon glyphicon-paste"></i></button>' +
+        '&nbsp;&nbsp;<button id="x-reset-open" type="button" title="' + title_reset_editor + '" class="editable-translate btn btn-sm btn-success"><i class="glyphicon glyphicon-open"></i></button>' +
+        '<button id="x-reset-saved" type="button" title="' + title_load_last + '" class="editable-translate btn btn-sm btn-success"><i class="glyphicon glyphicon-floppy-open"></i></button>' +
         '<br>&nbsp;';
 
     function textAreaSelectedText(elemTextArea) {
@@ -458,12 +486,12 @@ $(document).ready(function () {
                 openedValue = dstElem[0].value.trim();
                 dstElem[0].value = openedValue;
 
-                if (MARKDOWN_KEY_SUFFIX !== undefined && MARKDOWN_KEY_SUFFIX !== '' && key.length > MARKDOWN_KEY_SUFFIX.length && key.substring(key.length - MARKDOWN_KEY_SUFFIX.length, key.length) == MARKDOWN_KEY_SUFFIX) {
+                if (MARKDOWN_KEY_SUFFIX !== undefined && MARKDOWN_KEY_SUFFIX !== '' && key.length > MARKDOWN_KEY_SUFFIX.length && key.substring(key.length - MARKDOWN_KEY_SUFFIX.length, key.length) === MARKDOWN_KEY_SUFFIX) {
                     if (xElem.btnCleanMarkdown.length) {
                         xElem.btnCleanMarkdown.removeClass('hidden');
                         xElem.btnCleanMarkdown.on('click', xedit(dstElem, function (params) {
                                 // clean up wrapped lines which are not markdown hard breaks or blank lines
-                                // TODO: clean up this shit-ball. Check by lines not characrters
+                                // TODO: clean up this shit-ball. Check by lines not characters
                                 // split into lines and step through
                                 var text = this;
                                 var lines = text.split('\n');
@@ -474,7 +502,7 @@ $(document).ready(function () {
                                     var line = lines[i];
                                     var isBlankLine = false;
 
-                                    if (line.trim().length == 0) {
+                                    if (line.trim().length === 0) {
                                         if (!lastWasBlank) {
                                             line = "\n";
                                             isBlankLine = true;
@@ -485,18 +513,18 @@ $(document).ready(function () {
                                     } else {
                                         isBlankLine = false;
 
-                                        if (line.length > 2 && line.substring(line.length - 2, line.length) == "  ") {
+                                        if (line.length > 2 && line.substring(line.length - 2, line.length) === "  ") {
                                             // we keep the spaces and add an end of line
                                             line += "\n";
                                         } else {
                                             // we check if next line is blank, we keep eol
-                                            if (i + 1 >= iMax || lines[i + 1].trim().length == 0) {
+                                            if (i + 1 >= iMax || lines[i + 1].trim().length === 0) {
                                                 line += "\n";
                                             }
 
                                             if (fixedText.length > 0) {
                                                 var lastChar = fixedText.charAt(fixedText.length - 1);
-                                                if (lastChar != '\n' && lastChar != ' ' && line.charAt(0) != ' ') {
+                                                if (lastChar !== '\n' && lastChar !== ' ' && line.charAt(0) !== ' ') {
                                                     // add a space, we will splice to previous line
                                                     fixedText += ' ';
                                                 }

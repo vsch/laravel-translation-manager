@@ -167,6 +167,17 @@ if (!function_exists('getEditableLinksOnly')) {
     }
 }
 
+if (!function_exists('getWebUITranslations')) {
+    /**
+     * @return string
+     *
+     */
+    function getWebUITranslations() {
+        $trans = App::make('translator');
+        return $trans->getWebUITranslations();
+    }
+}
+
 if (!function_exists('getEditableTranslationsButton')) {
     /**
      * @param string|null $style style attribute to apply
