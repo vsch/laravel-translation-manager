@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="author" content="Vladimir Schneider">
-    <link rel="icon" href="@asset('/images/favicon.png')">
+    <link rel="icon" href="{{asset('/images/favicon.png')}}">
     <meta name="description" content="<?=noEditTrans('laravel-translation-manager::messages.translation-manager')?>">
     <meta name="csrf-token" content="<?= csrf_token() ?>"/>
     {{--<!-- Bootstrap core CSS -->--}}
