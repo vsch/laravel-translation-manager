@@ -1,4 +1,4 @@
-# Laravel 5.2 Translation Manager
+# Laravel 5 Translation Manager
 
 This package is used to comfortably manage, view, edit and translate Laravel language files with
 translation assistance through the Yandex Translation API. It augments the Laravel Translator
@@ -10,6 +10,8 @@ system with a ton of practical functionality. [Features]
 [Configuration][]  
 [Version Notes][]
 
+> - For Laravel 5.4 require: `"vsch/laravel-translation-manager": "~2.4"`
+>     
 > - For Laravel 5.3 require: `"vsch/laravel-translation-manager": "~2.3"`
 >     
 >     [Upgrading from LTM 2.0 or 2.1 to 2.3](../../wiki/Upgrade-2.0-to-2.3)
@@ -25,6 +27,10 @@ system with a ton of practical functionality. [Features]
 > 
 > :exclamation: If you have made correction to the auto-translated localization and would like
 > to share them with others please do so. It will be greatly appreciated.
+
+### Version 2.4.0 released
+
+Laravel 5.4 compatible release. No API changes only internal implementation changes.
 
 ### Version 2.3.3 released
 

@@ -246,7 +246,7 @@ class Controller extends BaseController
         //$allTranslations = $this->getTranslation()->where('group', $group)->orderBy('key', 'asc')->get();
         $displayWhere = $this->displayLocales ? ' AND locale IN (\'' . implode("','", explode(',', $this->displayLocales)) . "')" : '';
         $ltm_translations = $this->manager->getTranslationsTableName();
-        $allTranslations = $this->getTranslation()->hydrateRaw($sql = <<<SQL
+        $allTranslations = $this->getTranslation()->fromQuery($sql = <<<SQL
 SELECT  
     ltm.id,
     ltm.status,

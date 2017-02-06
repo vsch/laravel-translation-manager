@@ -37,33 +37,33 @@ class ManagerServiceProvider extends ServiceProvider
         $this->mergeConfigFrom($configPath, self::PACKAGE);
         $this->publishes([$configPath => config_path(self::PACKAGE . '.php')], 'config');
 
-        $this->app[self::PACKAGE] = $this->app->share(function ($app) {
+        $this->app->singleton(self::PACKAGE, function ($app) {
             /* @var $manager \Vsch\TranslationManager\Manager */
             $manager = $app->make('Vsch\TranslationManager\Manager');
             return $manager;
         });
 
-        $this->app['command.translation-manager.reset'] = $this->app->share(function ($app) {
+        $this->app->singleton('command.translation-manager.reset', function ($app) {
             return new Console\ResetCommand($app[self::PACKAGE]);
         });
         $this->commands('command.translation-manager.reset');
 
-        $this->app['command.translation-manager.import'] = $this->app->share(function ($app) {
+        $this->app->singleton('command.translation-manager.import', function ($app) {
             return new Console\ImportCommand($app[self::PACKAGE]);
         });
         $this->commands('command.translation-manager.import');
 
-        $this->app['command.translation-manager.find'] = $this->app->share(function ($app) {
+        $this->app->singleton('command.translation-manager.find', function ($app) {
             return new Console\FindCommand($app[self::PACKAGE]);
         });
         $this->commands('command.translation-manager.find');
 
-        $this->app['command.translation-manager.export'] = $this->app->share(function ($app) {
+        $this->app->singleton('command.translation-manager.export', function ($app) {
             return new Console\ExportCommand($app[self::PACKAGE]);
         });
         $this->commands('command.translation-manager.export');
 
-        $this->app['command.translation-manager.clean'] = $this->app->share(function ($app) {
+        $this->app->singleton('command.translation-manager.clean', function ($app) {
             return new Console\CleanCommand($app[self::PACKAGE]);
         });
         $this->commands('command.translation-manager.clean');

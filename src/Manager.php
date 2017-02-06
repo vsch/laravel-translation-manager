@@ -708,7 +708,7 @@ SQL
     {
         $connectionName = $this->getConnectionName();
         $ltm_translations = $this->getTranslationsTableName();
-        $dbTranslations = $this->translation->hydrateRaw(<<<SQL
+        $dbTranslations = $this->translation->fromQuery(<<<SQL
 SELECT * FROM $ltm_translations WHERE locale = ? AND `group` = ?
 
 SQL
