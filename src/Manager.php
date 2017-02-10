@@ -913,7 +913,8 @@ SQL
             'Lang::trans',
             'Lang::transChoice',
             '@lang',
-            '@choice'
+            '@choice',
+            '__'
         );
         $pattern =                              // See http://regexr.com/392hu
             "(" . implode('|', $functions) . ")" .  // Must start with one of the functions
