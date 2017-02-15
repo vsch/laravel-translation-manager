@@ -28,6 +28,7 @@ class Manager
     const INDATABASE_PUBLISH_KEY = 'indatabase_publish';
     const DEFAULT_DB_CONNECTION_KEY = 'default_connection';
     const USER_LOCALES_ENABLED = 'user_locales_enabled';
+    const PDO_FETCH_MODE_ENABLED = 'pdo_fetch_mode_enabled';
     const USER_LIST_CONNECTION_KEY = 'user_list_connection';
     const DB_CONNECTIONS_KEY = 'db_connections';
     const PERSISTENT_PREFIX_KEY = 'persistent_prefix';
@@ -118,7 +119,12 @@ class Manager
     public
     function getConnection()
     {
-        return $this->translation->getConnection();
+        $connection = $this->translation->getConnection();
+        if ($this->getConnectionPdoFetchModeEnabled($this->getConnectionName())) {
+            // PR#63 when fetch mode is not default, this requires manual override
+            $connection->setFetchMode(\PDO::FETCH_CLASS);
+        }
+        return $connection;
     }
 
     /**
@@ -131,24 +137,33 @@ class Manager
     }
 
     public
-    function getConnectionInDatabasePublish($connection)
+    function getConnectionInDatabasePublish($connectionName)
     {
-        if ($connection === null || $connection === '' || $this->isDefaultTranslationConnection($connection)) {
+        if ($connectionName === null || $connectionName === '' || $this->isDefaultTranslationConnection($connectionName)) {
             return $this->config(self::INDATABASE_PUBLISH_KEY, 0);
         }
-        return $this->getConnectionInfo($connection, self::INDATABASE_PUBLISH_KEY, $this->config(self::INDATABASE_PUBLISH_KEY, 0));
+        return $this->getConnectionInfo($connectionName, self::INDATABASE_PUBLISH_KEY, $this->config(self::INDATABASE_PUBLISH_KEY, 0));
     }
 
     public
-    function getUserListConnection($connection)
+    function getConnectionPdoFetchModeEnabled($connectionName)
     {
-        if ($connection === null || $connection === '' || $this->isDefaultTranslationConnection($connection)) {
+        if ($connectionName === null || $connectionName === '' || $this->isDefaultTranslationConnection($connectionName)) {
+            return $this->config(self::PDO_FETCH_MODE_ENABLED, false);
+        }
+        return $this->getConnectionInfo($connectionName, self::PDO_FETCH_MODE_ENABLED, $this->config(self::PDO_FETCH_MODE_ENABLED, false));
+    }
+
+    public
+    function getUserListConnection($connectionName)
+    {
+        if ($connectionName === null || $connectionName === '' || $this->isDefaultTranslationConnection($connectionName)) {
             // use the default connection for the user list
             return '';
         }
 
-        $userListConnection = $this->getConnectionInfo($connection, self::USER_LIST_CONNECTION_KEY, $connection);
-        if (!$userListConnection) $userListConnection = $connection;
+        $userListConnection = $this->getConnectionInfo($connectionName, self::USER_LIST_CONNECTION_KEY, $connectionName);
+        if (!$userListConnection) $userListConnection = $connectionName;
         return $userListConnection;
     }
 
@@ -176,7 +191,7 @@ class Manager
     }
 
     public
-    function getConnectionInfo($connection, $key = null, $default = null)
+    function getConnectionInfo($connectionName, $key = null, $default = null)
     {
         if ($key === null) {
             return $this->config(self::DB_CONNECTIONS_KEY);
@@ -185,7 +200,7 @@ class Manager
         $db_connections = $this->config(self::DB_CONNECTIONS_KEY);
         $environment = \App::environment();
 
-        $db_connection = $connection !== null && array_key_exists($environment, $db_connections) && array_key_exists($connection, $db_connections[$environment]) ? $db_connections[$environment][$connection] : null;
+        $db_connection = $connectionName !== null && array_key_exists($environment, $db_connections) && array_key_exists($connectionName, $db_connections[$environment]) ? $db_connections[$environment][$connectionName] : null;
 
         $value = $db_connection && array_key_exists($key, $db_connection)
             ? $db_connection[$key]

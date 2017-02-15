@@ -55,6 +55,16 @@ return array(
      */
     'user_locales_enabled' => false,
     /**
+     * Enable manually setting PDO fetch mode when it is not the default
+     *
+     * Only applies to connections that support setFetchMode() method
+     *
+     * If not defined then connection's default fetch mode will be used
+     *
+     * @type boolean
+     */
+    'pdo_fetch_mode_enabled' => false,
+    /**
      * Enable markdown translation to html on the fly
      *
      * With this option set to a suffix string, all keys that end in this suffix, will

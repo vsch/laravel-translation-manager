@@ -3,6 +3,11 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.2.x and 2.3.x for
 Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
 
+#### 2.4.2
+
+* Fix: #63, Setting PDO Fetch mode to FETCH_CLASS, this now is supported but config setting
+  `pdo_fetch_mode_enabled` must be set to `true`.
+
 #### 2.4.1
 
 - Fix: #61, Search in __ functions
