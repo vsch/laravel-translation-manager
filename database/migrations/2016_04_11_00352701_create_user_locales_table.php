@@ -11,8 +11,7 @@ class CreateUserLocalesTable extends Migration
      *
      * @return void
      */
-    public
-    function up()
+    public function up()
     {
         Schema::create('ltm_user_locales', function (Blueprint $table) {
             $table->increments('id');

@@ -83,8 +83,7 @@ class Manager
 
     private $package;
 
-    public
-    function setConnectionName($connection = null)
+    public function setConnectionName($connection = null)
     {
         if ($connection === null || $connection === '') {
             // resetting to default
@@ -97,8 +96,7 @@ class Manager
         $this->clearCache();
     }
 
-    public
-    function getConnectionName()
+    public function getConnectionName()
     {
         $connectionName = $this->translation->getConnectionName();
         return $connectionName;
@@ -109,14 +107,12 @@ class Manager
      *
      * @return bool
      */
-    public
-    function isDefaultTranslationConnection($connection)
+    public function isDefaultTranslationConnection($connection)
     {
         return $connection == null || $connection == $this->default_translation_connection;
     }
 
-    public
-    function getConnection()
+    public function getConnection()
     {
         return $this->translation->getConnection();
     }
@@ -124,14 +120,12 @@ class Manager
     /**
      * @return \Vsch\TranslationManager\Models\Translation
      */
-    public
-    function getTranslation()
+    public function getTranslation()
     {
         return $this->translation;
     }
 
-    public
-    function getConnectionInDatabasePublish($connection)
+    public function getConnectionInDatabasePublish($connection)
     {
         if ($connection === null || $connection === '' || $this->isDefaultTranslationConnection($connection)) {
             return $this->config(self::INDATABASE_PUBLISH_KEY, 0);
@@ -139,8 +133,7 @@ class Manager
         return $this->getConnectionInfo($connection, self::INDATABASE_PUBLISH_KEY, $this->config(self::INDATABASE_PUBLISH_KEY, 0));
     }
 
-    public
-    function getUserListConnection($connection)
+    public function getUserListConnection($connection)
     {
         if ($connection === null || $connection === '' || $this->isDefaultTranslationConnection($connection)) {
             // use the default connection for the user list
@@ -152,31 +145,27 @@ class Manager
         return $userListConnection;
     }
 
-    public
-    function getUserListProvider($connection)
+    public function getUserListProvider($connection)
     {
         return function ($user, $connection_name, &$user_list) {
             return \Gate::forUser($user)->allows(self::ABILITY_LIST_EDITORS, [$connection_name, &$user_list]);
         };
     }
 
-    public
-    function getTranslationsTableName()
+    public function getTranslationsTableName()
     {
         $prefix = $this->translation->getConnection()->getTablePrefix();
         return $prefix . $this->translation->getTable();
     }
 
-    public
-    function getUserLocalesTableName()
+    public function getUserLocalesTableName()
     {
         $userLocales = new UserLocales();
         $prefix = $this->translation->getConnection()->getTablePrefix();
         return $prefix . $userLocales->getTable();
     }
 
-    public
-    function getConnectionInfo($connection, $key = null, $default = null)
+    public function getConnectionInfo($connection, $key = null, $default = null)
     {
         if ($key === null) {
             return $this->config(self::DB_CONNECTIONS_KEY);
@@ -197,8 +186,7 @@ class Manager
     /**
      * @return bool
      */
-    public
-    function inDatabasePublishing()
+    public function inDatabasePublishing()
     {
         return $this->zipExporting ? 3 : $this->indatabase_publish;
     }
@@ -206,8 +194,7 @@ class Manager
     /**
      * @return bool
      */
-    public
-    function areUserLocalesEnabled()
+    public function areUserLocalesEnabled()
     {
         return $this->config(self::USER_LOCALES_ENABLED, false);
     }
@@ -262,8 +249,7 @@ class Manager
         return $translation;
     }
 
-    public
-    function cacheGroupTranslations($group, $locales, $translations)
+    public function cacheGroupTranslations($group, $locales, $translations)
     {
         $this->preloadedGroupKeys = $translations;
         $this->preloadedGroup = $group;
@@ -271,8 +257,7 @@ class Manager
         $this->preloadedGroupLocales = array_combine($locales, $locales);
     }
 
-    public
-    function __construct(Application $app, Filesystem $files, Dispatcher $events, Translation $translation)
+    public function __construct(Application $app, Filesystem $files, Dispatcher $events, Translation $translation)
     {
         $this->app = $app;
         $this->package = ManagerServiceProvider::PACKAGE;
@@ -299,15 +284,13 @@ class Manager
         $this->augmentedGroupList = null;
     }
 
-    public
-    function afterRoute($request, $response)
+    public function afterRoute($request, $response)
     {
         $this->saveCache();
         $this->saveUsageCache();
     }
 
-    public
-    function getGroupList()
+    public function getGroupList()
     {
         if ($this->groupList === null) {
             // read it in
@@ -323,8 +306,7 @@ class Manager
         return $this->groupList;
     }
 
-    public
-    function getGroupAugmentedList()
+    public function getGroupAugmentedList()
     {
         if ($this->augmentedGroupList === null) {
             // compute augmented list from vnd:{vendor}.{package}::group.key
@@ -348,8 +330,7 @@ class Manager
         return $this->augmentedGroupList;
     }
 
-    public
-    function config($key = null, $default = null)
+    public function config($key = null, $default = null)
     {
         // Version 5.1
         if (!$this->config) $this->config = $this->app['config'][$this->package];

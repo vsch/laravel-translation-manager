@@ -3,7 +3,8 @@
 use Illuminate\Console\Command;
 use Vsch\TranslationManager\Manager;
 
-class ResetCommand extends Command {
+class ResetCommand extends Command
+{
 
     /**
      * The console command name.
@@ -19,7 +20,7 @@ class ResetCommand extends Command {
      */
     protected $description = 'Delete all translations from the database';
 
-    /** @var \Vsch\TranslationManager\Manager  */
+    /** @var \Vsch\TranslationManager\Manager */
     protected $manager;
 
     public function __construct(Manager $manager)
@@ -38,6 +39,4 @@ class ResetCommand extends Command {
         $this->manager->truncateTranslations();
         $this->info("All translations are deleted");
     }
-
-
 }

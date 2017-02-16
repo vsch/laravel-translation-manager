@@ -11,11 +11,9 @@ class AddDeletedFlagToTranslations extends Migration
      *
      * @return void
      */
-    public
-    function up()
+    public function up()
     {
-        Schema::table('ltm_translations', function (Blueprint $table)
-        {
+        Schema::table('ltm_translations', function (Blueprint $table) {
             $table->tinyInteger('is_deleted')->default(0);
         });
     }
@@ -28,8 +26,7 @@ class AddDeletedFlagToTranslations extends Migration
     public
     function down()
     {
-        Schema::table('ltm_translations', function (Blueprint $table)
-        {
+        Schema::table('ltm_translations', function (Blueprint $table) {
             $table->dropColumn('is_deleted');
         });
     }

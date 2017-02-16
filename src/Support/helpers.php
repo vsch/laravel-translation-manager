@@ -45,8 +45,8 @@ if (!function_exists('transLang')) {
     /**
      * @param       $key
      * @param array $replace
-     * @param null  $locale
-     * @param null  $useDB
+     * @param null $locale
+     * @param null $useDB
      *
      * @return mixed
      */
@@ -61,8 +61,8 @@ if (!function_exists('noEditTransEmptyUndefined')) {
     /**
      * @param       $key
      * @param array $replace
-     * @param null  $locale
-     * @param null  $useDB
+     * @param null $locale
+     * @param null $useDB
      *
      * @return mixed
      */
@@ -86,8 +86,8 @@ if (!function_exists('transChoice')) {
      * @param       $key
      * @param       $number
      * @param array $replace
-     * @param null  $locale
-     * @param null  $useDB
+     * @param null $locale
+     * @param null $useDB
      *
      * @return mixed
      */
@@ -102,8 +102,8 @@ if (!function_exists('noEditTrans')) {
     /**
      * @param       $key
      * @param array $parameters
-     * @param null  $locale
-     * @param null  $useDB
+     * @param null $locale
+     * @param null $useDB
      *
      * @return mixed
      *
@@ -126,9 +126,9 @@ if (!function_exists('ifEditTrans')) {
     /**
      * @param       $key
      * @param array $parameters
-     * @param null  $locale
-     * @param null  $useDB
-     * @param null  $noWrap
+     * @param null $locale
+     * @param null $useDB
+     * @param null $noWrap
      *
      * @return mixed
      *
@@ -150,7 +150,8 @@ if (!function_exists('getEditableLinks')) {
      * @return string
      *
      */
-    function getEditableLinks() {
+    function getEditableLinks()
+    {
         $trans = App::make('translator');
         return $trans->getEditableLinks();
     }
@@ -161,7 +162,8 @@ if (!function_exists('getEditableLinksOnly')) {
      * @return string
      *
      */
-    function getEditableLinksOnly() {
+    function getEditableLinksOnly()
+    {
         $trans = App::make('translator');
         return $trans->getEditableLinksOnly();
     }
@@ -172,7 +174,8 @@ if (!function_exists('getWebUITranslations')) {
      * @return string
      *
      */
-    function getWebUITranslations() {
+    function getWebUITranslations()
+    {
         $trans = App::make('translator');
         return $trans->getWebUITranslations();
     }
@@ -184,7 +187,8 @@ if (!function_exists('getEditableTranslationsButton')) {
      *
      * @return string
      */
-    function getEditableTranslationsButton($style = null) {
+    function getEditableTranslationsButton($style = null)
+    {
         $trans = App::make('translator');
         return $trans->getEditableTranslationsButton($style);
     }
@@ -194,9 +198,9 @@ if (!function_exists('ifInPlaceEdit')) {
     /**
      * @param       $text
      * @param array $replace
-     * @param null  $locale
-     * @param null  $useDB
-     * @param null  $noWrap
+     * @param null $locale
+     * @param null $useDB
+     * @param null $noWrap
      *
      * @return mixed
      */
