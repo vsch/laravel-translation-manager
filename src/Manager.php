@@ -118,7 +118,11 @@ class Manager
     public
     function getConnection()
     {
-        return $this->translation->getConnection();
+        $connection = $this->translation->getConnection();
+        if (method_exists($connection, 'setFetchMode')) {
+            $connection->setFetchMode(\PDO::FETCH_CLASS);
+        }
+        return $connection;
     }
 
     /**

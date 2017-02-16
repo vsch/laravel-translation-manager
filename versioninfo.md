@@ -1,7 +1,11 @@
 ### Version Notes
 
-The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+m 2.2.x for Laravel
+The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3.x for Laravel
 5.3 compatibility.
+
+#### 2.3.7
+
+- Fix: #63, Setting PDO Fetch mode to FETCH_CLASS
 
 #### 2.3.6
 
