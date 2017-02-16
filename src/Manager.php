@@ -120,10 +120,6 @@ class Manager
     function getConnection()
     {
         $connection = $this->translation->getConnection();
-        if ($this->getConnectionPdoFetchModeEnabled($this->getConnectionName())) {
-            // PR#63 when fetch mode is not default, this requires manual override
-            $connection->setFetchMode(\PDO::FETCH_CLASS);
-        }
         return $connection;
     }
 
@@ -143,15 +139,6 @@ class Manager
             return $this->config(self::INDATABASE_PUBLISH_KEY, 0);
         }
         return $this->getConnectionInfo($connectionName, self::INDATABASE_PUBLISH_KEY, $this->config(self::INDATABASE_PUBLISH_KEY, 0));
-    }
-
-    public
-    function getConnectionPdoFetchModeEnabled($connectionName)
-    {
-        if ($connectionName === null || $connectionName === '' || $this->isDefaultTranslationConnection($connectionName)) {
-            return $this->config(self::PDO_FETCH_MODE_ENABLED, false);
-        }
-        return $this->getConnectionInfo($connectionName, self::PDO_FETCH_MODE_ENABLED, $this->config(self::PDO_FETCH_MODE_ENABLED, false));
     }
 
     public
