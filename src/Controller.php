@@ -39,6 +39,7 @@ class Controller extends BaseController
     function getConnection()
     {
         $connection = $this->manager->getConnection();
+		$connection->setFetchMode(\PDO::FETCH_CLASS);
         return $connection;
     }
 
