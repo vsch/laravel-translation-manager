@@ -118,7 +118,7 @@
                                                             class="btn btn-sm btn-warning input-control"
                                                             data-disable-with="<?= noEditTrans($package . '::messages.publishing') ?>">
                                                         <?= noEditTrans($package . '::messages.publish-all') ?>
-                                                    </button><?= ifEditTrans($package . '::messages.publish-all') ?>
+                                                    </button>
                                                     <?= ifEditTrans($package . '::messages.find-in-files') ?>
                                                     <?= ifEditTrans($package . '::messages.searching') ?>
                                                     <button type="submit" form="form-find"

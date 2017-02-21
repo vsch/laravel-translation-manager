@@ -71,7 +71,10 @@ class Translator extends LaravelTranslator
             if ($this->useCookies) {
                 if (\Cookie::has($this->cookiePrefix . 'lang_inplaceedit')) {
                     $this->inPlaceEditing = \Cookie::get($this->cookiePrefix . 'lang_inplaceedit', 0);
-                    $tmp = 0;
+                    if ($this->inPlaceEditing > 0 && !\Auth::check()) {
+                        $this->inPlaceEditing = 0;
+                        \Cookie::queue($this->cookiePrefix . 'lang_inplaceedit', $this->inPlaceEditing);
+                    }
                 }
             } else {
                 $session = $this->app->make('session');
