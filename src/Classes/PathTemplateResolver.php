@@ -98,8 +98,7 @@ class PathTemplateResolver
      * @param $config
      * @param $version
      */
-    public
-    function __construct($files, $base_path, $config, $version)
+    public function __construct($files, $base_path, $config, $version)
     {
         $this->files = $files;
         $this->base_path = $base_path;
@@ -116,8 +115,7 @@ class PathTemplateResolver
      * @param &$config
      * @param $version
      */
-    public static
-    function normalizeConfig(&$config, $version)
+    public static function normalizeConfig(&$config, $version)
     {
         $toMerge = [];
         foreach ($config as $key => &$value) {
@@ -186,8 +184,7 @@ class PathTemplateResolver
     /**
      * @param mixed $value
      */
-    public static
-    function normalizeInclude($value)
+    public static function normalizeInclude($value)
     {
         if (array_key_exists('include', $value)) {
 
@@ -215,8 +212,7 @@ class PathTemplateResolver
         return $value;
     }
 
-    public static
-    function configValues($config, $setting)
+    public static function configValues($config, $setting)
     {
         $values = [];
         foreach ($config as $key => $value) {
@@ -233,8 +229,7 @@ class PathTemplateResolver
         return $values;
     }
 
-    public
-    function langFileList()
+    public function langFileList()
     {
         $this->config_paths = self::configValues($this->config, 'path');
         $sorted_paths = array_keys($this->config_paths);
@@ -257,8 +252,7 @@ class PathTemplateResolver
         return $this->lang_files;
     }
 
-    public static
-    function isPathIncluded($config, $vars, $partial = true)
+    public static function isPathIncluded($config, $vars, $partial = true)
     {
         $matchVendor = array_key_exists('{vendor}', $vars);
         $vars_vendor = $matchVendor ? $vars['{vendor}'] : null;
@@ -324,8 +318,7 @@ class PathTemplateResolver
         return false;
     }
 
-    protected
-    function loadFileList($prefix, $path_parts, $group_parts)
+    protected function loadFileList($prefix, $path_parts, $group_parts)
     {
         // collect all the fixed path parts
         // variable, read directory and sub dirs
@@ -417,14 +410,12 @@ class PathTemplateResolver
         }
     }
 
-    public static
-    function expandVars($text, array $vars)
+    public static function expandVars($text, array $vars)
     {
         return str_replace(array_keys($vars), array_values($vars), $text);
     }
 
-    public static
-    function extractTemplateVars($template, $text)
+    public static function extractTemplateVars($template, $text)
     {
         // return vars array or null if no match
         $lastpos = 0;
@@ -452,8 +443,7 @@ class PathTemplateResolver
         return null;
     }
 
-    public static
-    function getDbGroupPath($config, $group, $locale)
+    public static function getDbGroupPath($config, $group, $locale)
     {
         $db_group = $config['db_group'];
         $path = $config['path'];
@@ -477,8 +467,7 @@ class PathTemplateResolver
         return null;
     }
 
-    public
-    function groupFilePath($group, $locale)
+    public function groupFilePath($group, $locale)
     {
         $config_paths = self::configValues($this->config, 'path');
         $sorted_paths = array_keys($config_paths);

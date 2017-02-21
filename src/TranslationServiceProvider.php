@@ -4,19 +4,16 @@ use Illuminate\Translation\TranslationServiceProvider as BaseTranslationServiceP
 
 class TranslationServiceProvider extends BaseTranslationServiceProvider
 {
-
     /**
      * Register the service provider.
      *
      * @return void
      */
-    public
-    function register()
+    public function register()
     {
         $this->registerLoader();
 
-        $this->app->singleton('translator', function ($app)
-        {
+        $this->app->singleton('translator', function ($app) {
             $loader = $app['translation.loader'];
 
             // When registering the translator component, we'll need to set the default
@@ -28,8 +25,7 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider
 
             $trans->setFallback($app['config']['app.fallback_locale']);
 
-            if ($app->bound(\Vsch\TranslationManager\ManagerServiceProvider::PACKAGE))
-            {
+            if ($app->bound(\Vsch\TranslationManager\ManagerServiceProvider::PACKAGE)) {
                 $trans->setTranslationManager($app[\Vsch\TranslationManager\ManagerServiceProvider::PACKAGE]);
             }
 

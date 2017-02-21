@@ -29,8 +29,7 @@ class ManagerServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public
-    function register()
+    public function register()
     {
         // Register the config publish path
         $configPath = __DIR__ . '/../config/' . self::PACKAGE . '.php';
@@ -76,8 +75,7 @@ class ManagerServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public
-    function boot(Router $router)
+    public function boot(Router $router)
     {
         $resources = __DIR__ . '/../resources/';
         $this->loadViewsFrom($resources . 'views', self::PACKAGE);
@@ -117,8 +115,7 @@ class ManagerServiceProvider extends ServiceProvider
      *
      * @return array
      */
-    public
-    function provides()
+    public function provides()
     {
         return array(
             self::PACKAGE,
@@ -131,5 +128,4 @@ class ManagerServiceProvider extends ServiceProvider
             'command.translation-manager.clean'
         );
     }
-
 }

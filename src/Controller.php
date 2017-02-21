@@ -8,20 +8,6 @@ include_once(__DIR__ . '/Support/finediff.php');
 
 class Controller extends BaseController
 {
-    /** @var \Vsch\TranslationManager\Manager */
-    protected $manager;
-    protected $packagePrefix;
-    protected $package;
-    private $cookiePrefix;
-    protected $sqltraces;
-    protected $logSql;
-    private $primaryLocale;
-    private $translatingLocale;
-    private $displayLocales;
-    private $showUsageInfo;
-    private $locales;
-    private $transFilters;
-
     const COOKIE_LANG_LOCALE = 'lang';
     const COOKIE_TRANS_LOCALE = 'trans';
     const COOKIE_PRIM_LOCALE = 'prim';
@@ -29,89 +15,25 @@ class Controller extends BaseController
     const COOKIE_SHOW_USAGE = 'show-usage';
     const COOKIE_CONNECTION_NAME = 'connection-name';
     const COOKIE_TRANS_FILTERS = 'trans-filters';
-
+    /** @var \Vsch\TranslationManager\Manager */
+    protected $manager;
+    protected $packagePrefix;
+    protected $package;
+    protected $sqltraces;
+    protected $logSql;
     protected $connectionList;
+    protected $userLocales;
+    private $cookiePrefix;
+    private $primaryLocale;
+    private $translatingLocale;
+    private $displayLocales;
+    private $showUsageInfo;
+    private $locales;
 
     // list of locales that the user is allowed to modify
-    protected $userLocales;
+    private $transFilters;
 
-    protected
-    function getConnection()
-    {
-        $connection = $this->manager->getConnection();
-        return $connection;
-    }
-
-    public
-    function isLocaleEnabled($locale)
-    {
-        if (!is_array($locale)) $locale = array($locale);
-        foreach ($locale as $item) {
-            if (!str_contains($this->userLocales, ',' . $item . ',')) return false;
-        }
-        return true;
-    }
-
-    public
-    function getConnectionName()
-    {
-        return $this->manager->getConnectionName();
-    }
-
-    public
-    function setConnectionName($connection)
-    {
-        if (!array_key_exists($connection, $this->connectionList)) $connection = '';
-        \Cookie::queue($this->cookieName(self::COOKIE_CONNECTION_NAME), $connection, 60 * 24 * 365 * 1);
-        $this->manager->setConnectionName($connection);
-    }
-
-    protected
-    function getTranslation()
-    {
-        return $this->manager->getTranslation();
-    }
-
-    public static
-    function routes()
-    {
-        \Route::get('view/{group?}', '\\Vsch\\TranslationManager\\Controller@getView');
-
-        //deprecated: \Route::controller('admin/translations', '\\Vsch\\TranslationManager\\Controller');
-        \Route::get('/', '\\Vsch\\TranslationManager\\Controller@getIndex');
-        \Route::get('connection', '\\Vsch\\TranslationManager\\Controller@getConnection');
-        \Route::get('import', '\\Vsch\\TranslationManager\\Controller@getImport');
-        \Route::get('index', '\\Vsch\\TranslationManager\\Controller@getIndex');
-        \Route::get('interface_locale', '\\Vsch\\TranslationManager\\Controller@getInterfaceLocale');
-        \Route::get('keyop/{group}/{op?}', '\\Vsch\\TranslationManager\\Controller@getKeyop');
-        \Route::get('publish/{group}', '\\Vsch\\TranslationManager\\Controller@getPublish');
-        \Route::get('search', '\\Vsch\\TranslationManager\\Controller@getSearch');
-        \Route::get('toggle_in_place_edit', '\\Vsch\\TranslationManager\\Controller@getToggleInPlaceEdit');
-        \Route::get('trans_filters', '\\Vsch\\TranslationManager\\Controller@getTransFilters');
-        \Route::get('translation', '\\Vsch\\TranslationManager\\Controller@getTranslation');
-        \Route::get('usage_info', '\\Vsch\\TranslationManager\\Controller@getUsageInfo');
-        \Route::get('view', '\\Vsch\\TranslationManager\\Controller@getView');
-        \Route::get('zipped_translations/{group?}', '\\Vsch\\TranslationManager\\Controller@getZippedTranslations');
-        \Route::post('add/{group}', '\\Vsch\\TranslationManager\\Controller@postAdd');
-        \Route::post('copy_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postCopyKeys');
-        \Route::post('delete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postDelete');
-        \Route::post('delete_all/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteAll');
-        \Route::post('delete_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteKeys');
-        \Route::post('delete_suffixed_keys{group?}', '\\Vsch\\TranslationManager\\Controller@postDeleteSuffixedKeys');
-        \Route::post('edit/{group}', '\\Vsch\\TranslationManager\\Controller@postEdit');
-        \Route::post('find', '\\Vsch\\TranslationManager\\Controller@postFind');
-        \Route::post('import/{group}', '\\Vsch\\TranslationManager\\Controller@postImport');
-        \Route::post('move_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postMoveKeys');
-        \Route::post('preview_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postPreviewKeys');
-        \Route::post('publish/{group}', '\\Vsch\\TranslationManager\\Controller@postPublish');
-        \Route::post('show_source/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postShowSource');
-        \Route::post('undelete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postUndelete');
-        \Route::post('user_locales', '\\Vsch\\TranslationManager\\Controller@postUserLocales');
-        \Route::post('yandex_key', '\\Vsch\\TranslationManager\\Controller@postYandexKey');
-    }
-
-    public
-    function __construct()
+    public function __construct()
     {
         $this->package = \Vsch\TranslationManager\ManagerServiceProvider::PACKAGE;
         $this->packagePrefix = $this->package . '::';
@@ -138,8 +60,7 @@ class Controller extends BaseController
         });
     }
 
-    private
-    function initialize()
+    private function initialize()
     {
         $connectionName = \Cookie::has($this->cookieName(self::COOKIE_CONNECTION_NAME)) ? \Cookie::get($this->cookieName(self::COOKIE_CONNECTION_NAME)) : '';
         $this->setConnectionName($connectionName);
@@ -192,17 +113,87 @@ class Controller extends BaseController
         //});
     }
 
-    public
-    function cookieName($cookie)
+    public function cookieName($cookie)
     {
         return $this->cookiePrefix . $cookie;
+    }
+
+    public function setConnectionName($connection)
+    {
+        if (!array_key_exists($connection, $this->connectionList)) $connection = '';
+        \Cookie::queue($this->cookieName(self::COOKIE_CONNECTION_NAME), $connection, 60 * 24 * 365 * 1);
+        $this->manager->setConnectionName($connection);
+    }
+
+    protected function loadLocales()
+    {
+        //Set the default locale as the first one.
+        $currentLocale = \Config::get('app.locale');
+        $primaryLocale = $this->primaryLocale;
+        $translatingLocale = \Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE), $currentLocale);
+
+        $locales = ManagerServiceProvider::getLists($this->getTranslation()->groupBy('locale')->pluck('locale')) ?: [];
+
+        // limit the locale list to what is in the config
+        $configShowLocales = $this->manager->config(Manager::SHOW_LOCALES_KEY, []);
+        if ($configShowLocales) {
+            if (!is_array($configShowLocales)) $configShowLocales = array($configShowLocales);
+            $locales = array_intersect($locales, $configShowLocales);
+        }
+
+        $configLocales = $this->manager->config(Manager::ADDITIONAL_LOCALES_KEY, []);
+        if (!is_array($configLocales)) $configLocales = array($configLocales);
+
+        $locales = array_merge(array($primaryLocale, $translatingLocale, $currentLocale), $configLocales, $locales);
+        return array_flatten(array_unique($locales));
+    }
+
+    protected function getTranslation()
+    {
+        return $this->manager->getTranslation();
+    }
+
+    public static function routes()
+    {
+        \Route::get('view/{group?}', '\\Vsch\\TranslationManager\\Controller@getView');
+
+        //deprecated: \Route::controller('admin/translations', '\\Vsch\\TranslationManager\\Controller');
+        \Route::get('/', '\\Vsch\\TranslationManager\\Controller@getIndex');
+        \Route::get('connection', '\\Vsch\\TranslationManager\\Controller@getConnection');
+        \Route::get('import', '\\Vsch\\TranslationManager\\Controller@getImport');
+        \Route::get('index', '\\Vsch\\TranslationManager\\Controller@getIndex');
+        \Route::get('interface_locale', '\\Vsch\\TranslationManager\\Controller@getInterfaceLocale');
+        \Route::get('keyop/{group}/{op?}', '\\Vsch\\TranslationManager\\Controller@getKeyop');
+        \Route::get('publish/{group}', '\\Vsch\\TranslationManager\\Controller@getPublish');
+        \Route::get('search', '\\Vsch\\TranslationManager\\Controller@getSearch');
+        \Route::get('toggle_in_place_edit', '\\Vsch\\TranslationManager\\Controller@getToggleInPlaceEdit');
+        \Route::get('trans_filters', '\\Vsch\\TranslationManager\\Controller@getTransFilters');
+        \Route::get('translation', '\\Vsch\\TranslationManager\\Controller@getTranslation');
+        \Route::get('usage_info', '\\Vsch\\TranslationManager\\Controller@getUsageInfo');
+        \Route::get('view', '\\Vsch\\TranslationManager\\Controller@getView');
+        \Route::get('zipped_translations/{group?}', '\\Vsch\\TranslationManager\\Controller@getZippedTranslations');
+        \Route::post('add/{group}', '\\Vsch\\TranslationManager\\Controller@postAdd');
+        \Route::post('copy_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postCopyKeys');
+        \Route::post('delete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postDelete');
+        \Route::post('delete_all/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteAll');
+        \Route::post('delete_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteKeys');
+        \Route::post('delete_suffixed_keys{group?}', '\\Vsch\\TranslationManager\\Controller@postDeleteSuffixedKeys');
+        \Route::post('edit/{group}', '\\Vsch\\TranslationManager\\Controller@postEdit');
+        \Route::post('find', '\\Vsch\\TranslationManager\\Controller@postFind');
+        \Route::post('import/{group}', '\\Vsch\\TranslationManager\\Controller@postImport');
+        \Route::post('move_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postMoveKeys');
+        \Route::post('preview_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postPreviewKeys');
+        \Route::post('publish/{group}', '\\Vsch\\TranslationManager\\Controller@postPublish');
+        \Route::post('show_source/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postShowSource');
+        \Route::post('undelete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postUndelete');
+        \Route::post('user_locales', '\\Vsch\\TranslationManager\\Controller@postUserLocales');
+        \Route::post('yandex_key', '\\Vsch\\TranslationManager\\Controller@postYandexKey');
     }
 
     /**
      * @return mixed
      */
-    public static
-    function active($url)
+    public static function active($url)
     {
         $url = url($url, null, false);
         $url = str_replace('https:', 'http:', $url);
@@ -211,10 +202,59 @@ class Controller extends BaseController
         return $ret;
     }
 
-    public
-    function getIndex($group = null)
+    public function getSearch()
     {
-       try {
+        $ltm_translations = $this->manager->getTranslationsTableName();
+        $q = \Request::get('q');
+
+        if ($q === '') $translations = [];
+        else {
+            $displayWhere = $this->displayLocales ? ' AND locale IN (\'' . implode("','", explode(',', $this->displayLocales)) . "')" : '';
+
+            if (strpos($q, '%') === false) $q = "%$q%";
+
+            //$translations = $this->getTranslation()->where('key', 'like', "%$q%")->orWhere('value', 'like', "%$q%")->orderBy('group', 'asc')->orderBy('key', 'asc')->get();
+
+            // need to fill-in missing locale's that match the key
+            $translations = $this->getConnection()->select(<<<SQL
+SELECT  
+    id, status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used
+    FROM $ltm_translations rt WHERE (`key` LIKE ? OR value LIKE ?) $displayWhere
+UNION ALL
+SELECT NULL id, 0 status, lt.locale, kt.`group`, kt.`key`, NULL value, NULL created_at, NULL updated_at, NULL source, NULL saved_value, NULL is_deleted, NULL was_used
+FROM (SELECT DISTINCT locale FROM $ltm_translations WHERE 1=1 $displayWhere) lt
+    CROSS JOIN (SELECT DISTINCT `key`, `group` FROM $ltm_translations WHERE 1=1 $displayWhere) kt
+WHERE NOT exists(SELECT * FROM $ltm_translations tr WHERE tr.`key` = kt.`key` AND tr.`group` = kt.`group` AND tr.locale = lt.locale)
+      AND `key` LIKE ?
+ORDER BY `key`, `group`, locale
+SQL
+                , [$q, $q, $q,]);
+        }
+
+        $numTranslations = count($translations);
+
+        return \View::make($this->packagePrefix . 'search')
+            ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
+            ->with('userLocales', $this->userLocales)
+            ->with('package', $this->package)
+            ->with('translations', $translations)
+            ->with('numTranslations', $numTranslations);
+    }
+
+    protected function getConnection()
+    {
+        $connection = $this->manager->getConnection();
+        return $connection;
+    }
+
+    public function getView($group = null)
+    {
+        return $this->getIndex($group);
+    }
+
+    public function getIndex($group = null)
+    {
+        try {
             return $this->processIndex($group);
         } catch (\Exception $e) {
             // if have non default connection, reset it
@@ -225,8 +265,7 @@ class Controller extends BaseController
         return $this->processIndex($group);
     }
 
-    private
-    function processIndex($group = null)
+    private function processIndex($group = null)
     {
         $locales = $this->locales;
         $currentLocale = \Lang::getLocale();
@@ -505,80 +544,14 @@ SQL
             ->with('connection_name', ($this->manager->isDefaultTranslationConnection($this->getConnectionName()) ? '' : $this->getConnectionName()));
     }
 
-    public
-    function getSearch()
+    public function getConnectionName()
     {
-       $ltm_translations = $this->manager->getTranslationsTableName();
-        $q = \Request::get('q');
-
-        if ($q === '') $translations = [];
-        else {
-            $displayWhere = $this->displayLocales ? ' AND locale IN (\'' . implode("','", explode(',', $this->displayLocales)) . "')" : '';
-
-            if (strpos($q, '%') === false) $q = "%$q%";
-
-            //$translations = $this->getTranslation()->where('key', 'like', "%$q%")->orWhere('value', 'like', "%$q%")->orderBy('group', 'asc')->orderBy('key', 'asc')->get();
-
-            // need to fill-in missing locale's that match the key
-            $translations = $this->getConnection()->select(<<<SQL
-SELECT  
-    id, status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used
-    FROM $ltm_translations rt WHERE (`key` LIKE ? OR value LIKE ?) $displayWhere
-UNION ALL
-SELECT NULL id, 0 status, lt.locale, kt.`group`, kt.`key`, NULL value, NULL created_at, NULL updated_at, NULL source, NULL saved_value, NULL is_deleted, NULL was_used
-FROM (SELECT DISTINCT locale FROM $ltm_translations WHERE 1=1 $displayWhere) lt
-    CROSS JOIN (SELECT DISTINCT `key`, `group` FROM $ltm_translations WHERE 1=1 $displayWhere) kt
-WHERE NOT exists(SELECT * FROM $ltm_translations tr WHERE tr.`key` = kt.`key` AND tr.`group` = kt.`group` AND tr.locale = lt.locale)
-      AND `key` LIKE ?
-ORDER BY `key`, `group`, locale
-SQL
-                , [$q, $q, $q,]);
-        }
-
-        $numTranslations = count($translations);
-
-        return \View::make($this->packagePrefix . 'search')
-            ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
-            ->with('userLocales', $this->userLocales)
-            ->with('package', $this->package)
-            ->with('translations', $translations)
-            ->with('numTranslations', $numTranslations);
+        return $this->manager->getConnectionName();
     }
 
-    public
-    function getView($group = null)
+    public function postAdd($group)
     {
-        return $this->getIndex($group);
-    }
-
-    protected
-    function loadLocales()
-    {
-        //Set the default locale as the first one.
-        $currentLocale = \Config::get('app.locale');
-        $primaryLocale = $this->primaryLocale;
-        $translatingLocale = \Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE), $currentLocale);
-
-        $locales = ManagerServiceProvider::getLists($this->getTranslation()->groupBy('locale')->pluck('locale')) ?: [];
-
-        // limit the locale list to what is in the config
-        $configShowLocales = $this->manager->config(Manager::SHOW_LOCALES_KEY, []);
-        if ($configShowLocales) {
-            if (!is_array($configShowLocales)) $configShowLocales = array($configShowLocales);
-            $locales = array_intersect($locales, $configShowLocales);
-        }
-
-        $configLocales = $this->manager->config(Manager::ADDITIONAL_LOCALES_KEY, []);
-        if (!is_array($configLocales)) $configLocales = array($configLocales);
-
-        $locales = array_merge(array($primaryLocale, $translatingLocale, $currentLocale), $configLocales, $locales);
-        return array_flatten(array_unique($locales));
-    }
-
-    public
-    function postAdd($group)
-    {
-       if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+        if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $keys = explode("\n", trim(\Request::get('keys')));
             $suffixes = explode("\n", trim(\Request::get('suffixes')));
             $group = explode('::', $group, 2);
@@ -603,10 +576,9 @@ SQL
         return \Redirect::back()->withInput();
     }
 
-    public
-    function postDeleteSuffixedKeys($group)
+    public function postDeleteSuffixedKeys($group)
     {
-       if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+        if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $ltm_translations = $this->manager->getTranslationsTableName();
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
                 $keys = explode("\n", trim(\Request::get('keys')));
@@ -639,10 +611,9 @@ SQL
         return \Redirect::back()->withInput();
     }
 
-    public
-    function postEdit($group)
+    public function postEdit($group)
     {
-       if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY))) {
+        if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY))) {
             $name = \Request::get('name');
             $value = \Request::get('value');
 
@@ -691,10 +662,18 @@ SQL
         return array('status' => 'ok');
     }
 
-    public
-    function postDelete($group, $key)
+    public function isLocaleEnabled($locale)
     {
-       if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+        if (!is_array($locale)) $locale = array($locale);
+        foreach ($locale as $item) {
+            if (!str_contains($this->userLocales, ',' . $item . ',')) return false;
+        }
+        return true;
+    }
+
+    public function postDelete($group, $key)
+    {
+        if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $key = decodeKey($key);
             $ltm_translations = $this->manager->getTranslationsTableName();
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
@@ -708,10 +687,9 @@ SQL
         return array('status' => 'ok');
     }
 
-    public
-    function postShowSource($group, $key)
+    public function postShowSource($group, $key)
     {
-       $key = decodeKey($key);
+        $key = decodeKey($key);
         $ltm_translations = $this->manager->getTranslationsTableName();
         $results = '';
         if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
@@ -734,10 +712,9 @@ SQL
         return array('status' => 'ok', 'result' => $refs, 'key_name' => "$group.$key");
     }
 
-    public
-    function postUndelete($group, $key)
+    public function postUndelete($group, $key)
     {
-       if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+        if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $key = decodeKey($key);
             $ltm_translations = $this->manager->getTranslationsTableName();
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
@@ -751,38 +728,12 @@ SQL
         return array('status' => 'ok');
     }
 
-    protected
-    static
-    function keyGroup($group, $key)
+    public function getKeyop($group, $op = 'preview')
     {
-        $prefix = '';
-        $gkey = $key;
-
-        if (starts_with($key, 'vnd:') || starts_with($key, 'wbn:')) {
-            // these have vendor with . afterwards in the group
-            $parts = explode('.', $key, 2);
-
-            if (count($parts) === 2) {
-                $prefix = $parts[0] . '.';
-                $gkey = $parts[1];
-            }
-        }
-
-        $parts = explode('.', $gkey, 2);
-
-        if (count($parts) === 1) {
-            $tgroup = $group;
-            $tkey = $gkey;
-        } else {
-            $tgroup = $parts[0];
-            $tkey = $parts[1];
-        }
-
-        return [$prefix . $tgroup, $tkey];
+        return $this->keyOp($group, $op);
     }
 
-    protected
-    function keyOp($group, $op = 'preview')
+    protected function keyOp($group, $op = 'preview')
     {
         $errors = [];
         $keymap = [];
@@ -1042,49 +993,65 @@ SQL
             ->with('group', $group);
     }
 
-    public
-    function getKeyop($group, $op = 'preview')
+    protected static function keyGroup($group, $key)
     {
-       return $this->keyOp($group, $op);
+        $prefix = '';
+        $gkey = $key;
+
+        if (starts_with($key, 'vnd:') || starts_with($key, 'wbn:')) {
+            // these have vendor with . afterwards in the group
+            $parts = explode('.', $key, 2);
+
+            if (count($parts) === 2) {
+                $prefix = $parts[0] . '.';
+                $gkey = $parts[1];
+            }
+        }
+
+        $parts = explode('.', $gkey, 2);
+
+        if (count($parts) === 1) {
+            $tgroup = $group;
+            $tkey = $gkey;
+        } else {
+            $tgroup = $parts[0];
+            $tkey = $parts[1];
+        }
+
+        return [$prefix . $tgroup, $tkey];
     }
 
-    public
-    function postCopyKeys($group)
+    public function postCopyKeys($group)
     {
-       return $this->keyOp($group, 'copy');
+        return $this->keyOp($group, 'copy');
     }
 
-    public
-    function postMoveKeys($group)
+    public function postMoveKeys($group)
     {
-       return $this->keyOp($group, 'move');
+        return $this->keyOp($group, 'move');
     }
 
-    public
-    function postDeleteKeys($group)
+    public function postDeleteKeys($group)
     {
-       return $this->keyOp($group, 'delete');
+        return $this->keyOp($group, 'delete');
     }
 
-    public
-    function postPreviewKeys($group)
+    public function postPreviewKeys($group)
     {
-       return $this->keyOp($group, 'preview');
+        return $this->keyOp($group, 'preview');
     }
 
-    public
-    function postImport($group)
+    public function postImport($group)
     {
-       $replace = \Request::get('replace', false);
+        $replace = \Request::get('replace', false);
         $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : 1)
             , $group === '*' ? null : [$group]);
         return \Response::json(array('status' => 'ok', 'counter' => $counter));
     }
 
-    public
-    function getImport()
+    public function getImport()
     {
-       $replace = \Request::get('replace', false);
+        $replace = \Request::get('replace', false);
         $group = \Request::get('group', '*');
         $this->manager->clearErrors();
         $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : 1)
@@ -1093,51 +1060,45 @@ SQL
         return \Response::json(array('status' => 'ok', 'counter' => $counter, 'errors' => $errors));
     }
 
-    public
-    function postFind()
+    public function postFind()
     {
-       $numFound = $this->manager->findTranslations();
+        $numFound = $this->manager->findTranslations();
 
         return \Response::json(array('status' => 'ok', 'counter' => (int)$numFound));
     }
 
-    public
-    function postDeleteAll($group)
+    public function postDeleteAll($group)
     {
-       $this->manager->truncateTranslations($group);
+        $this->manager->truncateTranslations($group);
 
         return \Response::json(array('status' => 'ok', 'counter' => (int)0));
     }
 
-    public
-    function getPublish($group)
+    public function getPublish($group)
     {
-       $this->manager->exportTranslations($group);
+        $this->manager->exportTranslations($group);
 
         return \Response::json(array('status' => 'ok'));
     }
 
-    public
-    function postPublish($group)
+    public function postPublish($group)
     {
-       $this->manager->exportTranslations($group);
+        $this->manager->exportTranslations($group);
         $errors = $this->manager->errors();
 
         return \Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
     }
 
-    public
-    function getToggleInPlaceEdit()
+    public function getToggleInPlaceEdit()
     {
-       inPlaceEditing(!inPlaceEditing());
+        inPlaceEditing(!inPlaceEditing());
         if (\App::runningUnitTests()) return \Redirect::to('/');
         return !is_null(\Request::header('referer')) ? \Redirect::back() : \Redirect::to('/');
     }
 
-    public
-    function getInterfaceLocale()
+    public function getInterfaceLocale()
     {
-       $locale = \Request::get("l");
+        $locale = \Request::get("l");
         $translating = \Request::get("t");
         $primary = \Request::get("p");
         $connection = \Request::get("c");
@@ -1156,10 +1117,9 @@ SQL
         return !is_null(\Request::header('referer')) ? \Redirect::back() : \Redirect::to('/');
     }
 
-    public
-    function getUsageInfo()
+    public function getUsageInfo()
     {
-       $group = \Request::get("group");
+        $group = \Request::get("group");
         $reset = \Request::get("reset-usage-info");
         $show = \Request::get("show-usage-info");
 
@@ -1176,10 +1136,9 @@ SQL
         return !is_null(\Request::header('referer')) ? \Redirect::back() : \Redirect::to('/');
     }
 
-    public
-    function getTransFilters()
+    public function getTransFilters()
     {
-       $filter = null;
+        $filter = null;
         $regex = null;
 
         if (\Request::has('filter')) {
@@ -1204,10 +1163,9 @@ SQL
         return !is_null(\Request::header('referer')) ? \Redirect::back() : \Redirect::to('/');
     }
 
-    public
-    function getZippedTranslations($group = null)
+    public function getZippedTranslations($group = null)
     {
-       // disable gzip compression of this page, this causes wrapping of the zip file in gzip format
+        // disable gzip compression of this page, this causes wrapping of the zip file in gzip format
         // does not work the zip is still gzip compressed
         if (ini_get('zlib.output_compression')) {
             ini_set('zlib.output_compression', 'Off');
@@ -1233,19 +1191,17 @@ SQL
         //\Log::info("sending file, zlib.compression current setting " . ini_get('zlib.output_compression'));
     }
 
-    public
-    function postYandexKey()
+    public function postYandexKey()
     {
-       return \Response::json(array(
+        return \Response::json(array(
             'status' => 'ok',
             'yandex_key' => $this->manager->config('yandex_translator_key', null)
         ));
     }
 
-    public
-    function postUserLocales()
+    public function postUserLocales()
     {
-       $user_id = \Request::get("pk");
+        $user_id = \Request::get("pk");
         $values = \Request::get("value") ?: [];
         $userLocale = new UserLocales();
 
