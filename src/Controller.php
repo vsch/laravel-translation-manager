@@ -206,7 +206,6 @@ class Controller extends BaseController
 
     public function getSearch()
     {
-        $ltm_translations = $this->manager->getTranslationsTableName();
         $q = \Request::get('q');
 
         if ($q === '') $translations = [];
@@ -214,8 +213,6 @@ class Controller extends BaseController
             $displayWhere = $this->displayLocales ? ' AND locale IN (\'' . implode("','", explode(',', $this->displayLocales)) . "')" : '';
 
             if (strpos($q, '%') === false) $q = "%$q%";
-
-            //$translations = $this->getTranslation()->where('key', 'like', "%$q%")->orWhere('value', 'like', "%$q%")->orderBy('group', 'asc')->orderBy('key', 'asc')->get();
 
             // need to fill-in missing locale's that match the key
             $translations = $this->translatorRepository->searchByRequest($q, $displayWhere);
@@ -274,7 +271,6 @@ class Controller extends BaseController
         // translations, otherwise we don't know what the group and key looks like.
         //$allTranslations = $this->getTranslation()->where('group', $group)->orderBy('key', 'asc')->get();
         $displayWhere = $this->displayLocales ? ' AND locale IN (\'' . implode("','", explode(',', $this->displayLocales)) . "')" : '';
-        $ltm_translations = $this->manager->getTranslationsTableName();
         $allTranslations = $this->translatorRepository->allTranslations($group, $displayWhere);
 
         $numTranslations = count($allTranslations);
@@ -598,7 +594,6 @@ class Controller extends BaseController
     {
         if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $key = decodeKey($key);
-            $ltm_translations = $this->manager->getTranslationsTableName();
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
                 //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
                 $result = $this->translatorRepository->updateIsDeletedByGroupAndKey($group, $key, 1);
@@ -610,7 +605,6 @@ class Controller extends BaseController
     public function postShowSource($group, $key)
     {
         $key = decodeKey($key);
-        $ltm_translations = $this->manager->getTranslationsTableName();
         $results = '';
         if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
             $result = $this->translatorRepository->selectSourceByGroupAndKey($group, $key);
@@ -633,7 +627,6 @@ class Controller extends BaseController
     {
         if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $key = decodeKey($key);
-            $ltm_translations = $this->manager->getTranslationsTableName();
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
                 //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
                 $result = $this->translatorRepository->updateIsDeletedByGroupAndKey($group, $key, 0);
@@ -826,12 +819,7 @@ SQL
                             foreach ($rows as $row) {
                                 if ($this->isLocaleEnabled($row->locale)) {
                                     list($dstgrp, $dstkey) = self::keyGroup($row->dstgrp, $row->dst);
-                                    $to_delete = $this->getConnection()->select(<<<SQL
-SELECT GROUP_CONCAT(id SEPARATOR ',') ids FROM $ltm_translations tr
-WHERE `group` = ? AND `key` = ? AND locale = ? AND id NOT IN ($rowids)
-
-SQL
-                                        , [$dstgrp, $dstkey, $row->locale]);
+                                    $to_delete = $this->translatorRepository->selectToDeleteTranslations($dstgrp, $dstkey, $row->locale, $rowids);
 
                                     if (!empty($to_delete)) {
                                         $to_delete = $to_delete[0]->ids;
@@ -839,34 +827,27 @@ SQL
                                             //$this->getConnection()->update("UPDATE ltm_translations SET is_deleted = 1 WHERE id IN ($to_delete)");
                                             // have to delete right away, we will be bringing another key here
                                             // TODO: copy value to new key's saved value
-                                            $this->getConnection()->delete("DELETE FROM $ltm_translations WHERE id IN ($to_delete)");
+                                            $this->translatorRepository->deleteTranslationsForIds($to_delete);
                                         }
                                     }
 
-                                    $this->getConnection()->update("UPDATE $ltm_translations SET `group` = ?, `key` = ?, status = 1 WHERE id = ?"
-                                        , [$dstgrp, $dstkey, $row->id]);
+                                    $this->translatorRepository->updateGroupKeyStatusById($dstgrp, $dstkey, $row->id);
                                 }
                             }
                         } elseif ($op === 'delete') {
-                            //$this->getConnection()->delete("DELETE FROM ltm_translations WHERE id IN ($rowids)");
-                            $this->getConnection()->update("UPDATE $ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND id IN ($rowids)");
+                            $this->translatorRepository->updateIsDeletedByIds($rowids);
                         } elseif ($op === 'copy') {
                             // TODO: split operation into update and insert so that conflicting keys get new values instead of being replaced
                             foreach ($rows as $row) {
                                 if ($this->isLocaleEnabled($row->locale)) {
                                     list($dstgrp, $dstkey) = self::keyGroup($row->dstgrp, $row->dst);
-                                    $to_delete = $this->getConnection()->select(<<<SQL
-SELECT GROUP_CONCAT(id SEPARATOR ',') ids FROM $ltm_translations tr
-WHERE `group` = ? AND `key` = ? AND locale = ? AND id NOT IN ($rowids)
-
-SQL
-                                        , [$dstgrp, $dstkey, $row->locale]);
+                                    $to_delete = $this->translatorRepository->selectToDeleteTranslations($dstgrp, $dstkey, $userLocales, $rowids);
 
                                     if (!empty($to_delete)) {
                                         $to_delete = $to_delete[0]->ids;
                                         if ($to_delete) {
                                             //$this->getConnection()->update("UPDATE ltm_translations SET is_deleted = 1 WHERE id IN ($to_delete)");
-                                            $this->getConnection()->delete("DELETE FROM $ltm_translations WHERE id IN ($to_delete)");
+                                            $this->translatorRepository->deleteTranslationsForIds($to_delete);
                                         }
                                     }
 
@@ -1029,15 +1010,17 @@ SQL
 
         $this->setConnectionName($connection);
 
-        if (\App::runningUnitTests()) return \Redirect::to('/');
+        if (\App::runningUnitTests()) {
+            return \Redirect::to('/');
+        }
         return !is_null(\Request::header('referer')) ? \Redirect::back() : \Redirect::to('/');
     }
 
     public function getUsageInfo()
     {
-        $group = \Request::get("group");
-        $reset = \Request::get("reset-usage-info");
-        $show = \Request::get("show-usage-info");
+        $group = \Request::get('group');
+        $reset = \Request::get('reset-usage-info');
+        $show = \Request::get('show-usage-info');
 
         // need to store this so that it can be displayed again
         \Cookie::queue($this->cookieName(self::COOKIE_SHOW_USAGE), $show, 60 * 24 * 365 * 1);
@@ -1048,7 +1031,9 @@ SQL
             $this->manager->clearUsageCache(true, $group);
         }
 
-        if (\App::runningUnitTests()) return \Redirect::to('/');
+        if (\App::runningUnitTests()) {
+            return \Redirect::to('/');
+        }
         return !is_null(\Request::header('referer')) ? \Redirect::back() : \Redirect::to('/');
     }
 

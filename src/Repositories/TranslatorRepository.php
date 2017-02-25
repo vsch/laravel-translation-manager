@@ -65,17 +65,28 @@ SQL
 SQL
             , [$group, 'vnd:%.' . $group, 'wbn:%.' . $group]);
     }
-    
+
     public function updateIsDeletedByGroupAndKey($group, $key, $value)
     {
         $whereClause = $value == 1 ? 0 : 1;
-        
+
         return $this->getConnection()->update(<<<SQL
 UPDATE $this->tableName SET is_deleted = $value WHERE is_deleted = $whereClause AND `group` = ? AND `key` = ?
 SQL
-            , [$group, $key]);   
+            , [$group, $key]);
     }
 
+    public function updateIsDeletedByIds($rowIds)
+    {
+        $this->getConnection()->update("UPDATE $this->tableName SET is_deleted = 1 WHERE is_deleted = 0 AND id IN ($rowIds)");
+    }
+
+    public function updateGroupKeyStatusById($dstgrp, $dstkey, $id)
+    {
+        $this->getConnection()->update("UPDATE $this->tableName SET `group` = ?, `key` = ?, status = 1 WHERE id = ?"
+            , [$dstgrp, $dstkey, $id]);
+    }
+    
     public function setNotUsedForAllTranslations()
     {
 
@@ -100,12 +111,8 @@ SELECT source FROM $this->tableName WHERE `group` = ? AND `key` = ?
 SQL
             , [$group, $key]);
     }
-
-
-
-
-
-
+    
+    
     public function updateStatusForTranslations($status, $updated_at, $translationIds)
     {
         $this->getConnection()->affectingStatement(<<<SQL
@@ -268,6 +275,17 @@ SQL
             ORDER BY `key`, `group`
 SQL
         );
+    }
+
+
+    public function selectToDeleteTranslations($dstgrp, $dstkey, $locale, $rowIds)
+    {
+        return $this->getConnection()->select(<<<SQL
+SELECT GROUP_CONCAT(id SEPARATOR ',') ids FROM $this->tableName tr
+WHERE `group` = ? AND `key` = ? AND locale = ? AND id NOT IN ($rowIds)
+
+SQL
+            , [$dstgrp, $dstkey, $locale]);
     }
     
     
