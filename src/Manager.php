@@ -405,7 +405,6 @@ class Manager
             //\Cache::put($this->usageCacheTransKey, $this->usageCache, 60 * 24 * 365);
             \Cache::put($this->usageCacheTransKey, [], 60 * 24 * 365);
             $this->usageCacheIsDirty = false;
-            $ltm_translations = $this->getTranslationsTableName();
 
             // now update the keys in the database
             foreach ($this->usageCache as $group => $keys) {
@@ -451,7 +450,6 @@ class Manager
 
     public function clearUsageCache($clearDatabase, $groups = null)
     {
-        $ltm_translations = $this->getTranslationsTableName();
         if (!$groups || $groups === '*') {
             $this->usageCache();
             $this->usageCache = [];
@@ -661,7 +659,6 @@ class Manager
     protected function importTranslationFile($locale, $db_group, $translations, $replace)
     {
         $connectionName = $this->getConnectionName();
-        $ltm_translations = $this->getTranslationsTableName();
         $dbTranslations = $this->translatorRepository->selectTranslationsByLocaleAndGroup($locale, $db_group, $connectionName);
 
         $timeStamp = 'now()';
@@ -1002,7 +999,6 @@ class Manager
     {
         // TODO: clean up this recursion crap
         // this can come from the command line
-        $ltm_translations = $this->getTranslationsTableName();
         if (!$recursing) {
             $this->clearErrors();
             $group = self::fixGroup($group);

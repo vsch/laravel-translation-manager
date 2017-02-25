@@ -40,6 +40,14 @@ class TranslatorRepository
     }
 
     /**
+     * @return mixed
+     */
+    public function getConnection()
+    {
+        return $this->connection;
+    }
+
+    /**
      *
      * @param $keys
      * @param $group
@@ -221,7 +229,7 @@ SQL
         WHERE NOT EXISTS(SELECT * FROM $this->tableName t WHERE t.locale = m.locale AND t.`group` = m.`group` AND t.`key` = m.`key`)
         ORDER BY `key` ASC
 SQL
-            , [$group, $group], $this->getConnectionName());
+            , [$group, $group], $this->getTranslation()->getConnectionName());
     }
 
     public function stats($displayWhere)
