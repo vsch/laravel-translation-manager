@@ -16,6 +16,7 @@ use Vsch\TranslationManager\Classes\PathTemplateResolver;
 use Vsch\TranslationManager\Classes\TranslationFileRewriter;
 use Vsch\TranslationManager\Models\Translation;
 use Vsch\TranslationManager\Models\UserLocales;
+use Vsch\TranslationManager\Repositories\TranslatorRepository;
 use ZipArchive;
 
 /**
@@ -259,7 +260,7 @@ class Manager
         $this->preloadedGroupLocales = array_combine($locales, $locales);
     }
 
-    public function __construct(Application $app, Filesystem $files, Dispatcher $events, Translation $translation)
+    public function __construct(Application $app, Filesystem $files, Dispatcher $events, Translation $translation, TranslatorRepository $translatorRepository)
     {
         $this->app = $app;
         $this->package = ManagerServiceProvider::PACKAGE;
