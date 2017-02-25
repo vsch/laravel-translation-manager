@@ -57,17 +57,17 @@ SQL
                 , [$group, 'vnd:%.' . $group, 'wbn:%.' . $group]);
         }
 
-
+        /**
+         * Update for keys
+         */
         $this->getConnection()->affectingStatement(<<<SQL
             UPDATE $this->tableName SET was_used = $value WHERE was_used $value AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?) AND `key` IN ($keys)
 SQL
             , [$group, 'vnd:%.' . $group, 'wbn:%.' . $group]);
     }
 
-    /**
-     *
-     */
-    public function clearUsageCache()
+
+    public function setNotUsedForAllTranslations()
     {
 
         $this->getConnection()->affectingStatement(<<<SQL
@@ -98,7 +98,7 @@ SQL
         $this->getConnection()->unprepared($sql);
     }
 
-    public function deleteTranslation($group = null) {
+    public function deleteTranslationWhereIsDeleted($group = null) {
         if (! $group) {
             $this->getConnection()->affectingStatement("DELETE FROM $this->tableName WHERE is_deleted = 1");
         } else {
@@ -106,10 +106,10 @@ SQL
         }
     }
 
-    public function deleteTranslations($keys)
+    public function deleteTranslationsForIds($translationIds)
     {
         $this->getConnection()->unprepared(<<<SQL
-          DELETE FROM $this->tableName WHERE id IN ($keys)
+          DELETE FROM $this->tableName WHERE id IN ($translationIds)
 SQL
         );
     }
