@@ -11,8 +11,7 @@ class ManagerServiceProvider extends ServiceProvider
     const CONTROLLER_PREFIX = '\\';
     const PUBLIC_PREFIX = '/vendor/';
 
-    public static
-    function getLists($query)
+    public static function getLists($query)
     {
         return $query->all();
     }
@@ -35,6 +34,12 @@ class ManagerServiceProvider extends ServiceProvider
         $configPath = __DIR__ . '/../config/' . self::PACKAGE . '.php';
         $this->mergeConfigFrom($configPath, self::PACKAGE);
         $this->publishes([$configPath => config_path(self::PACKAGE . '.php')], 'config');
+
+        $this->app->singleton('TranslatorRepository', function ($app) {
+            /* @var $manager \Vsch\TranslationManager\Repositories\TranslatorRepository */
+            $translatorRepository = $app->make('Vsch\TranslationManager\Repositories\TranslatorRepository');
+            return $translatorRepository;
+        });
 
         $this->app->singleton(self::PACKAGE, function ($app) {
             /* @var $manager \Vsch\TranslationManager\Manager */
