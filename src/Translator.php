@@ -368,7 +368,7 @@ class Translator extends LaravelTranslator
             $translations .= $keyDiv . $textDiv;
             $translations .= '</div>' . PHP_EOL;
 
-            $result = '<div id="transcontainer" style="display: none; position:fixed; top:0; height: 100%; width: 100%; align-items: center; justify-content:center; overflow: auto" ><div id="transkeylist" class="transpopup">' . PHP_EOL . $buttons . $translations . '</div>' . PHP_EOL . '</div>' . PHP_EOL;
+            $result = '<div id="transcontainer" style="display: none; position:fixed; top:0; height: 100%; width: 100%; align-items: center; justify-content:center; overflow: auto; z-index: 5" ><div id="transkeylist" class="transpopup">' . PHP_EOL . $buttons . $translations . '</div>' . PHP_EOL . '</div>' . PHP_EOL;
             return $result;
         }
         return null;
