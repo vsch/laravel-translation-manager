@@ -45,8 +45,8 @@ if (!function_exists('transLang')) {
     /**
      * @param       $key
      * @param array $replace
-     * @param null $locale
-     * @param null $useDB
+     * @param null  $locale
+     * @param null  $useDB
      *
      * @return mixed
      */
@@ -61,8 +61,8 @@ if (!function_exists('noEditTransEmptyUndefined')) {
     /**
      * @param       $key
      * @param array $replace
-     * @param null $locale
-     * @param null $useDB
+     * @param null  $locale
+     * @param null  $useDB
      *
      * @return mixed
      */
@@ -86,8 +86,8 @@ if (!function_exists('transChoice')) {
      * @param       $key
      * @param       $number
      * @param array $replace
-     * @param null $locale
-     * @param null $useDB
+     * @param null  $locale
+     * @param null  $useDB
      *
      * @return mixed
      */
@@ -102,8 +102,8 @@ if (!function_exists('noEditTrans')) {
     /**
      * @param       $key
      * @param array $parameters
-     * @param null $locale
-     * @param null $useDB
+     * @param null  $locale
+     * @param null  $useDB
      *
      * @return mixed
      *
@@ -126,9 +126,9 @@ if (!function_exists('ifEditTrans')) {
     /**
      * @param       $key
      * @param array $parameters
-     * @param null $locale
-     * @param null $useDB
-     * @param null $noWrap
+     * @param null  $locale
+     * @param null  $useDB
+     * @param null  $noWrap
      *
      * @return mixed
      *
@@ -198,9 +198,9 @@ if (!function_exists('ifInPlaceEdit')) {
     /**
      * @param       $text
      * @param array $replace
-     * @param null $locale
-     * @param null $useDB
-     * @param null $noWrap
+     * @param null  $locale
+     * @param null  $useDB
+     * @param null  $noWrap
      *
      * @return mixed
      */

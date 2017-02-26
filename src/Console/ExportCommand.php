@@ -1,8 +1,8 @@
 <?php namespace Vsch\TranslationManager\Console;
 
-use Vsch\TranslationManager\Manager;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputArgument;
+use Vsch\TranslationManager\Manager;
 
 class ExportCommand extends Command
 {
@@ -42,7 +42,6 @@ class ExportCommand extends Command
         $this->manager->exportTranslations($group);
 
         $this->info("Done writing language files for " . (($group == '*') ? 'ALL groups' : $group . " group"));
-
     }
 
     /**

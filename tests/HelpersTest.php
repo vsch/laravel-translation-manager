@@ -16,20 +16,16 @@ class HelpersTest extends \Vsch\Tests\TranslationManagerTestCase
      * @var int    $expectedCount
      * @return void
      */
-    public
-    function testStrReplace($search, $replace, $subject, $expectedResult, $expectedCount)
+    public function testStrReplace($search, $replace, $subject, $expectedResult, $expectedCount)
     {
         //echo $url . "\n";
-        try
-        {
+        try {
             self::startTimer('str_replace', microtime(true));
             $result = str_replace($search, $replace, $subject, $count);
             self::endTimer('str_replace', microtime(true));
             $this->assertSame($expectedResult, $result, "Mismatch in result");
             $this->assertSame($expectedCount, $count, "Mismatch in count");
-        }
-        catch (Exception $e)
-        {
+        } catch (Exception $e) {
             echo "Exception " . $e->getMessage() . " on subject: '$subject'\n";
             var_dump($search);
             var_dump($replace);
@@ -49,20 +45,16 @@ class HelpersTest extends \Vsch\Tests\TranslationManagerTestCase
      * @var int    $expectedCount
      * @return void
      */
-    public
-    function testMbStrReplace($search, $replace, $subject, $expectedResult, $expectedCount)
+    public function testMbStrReplace($search, $replace, $subject, $expectedResult, $expectedCount)
     {
         //echo $url . "\n";
-        try
-        {
+        try {
             self::startTimer('mb_str_replace', microtime(true));
             $result = mb_str_replace($search, $replace, $subject, $count);
             self::endTimer('mb_str_replace', microtime(true));
             $this->assertSame($expectedResult, $result, "Mismatch in result");
             $this->assertSame($expectedCount, $count, "Mismatch in count");
-        }
-        catch (Exception $e)
-        {
+        } catch (Exception $e) {
             echo "Exception " . $e->getMessage() . " on subject: '$subject'\n";
             var_dump($search);
             var_dump($replace);
@@ -76,8 +68,7 @@ class HelpersTest extends \Vsch\Tests\TranslationManagerTestCase
      *
      * @return array()
      */
-    public
-    function getReplaceStringProvider($testName)
+    public function getReplaceStringProvider($testName)
     {
         $tests = array(
             array('abc', 'def', 'this is a test', false),
@@ -142,10 +133,8 @@ class HelpersTest extends \Vsch\Tests\TranslationManagerTestCase
         );
 
         $testData = [];
-        foreach ($tests as $test)
-        {
-            if ($testName === 'testMbReplace2' && $test[3])
-            {
+        foreach ($tests as $test) {
+            if ($testName === 'testMbReplace2' && $test[3]) {
                 $replace = $test[1];
                 $search = $test[0];
                 if (!is_array($replace) && is_array($search)) $replace = array_fill(0, count($search), $test[1]);
@@ -160,9 +149,7 @@ class HelpersTest extends \Vsch\Tests\TranslationManagerTestCase
                     $count,
                     $test[3]
                 ];
-            }
-            else
-            {
+            } else {
                 $testData[] = [$test[0], $test[1], $test[2], str_replace($test[0], $test[1], $test[2], $count), $count];
             }
         }
@@ -179,25 +166,19 @@ class HelpersTest extends \Vsch\Tests\TranslationManagerTestCase
      * @var string $expectedResult
      * @return void
      */
-    public
-    function testAppendPath($path, $part, $expectedResult)
+    public function testAppendPath($path, $part, $expectedResult)
     {
         //echo $url . "\n";
-        try
-        {
-            self::timeIt('appendPath', function () use (&$result, $path, $part)
-            {
+        try {
+            self::timeIt('appendPath', function () use (&$result, $path, $part) {
                 $result = appendPath($path, $part);
             });
 
-            if ($result !== $expectedResult)
-            {
+            if ($result !== $expectedResult) {
                 $result = appendPath($path, $part);
             }
             $this->assertSame($expectedResult, $result, "Mismatch in result on: '$path', '$part'");
-        }
-        catch (Exception $e)
-        {
+        } catch (Exception $e) {
             echo "Exception " . $e->getMessage() . " on: '$path', '$part'\n";
             // rethrow it
             throw $e;
@@ -209,8 +190,7 @@ class HelpersTest extends \Vsch\Tests\TranslationManagerTestCase
      *
      * @return array()
      */
-    public
-    function getAppendPathProvider($testName)
+    public function getAppendPathProvider($testName)
     {
         return array(
             array('', '', ''),

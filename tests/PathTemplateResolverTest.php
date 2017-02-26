@@ -6,13 +6,11 @@ class PathTemplateResolverTest extends \Vsch\Tests\TranslationManagerTestCase
 {
     protected $pathResolver;
 
-    public
-    function setUp()
+    public function setUp()
     {
     }
 
-    public
-    function tearDown()
+    public function tearDown()
     {
     }
 
@@ -41,8 +39,7 @@ class PathTemplateResolverTest extends \Vsch\Tests\TranslationManagerTestCase
      *
      * @return array()
      */
-    public
-    function getMergeConfigProvider()
+    public function getMergeConfigProvider()
     {
         // @formatter:off
         return [
@@ -73,8 +70,7 @@ class PathTemplateResolverTest extends \Vsch\Tests\TranslationManagerTestCase
      * @var array $expectedResult
      * @return void
      */
-    public
-    function testNormalizeInclude($config, $expectedResult)
+    public function testNormalizeInclude($config, $expectedResult)
     {
         self::startTimer('normalizeInclude', microtime(true));
         $result = PathTemplateResolver::normalizeInclude($config);
@@ -88,8 +84,7 @@ class PathTemplateResolverTest extends \Vsch\Tests\TranslationManagerTestCase
      *
      * @return array()
      */
-    public
-    function getNormalizeIncludeProvider()
+    public function getNormalizeIncludeProvider()
     {
         // @formatter:off
         return [
@@ -146,8 +141,7 @@ class PathTemplateResolverTest extends \Vsch\Tests\TranslationManagerTestCase
      * @param string $setting
      * @param array  $expectedResult
      */
-    public
-    function testConfigValues($config, $setting, $expectedResult)
+    public function testConfigValues($config, $setting, $expectedResult)
     {
         self::startTimer('configValues', microtime(true));
         $result = PathTemplateResolver::configValues($config, $setting);
@@ -161,8 +155,7 @@ class PathTemplateResolverTest extends \Vsch\Tests\TranslationManagerTestCase
      *
      * @return array()
      */
-    public
-    function getConfigValuesProvider()
+    public function getConfigValuesProvider()
     {
         // @formatter:off
         return [
@@ -231,14 +224,12 @@ class PathTemplateResolverTest extends \Vsch\Tests\TranslationManagerTestCase
      * @param bool  $partial
      * @param bool  $expectedResult
      */
-    public
-    function testIsPathIncluded($config, $vars, $partial, $expectedResult)
+    public function testIsPathIncluded($config, $vars, $partial, $expectedResult)
     {
         self::startTimer('isPathIncluded', microtime(true));
         $result = PathTemplateResolver::isPathIncluded($config, $vars, $partial);
         self::endTimer('isPathIncluded', microtime(true));
-        if ($result != $expectedResult)
-        {
+        if ($result != $expectedResult) {
             PathTemplateResolver::isPathIncluded($config, $vars, $partial);
         }
         $this->assertEquals($expectedResult, $result, "Mismatch in result");
@@ -249,8 +240,7 @@ class PathTemplateResolverTest extends \Vsch\Tests\TranslationManagerTestCase
      *
      * @return array()
      */
-    public
-    function getIsPathIncludedProvider()
+    public function getIsPathIncludedProvider()
     {
         // @formatter:off
         return [
@@ -478,14 +468,12 @@ class PathTemplateResolverTest extends \Vsch\Tests\TranslationManagerTestCase
      * @var string $expectedResult
      * @return void
      */
-    public
-    function testExpandVars($text, $vars, $expectedResult)
+    public function testExpandVars($text, $vars, $expectedResult)
     {
         self::startTimer('expandVars', microtime(true));
         $result = PathTemplateResolver::expandVars($text, $vars);
         self::endTimer('expandVars', microtime(true));
-        if ($result !== $expectedResult)
-        {
+        if ($result !== $expectedResult) {
             PathTemplateResolver::expandVars($text, $vars);
         }
         $this->assertSame($expectedResult, $result, "Mismatch in result");
@@ -496,8 +484,7 @@ class PathTemplateResolverTest extends \Vsch\Tests\TranslationManagerTestCase
      *
      * @return array()
      */
-    public
-    function getExpandVarsProvider()
+    public function getExpandVarsProvider()
     {
         return [
             /* 0 */ ['', ['{var1}' => 'var1', '{var2}' => 'var2', '{var3}' => 'var3',], ''],
@@ -516,14 +503,12 @@ class PathTemplateResolverTest extends \Vsch\Tests\TranslationManagerTestCase
      * @var array $expectedResult
      * @return void
      */
-    public
-    function testExtractTemplateVars($template, $text, $expectedResult)
+    public function testExtractTemplateVars($template, $text, $expectedResult)
     {
         self::startTimer('extractTemplateVars', microtime(true));
         $result = PathTemplateResolver::extractTemplateVars($template, $text);
         self::endTimer('extractTemplateVars', microtime(true));
-        if ($result !== $expectedResult)
-        {
+        if ($result !== $expectedResult) {
             PathTemplateResolver::extractTemplateVars($template, $text);
         }
         $this->assertSame($expectedResult, $result, "Mismatch in result");
@@ -534,8 +519,7 @@ class PathTemplateResolverTest extends \Vsch\Tests\TranslationManagerTestCase
      *
      * @return array()
      */
-    public
-    function getExtractTemplateVarsProvider()
+    public function getExtractTemplateVarsProvider()
     {
         // @formatter:off
         return [

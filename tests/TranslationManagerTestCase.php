@@ -1,7 +1,5 @@
 <?php namespace Vsch\Tests;
 
-use PHPUnit_Framework_TestCase as TestCase;
-
 class TranslationManagerTestCase extends \Illuminate\Foundation\Testing\TestCase
 {
     private static $timing;
@@ -9,25 +7,21 @@ class TranslationManagerTestCase extends \Illuminate\Foundation\Testing\TestCase
     private static $timeItOverhead;
     private static $startEndOverhead;
 
-    static
-    function startTimer($name, $time)
+    static function startTimer($name, $time)
     {
         self::$timers[$name] = $time;
     }
 
-    static
-    function endTimer($name, $end)
+    static function endTimer($name, $end)
     {
         $start = self::$timers[$name];
         unset(self::$timers[$name]);
         self::addTime($name, $start, $end, self::$startEndOverhead);
     }
 
-    static
-    function addTime($name, $start, $end, $overhead)
+    static function addTime($name, $start, $end, $overhead)
     {
-        if (!array_key_exists($name, self::$timing))
-        {
+        if (!array_key_exists($name, self::$timing)) {
             self::$timing[$name] = [];
             self::$timing[$name]['name'] = $name;
             self::$timing[$name]['total'] = 0;
@@ -37,8 +31,7 @@ class TranslationManagerTestCase extends \Illuminate\Foundation\Testing\TestCase
         self::$timing[$name]['count']++;
     }
 
-    static
-    function timeIt($name, \Closure $test)
+    static function timeIt($name, \Closure $test)
     {
         $start = microtime(true);
         $test();
@@ -46,8 +39,7 @@ class TranslationManagerTestCase extends \Illuminate\Foundation\Testing\TestCase
         self::addTime($name, $start, $end, self::$timeItOverhead);
     }
 
-    public static
-    function setupBeforeClass()
+    public static function setupBeforeClass()
     {
         parent::setUpBeforeClass();
 
@@ -56,10 +48,8 @@ class TranslationManagerTestCase extends \Illuminate\Foundation\Testing\TestCase
         self::$startEndOverhead = 0;
         self::$timers = [];
         self::$timing = [];
-        for ($i = 0; $i < $iMax; $i++)
-        {
-            self::timeIt('$timeItOverhead', function ()
-            {
+        for ($i = 0; $i < $iMax; $i++) {
+            self::timeIt('$timeItOverhead', function () {
             });
             self::startTimer('$startEndOverhead', microtime(true));
             self::endTimer('$startEndOverhead', microtime(true));
@@ -70,11 +60,9 @@ class TranslationManagerTestCase extends \Illuminate\Foundation\Testing\TestCase
         self::$timing = [];
     }
 
-    public static
-    function tearDownAfterClass()
+    public static function tearDownAfterClass()
     {
-        if (!self::$timing)
-        {
+        if (!self::$timing) {
             echo "\n";
             return;
         }
@@ -86,13 +74,11 @@ class TranslationManagerTestCase extends \Illuminate\Foundation\Testing\TestCase
         echo $s;
         echo str_repeat('-', strlen($s)) . "\n";
 
-        array_walk(self::$timing, function (&$value, $key)
-        {
+        array_walk(self::$timing, function (&$value, $key) {
             $value['avg'] = round($value['total'] / $value['count'] * 1000000, 3);
         });
 
-        usort(self::$timing, function ($a, $b)
-        {
+        usort(self::$timing, function ($a, $b) {
             $at = $a['avg'];
             $bt = $b['avg'];
             return $at === $bt ? 0 : ($at < $bt ? -1 : 1);
@@ -100,8 +86,7 @@ class TranslationManagerTestCase extends \Illuminate\Foundation\Testing\TestCase
 
         $best = self::$timing[0]['avg'];
 
-        foreach (self::$timing as $timing)
-        {
+        foreach (self::$timing as $timing) {
             printf("%40s %6d %7.3fms %7.3fus %4.1f%%\n", $timing['name'], $timing['count'],
                 round($timing['total'] * 1000, 3),
                 $timing['avg'],
@@ -127,7 +112,7 @@ class TranslationManagerTestCase extends \Illuminate\Foundation\Testing\TestCase
      */
     public function createApplication()
     {
-        $app = require __DIR__.'/../../../../bootstrap/app.php';
+        $app = require __DIR__ . '/../../../../bootstrap/app.php';
 
         $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 

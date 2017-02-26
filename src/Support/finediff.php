@@ -28,9 +28,9 @@
  * THE SOFTWARE.
  *
  * @copyright Copyright 2011 (c) Raymond Hill (http://raymondhill.net/blog/?p=441)
- * @link http://www.raymondhill.net/finediff/
- * @version 0.6
- * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
+ * @link      http://www.raymondhill.net/finediff/
+ * @version   0.6
+ * @license   MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 
 /**
@@ -440,10 +440,7 @@ class FineDiff
         foreach (FineDiff::doFragmentDiff($from_segment, $to_segment, $delimiters) as $fragment_edit) {
             // increase granularity
             if ($fragment_edit instanceof FineDiffReplaceOp && $has_next_stage) {
-                $this->_processGranularity(
-                    substr($this->from_text, $this->from_offset, $fragment_edit->getFromLen()),
-                    $fragment_edit->getText()
-                );
+                $this->_processGranularity(substr($this->from_text, $this->from_offset, $fragment_edit->getFromLen()), $fragment_edit->getText());
             } // fuse copy ops whenever possible
             else if ($fragment_edit instanceof FineDiffCopyOp && $this->last_edit instanceof FineDiffCopyOp) {
                 $this->edits[count($this->edits) - 1]->increase($fragment_edit->getFromLen());

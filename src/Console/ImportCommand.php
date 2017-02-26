@@ -1,8 +1,8 @@
 <?php namespace Vsch\TranslationManager\Console;
 
-use Vsch\TranslationManager\Manager;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
+use Vsch\TranslationManager\Manager;
 
 class ImportCommand extends Command
 {
@@ -30,7 +30,6 @@ class ImportCommand extends Command
         parent::__construct();
     }
 
-
     /**
      * Execute the console command.
      *
@@ -41,7 +40,6 @@ class ImportCommand extends Command
         $replace = $this->option('replace');
         $counter = $this->manager->importTranslations($replace);
         $this->info('Done importing, processed ' . $counter . ' items!');
-
     }
 
     /**

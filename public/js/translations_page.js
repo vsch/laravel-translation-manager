@@ -231,9 +231,11 @@ jQuery(document).ready(function ($) {
                     if (matchedKeys == 0) {
                         matchedTextParent.addClass('has-error');
                         matchedText.addClass('bg-danger');
-                    } else if (matchedKeys < filteredKeys) {
-                        matchedTextParent.addClass('has-highlight');
-                        matchedText.addClass('bg-highlight');
+                    } else {
+                        if (matchedKeys < filteredKeys) {
+                            matchedTextParent.addClass('has-highlight');
+                            matchedText.addClass('bg-highlight');
+                        }
                     }
                 }
             }
