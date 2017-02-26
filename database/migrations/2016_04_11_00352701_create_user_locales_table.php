@@ -27,8 +27,7 @@ class CreateUserLocalesTable extends Migration
      *
      * @return void
      */
-    public
-    function down()
+    public function down()
     {
         Schema::drop('ltm_user_locales');
     }

@@ -1,7 +1,7 @@
 <?php namespace Vsch\TranslationManager\Console;
 
-use Vsch\TranslationManager\Manager;
 use Illuminate\Console\Command;
+use Vsch\TranslationManager\Manager;
 
 class CleanCommand extends Command
 {

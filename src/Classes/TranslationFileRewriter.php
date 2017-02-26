@@ -8,26 +8,23 @@
 
 namespace Vsch\TranslationManager\Classes;
 
-    /**
-     * Class TranslationFileRewriter
-     * @package Vsch\TranslationManager\Classes
-     *
-     * Class to handle parsing of PHP code aimed specifically at config files for the purpose of
-     *          changing the declarations and values while preserving multi-line comments
-     *
-     *  The format of the file is expected to be:
-     *  <?php
-     *  return [ or return array(
-     *  ]; or );
-     *
-     *          All multi-line comments inside the array() and first level keys will be collected. Single line comments are
-     *          stripped out as are multi-line comments outside of the array definition.
-     *
-     * Note:    No attempt is made to preserve single line comments, these are currently discarded.
-     *
-     */
 /**
  * Class TranslationFileRewriter
+ *
+ * @package Vsch\TranslationManager\Classes
+ * Class to handle parsing of PHP code aimed specifically at config files for the purpose of
+ *          changing the declarations and values while preserving multi-line comments
+ *  The format of the file is expected to be:
+ *  <?php
+ *  return [ or return array(
+ *  ]; or );
+ *          All multi-line comments inside the array() and first level keys will be collected. Single line comments are
+ *          stripped out as are multi-line comments outside of the array definition.
+ * Note:    No attempt is made to preserve single line comments, these are currently discarded.
+ */
+/**
+ * Class TranslationFileRewriter
+ *
  * @package Vsch\TranslationManager\Classes
  */
 class TranslationFileRewriter
@@ -45,10 +42,10 @@ class TranslationFileRewriter
 
     public static $options = array(
         'PRESERVE_EMPTY_ARRAYS' => self::OPT_PRESERVE_EMPTY_ARRAYS,
-        'USE_QUOTES' => self::OPT_USE_QUOTES,
-        'USE_HEREDOC' => self::OPT_USE_HEREDOC,
-        'USE_SHORT_ARRAY' => self::OPT_USE_SHORT_ARRAY,
-        'SORT_KEYS' => self::OPT_SORT_KEYS,
+        'USE_QUOTES'            => self::OPT_USE_QUOTES,
+        'USE_HEREDOC'           => self::OPT_USE_HEREDOC,
+        'USE_SHORT_ARRAY'       => self::OPT_USE_SHORT_ARRAY,
+        'SORT_KEYS'             => self::OPT_SORT_KEYS,
     );
 
     /**
@@ -69,7 +66,6 @@ class TranslationFileRewriter
 
     /**
      * @var array   contains the key portion of the first level identifier as the key and the value is
-     *
      *              [
      *              'section' => int,  // index of the section this identifier belongs to. -1 means before first.
      *                 'ordinal' => int,   // ordinal position of this identifier in the section
@@ -129,9 +125,7 @@ class TranslationFileRewriter
 
     /**
      * @param $source
-     *
      * TODO: Quite a bit of kludge but does the job. Needs clean up, it is hard on the eyes.
-     *
      */
     public function parseSource($source)
     {
@@ -403,34 +397,3 @@ class TranslationFileRewriter
         return ob_get_clean();
     }
 }
-
-/*
-$source = file_get_contents(__DIR__ . '/../../../../tests/config.txt');
-$config = new TranslationFileRewriter();
-$config->parseSource($source);
-//echo $config;
-
-$value = [
-    'active_url' => "The :attribute is not a valid URL.",
-    "between" => array(
-        "numeric" => "La valeur de :attribute doit être comprise entre :min et :max.",
-        "array" => "Le tableau :attribute doit avoir entre :min et :max éléments.",
-    ),
-    "accepted" => "The :attribute must be accepted.",
-    'max' => [
-        "numeric" => "The value of :attribute cannot be greater than :max.",
-    ],
-    "text" => 'Long Text with no lines embedded',
-    "text2" => 'Long Text with no lines embedded',
-    "newkey" => 'a new translation',
-    "url" => "The format of the URL of :attribute is not valid.",
-    'custom' => [
-        'name' => [
-            'min' => 'Name must be at least 6 characters long.',
-        ],
-    ],
-];
-
-file_put_contents(__DIR__ . '/../../../../tests/config_new.txt', $config->formatForExport($value, TranslationFileRewriter::OPT_SORT_KEYS | TranslationFileRewriter::OPT_USE_QUOTES | TranslationFileRewriter::OPT_USE_SHORT_ARRAY | TranslationFileRewriter::OPT_PRESERVE_EMPTY_ARRAYS));
-
-//*/

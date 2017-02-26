@@ -1,8 +1,7 @@
 <?php namespace Vsch\TranslationManager\Console;
 
-use Vsch\TranslationManager\Manager;
 use Illuminate\Console\Command;
-use Symfony\Component\Console\Input\InputOption;
+use Vsch\TranslationManager\Manager;
 
 class FindCommand extends Command
 {
@@ -30,7 +29,6 @@ class FindCommand extends Command
         parent::__construct();
     }
 
-
     /**
      * Execute the console command.
      *
@@ -40,6 +38,5 @@ class FindCommand extends Command
     {
         $counter = $this->manager->findTranslations();
         $this->info('Done importing, processed ' . $counter . ' items!');
-
     }
 }

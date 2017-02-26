@@ -2,9 +2,9 @@
     overflow: auto;
     max-width: 95%;
     max-height: 95%;
-    display:flex;
+    display: flex;
     padding-right: 20px;
-    flex-direction:column;
+    flex-direction: column;
     background-color: #f7f7f7;
     border: 1px solid #c2e1f5 !important;
 }
@@ -107,15 +107,13 @@ h6 .editable-click, h6 a.editable-click, h6 a.editable-click:hover {
     padding-left: 8px;
 }
 
-.table-translations td.unused-key
-{
+.table-translations td.unused-key {
     color: #999999;
 }
 
 .table.translation-stats > thead > tr > th.deleted,
 .table.translation-stats > tbody > tr > td.deleted,
-.table.translation-stats > tbody > tr > td.group.deleted > a
-{
+.table.translation-stats > tbody > tr > td.group.deleted > a {
     color: #c200c1;
     font-weight: bold;
 }
@@ -159,11 +157,11 @@ textarea.editable-input {
     background-color: #f0f0f0;
 }
 
-.table-striped>tbody>tr:nth-of-type(even) {
+.table-striped > tbody > tr:nth-of-type(even) {
     background-color: #f9f9f9;
 }
 
-.table-striped>tbody>tr:nth-of-type(odd) {
+.table-striped > tbody > tr:nth-of-type(odd) {
     background-color: #ffffff;
 }
 
@@ -225,7 +223,7 @@ ins {
 }
 
 #accordion.panel-group .panel > .panel-heading a.collapsed:not(.in):before {
-    content: "▶ " ;
+    content: "▶ ";
     display: inline;
 }
 
@@ -255,12 +253,15 @@ ins {
 input.bg-success {
     background-color: #dff0d8;
 }
+
 input.bg-info {
     background-color: #d9edf7;
 }
+
 input.bg-warning {
     background-color: #fcf8e3;
 }
+
 input.bg-danger {
     background-color: #f2dede;
 }
@@ -282,6 +283,7 @@ label.regex-error {
 input.bg-highlight {
     background-color: #d9edf7;
 }
+
 .has-highlight .help-block,
 .has-highlight .control-label,
 .has-highlight .radio,
@@ -294,21 +296,25 @@ input.bg-highlight {
 .has-highlight.checkbox-inline label {
     color: #337ab7;
 }
+
 .has-highlight .form-control {
     border-color: #337ab7;
     -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
 }
+
 .has-highlight .form-control:focus {
     border-color: #286090;
     -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 6px #337ab7;
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 6px #337ab7;
 }
+
 .has-highlight .input-group-addon {
     color: #337ab7;
     background-color: #d9edf7;
     border-color: #337ab7;
 }
+
 .has-highlight .form-control-feedback {
     color: #337ab7;
 }

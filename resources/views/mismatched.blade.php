@@ -20,22 +20,20 @@
                         $mismatches[] = null;
                         $locale = $translatingLocale;
                         $translator = App::make('translator');
-                        $isLocaleEnabled = str_contains($userLocales, ','.$locale.',');
+                        $isLocaleEnabled = str_contains($userLocales, ',' . $locale . ',');
                         foreach($mismatches as $mismatch)
                         {
                         if ($mismatch === null) break;
 
                         $borderTop = ' class="no-border-top"';
-                        if ($key != $mismatch->key)
-                        {
-                            if ($key !== '')
-                            {
+                        if ($key != $mismatch->key) {
+                            if ($key !== '') {
                                 $borderTop = ' class="border-top"';
                             }
                             $key = $mismatch->key;
                             $keyText = $mismatch->key;
                         }
-                        $link = action($controller . '@getView') . '/'. $mismatch->group . '#' . $mismatch->key;
+                        $link = action($controller . '@getView') . '/' . $mismatch->group . '#' . $mismatch->key;
                         $mismatch->value = $mismatch->ru_value;
                         $mismatch->locale = $locale;
                         $mismatch->status = $locale;

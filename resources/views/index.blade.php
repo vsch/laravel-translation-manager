@@ -118,7 +118,7 @@
                                                             class="btn btn-sm btn-warning input-control"
                                                             data-disable-with="<?= noEditTrans($package . '::messages.publishing') ?>">
                                                         <?= noEditTrans($package . '::messages.publish-all') ?>
-                                                    </button><?= ifEditTrans($package . '::messages.publish-all') ?>
+                                                    </button>
                                                     <?= ifEditTrans($package . '::messages.find-in-files') ?>
                                                     <?= ifEditTrans($package . '::messages.searching') ?>
                                                     <button type="submit" form="form-find"
@@ -152,8 +152,7 @@
                                         <?= ifEditTrans($package . '::messages.choose-group'); ?>
                                         <div class="input-group-sm">
                                             <?= Form::select('group', $groups, $group, array(
-                                                    'form' => 'form-select',
-                                                    'class' => 'group-select form-control'
+                                                'form' => 'form-select', 'class' => 'group-select form-control'
                                             )) ?>
                                         </div>
                                     </div>
@@ -324,8 +323,7 @@
                                 <div class=" col-sm-4">
                                     <div class="row">
                                         <div class=" col-sm-12">
-                                            <?= formSubmit(trans($package . '::messages.display-locales')
-                                                    , ['class' => "btn btn-sm btn-primary"]) ?>&nbsp;&nbsp;
+                                            <?= formSubmit(trans($package . '::messages.display-locales'), ['class' => "btn btn-sm btn-primary"]) ?>&nbsp;&nbsp;
                                         </div>
                                     </div>
                                     <div class="row">
@@ -349,7 +347,7 @@
                                                         type="checkbox"
                                                         value="<?=$locale?>"
                                                 <?= ($locale === $primaryLocale || $locale === $translatingLocale || array_key_exists($locale, $displayLocales)) ? 'checked' : '' ?>
-                                                        <?= $locale === $primaryLocale ? ' disabled' : '' ?>><?= $locale ?>
+                                                    <?= $locale === $primaryLocale ? ' disabled' : '' ?>><?= $locale ?>
                                             </label>
                                         @endforeach
                                     </div>
@@ -480,15 +478,13 @@
                                             <div class="col-sm-6">
                                                 <label for="keys">@lang($package . '::messages.keys'):</label><?= ifEditTrans($package . '::messages.addkeys-placeholder') ?>
                                                 <?=  Form::textarea('keys', Request::old('keys'), [
-                                                        'class' => "form-control", 'rows' => "4", 'style' => "resize: vertical",
-                                                        'placeholder' => noEditTrans($package . '::messages.addkeys-placeholder')
+                                                    'class' => "form-control", 'rows' => "4", 'style' => "resize: vertical", 'placeholder' => noEditTrans($package . '::messages.addkeys-placeholder')
                                                 ]) ?>
                                             </div>
                                             <div class="col-sm-6">
                                                 <label for="suffixes">@lang($package . '::messages.suffixes'):</label><?= ifEditTrans($package . '::messages.addsuffixes-placeholder') ?>
                                                 <?=  Form::textarea('suffixes', Request::old('suffixes'), [
-                                                        'class' => "form-control", 'rows' => "4", 'style' => "resize: vertical",
-                                                        'placeholder' => noEditTrans($package . '::messages.addsuffixes-placeholder')
+                                                    'class' => "form-control", 'rows' => "4", 'style' => "resize: vertical", 'placeholder' => noEditTrans($package . '::messages.addsuffixes-placeholder')
                                                 ]) ?>
                                             </div>
                                         </div>
@@ -566,22 +562,19 @@
                                         <!-- Key Ops Form -->
                                         <div id="wildcard-keyops-results" class="results"></div>
                                         <?=  Form::open([
-                                                'id' => 'form-keyops', 'data-remote' => "true", 'method' => 'POST',
-                                                'action' => [$controller . '@postPreviewKeys', $group]
+                                            'id' => 'form-keyops', 'data-remote' => "true", 'method' => 'POST', 'action' => [$controller . '@postPreviewKeys', $group]
                                         ]) ?>
                                         <div class="row">
                                             <div class="col-sm-6">
                                                 <label for="srckeys">@lang($package . '::messages.srckeys'):</label><?= ifEditTrans($package . '::messages.srckeys-placeholder') ?>
                                                 <?=  Form::textarea('srckeys', Request::old('srckeys'), [
-                                                        'id' => 'srckeys', 'class' => "form-control", 'rows' => "4", 'style' => "resize: vertical",
-                                                        'placeholder' => noEditTrans($package . '::messages.srckeys-placeholder')
+                                                    'id' => 'srckeys', 'class' => "form-control", 'rows' => "4", 'style' => "resize: vertical", 'placeholder' => noEditTrans($package . '::messages.srckeys-placeholder')
                                                 ]) ?>
                                             </div>
                                             <div class="col-sm-6">
                                                 <label for="dstkeys">@lang($package . '::messages.dstkeys'):</label><?= ifEditTrans($package . '::messages.dstkeys-placeholder') ?>
                                                 <?=  Form::textarea('dstkeys', Request::old('dstkeys'), [
-                                                        'id' => 'dstkeys', 'class' => "form-control", 'rows' => "4", 'style' => "resize: vertical",
-                                                        'placeholder' => noEditTrans($package . '::messages.dstkeys-placeholder')
+                                                    'id' => 'dstkeys', 'class' => "form-control", 'rows' => "4", 'style' => "resize: vertical", 'placeholder' => noEditTrans($package . '::messages.dstkeys-placeholder')
                                                 ]) ?>
                                             </div>
                                         </div>
@@ -628,8 +621,7 @@
                                                         onclick="clearSrcKeys(event)"><?= noEditTrans($package . '::messages.clearsrckeys') ?></button>
                                                 <div class="input-group" style="float:right; display:inline">
                                                     <?= formSubmit(trans($package . '::messages.preview'), [
-                                                            'class' => "btn btn-sm btn-primary",
-                                                            'onclick' => 'postPreviewKeys(event)'
+                                                        'class' => "btn btn-sm btn-primary", 'onclick' => 'postPreviewKeys(event)'
                                                     ]) ?>
                                                     <?= ifEditTrans($package . '::messages.copykeys'); ?>
                                                     <button class="btn btn-sm btn-primary" onclick="postCopyKeys(event)">
@@ -678,8 +670,7 @@
                                         <textarea id="primary-text" class="form-control" rows="3" name="keys"
                                                 style="resize: vertical;" placeholder="<?= $primaryLocale ?>"></textarea>
                                                 <div style="min-height: 10px"></div>
-                                        <span>@lang($package.'::messages.powered-by-yandex')</span>
-                                        <span style="float:right; display:inline">
+                                                <span>@lang($package.'::messages.powered-by-yandex')</span> <span style="float:right; display:inline">
                                             <button id="translate-primary-current" type="button" class="btn btn-sm btn-primary">
                                                 <?= $primaryLocale ?>&nbsp;<i class="glyphicon glyphicon-share-alt"></i>&nbsp;<?= $translatingLocale ?>
                                             </button>
@@ -835,7 +826,8 @@
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
-                        <h4 class="modal-title" id="keySourceRefsModal">@lang($package . '::messages.source-refs-header')<code style="color:white">'<span id="key-name"></span>'</code></h4>
+                        <h4 class="modal-title" id="keySourceRefsModal">@lang($package . '::messages.source-refs-header')
+                                <code style="color:white">'<span id="key-name"></span>'</code></h4>
                     </div>
                     <div class="modal-body">
                         <div class="results"></div>
@@ -887,8 +879,8 @@
 
     <script>
         var TRANS_FILTERS = ({
-            filter: "<?= isset($transFilters['filter']) ? $transFilters['filter'] :"" ?>",
-            regex: "<?= isset($transFilters['regex']) ? $transFilters['regex']:""  ?>"
+            filter: "<?= isset($transFilters['filter']) ? $transFilters['filter'] : "" ?>",
+            regex: "<?= isset($transFilters['regex']) ? $transFilters['regex'] : ""  ?>"
         });
 
         var USER_LOCALES = [

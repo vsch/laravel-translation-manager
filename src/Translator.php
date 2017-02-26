@@ -30,7 +30,7 @@ class Translator extends LaravelTranslator
     /**
      * Translator constructor.
      *
-     * @param \Illuminate\Foundation\Application $app
+     * @param \Illuminate\Foundation\Application      $app
      * @param \Illuminate\Translation\LoaderInterface $loader
      * @param                                         $locale
      */
@@ -71,12 +71,16 @@ class Translator extends LaravelTranslator
             if ($this->useCookies) {
                 if (\Cookie::has($this->cookiePrefix . 'lang_inplaceedit')) {
                     $this->inPlaceEditing = \Cookie::get($this->cookiePrefix . 'lang_inplaceedit', 0);
-                    $tmp = 0;
                 }
             } else {
                 $session = $this->app->make('session');
                 $this->inPlaceEditing = $session->get($this->cookiePrefix . 'lang_inplaceedit', 0);
             }
+        }
+
+        // reset in place edit mode if not logged in
+        if ($this->inPlaceEditing != 0 && !\Auth::check()) {
+            $this->inPlaceEditing = 0;
         }
         return $this->inPlaceEditing;
     }
@@ -249,9 +253,9 @@ class Translator extends LaravelTranslator
      * Get the translation for the given key.
      *
      * @param  string $key
-     * @param  array $replace
+     * @param  array  $replace
      * @param  string $locale
-     * @param  int $useDB null - check usedb field which is set to 1 by default,
+     * @param  int    $useDB null - check usedb field which is set to 1 by default,
      *                       0 - don't use,
      *                       1 - only if key is missing in files or saved in the translator cache, use saved_value
      *                       fallback on $key,
@@ -351,15 +355,12 @@ class Translator extends LaravelTranslator
             $textDiv .= '</div>' . PHP_EOL;
 
             // Top right corner button
-            $translateButton = '<a href="#"><i class="fa fa-language" style="position: fixed; right: 5px; top: 5px; z-index:99999;"' .
-                ' onclick="document.getElementById(\'transcontainer\').style.display = \'flex\';"></i></a>' . PHP_EOL;
+            $translateButton = '<a href="#"><i class="fa fa-language" style="position: fixed; right: 5px; top: 5px; z-index:99999;"' . ' onclick="document.getElementById(\'transcontainer\').style.display = \'flex\';"></i></a>' . PHP_EOL;
 
             // Buttons
             $buttons = '<div style="display:flex; justify-content: flex-end;">' . PHP_EOL;
-            $buttons .= '<div style="margin: 5px;"><a href="#" style="text-decoration: none;" onclick="window.location.reload(true);">' .
-                '<i class="fa fa-btn fa-refresh" style="margin-right: 4px;"></i>' . $this->trans($this->package . '::messages.reload-page') . '</a></div>' . PHP_EOL;
-            $buttons .= '<div style="margin: 5px;"><a href="#" style="text-decoration: none;"' .
-                ' onClick="document.getElementById(\'transcontainer\').style.display = \'none\';"><i class="fa fa-btn fa-times" style="margin-right: 4px;"></i>' . $this->trans($this->package . '::messages.close') . '</a></div>' . PHP_EOL;
+            $buttons .= '<div style="margin: 5px;"><a href="#" style="text-decoration: none;" onclick="window.location.reload(true);">' . '<i class="fa fa-btn fa-refresh" style="margin-right: 4px;"></i>' . $this->trans($this->package . '::messages.reload-page') . '</a></div>' . PHP_EOL;
+            $buttons .= '<div style="margin: 5px;"><a href="#" style="text-decoration: none;"' . ' onClick="document.getElementById(\'transcontainer\').style.display = \'none\';"><i class="fa fa-btn fa-times" style="margin-right: 4px;"></i>' . $this->trans($this->package . '::messages.close') . '</a></div>' . PHP_EOL;
             $buttons .= '</div>' . PHP_EOL;
 
             // Translations
@@ -367,8 +368,7 @@ class Translator extends LaravelTranslator
             $translations .= $keyDiv . $textDiv;
             $translations .= '</div>' . PHP_EOL;
 
-            $result = '<div id="transcontainer" style="display: none; position:fixed; top:0; height: 100%; width: 100%; align-items: center; justify-content:center;" ><div id="transkeylist" class="transpopup">' .
-                PHP_EOL . $buttons . $translations . '</div>' . PHP_EOL . '</div>' . PHP_EOL;
+            $result = '<div id="transcontainer" style="display: none; position:fixed; top:0; height: 100%; width: 100%; align-items: center; justify-content:center;" ><div id="transkeylist" class="transpopup">' . PHP_EOL . $buttons . $translations . '</div>' . PHP_EOL . '</div>' . PHP_EOL;
             return $result;
         }
         return null;
@@ -437,8 +437,7 @@ HTML;
         $inplaceEditMode = $this->manager->config('inplace_edit_mode');
         if ($this->inPlaceEditing() && $inplaceEditMode == 2) {
             // Top right corner button
-            $translateButton = '<a href="#"><i class="fa fa-language" ' . $style .
-                ' onclick="document.getElementById(\'transcontainer\').style.display = \'flex\';"></i></a>' . PHP_EOL;
+            $translateButton = '<a href="#"><i class="fa fa-language" ' . $style . ' onclick="document.getElementById(\'transcontainer\').style.display = \'flex\';"></i></a>' . PHP_EOL;
 
             return $translateButton;
         }
@@ -449,8 +448,8 @@ HTML;
      * Get a translation according to an integer value.
      *
      * @param  string $id
-     * @param  int $number
-     * @param  array $parameters
+     * @param  int    $number
+     * @param  array  $parameters
      * @param  string $domain
      * @param  string $locale
      *
@@ -465,7 +464,7 @@ HTML;
      * Get the translation for a given key.
      *
      * @param  string $id
-     * @param  array $parameters
+     * @param  array  $parameters
      * @param  string $domain
      * @param  string $locale
      *
@@ -480,8 +479,8 @@ HTML;
      * Get a translation according to an integer value.
      *
      * @param  string $key
-     * @param  int $number
-     * @param  array $replace
+     * @param  int    $number
+     * @param  array  $replace
      * @param  string $locale
      *
      * @return string
