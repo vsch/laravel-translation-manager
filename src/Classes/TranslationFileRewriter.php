@@ -211,7 +211,7 @@ class TranslationFileRewriter
                 continue;
             }
 
-            if ($token_name === null && ($token_data === ']' || $token_data === ')')) {
+            if ($arrayStack && ($token_name === null && ($token_data === ']' || $token_data === ')'))) {
                 // array closing
                 assert($inArray, ") or ] while not in array declaration");
 

@@ -270,8 +270,7 @@ class Controller extends BaseController
         // to allow proper handling of nested directory structure we need to copy the keys for the group for all missing
         // translations, otherwise we don't know what the group and key looks like.
         //$allTranslations = $this->getTranslation()->where('group', $group)->orderBy('key', 'asc')->get();
-        $displayWhere = $this->displayLocales ? ' AND locale IN (\'' . implode("','", explode(',', $this->displayLocales)) . "')" : '';
-        $allTranslations = $this->translatorRepository->allTranslations($group, $displayWhere);
+        $allTranslations = $this->translatorRepository->allTranslations($group, $this->displayLocales);
 
         $numTranslations = count($allTranslations);
         $translations = array();
@@ -281,7 +280,7 @@ class Controller extends BaseController
 
         $this->manager->cacheGroupTranslations($group, $this->displayLocales, $translations);
 
-        $stats = $this->translatorRepository->stats($displayWhere);
+        $stats = $this->translatorRepository->stats($this->displayLocales);
 
         // returned result set lists missing, changed, group, locale
         $summary = [];
@@ -318,13 +317,13 @@ class Controller extends BaseController
 
         if ($mismatchEnabled) {
             // get mismatches
-            $mismatches = $this->translatorRepository->findMismatches($displayWhere, $primaryLocale, $translatingLocale);
+            $mismatches = $this->translatorRepository->findMismatches($this->displayLocales, $primaryLocale, $translatingLocale);
 
             $key = '';
-            $rus = [];
-            $ens = [];
-            $rubases = [];    // by key
-            $enbases = [];    // by key
+            $translatingList = [];
+            $primaryList = [];
+            $translatingBases = [];    // by key
+            $primaryBases = [];    // by key
             $extra = new \stdClass();
             $extra->key = '';
             $mismatches[] = $extra;
@@ -332,52 +331,52 @@ class Controller extends BaseController
                 if ($mismatch->key !== $key) {
                     if ($key) {
                         // process diff for key
-                        $txtru = '';
-                        $txten = '';
-                        if (count($ens) > 1) {
-                            $maxen = 0;
-                            foreach ($ens as $en => $cnt) {
-                                if ($maxen < $cnt) {
-                                    $maxen = $cnt;
-                                    $txten = $en;
+                        $translatingText = '';
+                        $primaryText = '';
+                        if (count($primaryList) > 1) {
+                            $maxPrimary = 0;
+                            foreach ($primaryList as $en => $count) {
+                                if ($maxPrimary < $count) {
+                                    $maxPrimary = $count;
+                                    $primaryText = $en;
                                 }
                             }
-                            $enbases[$key] = $txten;
+                            $primaryBases[$key] = $primaryText;
                         } else {
-                            $txten = array_keys($ens)[0];
-                            $enbases[$key] = $txten;
+                            $primaryText = array_keys($primaryList)[0];
+                            $primaryBases[$key] = $primaryText;
                         }
-                        if (count($rus) > 1) {
-                            $maxru = 0;
-                            foreach ($rus as $ru => $cnt) {
-                                if ($maxru < $cnt) {
-                                    $maxru = $cnt;
-                                    $txtru = $ru;
+                        if (count($translatingList) > 1) {
+                            $maxTranslating = 0;
+                            foreach ($translatingList as $ru => $count) {
+                                if ($maxTranslating < $count) {
+                                    $maxTranslating = $count;
+                                    $translatingText = $ru;
                                 }
                             }
-                            $rubases[$key] = $txtru;
+                            $translatingBases[$key] = $translatingText;
                         } else {
-                            $txtru = array_keys($rus)[0];
-                            $rubases[$key] = $txtru;
+                            $translatingText = array_keys($translatingList)[0];
+                            $translatingBases[$key] = $translatingText;
                         }
                     }
                     $key = $mismatch->key;
-                    $rus = [];
-                    $ens = [];
+                    $translatingList = [];
+                    $primaryList = [];
                 }
 
                 if ($mismatch->key === '') break;
 
-                if (!isset($ens[$mismatch->en])) {
-                    $ens[$mismatch->en] = 1;
+                if (!isset($primaryList[$mismatch->en])) {
+                    $primaryList[$mismatch->en] = 1;
                 } else {
-                    $ens[$mismatch->en]++;
+                    $primaryList[$mismatch->en]++;
                 }
 
-                if (!isset($rus[$mismatch->ru])) {
-                    $rus[$mismatch->ru] = 1;
+                if (!isset($translatingList[$mismatch->ru])) {
+                    $translatingList[$mismatch->ru] = 1;
                 } else {
-                    $rus[$mismatch->ru]++;
+                    $translatingList[$mismatch->ru]++;
                 }
             }
 
@@ -385,9 +384,9 @@ class Controller extends BaseController
 
             foreach ($mismatches as $mismatch) {
                 $mismatch->en_value = $mismatch->ru;
-                $mismatch->en = mb_renderDiffHtml($enbases[$mismatch->key], $mismatch->en);
+                $mismatch->en = mb_renderDiffHtml($primaryBases[$mismatch->key], $mismatch->en);
                 $mismatch->ru_value = $mismatch->ru;
-                $mismatch->ru = mb_renderDiffHtml($rubases[$mismatch->key], $mismatch->ru);
+                $mismatch->ru = mb_renderDiffHtml($translatingBases[$mismatch->key], $mismatch->ru);
             }
         }
 

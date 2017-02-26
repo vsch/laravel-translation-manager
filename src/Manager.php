@@ -408,25 +408,7 @@ class Manager
 
             // now update the keys in the database
             foreach ($this->usageCache as $group => $keys) {
-                $setKeys = "";
-                $resetKeys = "";
-                foreach ($keys as $key => $usage) {
-                    if ($usage) {
-                        if ($setKeys) $setKeys .= ',';
-                        $setKeys .= "'$key'";
-                    } else {
-                        if ($resetKeys) $resetKeys .= ',';
-                        $resetKeys .= "'$key'";
-                    }
-                }
-
-                if ($setKeys) {
-                    $this->translatorRepository->updateUsedTranslationsForGroup($keys, $group, 1);
-                }
-
-                if ($resetKeys) {
-                    $this->translatorRepository->updateUsedTranslationsForGroup($keys, $group, 0);
-                }
+                $this->translatorRepository->updateUsedTranslationsForGroup($keys, $group);
             }
         }
     }
@@ -708,21 +690,7 @@ class Manager
             }
 
             if (!$translation->exists) {
-                $sql = '(' .
-                    self::dbValue($translation->status, Translation::STATUS_SAVED) . ',' .
-                    self::dbValue($translation->locale) . ',' .
-                    self::dbValue($translation->group) . ',' .
-                    self::dbValue($translation->key) . ',' .
-                    self::dbValue($translation->value) . ',' .
-                    self::dbValue($translation->created_at, $timeStamp) . ',' .
-                    self::dbValue($translation->updated_at, $timeStamp) . ',' .
-                    self::dbValue($translation->source) . ',' .
-                    self::dbValue($translation->saved_value) . ',' .
-                    self::dbValue($translation->is_deleted, 0) . ',' .
-                    self::dbValue($translation->was_used, 0) .
-                    ')';
-
-                $values[] = $sql;
+                $values[] = $this->translatorRepository->getInsertTranslationsElement($translation, $timeStamp);
             } else if ($translation->isDirty()) {
                 if ($translation->isDirty(['value', 'source', 'saved_value', 'was_used',])) {
                     $translation->save();
@@ -776,23 +744,6 @@ class Manager
             }
             //$this->getConnection()->unprepared('UNLOCK TABLES');
         }
-    }
-
-    protected static function dbValue($value, $nullValue = 'NULL')
-    {
-        if ($value === null) {
-            return $nullValue;
-        }
-
-        if (is_string($value)) {
-            return '\'' . str_replace('\'', '\'\'', $value) . '\'';
-        }
-
-        if (is_bool($value)) {
-            return $value ? 1 : 0;
-        }
-        
-        return $value;
     }
 
     public function importTranslations($replace, $groups = null)
