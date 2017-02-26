@@ -3,6 +3,10 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.2.x and 2.3.x for
 Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
 
+#### 2.4.5
+
+* Fix: #69, fix overflow of edit in place container
+
 #### 2.4.4
 
 * Change: merge RU and UK locale translations thanks to
