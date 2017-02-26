@@ -104,12 +104,12 @@ SQL
         );
     }
 
-    public function selectTranslationsByLocaleAndGroup($locale, $db_group, $connectionName)
+    public function selectTranslationsByLocaleAndGroup($locale, $db_group)
     {
         return $this->translation->fromQuery(<<<SQL
 SELECT * FROM $this->tableName WHERE locale = ? AND `group` = ?
 SQL
-            , [$locale, $db_group], $connectionName);
+            , [$locale, $db_group], $this->getTranslation()->getConnectionName());
     }
 
     public function selectSourceByGroupAndKey($group, $key)

@@ -659,7 +659,7 @@ class Manager
     protected function importTranslationFile($locale, $db_group, $translations, $replace)
     {
         $connectionName = $this->getConnectionName();
-        $dbTranslations = $this->translatorRepository->selectTranslationsByLocaleAndGroup($locale, $db_group, $connectionName);
+        $dbTranslations = $this->translatorRepository->selectTranslationsByLocaleAndGroup($locale, $db_group);
 
         $timeStamp = 'now()';
         $dbTransMap = [];
