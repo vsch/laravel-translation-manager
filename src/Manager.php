@@ -16,6 +16,7 @@ use Vsch\TranslationManager\Classes\PathTemplateResolver;
 use Vsch\TranslationManager\Classes\TranslationFileRewriter;
 use Vsch\TranslationManager\Models\Translation;
 use Vsch\TranslationManager\Models\UserLocales;
+use Vsch\TranslationManager\Repositories\TranslatorRepository;
 use ZipArchive;
 
 /**
@@ -83,6 +84,7 @@ class Manager
     protected $zipExporting;
 
     private $package;
+    private $translatorRepository;
 
     public function setConnectionName($connection = null)
     {
@@ -111,12 +113,6 @@ class Manager
     public function isDefaultTranslationConnection($connection)
     {
         return $connection == null || $connection == $this->default_translation_connection;
-    }
-
-    public function getConnection()
-    {
-        $connection = $this->translation->getConnection();
-        return $connection;
     }
 
     /**
@@ -154,16 +150,10 @@ class Manager
         };
     }
 
-    public function getTranslationsTableName()
-    {
-        $prefix = $this->translation->getConnection()->getTablePrefix();
-        return $prefix . $this->translation->getTable();
-    }
-
     public function getUserLocalesTableName()
     {
         $userLocales = new UserLocales();
-        $prefix = $this->translation->getConnection()->getTablePrefix();
+        $prefix = $this->translatorRepository->getConnection()->getTablePrefix();
         return $prefix . $userLocales->getTable();
     }
     
@@ -259,9 +249,11 @@ class Manager
         $this->preloadedGroupLocales = array_combine($locales, $locales);
     }
 
-    public function __construct(Application $app, Filesystem $files, Dispatcher $events, Translation $translation)
+    public function __construct(Application $app, Filesystem $files, Dispatcher $events, Translation $translation, TranslatorRepository $translatorRepository)
     {
         $this->app = $app;
+        $this->translatorRepository = $translatorRepository;
+
         $this->package = ManagerServiceProvider::PACKAGE;
         $this->config = $this->app['config'][$this->package];
 
@@ -270,8 +262,11 @@ class Manager
         $this->translation = $translation;
         $this->default_connection = $translation->getConnectionName();
         $this->default_translation_connection = $this->config(self::DEFAULT_DB_CONNECTION_KEY, null);
-        if (!$this->default_translation_connection) $this->default_translation_connection = $this->default_connection;
-        else $this->setConnectionName($this->default_translation_connection);
+        if (!$this->default_translation_connection) {
+            $this->default_translation_connection = $this->default_connection;
+        } else {
+            $this->setConnectionName($this->default_translation_connection);
+        }
 
         $this->preloadedGroupKeys = null;
         $this->preloadedGroup = null;
@@ -410,7 +405,6 @@ class Manager
             //\Cache::put($this->usageCacheTransKey, $this->usageCache, 60 * 24 * 365);
             \Cache::put($this->usageCacheTransKey, [], 60 * 24 * 365);
             $this->usageCacheIsDirty = false;
-            $ltm_translations = $this->getTranslationsTableName();
 
             // now update the keys in the database
             foreach ($this->usageCache as $group => $keys) {
@@ -427,16 +421,11 @@ class Manager
                 }
 
                 if ($setKeys) {
-                    $this->getConnection()->affectingStatement(<<<SQL
-UPDATE $ltm_translations SET was_used = 1 WHERE was_used <> 1 AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?) AND `key` IN ($setKeys)
-SQL
-                        , [$group, 'vnd:%.' . $group, 'wbn:%.' . $group]);
+                    $this->translatorRepository->updateUsedTranslationsForGroup($keys, $group, 1);
                 }
+
                 if ($resetKeys) {
-                    $this->getConnection()->affectingStatement(<<<SQL
-UPDATE $ltm_translations SET was_used = 0 WHERE was_used <> 0 AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?) AND `key` IN ($resetKeys)
-SQL
-                        , [$group, 'vnd:%.' . $group, 'wbn:%.' . $group]);
+                    $this->translatorRepository->updateUsedTranslationsForGroup($keys, $group, 0);
                 }
             }
         }
@@ -461,7 +450,6 @@ SQL
 
     public function clearUsageCache($clearDatabase, $groups = null)
     {
-        $ltm_translations = $this->getTranslationsTableName();
         if (!$groups || $groups === '*') {
             $this->usageCache();
             $this->usageCache = [];
@@ -469,14 +457,13 @@ SQL
             $this->saveUsageCache();
 
             if ($clearDatabase) {
-                $this->getConnection()->affectingStatement(<<<SQL
-UPDATE $ltm_translations SET was_used = 0 WHERE was_used <> 0
-SQL
-                );
+                $this->translatorRepository->setNotUsedForAllTranslations();
             }
         } elseif ($this->usageCache()) {
             $this->usageCache();
-            if (!is_array($groups)) $groups = [$groups];
+            if (!is_array($groups)) {
+                $groups = [$groups];
+            }
 
             foreach ($groups as $group) {
                 if (array_key_exists($group, $this->usageCache)) {
@@ -485,10 +472,7 @@ SQL
                 }
 
                 if ($clearDatabase) {
-                    $this->getConnection()->affectingStatement(<<<SQL
-UPDATE $ltm_translations SET was_used = 0 WHERE was_used <> 0 AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?)
-SQL
-                        , [$group, 'vnd:%.' . $group, 'wbn:%.' . $group]);
+                    $this->translatorRepository->updateUsedTranslationsForGroup(null, $group, 0);
                 }
             }
 
@@ -524,7 +508,9 @@ SQL
         list($group, $transKey) = self::groupKeyList($key);
 
         if ($group) {
-            if (!array_key_exists($group, $this->cache())) $this->cache[$group] = [];
+            if (!array_key_exists($group, $this->cache())) {
+                $this->cache[$group] = [];
+            }
             $this->cache[$group][$this->cacheKey($transKey, $locale)] = $value;
             $this->cacheIsDirty = $this->persistentPrefix !== '';
         }
@@ -543,7 +529,9 @@ SQL
         list($group, $transKey) = self::groupKeyList($key);
 
         if ($group) {
-            if (!array_key_exists($group, $this->usageCache())) $this->usageCache[$group] = [];
+            if (!array_key_exists($group, $this->usageCache())) {
+                $this->usageCache[$group] = [];
+            }
             $this->usageCache[$group][$this->usageCacheKey($transKey, $locale)] = $value;
             $this->usageCacheIsDirty = $this->persistentPrefix !== '';
         }
@@ -566,7 +554,9 @@ SQL
 
     public static function fixGroup($group)
     {
-        if ($group !== null) $group = str_replace('/', '.', $group);
+        if ($group !== null) {
+            $group = str_replace('/', '.', $group);
+        }
         return $group;
     }
 
@@ -669,12 +659,7 @@ SQL
     protected function importTranslationFile($locale, $db_group, $translations, $replace)
     {
         $connectionName = $this->getConnectionName();
-        $ltm_translations = $this->getTranslationsTableName();
-        $dbTranslations = $this->translation->fromQuery(<<<SQL
-SELECT * FROM $ltm_translations WHERE locale = ? AND `group` = ?
-
-SQL
-            , [$locale, $db_group], $connectionName);
+        $dbTranslations = $this->translatorRepository->selectTranslationsByLocaleAndGroup($locale, $db_group);
 
         $timeStamp = 'now()';
         $dbTransMap = [];
@@ -742,8 +727,12 @@ SQL
                 if ($translation->isDirty(['value', 'source', 'saved_value', 'was_used',])) {
                     $translation->save();
                 } else {
-                    if (!array_key_exists($translation->status, $statusChangeOnly)) $statusChangeOnly[$translation->status] = $translation->id;
-                    else $statusChangeOnly[$translation->status] .= ',' . $translation->id;
+                    if (!array_key_exists($translation->status, $statusChangeOnly)) {
+                        $statusChangeOnly[$translation->status] = $translation->id;
+                    }
+                    else {
+                        $statusChangeOnly[$translation->status] .= ',' . $translation->id;
+                    }
                 }
             }
 
@@ -753,13 +742,9 @@ SQL
         // now batch update those with status changes only
         $updated_at = new Carbon();
         foreach ($statusChangeOnly as $status => $translationIds) {
-            $this->getConnection()->affectingStatement(<<<SQL
-UPDATE $ltm_translations SET status = ?, is_deleted = 0, updated_at = ? WHERE id IN ($translationIds)
-SQL
-                , [$status, $updated_at]);
+            $this->translatorRepository->updateStatusForTranslations($status, $updated_at, $translationIds);
         }
 
-        //$sql = "INSERT INTO `ltm_translations`(status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used) VALUES ";
         // now process all the new translations that were not in the files
         if ($replace == 2) {
             // we delete all translations that were not in the files
@@ -770,10 +755,7 @@ SQL
                 }
 
                 $translationIds = trim_prefix($translationIds, ',');
-                $this->getConnection()->unprepared(<<<SQL
-DELETE FROM $ltm_translations WHERE id IN ($translationIds)
-SQL
-                );
+                $this->translatorRepository->deleteTranslationsForIds($translationIds);
             }
         } else {
             // update their status
@@ -787,11 +769,8 @@ SQL
         }
 
         if ($values) {
-            $sql = "INS" . "ERT INTO $ltm_translations (status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used) VALUES " . implode(",", $values);
-
-            //$this->getConnection()->unprepared('LOCK TABLES `ltm_translations` WRITE');
             try {
-                $this->getConnection()->unprepared($sql);
+                $this->translatorRepository->insertTranslations($values);
             } catch (\Exception $e) {
                 $tmp = 0;
             }
@@ -801,9 +780,18 @@ SQL
 
     protected static function dbValue($value, $nullValue = 'NULL')
     {
-        if ($value === null) return $nullValue;
-        if (is_string($value)) return '\'' . str_replace('\'', '\'\'', $value) . '\'';
-        if (is_bool($value)) return $value ? 1 : 0;
+        if ($value === null) {
+            return $nullValue;
+        }
+
+        if (is_string($value)) {
+            return '\'' . str_replace('\'', '\'\'', $value) . '\'';
+        }
+
+        if (is_bool($value)) {
+            return $value ? 1 : 0;
+        }
+        
         return $value;
     }
 
@@ -826,11 +814,9 @@ SQL
         $this->imported = 0;
         $this->clearCache($groups);
         $this->clearUsageCache(false, $groups);
-
-        // Laravel 5.1
+        
         $pathTemplateResolver = new PathTemplateResolver($this->files, $this->app->basePath(), $this->config('language_dirs'), '5');
-        // Laravel 4.2
-        //$pathTemplateResolver = new PathTemplateResolver($this->files, base_path(), $this->config('language_dirs'), '4');
+  
         $langFiles = $pathTemplateResolver->langFileList();
 
         if ($groups !== null) {
@@ -1013,25 +999,21 @@ SQL
     {
         // TODO: clean up this recursion crap
         // this can come from the command line
-        $ltm_translations = $this->getTranslationsTableName();
         if (!$recursing) {
             $this->clearErrors();
             $group = self::fixGroup($group);
         }
 
         if ($group && $group !== '*') {
-            $this->getConnection()->affectingStatement("DELETE FROM $ltm_translations WHERE is_deleted = 1");
+            $this->translatorRepository->deleteTranslationWhereIsDeleted();
         } elseif (!$recursing) {
-            $this->getConnection()->affectingStatement("DELETE FROM $ltm_translations WHERE is_deleted = 1 AND `group` = ?", [$group]);
+            $this->translatorRepository->deleteTranslationWhereIsDeleted($group);
         }
 
         $inDatabasePublishing = $this->inDatabasePublishing();
         if ($inDatabasePublishing < 3 && $inDatabasePublishing && ($inDatabasePublishing < 2 || !$recursing)) {
             if ($group && $group !== '*') {
-                $this->getConnection()->affectingStatement(<<<SQL
-UPDATE $ltm_translations SET saved_value = value, status = ? WHERE (saved_value <> value || status <> ?) AND `group` = ?
-SQL
-                    , [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED, $group]);
+                $this->translatorRepository->updateValueInGroup($group);
 
                 $translations = $this->translation->query()->where('status', '<>', Translation::STATUS_SAVED)->where('group', '=', $group)->get([
                     'group',
@@ -1040,10 +1022,8 @@ SQL
                     'saved_value'
                 ]);
             } else {
-                $this->getConnection()->affectingStatement(<<<SQL
-UPDATE $ltm_translations SET saved_value = value, status = ? WHERE (saved_value <> value || status <> ?)
-SQL
-                    , [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED]);
+                $this->translatorRepository->updateValuesByStatus();
+
                 $translations = $this->translation->query()->where('status', '<>', Translation::STATUS_SAVED)->get([
                     'group',
                     'key',
@@ -1073,16 +1053,13 @@ SQL
                 $configRewriter = new TranslationFileRewriter();
                 $exportOptions = array_key_exists('export_format', $this->config()) ? TranslationFileRewriter::optionFlags($this->config('export_format')) : null;
 
-                // Laravel 5.1
                 $base_path = $this->app->basePath();
                 $pathTemplateResolver = new PathTemplateResolver($this->files, $base_path, $this->config('language_dirs'), '5');
                 $zipRoot = $base_path . $this->config('zip_root', mb_substr($this->app->langPath(), 0, -4));
-                // Laravel 4.2
-                //$base_path = base_path();
-                //$pathTemplateResolver = new PathTemplateResolver($this->files, $base_path, $this->config('language_dirs'), '4');
-                //$zipRoot = $base_path . $this->config('zip_root', mb_substr($this->app->make('path').'/lang', 0, -4));
 
-                if (mb_substr($zipRoot, -1) === '/') $zipRoot = substr($zipRoot, 0, -1);
+                if (mb_substr($zipRoot, -1) === '/') {
+                    $zipRoot = substr($zipRoot, 0, -1);
+                }
 
                 foreach ($tree as $locale => $groups) {
                     if (isset($groups[$group])) {
@@ -1177,8 +1154,7 @@ SQL
         if ($group === '*' || $group === null) {
             $this->translation->truncate();
         } else {
-            $ltm_translations = $this->getTranslationsTableName();
-            $this->getConnection()->affectingStatement("DELETE FROM $ltm_translations WHERE `group` = ?", [$group]);
+            $this->translatorRepository->deleteTranslationByGroup($group);
         }
     }
 

@@ -3,6 +3,7 @@
 use Illuminate\Routing\Controller as BaseController;
 use Vsch\TranslationManager\Models\Translation;
 use Vsch\TranslationManager\Models\UserLocales;
+use Vsch\TranslationManager\Repositories\TranslatorRepository;
 
 include_once(__DIR__ . '/Support/finediff.php');
 
@@ -29,16 +30,17 @@ class Controller extends BaseController
     private $displayLocales;
     private $showUsageInfo;
     private $locales;
-
+    private $translatorRepository;
     // list of locales that the user is allowed to modify
     private $transFilters;
 
-    public function __construct()
+    public function __construct(TranslatorRepository $translatorRepository)
     {
         $this->package = \Vsch\TranslationManager\ManagerServiceProvider::PACKAGE;
         $this->packagePrefix = $this->package . '::';
         $this->manager = \App::make($this->package);
-
+        $this->translatorRepository = $translatorRepository;
+        
         $this->connectionList = [];
         $this->connectionList[''] = 'default';
         $connections = $this->manager->config(Manager::DB_CONNECTIONS_KEY);
@@ -204,7 +206,6 @@ class Controller extends BaseController
 
     public function getSearch()
     {
-        $ltm_translations = $this->manager->getTranslationsTableName();
         $q = \Request::get('q');
 
         if ($q === '') $translations = [];
@@ -213,22 +214,8 @@ class Controller extends BaseController
 
             if (strpos($q, '%') === false) $q = "%$q%";
 
-            //$translations = $this->getTranslation()->where('key', 'like', "%$q%")->orWhere('value', 'like', "%$q%")->orderBy('group', 'asc')->orderBy('key', 'asc')->get();
-
             // need to fill-in missing locale's that match the key
-            $translations = $this->getConnection()->select(<<<SQL
-SELECT  
-    id, status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used
-    FROM $ltm_translations rt WHERE (`key` LIKE ? OR value LIKE ?) $displayWhere
-UNION ALL
-SELECT NULL id, 0 status, lt.locale, kt.`group`, kt.`key`, NULL value, NULL created_at, NULL updated_at, NULL source, NULL saved_value, NULL is_deleted, NULL was_used
-FROM (SELECT DISTINCT locale FROM $ltm_translations WHERE 1=1 $displayWhere) lt
-    CROSS JOIN (SELECT DISTINCT `key`, `group` FROM $ltm_translations WHERE 1=1 $displayWhere) kt
-WHERE NOT exists(SELECT * FROM $ltm_translations tr WHERE tr.`key` = kt.`key` AND tr.`group` = kt.`group` AND tr.locale = lt.locale)
-      AND `key` LIKE ?
-ORDER BY `key`, `group`, locale
-SQL
-                , [$q, $q, $q,]);
+            $translations = $this->translatorRepository->searchByRequest($q, $displayWhere);
         }
 
         $numTranslations = count($translations);
@@ -284,45 +271,7 @@ SQL
         // translations, otherwise we don't know what the group and key looks like.
         //$allTranslations = $this->getTranslation()->where('group', $group)->orderBy('key', 'asc')->get();
         $displayWhere = $this->displayLocales ? ' AND locale IN (\'' . implode("','", explode(',', $this->displayLocales)) . "')" : '';
-        $ltm_translations = $this->manager->getTranslationsTableName();
-        $allTranslations = $this->getTranslation()->fromQuery($sql = <<<SQL
-SELECT  
-    ltm.id,
-    ltm.status,
-    ltm.locale,
-    ltm.`group`,
-    ltm.`key`,
-    ltm.value,
-    ltm.created_at,
-    ltm.updated_at,
-    ltm.saved_value,
-    ltm.is_deleted,
-    ltm.was_used,
-    ltm.source <> '' has_source,
-    ltm.is_auto_added
-FROM $ltm_translations ltm WHERE `group` = ? $displayWhere
-UNION ALL
-SELECT DISTINCT
-    NULL id,
-    NULL status,
-    locale,
-    `group`,
-    `key`,
-    NULL value,
-    NULL created_at,
-    NULL updated_at,
-    NULL saved_value,
-    NULL is_deleted,
-    NULL was_used,
-    NULL has_source,
-    NULL is_auto_added
-FROM
-(SELECT * FROM (SELECT DISTINCT locale FROM $ltm_translations WHERE 1=1 $displayWhere) lcs
-    CROSS JOIN (SELECT DISTINCT `group`, `key` FROM $ltm_translations WHERE `group` = ? $displayWhere) grp) m
-WHERE NOT EXISTS(SELECT * FROM $ltm_translations t WHERE t.locale = m.locale AND t.`group` = m.`group` AND t.`key` = m.`key`)
-ORDER BY `key` ASC
-SQL
-            , [$group, $group], $this->getConnectionName());
+        $allTranslations = $this->translatorRepository->allTranslations($group, $displayWhere);
 
         $numTranslations = count($allTranslations);
         $translations = array();
@@ -332,26 +281,7 @@ SQL
 
         $this->manager->cacheGroupTranslations($group, $this->displayLocales, $translations);
 
-        $stats = $this->getConnection()->select(<<<SQL
-SELECT (mx.total_keys - lcs.total) missing, lcs.changed, lcs.cached, lcs.deleted, lcs.locale, lcs.`group`
-FROM
-    (SELECT sum(total) total, sum(changed) changed, sum(cached) cached, sum(deleted) deleted, `group`, locale
-     FROM
-         (SELECT count(value) total,
-          sum(CASE WHEN status = 1 THEN 1 ELSE 0 END) changed,
-          sum(CASE WHEN status = 2 AND value IS NOT NULL THEN 1 ELSE 0 END) cached,
-         sum(is_deleted) deleted,
-         `group`, locale
-                FROM $ltm_translations lt WHERE 1=1 $displayWhere GROUP BY `group`, locale
-          UNION ALL
-          SELECT DISTINCT 0, 0, 0, 0, `group`, locale FROM (SELECT DISTINCT locale FROM $ltm_translations WHERE 1=1 $displayWhere) lc
-              CROSS JOIN (SELECT DISTINCT `group` FROM $ltm_translations) lg) a
-     GROUP BY `group`, locale) lcs
-    JOIN (SELECT count(DISTINCT `key`) total_keys, `group` FROM $ltm_translations WHERE 1=1 $displayWhere GROUP BY `group`) mx
-        ON lcs.`group` = mx.`group`
-WHERE lcs.total < mx.total_keys OR lcs.changed > 0 OR lcs.cached > 0 OR lcs.deleted > 0
-SQL
-        );
+        $stats = $this->translatorRepository->stats($displayWhere);
 
         // returned result set lists missing, changed, group, locale
         $summary = [];
@@ -366,10 +296,21 @@ SQL
             }
 
             $item = $summary[$stat->group];
-            if ($stat->missing) $item->missing .= $stat->locale . ":" . $stat->missing . " ";
-            if ($stat->changed) $item->changed .= $stat->locale . ":" . $stat->changed . " ";
-            if ($stat->cached) $item->cached .= $stat->locale . ":" . $stat->cached . " ";
-            if ($stat->deleted) $item->deleted .= $stat->locale . ":" . $stat->deleted . " ";
+            if ($stat->missing) {
+                $item->missing .= $stat->locale . ":" . $stat->missing . " ";
+            }
+
+            if ($stat->changed) {
+                $item->changed .= $stat->locale . ":" . $stat->changed . " ";
+            }
+
+            if ($stat->cached) {
+                $item->cached .= $stat->locale . ":" . $stat->cached . " ";
+            }
+
+            if ($stat->deleted) {
+                $item->deleted .= $stat->locale . ":" . $stat->deleted . " ";
+            }
         }
 
         $mismatches = null;
@@ -377,36 +318,12 @@ SQL
 
         if ($mismatchEnabled) {
             // get mismatches
-            $mismatches = $this->getConnection()->select(<<<SQL
-SELECT DISTINCT lt.*, ft.ru, ft.en
-FROM (SELECT * FROM $ltm_translations WHERE 1=1 $displayWhere) lt
-    JOIN
-    (SELECT DISTINCT mt.`key`, BINARY mt.ru ru, BINARY mt.en en
-     FROM (SELECT lt.`group`, lt.`key`, group_concat(CASE lt.locale WHEN '$primaryLocale' THEN VALUE ELSE NULL END) en, group_concat(CASE lt.locale WHEN '$translatingLocale' THEN VALUE ELSE NULL END) ru
-           FROM (SELECT value, `group`, `key`, locale FROM $ltm_translations WHERE 1=1 $displayWhere
-                 UNION ALL
-                 SELECT NULL, `group`, `key`, locale FROM ((SELECT DISTINCT locale FROM $ltm_translations WHERE 1=1 $displayWhere) lc
-                     CROSS JOIN (SELECT DISTINCT `group`, `key` FROM $ltm_translations WHERE 1=1 $displayWhere) lg)
-                ) lt
-           GROUP BY `group`, `key`) mt
-         JOIN (SELECT lt.`group`, lt.`key`, group_concat(CASE lt.locale WHEN '$primaryLocale' THEN VALUE ELSE NULL END) en, group_concat(CASE lt.locale WHEN '$translatingLocale' THEN VALUE ELSE NULL END) ru
-               FROM (SELECT value, `group`, `key`, locale FROM $ltm_translations WHERE 1=1 $displayWhere
-                     UNION ALL
-                     SELECT NULL, `group`, `key`, locale FROM ((SELECT DISTINCT locale FROM $ltm_translations WHERE 1=1 $displayWhere) lc
-                         CROSS JOIN (SELECT DISTINCT `group`, `key` FROM $ltm_translations WHERE 1=1 $displayWhere) lg)
-                    ) lt
-               GROUP BY `group`, `key`) ht ON mt.`key` = ht.`key`
-     WHERE (mt.ru NOT LIKE BINARY ht.ru AND mt.en LIKE BINARY ht.en) OR (mt.ru LIKE BINARY ht.ru AND mt.en NOT LIKE BINARY ht.en)
-    ) ft
-        ON (lt.locale = '$translatingLocale' AND lt.value LIKE BINARY ft.ru) AND lt.`key` = ft.key
-ORDER BY `key`, `group`
-SQL
-            );
+            $mismatches = $this->translatorRepository->findMismatches($displayWhere, $primaryLocale, $translatingLocale);
 
             $key = '';
             $rus = [];
             $ens = [];
-            $rubases = [];      // by key
+            $rubases = [];    // by key
             $enbases = [];    // by key
             $extra = new \stdClass();
             $extra->key = '';
@@ -451,10 +368,17 @@ SQL
 
                 if ($mismatch->key === '') break;
 
-                if (!isset($ens[$mismatch->en])) $ens[$mismatch->en] = 1;
-                else $ens[$mismatch->en]++;
-                if (!isset($rus[$mismatch->ru])) $rus[$mismatch->ru] = 1;
-                else $rus[$mismatch->ru]++;
+                if (!isset($ens[$mismatch->en])) {
+                    $ens[$mismatch->en] = 1;
+                } else {
+                    $ens[$mismatch->en]++;
+                }
+
+                if (!isset($rus[$mismatch->ru])) {
+                    $rus[$mismatch->ru] = 1;
+                } else {
+                    $rus[$mismatch->ru]++;
+                }
             }
 
             array_splice($mismatches, count($mismatches) - 1, 1);
@@ -592,17 +516,12 @@ SQL
                         if ($suffixes) {
                             foreach ($suffixes as $suffix) {
                                 //$this->getTranslation()->where('group', $group)->where('key', $key . trim($suffix))->delete();
-                                $result = $this->getConnection()->update(<<<SQL
-UPDATE $ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
-SQL
-                                    , [$group, $key . trim($suffix)]);
+                                $result = $this->translatorRepository->updateIsDeletedByGroupAndKey($group, $key . trim($suffix), 1);
+
                             }
                         } else {
                             //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
-                            $result = $this->getConnection()->update(<<<SQL
-UPDATE $ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
-SQL
-                                , [$group, $key]);
+                            $result = $this->translatorRepository->updateIsDeletedByGroupAndKey($group, $key, 1);
                         }
                     }
                 }
@@ -675,13 +594,9 @@ SQL
     {
         if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $key = decodeKey($key);
-            $ltm_translations = $this->manager->getTranslationsTableName();
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
                 //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
-                $result = $this->getConnection()->update(<<<SQL
-UPDATE $ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND `group` = ? AND `key` = ?
-SQL
-                    , [$group, $key]);
+                $result = $this->translatorRepository->updateIsDeletedByGroupAndKey($group, $key, 1);
             }
         }
         return array('status' => 'ok');
@@ -690,13 +605,9 @@ SQL
     public function postShowSource($group, $key)
     {
         $key = decodeKey($key);
-        $ltm_translations = $this->manager->getTranslationsTableName();
         $results = '';
         if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
-            $result = $this->getConnection()->select(<<<SQL
-SELECT source FROM $ltm_translations WHERE `group` = ? AND `key` = ?
-SQL
-                , [$group, $key]);
+            $result = $this->translatorRepository->selectSourceByGroupAndKey($group, $key);
 
             foreach ($result as $item) {
                 $results .= $item->source;
@@ -716,13 +627,9 @@ SQL
     {
         if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $key = decodeKey($key);
-            $ltm_translations = $this->manager->getTranslationsTableName();
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
                 //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
-                $result = $this->getConnection()->update(<<<SQL
-UPDATE $ltm_translations SET is_deleted = 0 WHERE is_deleted = 1 AND `group` = ? AND `key` = ?
-SQL
-                    , [$group, $key]);
+                $result = $this->translatorRepository->updateIsDeletedByGroupAndKey($group, $key, 0);
             }
         }
         return array('status' => 'ok');
@@ -764,7 +671,9 @@ SQL
             } elseif (!count($srckeys)) {
                 $errors[] = trans($this->packagePrefix . 'messages.keyop-need-keys');
             } else {
-                if (!count($dstkeys)) $dstkeys = array_fill(0, count($srckeys), null);
+                if (!count($dstkeys)) {
+                    $dstkeys = array_fill(0, count($srckeys), null);
+                }
 
                 $keys = array_combine($srckeys, $dstkeys);
                 $hadErrors = false;
@@ -910,12 +819,7 @@ SQL
                             foreach ($rows as $row) {
                                 if ($this->isLocaleEnabled($row->locale)) {
                                     list($dstgrp, $dstkey) = self::keyGroup($row->dstgrp, $row->dst);
-                                    $to_delete = $this->getConnection()->select(<<<SQL
-SELECT GROUP_CONCAT(id SEPARATOR ',') ids FROM $ltm_translations tr
-WHERE `group` = ? AND `key` = ? AND locale = ? AND id NOT IN ($rowids)
-
-SQL
-                                        , [$dstgrp, $dstkey, $row->locale]);
+                                    $to_delete = $this->translatorRepository->selectToDeleteTranslations($dstgrp, $dstkey, $row->locale, $rowids);
 
                                     if (!empty($to_delete)) {
                                         $to_delete = $to_delete[0]->ids;
@@ -923,34 +827,27 @@ SQL
                                             //$this->getConnection()->update("UPDATE ltm_translations SET is_deleted = 1 WHERE id IN ($to_delete)");
                                             // have to delete right away, we will be bringing another key here
                                             // TODO: copy value to new key's saved value
-                                            $this->getConnection()->delete("DELETE FROM $ltm_translations WHERE id IN ($to_delete)");
+                                            $this->translatorRepository->deleteTranslationsForIds($to_delete);
                                         }
                                     }
 
-                                    $this->getConnection()->update("UPDATE $ltm_translations SET `group` = ?, `key` = ?, status = 1 WHERE id = ?"
-                                        , [$dstgrp, $dstkey, $row->id]);
+                                    $this->translatorRepository->updateGroupKeyStatusById($dstgrp, $dstkey, $row->id);
                                 }
                             }
                         } elseif ($op === 'delete') {
-                            //$this->getConnection()->delete("DELETE FROM ltm_translations WHERE id IN ($rowids)");
-                            $this->getConnection()->update("UPDATE $ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND id IN ($rowids)");
+                            $this->translatorRepository->updateIsDeletedByIds($rowids);
                         } elseif ($op === 'copy') {
                             // TODO: split operation into update and insert so that conflicting keys get new values instead of being replaced
                             foreach ($rows as $row) {
                                 if ($this->isLocaleEnabled($row->locale)) {
                                     list($dstgrp, $dstkey) = self::keyGroup($row->dstgrp, $row->dst);
-                                    $to_delete = $this->getConnection()->select(<<<SQL
-SELECT GROUP_CONCAT(id SEPARATOR ',') ids FROM $ltm_translations tr
-WHERE `group` = ? AND `key` = ? AND locale = ? AND id NOT IN ($rowids)
-
-SQL
-                                        , [$dstgrp, $dstkey, $row->locale]);
+                                    $to_delete = $this->translatorRepository->selectToDeleteTranslations($dstgrp, $dstkey, $userLocales, $rowids);
 
                                     if (!empty($to_delete)) {
                                         $to_delete = $to_delete[0]->ids;
                                         if ($to_delete) {
                                             //$this->getConnection()->update("UPDATE ltm_translations SET is_deleted = 1 WHERE id IN ($to_delete)");
-                                            $this->getConnection()->delete("DELETE FROM $ltm_translations WHERE id IN ($to_delete)");
+                                            $this->translatorRepository->deleteTranslationsForIds($to_delete);
                                         }
                                     }
 
@@ -1113,15 +1010,17 @@ SQL
 
         $this->setConnectionName($connection);
 
-        if (\App::runningUnitTests()) return \Redirect::to('/');
+        if (\App::runningUnitTests()) {
+            return \Redirect::to('/');
+        }
         return !is_null(\Request::header('referer')) ? \Redirect::back() : \Redirect::to('/');
     }
 
     public function getUsageInfo()
     {
-        $group = \Request::get("group");
-        $reset = \Request::get("reset-usage-info");
-        $show = \Request::get("show-usage-info");
+        $group = \Request::get('group');
+        $reset = \Request::get('reset-usage-info');
+        $show = \Request::get('show-usage-info');
 
         // need to store this so that it can be displayed again
         \Cookie::queue($this->cookieName(self::COOKIE_SHOW_USAGE), $show, 60 * 24 * 365 * 1);
@@ -1132,7 +1031,9 @@ SQL
             $this->manager->clearUsageCache(true, $group);
         }
 
-        if (\App::runningUnitTests()) return \Redirect::to('/');
+        if (\App::runningUnitTests()) {
+            return \Redirect::to('/');
+        }
         return !is_null(\Request::header('referer')) ? \Redirect::back() : \Redirect::to('/');
     }
 
