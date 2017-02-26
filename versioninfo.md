@@ -12,6 +12,8 @@ Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
 
 * Fix: reformat code to PSR-2 
 
+* Fix: #66, Add a note that only MySQL connection is supported
+
 #### 2.4.3
 
 * roll back changes in 2.4.2 because it only applies to Laravel 5.3
