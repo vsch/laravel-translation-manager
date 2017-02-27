@@ -132,8 +132,11 @@ class Controller extends BaseController
         //Set the default locale as the first one.
         $currentLocale = \Config::get('app.locale');
         $primaryLocale = $this->primaryLocale;
+        if (!$currentLocale) {
+            $currentLocale = $primaryLocale;
+        }
+        
         $translatingLocale = \Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE), $currentLocale);
-
         $locales = ManagerServiceProvider::getLists($this->getTranslation()->groupBy('locale')->pluck('locale')) ?: [];
 
         // limit the locale list to what is in the config

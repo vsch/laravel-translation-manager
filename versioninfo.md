@@ -7,6 +7,13 @@ Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
 
 * Fix: #69, fix overflow of edit in place container
 
+* Fix: refactor all database access out to `TranslatorRepository`, thanks to
+  [Alex Mokrenko](https://github.com/al0mie)
+
+* Fix: #71, Trying to get property of non-object exception
+
+* Fix: #72, $locales array elements need to be filtered before passing to view
+
 #### 2.4.4
 
 * Change: merge RU and UK locale translations thanks to
@@ -17,6 +24,7 @@ Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
 * Fix: reformat code to PSR-2 
 
 * Fix: #66, Add a note that only MySQL connection is supported
+
 
 #### 2.4.3
 
