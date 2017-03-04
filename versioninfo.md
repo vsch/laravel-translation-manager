@@ -21,10 +21,9 @@ Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
 
 * Fix: disable in place edit mode if not logged in
 
-* Fix: reformat code to PSR-2 
+* Fix: reformat code to PSR-2
 
 * Fix: #66, Add a note that only MySQL connection is supported
-
 
 #### 2.4.3
 
@@ -55,7 +54,7 @@ Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
 
   Requires adding `{!! getWebUITranslations() !!}` to layout master before including
   `translator.js`, otherwise english defaults will be used.
-  
+
   * title-save-changes: default "Save changes"
   * title-cancel-changes: default "Cancel changes"
   * title-translate: default "Translate"
@@ -99,9 +98,9 @@ Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
 * Add: routes entry for translations. Old routes handling no longer works, now need to add a
   call to `Translator::routes()` wrapped in appropriate middleware and prefix grouping:
 
-      \Route::group(['middleware' => 'web', 'prefix' => 'translations'], function () {
-          Translator::routes();
-      });
+        \Route::group(['middleware' => 'web', 'prefix' => 'translations'], function () {
+            Translator::routes();
+        });
 
   to be added to routes/web.php to create translator routes
 * Fix: search to list columns explicitly
