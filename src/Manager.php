@@ -16,7 +16,6 @@ use Vsch\TranslationManager\Classes\PathTemplateResolver;
 use Vsch\TranslationManager\Classes\TranslationFileRewriter;
 use Vsch\TranslationManager\Models\Translation;
 use Vsch\TranslationManager\Models\UserLocales;
-use Vsch\TranslationManager\Repositories\TranslatorRepository;
 use ZipArchive;
 
 /**
@@ -29,7 +28,6 @@ class Manager
     const INDATABASE_PUBLISH_KEY = 'indatabase_publish';
     const DEFAULT_DB_CONNECTION_KEY = 'default_connection';
     const USER_LOCALES_ENABLED = 'user_locales_enabled';
-    const PDO_FETCH_MODE_ENABLED = 'pdo_fetch_mode_enabled';
     const USER_LIST_CONNECTION_KEY = 'user_list_connection';
     const DB_CONNECTIONS_KEY = 'db_connections';
     const PERSISTENT_PREFIX_KEY = 'persistent_prefix';
@@ -113,6 +111,16 @@ class Manager
     public function isDefaultTranslationConnection($connection)
     {
         return $connection == null || $connection == $this->default_translation_connection;
+    }
+
+    public
+    function getConnection()
+    {
+        $connection = $this->translation->getConnection();
+        if (method_exists($connection, 'setFetchMode')) {
+            $connection->setFetchMode(\PDO::FETCH_CLASS);
+        }
+        return $connection;
     }
 
     /**
