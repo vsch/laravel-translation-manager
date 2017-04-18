@@ -707,13 +707,14 @@ class Controller extends BaseController
                     list($srcgrp, $srckey) = self::keyGroup($group, $src);
                     list($dstgrp, $dstkey) = $dst === null ? [null, null] : self::keyGroup($group, $dst);
 
-                	$rows = $this->translatorRepository->selectKeys($src, $dst, $userLocales, $srcgrp, $srckey, $dstkey, $dstgrp);
+                    $rows = $this->translatorRepository->selectKeys($src, $dst, $userLocales, $srcgrp, $srckey, $dstkey, $dstgrp);
 
                     $keymap[$src] = ['dst' => $dst, 'rows' => $rows];
                 }
 
                 if (!$hadErrors && ($op === 'copy' || $op === 'move' || $op === 'delete')) {
                     foreach ($keys as $src => $dst) {
+                        
                         $rows = $keymap[$src]['rows'];
 
                         $rowids = array_reduce($rows, function ($carry, $row) {
@@ -758,7 +759,8 @@ class Controller extends BaseController
                                         }
                                     }
 
-                                  $this->translatorRepository->copyKeys($dstgrp, $dstkey, $row->id);
+                                    $this->translatorRepository->copyKeys($dstgrp, $dstkey, $row->id);
+                                }
                             }
                         }
                     }
