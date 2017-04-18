@@ -233,7 +233,7 @@ class Controller extends BaseController
 
     protected function getConnection()
     {
-        $connection = $this->manager->getConnection();
+        $connection = $this->translatorRepository->getConnection();
         return $connection;
     }
 
