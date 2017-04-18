@@ -476,4 +476,30 @@ SQL
         }
         return $rows;
     }
+
+    public function copyKeys($dstgrp, $dstkey, $rowId)
+    {
+        $ltm_translations = $this->getTranslationsTableName();
+
+        return $this->connection->insert($this->adjustTranslationTable(<<<SQL
+INSERT INTO $ltm_translations (status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used) 
+SELECT
+    1 status,
+    locale,
+    ? `group`,
+    ? `key`,
+    value,
+    sysdate() created_at,
+    sysdate() updated_at,
+    source,
+    saved_value,
+    is_deleted,
+    was_used
+FROM $ltm_translations t1
+WHERE id = ?
+
+SQL
+        ), [$dstgrp, $dstkey, $rowId]);
+    }
+
 }

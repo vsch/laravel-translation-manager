@@ -758,26 +758,7 @@ class Controller extends BaseController
                                         }
                                     }
 
-                                    $this->getConnection()->insert($sql = <<<SQL
-INSERT INTO $ltm_translations (status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used) 
-SELECT
-    1 status,
-    locale,
-    ? `group`,
-    ? `key`,
-    value,
-    sysdate() created_at,
-    sysdate() updated_at,
-    source,
-    saved_value,
-    is_deleted,
-    was_used
-FROM $ltm_translations t1
-WHERE id = ?
-
-SQL
-                                        , [$dstgrp, $dstkey, $row->id]);
-                                }
+                                  $this->translatorRepository->copyKeys($dstgrp, $dstkey, $row->id);
                             }
                         }
                     }
