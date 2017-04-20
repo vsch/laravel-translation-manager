@@ -5,6 +5,13 @@ use Illuminate\Translation\TranslationServiceProvider as BaseTranslationServiceP
 class TranslationServiceProvider extends BaseTranslationServiceProvider
 {
     /**
+     * Indicates if loading of the provider is deferred.
+     *
+     * @var bool
+     */
+    protected $defer = false;
+
+    /**
      * Register the service provider.
      *
      * @return void
