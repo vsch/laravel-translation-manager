@@ -374,4 +374,132 @@ SQL
         ), [$group, $key, $locale]);
     }
 
+    public function selectKeys($src, $dst, $userLocales, $srcgrp, $srckey, $dstkey, $dstgrp)
+    {
+        $ltm_translations = $this->getTranslationsTableName();
+        
+        if ((substr($src, 0, 1) === '*')) {
+            if ($dst === null) {
+                $rows = $this->connection->select($this->adjustTranslationTable($sql = <<<SQL
+SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM $ltm_translations t1
+WHERE `group` = ? AND `key` LIKE BINARY ? AND locale IN ($userLocales)
+ORDER BY locale, `key`
+
+SQL
+                ), [
+                        $srcgrp,
+                        '%' . mb_substr($srckey, 1),
+                    ]);
+            } else {
+                $rows = $this->connection->select($this->adjustTranslationTable($sql = <<<SQL
+SELECT DISTINCT `group`, `key`, locale, id, CONCAT(SUBSTR(`key`, 1, CHAR_LENGTH(`key`)-?), ?) dst, ? dstgrp FROM $ltm_translations t1
+WHERE `group` = ? AND `key` LIKE BINARY ? AND locale IN ($userLocales)
+AND NOT exists(SELECT * FROM $ltm_translations t2 WHERE t2.value IS NOT NULL AND t2.`group` = ? AND t1.locale = t2.locale
+                AND t2.`key` LIKE BINARY CONCAT(SUBSTR(t1.`key`, 1, CHAR_LENGTH(t1.`key`)-?), ?))
+ORDER BY locale, `key`
+
+SQL
+                ), [
+                        mb_strlen($srckey) - 1,
+                        mb_substr($dstkey, 1),
+                        $dstgrp,
+                        $srcgrp,
+                        '%' . mb_substr($srckey, 1),
+                        $dstgrp,
+                        mb_strlen($srckey) - 1,
+                        mb_substr($dstkey, 1)
+                    ]);
+            }
+        } elseif ((substr($src, -1, 1) === '*')) {
+            if ($dst === null) {
+                $rows = $this->connection->select($this->adjustTranslationTable($sql = <<<SQL
+SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM $ltm_translations t1
+WHERE `group` = ? AND `key` LIKE BINARY ? AND locale IN ($userLocales)
+ORDER BY locale, `key`
+
+SQL
+                ), [
+                        $srcgrp,
+                        mb_substr($srckey, 0, -1) . '%',
+                    ]);
+            } else {
+                $rows = $this->connection->select($this->adjustTranslationTable($sql = <<<SQL
+SELECT DISTINCT `group`, `key`, locale, id, CONCAT(?, SUBSTR(`key`, ?+1, CHAR_LENGTH(`key`)-?)) dst, ? dstgrp FROM $ltm_translations t1
+WHERE `group` = ? AND `key` LIKE BINARY ? AND locale IN ($userLocales)
+AND NOT exists(SELECT * FROM $ltm_translations t2 WHERE t2.value IS NOT NULL AND t2.`group` = ? AND t1.locale = t2.locale
+                AND t2.`key` LIKE BINARY CONCAT(?, SUBSTR(t1.`key`, ?+1, CHAR_LENGTH(t1.`key`)-?)))
+ORDER BY locale, `key`
+
+SQL
+                ), [
+                        mb_substr($dstkey, 0, -1),
+                        mb_strlen($srckey) - 1,
+                        mb_strlen($srckey) - 1,
+                        $dstgrp,
+                        $srcgrp,
+                        mb_substr($srckey, 0, -1) . '%',
+                        $dstgrp,
+                        mb_substr($dstkey, 0, -1),
+                        mb_strlen($srckey) - 1,
+                        mb_strlen($srckey) - 1
+                    ]);
+            }
+        } else {
+            if ($dst === null) {
+                $rows = $this->connection->select($this->adjustTranslationTable($sql = <<<SQL
+SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM $ltm_translations t1
+WHERE `group` = ? AND `key` LIKE BINARY ? AND locale IN ($userLocales)
+ORDER BY locale, `key`
+
+SQL
+                ), [
+                        $srcgrp,
+                        $srckey,
+                    ]);
+            } else {
+                $rows = $this->connection->select($this->adjustTranslationTable($sql = <<<SQL
+SELECT DISTINCT `group`, `key`, locale, id, ? dst, ? dstgrp FROM $ltm_translations t1
+WHERE `group` = ? AND `key` LIKE BINARY ? AND locale IN ($userLocales)
+AND NOT exists(SELECT * FROM $ltm_translations t2 WHERE t2.value IS NOT NULL AND t2.`group` = ? AND t1.locale = t2.locale AND t2.`key` LIKE BINARY ?)
+ORDER BY locale, `key`
+
+SQL
+                ), [
+                        $dstkey,
+                        $dstgrp,
+                        $srcgrp,
+                        $srckey,
+                        $dstgrp,
+                        $dstkey,
+                    ]);
+            }
+        }
+ 
+        return $rows;
+    }
+
+    public function copyKeys($dstgrp, $dstkey, $rowId)
+    {
+        $ltm_translations = $this->getTranslationsTableName();
+
+        return $this->connection->insert($this->adjustTranslationTable(<<<SQL
+INSERT INTO $ltm_translations (status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used) 
+SELECT
+    1 status,
+    locale,
+    ? `group`,
+    ? `key`,
+    value,
+    sysdate() created_at,
+    sysdate() updated_at,
+    source,
+    saved_value,
+    is_deleted,
+    was_used
+FROM $ltm_translations t1
+WHERE id = ?
+
+SQL
+        ), [$dstgrp, $dstkey, $rowId]);
+    }
 }
