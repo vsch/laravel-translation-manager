@@ -3,7 +3,7 @@
 use Illuminate\Routing\Controller as BaseController;
 use Vsch\TranslationManager\Models\Translation;
 use Vsch\TranslationManager\Models\UserLocales;
-use Vsch\TranslationManager\Repositories\TranslatorRepository;
+use Vsch\TranslationManager\Repositories\Interfaces\ITranslatorRepository;
 
 include_once(__DIR__ . '/Support/finediff.php');
 
@@ -34,7 +34,7 @@ class Controller extends BaseController
     // list of locales that the user is allowed to modify
     private $transFilters;
 
-    public function __construct(TranslatorRepository $translatorRepository)
+    public function __construct(ITranslatorRepository $translatorRepository)
     {
         $this->package = \Vsch\TranslationManager\ManagerServiceProvider::PACKAGE;
         $this->packagePrefix = $this->package . '::';
