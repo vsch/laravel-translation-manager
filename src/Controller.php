@@ -505,7 +505,7 @@ class Controller extends BaseController
     public function postDeleteSuffixedKeys($group)
     {
         if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
-            $ltm_translations = $this->manager->getTranslationsTableName();
+            $ltm_translations = $this->translatorRepository->getTranslationsTableName();
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
                 $keys = explode("\n", trim(\Request::get('keys')));
                 $suffixes = explode("\n", trim(\Request::get('suffixes')));
@@ -648,7 +648,7 @@ class Controller extends BaseController
         $keymap = [];
         $this->logSql = 1;
         $this->sqltraces = [];
-        $ltm_translations = $this->manager->getTranslationsTableName();
+        $ltm_translations = $this->translatorRepository->getTranslationsTableName();
         $userLocales = $this->userLocales;
         if ($userLocales) $userLocales = "'" . str_replace(',', "','", substr($userLocales, 1, -1)) . "'";
 
