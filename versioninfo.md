@@ -3,6 +3,12 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.2.x and 2.3.x for
 Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
 
+#### 2.4.6
+
+* Fix: #80, Move query to repository
+
+* Fix: #77, log_missing_keys working even if set to false
+
 #### 2.4.5
 
 * Fix: #69, fix overflow of edit in place container

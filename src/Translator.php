@@ -292,7 +292,7 @@ class Translator extends LaravelTranslator
         if ($useDB == 2) {
             list($namespace, $group, $item) = $this->parseKey($key);
             if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
-                $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
+                $t = $this->manager->missingKey($namespace, $group, $item, $locale, !\Gate::allows(Manager::ABILITY_BYPASS_LOTTERY), true);
                 if ($t) {
                     $result = $t->value ?: $key;
                     if ($t->isDirty()) $t->save();
@@ -307,7 +307,7 @@ class Translator extends LaravelTranslator
             if ($useDB === 1) {
                 list($namespace, $group, $item) = $this->parseKey($key);
                 if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
-                    $t = $this->manager->missingKey($namespace, $group, $item, $locale, false, true);
+                    $t = $this->manager->missingKey($namespace, $group, $item, $locale, !\Gate::allows(Manager::ABILITY_BYPASS_LOTTERY), true);
                     if ($t) {
                         $result = $t->saved_value ?: $key;
                         if ($t->isDirty()) $t->save();
@@ -521,7 +521,7 @@ HTML;
     {
         list($namespace, $group, $item) = $this->parseKey($key);
         if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
-            $this->manager->missingKey($namespace, $group, $item, $locale, !\Gate::allows(Manager::ABILITY_BYPASS_LOTTERY));
+            $this->manager->missingKey($namespace, $group, $item, $locale, !\Gate::allows(Manager::ABILITY_BYPASS_LOTTERY), false);
         }
     }
 

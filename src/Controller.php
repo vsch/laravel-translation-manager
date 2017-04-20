@@ -40,7 +40,7 @@ class Controller extends BaseController
         $this->packagePrefix = $this->package . '::';
         $this->manager = \App::make($this->package);
         $this->translatorRepository = $translatorRepository;
-        
+
         $this->connectionList = [];
         $this->connectionList[''] = 'default';
         $connections = $this->manager->config(Manager::DB_CONNECTIONS_KEY);
@@ -135,7 +135,7 @@ class Controller extends BaseController
         if (!$currentLocale) {
             $currentLocale = $primaryLocale;
         }
-        
+
         $translatingLocale = \Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE), $currentLocale);
         $locales = ManagerServiceProvider::getLists($this->getTranslation()->groupBy('locale')->pluck('locale')) ?: [];
 
@@ -490,10 +490,10 @@ class Controller extends BaseController
                 if ($group && $key) {
                     if ($suffixes) {
                         foreach ($suffixes as $suffix) {
-                            $this->manager->missingKey($namespace, $group, $key . trim($suffix));
+                            $this->manager->missingKey($namespace, $group, $key . trim($suffix), null, false, false);
                         }
                     } else {
-                        $this->manager->missingKey($namespace, $group, $key);
+                        $this->manager->missingKey($namespace, $group, $key, null, false, false);
                     }
                 }
             }
@@ -505,7 +505,6 @@ class Controller extends BaseController
     public function postDeleteSuffixedKeys($group)
     {
         if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
-            $ltm_translations = $this->manager->getTranslationsTableName();
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
                 $keys = explode("\n", trim(\Request::get('keys')));
                 $suffixes = explode("\n", trim(\Request::get('suffixes')));
@@ -519,7 +518,6 @@ class Controller extends BaseController
                             foreach ($suffixes as $suffix) {
                                 //$this->getTranslation()->where('group', $group)->where('key', $key . trim($suffix))->delete();
                                 $result = $this->translatorRepository->updateIsDeletedByGroupAndKey($group, $key . trim($suffix), 1);
-
                             }
                         } else {
                             //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
@@ -542,8 +540,8 @@ class Controller extends BaseController
             if ($this->isLocaleEnabled($locale)) {
                 $translation = $this->manager->firstOrNewTranslation(array(
                     'locale' => $locale,
-                    'group' => $group,
-                    'key' => $key,
+                    'group'  => $group,
+                    'key'    => $key,
                 ));
 
                 $markdownSuffix = $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX);
@@ -568,8 +566,8 @@ class Controller extends BaseController
 
                     $translation = $this->manager->firstOrNewTranslation(array(
                         'locale' => $locale,
-                        'group' => $group,
-                        'key' => $key,
+                        'group'  => $group,
+                        'key'    => $key,
                     ));
 
                     $value = $markdownValue !== null ? \Markdown::convertToHtml(str_replace("\xc2\xa0", ' ', $markdownValue)) : null;
@@ -648,7 +646,6 @@ class Controller extends BaseController
         $keymap = [];
         $this->logSql = 1;
         $this->sqltraces = [];
-        $ltm_translations = $this->manager->getTranslationsTableName();
         $userLocales = $this->userLocales;
         if ($userLocales) $userLocales = "'" . str_replace(',', "','", substr($userLocales, 1, -1)) . "'";
 
@@ -714,7 +711,7 @@ class Controller extends BaseController
 
                 if (!$hadErrors && ($op === 'copy' || $op === 'move' || $op === 'delete')) {
                     foreach ($keys as $src => $dst) {
-                        
+
                         $rows = $keymap[$src]['rows'];
 
                         $rowids = array_reduce($rows, function ($carry, $row) {
@@ -946,7 +943,7 @@ class Controller extends BaseController
 
         if (\Request::wantsJson()) {
             return \Response::json(array(
-                'status' => 'ok',
+                'status'       => 'ok',
                 'transFilters' => $this->transFilters,
             ));
         }
@@ -985,8 +982,8 @@ class Controller extends BaseController
     public function postYandexKey()
     {
         return \Response::json(array(
-            'status' => 'ok',
-            'yandex_key' => $this->manager->config('yandex_translator_key', null)
+            'status'     => 'ok',
+            'yandex_key' => $this->manager->config('yandex_translator_key', null),
         ));
     }
 

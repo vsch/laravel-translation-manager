@@ -122,7 +122,7 @@ class Manager
     {
         return $this->translation;
     }
-    
+
     public function getConnectionInDatabasePublish($connectionName)
     {
         if ($connectionName === null || $connectionName === '' || $this->isDefaultTranslationConnection($connectionName)) {
@@ -130,7 +130,7 @@ class Manager
         }
         return $this->getConnectionInfo($connectionName, self::INDATABASE_PUBLISH_KEY, $this->config(self::INDATABASE_PUBLISH_KEY, 0));
     }
-    
+
     public function getUserListConnection($connectionName)
     {
         if ($connectionName === null || $connectionName === '' || $this->isDefaultTranslationConnection($connectionName)) {
@@ -156,7 +156,7 @@ class Manager
         $prefix = $this->translatorRepository->getConnection()->getTablePrefix();
         return $prefix . $userLocales->getTable();
     }
-    
+
     public function getConnectionInfo($connectionName, $key = null, $default = null)
     {
         if ($key === null) {
@@ -543,20 +543,19 @@ class Manager
     }
 
     /**
-     * @param      $namespace string
-     * @param      $group     string
-     * @param      $key       string
-     *
-     * @param null $locale
-     * @param bool $useLottery
-     * @param bool $findOrNew
+     * @param             $namespace string
+     * @param             $group     string
+     * @param             $key       string
+     * @param null|string $locale
+     * @param bool        $useLottery
+     * @param bool        $findOrNew
      *
      * @return \Vsch\TranslationManager\Models\Translation|null
      */
-    public function missingKey($namespace, $group, $key, $locale = null, $useLottery = false, $findOrNew = false)
+    public function missingKey($namespace, $group, $key, $locale = null, $useLottery = true, $findOrNew = false)
     {
         if (!$useLottery || $this->config(self::LOG_MISSING_KEYS_KEY)) {
-            // Fucking L5 changes
+            // L5 changes
             $group = self::fixGroup($group);
             $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
             if (!in_array($group, $this->config(self::EXCLUDE_GROUPS_KEY))) {
@@ -582,17 +581,18 @@ class Manager
                     if ($findOrNew) {
                         $translation = $this->firstOrNewTranslation(array(
                             'locale' => $locale,
-                            'group' => $group,
-                            'key' => $key,
+                            'group'  => $group,
+                            'key'    => $key,
                         ));
                     } else {
                         $translation = $this->firstOrCreateTranslation(array(
                             'locale' => $locale,
-                            'group' => $group,
-                            'key' => $key,
+                            'group'  => $group,
+                            'key'    => $key,
                         ));
                     }
 
+                    /* @var $translation \Vsch\TranslationManager\Models\Translation */
                     return $translation;
                 }
             }
@@ -601,14 +601,13 @@ class Manager
     }
 
     /**
-     * @param      $namespace string
-     * @param      $group     string
-     * @param      $key       string
-     *
-     * @param null $locale
-     * @param bool $useLottery
+     * @param             $namespace string
+     * @param             $group     string
+     * @param             $key       string
+     * @param null|string $locale
+     * @param bool        $useLottery
      */
-    public function usingKey($namespace, $group, $key, $locale = null, $useLottery = false)
+    public function usingKey($namespace, $group, $key, $locale, $useLottery)
     {
         if ($this->config(self::LOG_KEY_USAGE_INFO_KEY)) {
             $group = self::fixGroup($group);
@@ -664,8 +663,8 @@ class Manager
             } else {
                 $translation = new Translation(array(
                     'locale' => $locale,
-                    'group' => $db_group,
-                    'key' => $key,
+                    'group'  => $db_group,
+                    'key'    => $key,
                 ));
 
                 $translation->setConnection($connectionName);
@@ -691,14 +690,13 @@ class Manager
 
             if (!$translation->exists) {
                 $values[] = $this->translatorRepository->getInsertTranslationsElement($translation, $timeStamp);
-            } else if ($translation->isDirty()) {
+            } elseif ($translation->isDirty()) {
                 if ($translation->isDirty(['value', 'source', 'saved_value', 'was_used',])) {
                     $translation->save();
                 } else {
                     if (!array_key_exists($translation->status, $statusChangeOnly)) {
                         $statusChangeOnly[$translation->status] = $translation->id;
-                    }
-                    else {
+                    } else {
                         $statusChangeOnly[$translation->status] .= ',' . $translation->id;
                     }
                 }
@@ -765,9 +763,9 @@ class Manager
         $this->imported = 0;
         $this->clearCache($groups);
         $this->clearUsageCache(false, $groups);
-        
+
         $pathTemplateResolver = new PathTemplateResolver($this->files, $this->app->basePath(), $this->config('language_dirs'), '5');
-  
+
         $langFiles = $pathTemplateResolver->langFileList();
 
         if ($groups !== null) {
@@ -810,15 +808,15 @@ class Manager
             'Lang::transChoice',
             '@lang',
             '@choice',
-            '__'
+            '__',
         );
         $pattern =                                  // See http://regexr.com/392hu
             "(" . implode('|', $functions) . ")" .  // Must start with one of the functions
             "\\(" .                                 // Match opening parentheses
             "(['\"])" .                             // Match " or '
             "(" .                                   // Start a new group to match:
-                "[a-zA-Z0-9_-]+" .                  // Must start with group
-                "([.][^\1)]+)+" .                   // Be followed by one or more items/keys
+            "[a-zA-Z0-9_-]+" .                  // Must start with group
+            "([.][^\1)]+)+" .                   // Be followed by one or more items/keys
             ")" .                                   // Close group
             "['\"]" .                               // Closing quote
             "[\\),]";                               // Close parentheses or new parameter
@@ -970,7 +968,7 @@ class Manager
                     'group',
                     'key',
                     'locale',
-                    'saved_value'
+                    'saved_value',
                 ]);
             } else {
                 $this->translatorRepository->updateValuesByStatus();
@@ -979,7 +977,7 @@ class Manager
                     'group',
                     'key',
                     'locale',
-                    'saved_value'
+                    'saved_value',
                 ]);
             }
 
@@ -1045,9 +1043,9 @@ class Manager
 
                 if (!$inDatabasePublishing) {
                     $this->translation->where('group', $group)->update(array(
-                        'status' => Translation::STATUS_SAVED,
+                        'status'        => Translation::STATUS_SAVED,
                         'is_auto_added' => 0,
-                        'saved_value' => (new Expression('value'))
+                        'saved_value'   => (new Expression('value')),
                     ));
                 }
             }
