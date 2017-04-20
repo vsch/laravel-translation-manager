@@ -246,7 +246,6 @@ SQL
                     '%' . mb_substr($srckey, 1),
                 ]);
             } else {
-                dump('22');
                 $rows = $this->connection->select($this->adjustTranslationTable($sql = <<<SQL
 SELECT DISTINCT "group", "key", locale, id, CONCAT(SUBSTR("key", 1, CHAR_LENGTH("key")-?), ?) dst, ? dstgrp FROM $ltm_translations t1
 WHERE "group" = ? AND "key" LIKE BINARY '?' AND locale IN ($userLocales)
@@ -268,7 +267,6 @@ SQL
             }
         } elseif ((substr($src, -1, 1) === '*')) {
             if ($dst === null) {
-                dump('2');
                 $rows = $this->connection->select($this->adjustTranslationTable($sql = <<<SQL
 SELECT DISTINCT "group", "key", locale, id, NULL dst, NULL dstgrp FROM $ltm_translations t1
 WHERE "group" = ? AND "key" LIKE BINARY '?' AND locale IN ($userLocales)
@@ -280,7 +278,6 @@ SQL
                     mb_substr($srckey, 0, -1) . '%',
                 ]);
             } else {
-                dump('3');
                 $rows = $this->connection->select($this->adjustTranslationTable($sql = <<<SQL
 SELECT DISTINCT "group", "key", locale, id, CONCAT(?, SUBSTR("key", ?+1, CHAR_LENGTH("key")-?)) dst, ? dstgrp FROM $ltm_translations t1
 WHERE "group" = ? AND "key" LIKE BINARY '?' AND locale IN ($userLocales)
