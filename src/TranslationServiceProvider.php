@@ -19,6 +19,19 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider
     public function register()
     {
         $this->registerLoader();
+        
+        $db_driver = config('database.default');
+
+        if ($db_driver === 'pgsql') {
+            $translatorRepository = 'Vsch\TranslationManager\Repositories\PostgresTranslatorRepository';
+        } else {
+            $translatorRepository = 'Vsch\TranslationManager\Repositories\MysqlTranslatorRepository';
+        }
+
+        $this->app->bind(
+            'Vsch\TranslationManager\Repositories\Interfaces\ITranslatorRepository',
+            $translatorRepository
+        );
 
         $this->app->singleton('translator', function ($app) {
             $loader = $app['translation.loader'];
