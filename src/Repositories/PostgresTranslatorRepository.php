@@ -357,4 +357,9 @@ WHERE id = ?
 SQL
         ), [$dstgrp, $dstkey, $rowId]);
     }
+
+    public function findFilledGroups()
+    {
+        return $this->translation->whereNotNull('value')->select(DB::raw('DISTINCT "group"'))->get('group');
+    }
 }

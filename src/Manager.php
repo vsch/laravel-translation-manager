@@ -1054,7 +1054,7 @@ class Manager
 
     public function exportAllTranslations($recursing = 0)
     {
-        $groups = $this->translation->whereNotNull('value')->select(DB::raw('DISTINCT `group`'))->get('group');
+        $groups = $this->translatorRepository->findFilledGroups();
         $this->clearCache();
         $this->clearUsageCache(false);
 
@@ -1071,7 +1071,7 @@ class Manager
 
         if (!is_array($groups)) {
             if ($groups === '*') {
-                $groups = $this->translation->whereNotNull('value')->select(DB::raw('DISTINCT `group`'))->get('group');
+                $groups = $this->translatorRepository->findFilledGroups();
                 foreach ($groups as $group) {
                     // Stuff with content
                     $this->exportTranslations($group->group, 0);
