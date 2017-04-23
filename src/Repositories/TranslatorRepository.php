@@ -5,7 +5,7 @@ namespace Vsch\TranslationManager\Repositories;
 use Vsch\TranslationManager\Repositories\Interfaces\ITranslatorRepository;
 use Vsch\TranslationManager\Models\Translation;
 
-class TranslatorRepository implements ITranslatorRepository
+abstract class TranslatorRepository implements ITranslatorRepository
 {
     protected $translation;
     protected $connection;
