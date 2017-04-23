@@ -29,5 +29,4 @@ class AddDeletedFlagToTranslations extends Migration
             $table->dropColumn('is_deleted');
         });
     }
-
 }
