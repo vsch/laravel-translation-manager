@@ -4,7 +4,7 @@ This package is used to comfortably manage, view, edit and translate Laravel lan
 translation assistance through the Yandex Translation API. It augments the Laravel Translator
 system with a ton of practical functionality. [Features]
 
-:warning: Only MySQL Database connection is supported. 
+:warning: Only MySQL and PostgreSQL Database connections are supported.
 
 **Detailed information is now in the [wiki].**
 
