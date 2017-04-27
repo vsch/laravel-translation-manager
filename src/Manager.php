@@ -16,7 +16,7 @@ use Vsch\TranslationManager\Classes\PathTemplateResolver;
 use Vsch\TranslationManager\Classes\TranslationFileRewriter;
 use Vsch\TranslationManager\Models\Translation;
 use Vsch\TranslationManager\Models\UserLocales;
-use Vsch\TranslationManager\Repositories\TranslatorRepository;
+use Vsch\TranslationManager\Repositories\Interfaces\ITranslatorRepository;
 use ZipArchive;
 
 /**
@@ -249,7 +249,7 @@ class Manager
         $this->preloadedGroupLocales = array_combine($locales, $locales);
     }
 
-    public function __construct(Application $app, Filesystem $files, Dispatcher $events, Translation $translation, TranslatorRepository $translatorRepository)
+    public function __construct(Application $app, Filesystem $files, Dispatcher $events, Translation $translation, ITranslatorRepository $translatorRepository)
     {
         $this->app = $app;
         $this->translatorRepository = $translatorRepository;
@@ -1054,7 +1054,7 @@ class Manager
 
     public function exportAllTranslations($recursing = 0)
     {
-        $groups = $this->translation->whereNotNull('value')->select(DB::raw('DISTINCT `group`'))->get('group');
+        $groups = $this->translatorRepository->findFilledGroups();
         $this->clearCache();
         $this->clearUsageCache(false);
 
@@ -1065,13 +1065,13 @@ class Manager
 
     public function zipTranslations($groups)
     {
-        $zip_name = tempnam("Translations_" . time(), "zip"); // Zip name
+        $zip_name = tempnam('Translations_' . time(), 'zip'); // Zip name
         $this->zipExporting = new ZipArchive();
         $this->zipExporting->open($zip_name, ZipArchive::OVERWRITE);
 
         if (!is_array($groups)) {
             if ($groups === '*') {
-                $groups = $this->translation->whereNotNull('value')->select(DB::raw('DISTINCT `group`'))->get('group');
+                $groups = $this->translatorRepository->findFilledGroups();
                 foreach ($groups as $group) {
                     // Stuff with content
                     $this->exportTranslations($group->group, 0);

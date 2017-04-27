@@ -35,12 +35,6 @@ class ManagerServiceProvider extends ServiceProvider
         $this->mergeConfigFrom($configPath, self::PACKAGE);
         $this->publishes([$configPath => config_path(self::PACKAGE . '.php')], 'config');
 
-        $this->app->singleton('TranslatorRepository', function ($app) {
-            /* @var $manager \Vsch\TranslationManager\Repositories\TranslatorRepository */
-            $translatorRepository = $app->make('Vsch\TranslationManager\Repositories\TranslatorRepository');
-            return $translatorRepository;
-        });
-
         $this->app->singleton(self::PACKAGE, function ($app) {
             /* @var $manager \Vsch\TranslationManager\Manager */
             $manager = $app->make('Vsch\TranslationManager\Manager');
