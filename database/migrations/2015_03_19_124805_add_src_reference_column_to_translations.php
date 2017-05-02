@@ -28,7 +28,7 @@ class AddSrcReferenceColumnToTranslations extends Migration
     {
         Schema::table('ltm_translations', function (Blueprint $table) {
             $table->dropColumn('source');
-            $table->dropIndex('ixk_ltm_translations_locale_group_key');
+            $table->dropUnique('ixk_ltm_translations_locale_group_key');
         });
     }
 }
