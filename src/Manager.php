@@ -10,7 +10,6 @@ use Illuminate\Database\Query\Expression;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\Finder\Finder;
 use Vsch\TranslationManager\Classes\PathTemplateResolver;
 use Vsch\TranslationManager\Classes\TranslationFileRewriter;
@@ -998,7 +997,22 @@ class Manager
                     $this->clearUsageCache(false, $group);
                 }
 
-                $tree = $this->makeTree($this->translation->where('group', $group)->whereNotNull('value')->orderby('key')->get());
+                $rawTranslations = $this->translation->where('group', $group)->whereNotNull('value')->orderby('key')->get();
+                $tree = $this->makeTree($rawTranslations);
+                $lostDotTranslations = $this->getLostDotTranslation($rawTranslations, $tree);
+                if ($lostDotTranslations) {
+                    $errorText = "Incorrect use of dot convention for translation keys (value will be overwritten with an array of child values):";
+                    
+                    foreach ($lostDotTranslations as $group => $groupKeys) {
+                        $keys = $groupKeys;
+                        $errorText .= "<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>$group::</strong>";
+                        
+                        foreach ($keys as $key => $value) {
+                            $errorText .= "<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$key";
+                        }
+                    }
+                    $this->errors[] = $errorText;
+                }
                 $configRewriter = new TranslationFileRewriter();
                 $exportOptions = array_key_exists('export_format', $this->config()) ? TranslationFileRewriter::optionFlags($this->config('export_format')) : null;
 
@@ -1114,6 +1128,26 @@ class Manager
             array_set($array[$translation->locale][$translation->group], $translation->key, $translation->value);
         }
         return $array;
+    }
+
+    protected function getLostDotTranslation($translations, $tree)
+    {
+        // check if all translation values are in the array or some were lost because of invalid dot notation for keys 
+        $nonArrays = array();
+        foreach ($translations as $translation) {
+            $group = $translation->group;
+            $key = $translation->key;
+            if (!array_key_exists($key, $nonArrays)) {
+                $value = array_get($tree[$translation->locale][$translation->group], $translation->key);
+
+                if (is_array($value)) {
+                    // this one is an array while it is a translation in the source 
+                    $nonArrays[$group][$key] = $translation;
+                }
+            }
+        }
+
+        return $nonArrays;
     }
 
 }

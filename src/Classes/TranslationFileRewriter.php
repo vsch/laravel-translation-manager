@@ -340,6 +340,12 @@ class TranslationFileRewriter
         return $text;
     }
 
+    /**
+     * @param      array $trans translation to output
+     * @param null|integer $options formatting options
+     *
+     * @return string result of output of translations taking sections into account
+     */
     public function formatForExport($trans, $options = null)
     {
         $text = "<?php\n\nreturn " . (($options & self::OPT_USE_SHORT_ARRAY) ? "[\n" : "array(\n");

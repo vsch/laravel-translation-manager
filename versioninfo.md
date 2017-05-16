@@ -3,6 +3,20 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.2.x and 2.3.x for
 Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
 
+#### 2.4.14
+
+* Add: `Vsch\\TranslationManager\\Events\\TranslationsPublished` event class with two attributes:
+  * `groups`, string of the groups parameter, either `*` if all or group name 
+  * `errors`, array of errors resulting from the publishing.
+       
+  Event is generated when publish is invoked through the Web UI or export from the command line.
+
+#### 2.4.12
+
+* Fix: #86, After publish file takes another array format. Added an error message when incorrect
+  translation key dot convention usage results in a translation being lost because its value is
+  replaced with an array of its children.
+
 #### 2.4.11
 
 * Fix: #85, fix migrations rollback

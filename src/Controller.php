@@ -1,6 +1,7 @@
 <?php namespace Vsch\TranslationManager;
 
 use Illuminate\Routing\Controller as BaseController;
+use Vsch\TranslationManager\Events\TranslationsPublished;
 use Vsch\TranslationManager\Models\Translation;
 use Vsch\TranslationManager\Models\UserLocales;
 use Vsch\TranslationManager\Repositories\Interfaces\ITranslatorRepository;
@@ -861,8 +862,10 @@ class Controller extends BaseController
     public function getPublish($group)
     {
         $this->manager->exportTranslations($group);
+        $errors = $this->manager->errors();
 
-        return \Response::json(array('status' => 'ok'));
+        event(new TranslationsPublished($group, $errors));
+        return \Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
     }
 
     public function postPublish($group)
@@ -870,6 +873,7 @@ class Controller extends BaseController
         $this->manager->exportTranslations($group);
         $errors = $this->manager->errors();
 
+        event(new TranslationsPublished($group, $errors));
         return \Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
     }
 

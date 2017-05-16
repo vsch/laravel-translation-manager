@@ -2,6 +2,7 @@
 
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputArgument;
+use Vsch\TranslationManager\Events\TranslationsPublished;
 use Vsch\TranslationManager\Manager;
 
 class ExportCommand extends Command
@@ -40,6 +41,9 @@ class ExportCommand extends Command
         $group = $this->argument('group');
 
         $this->manager->exportTranslations($group);
+
+        $errors = $this->manager->errors();
+        event(new TranslationsPublished($group, $errors));
 
         $this->info("Done writing language files for " . (($group == '*') ? 'ALL groups' : $group . " group"));
     }
