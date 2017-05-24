@@ -3,6 +3,10 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.2.x and 2.3.x for
 Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
 
+#### 2.4.14
+
+* Fix: #88, Import fails without feedback, file translations being deleted on publishing
+
 #### 2.4.12
 
 * Add: `Vsch\\TranslationManager\\Events\\TranslationsPublished` event class with two attributes:
@@ -44,7 +48,7 @@ Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
 
 * Fix: #72, $locales array elements need to be filtered before passing to view
 
-#### 2.4.4
+#### 2.4.4``
 
 * Change: merge RU and UK locale translations thanks to
   [Alex Mokrenko](https://github.com/al0mie)
