@@ -72,7 +72,7 @@ if (!function_exists('noEditTransEmptyUndefined')) {
         if ($trans->isInPlaceEditing(1)) {
             /* @var $trans Translator */
             $trans->suspendInPlaceEditing();
-            $text = $trans->get($key, $replace, $locale, $useDB);
+            $text = $trans->get($key, $replace, $locale, true, $useDB);
             $trans->resumeInPlaceEditing();
         } else {
             $text = $trans->get($key, $replace, $locale, $useDB);
@@ -114,7 +114,7 @@ if (!function_exists('noEditTrans')) {
         if ($trans->isInPlaceEditing(1)) {
             /* @var $trans Translator */
             $trans->suspendInPlaceEditing();
-            $text = $trans->get($key, $parameters ?: [], $locale, $useDB);
+            $text = $trans->get($key, $parameters ?: [], $locale, true, $useDB);
             $trans->resumeInPlaceEditing();
             return $text;
         }

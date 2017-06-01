@@ -12,23 +12,41 @@ system with a ton of practical functionality. [Features]
 [Configuration][]  
 [Version Notes][]
 
-> - For Laravel 5.4 require: `"vsch/laravel-translation-manager": "~2.4"`
->     
-> - For Laravel 5.3 require: `"vsch/laravel-translation-manager": "~2.3"`
->     
->     [Upgrading from LTM 2.0 or 2.1 to 2.3](../../wiki/Upgrade-2.0-to-2.3)
-> 
-> - For Laravel 5.2 require: `"vsch/laravel-translation-manager": "~2.1"`
-> 
+> * For Laravel 5.4 require: `"vsch/laravel-translation-manager": "~2.4"`
+>
+> * For Laravel 5.3 require: `"vsch/laravel-translation-manager": "~2.3"`
+>   
+>   [Upgrading from LTM 2.0 or 2.1 to 2.3](../../wiki/Upgrade-2.0-to-2.3)
+>
+> * For Laravel 5.2 require: `"vsch/laravel-translation-manager": "~2.1"`
+>
 > #### Laravel version 4.2 is no longer supported. 
-> 
+>
 > You can still get access to the last updated version. Use the `laravel4` branch, or require:
 > `"vsch/laravel-translation-manager": "~1.0"`
 > 
 > #### Initial Localizations Added
-> 
+>
 > :exclamation: If you have made correction to the auto-translated localization and would like
 > to share them with others please do so. It will be greatly appreciated.
+
+### Version 2.4.20 released
+
+Important LTM Translator method changes to restore compatibility with Laravel 5.4 API. These
+changes affect the order of arguments to the LTM Translator implementation. If you were using
+these methods based on previous LTM implementation then you will need to make changes in your
+code:
+
+From `transChoice($id, $number, array $parameters = array(), $domain = 'messages', $locale =
+null, $useDB = null)` to `transChoice($id, $number, array $parameters = array(), $locale = null,
+$domain = 'messages', $useDB = null)`
+
+From `trans($id, array $parameters = array(), $domain = 'messages', $locale = null, $useDB =
+null)` to `trans($id, array $parameters = array(), $locale = null, $domain = 'messages', $useDB
+= null)`
+
+From `get($key, array $replace = array(), $locale = null, $useDB = null)` to `get($key, array
+$replace = array(), $locale = null, $fallback = true, $useDB = null)`
 
 ### Version 2.4.0 released
 
@@ -77,6 +95,7 @@ specifically change that through the web UI, see [User Admin] or by populating t
 
 \* This package was originally based on Barry vd. Heuvel's excellent [barryvdh] package.
 
+[barryvdh]: https://github.com/barryvdh/laravel-translation-manager
 [Configuration]: ../../wiki/Configuration
 [Enabling per locale user access control]: ../../wiki/Configuration#enabling-per-locale-user-access-control
 [Features]: ../../wiki/#features
@@ -90,6 +109,5 @@ specifically change that through the web UI, see [User Admin] or by populating t
 [User Admin]: ../../wiki/Web-Interface#user-admin
 [Version Notes]: versioninfo.md
 [Web Interface: Source References]: ../../wiki/Web-Interface#source-references
-[barryvdh]: https://github.com/barryvdh/laravel-translation-manager
 [wiki]: ../../wiki
 

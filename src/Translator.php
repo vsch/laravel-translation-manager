@@ -255,6 +255,7 @@ class Translator extends LaravelTranslator
      * @param  string $key
      * @param  array  $replace
      * @param  string $locale
+     * @param bool    $fallback
      * @param  int    $useDB null - check usedb field which is set to 1 by default,
      *                       0 - don't use,
      *                       1 - only if key is missing in files or saved in the translator cache, use saved_value
@@ -263,7 +264,7 @@ class Translator extends LaravelTranslator
      *
      * @return string
      */
-    public function get($key, array $replace = array(), $locale = null, $useDB = null)
+    public function get($key, array $replace = array(), $locale = null, $fallback = true, $useDB = null)
     {
         $inplaceEditMode = $this->manager->config('inplace_edit_mode');
 
@@ -302,7 +303,7 @@ class Translator extends LaravelTranslator
             }
         }
 
-        $result = parent::get($key, $replace, $locale);
+        $result = parent::get($key, $replace, $locale, $fallback);
         if ($result === $key) {
             if ($useDB === 1) {
                 list($namespace, $group, $item) = $this->parseKey($key);
@@ -450,12 +451,13 @@ HTML;
      * @param  string $id
      * @param  int    $number
      * @param  array  $parameters
-     * @param  string $domain
      * @param  string $locale
+     * @param  string $domain
+     * @param null    $useDB
      *
      * @return string
      */
-    public function transChoice($id, $number, array $parameters = array(), $domain = 'messages', $locale = null, $useDB = null)
+    public function transChoice($id, $number, array $parameters = array(), $locale = null, $domain = 'messages', $useDB = null)
     {
         return $this->choice($id, $number, $parameters, $locale, $useDB);
     }
@@ -465,14 +467,15 @@ HTML;
      *
      * @param  string $id
      * @param  array  $parameters
-     * @param  string $domain
      * @param  string $locale
+     * @param  string $domain
+     * @param null    $useDB
      *
      * @return string
      */
-    public function trans($id, array $parameters = array(), $domain = 'messages', $locale = null, $useDB = null)
+    public function trans($id, array $parameters = array(), $locale = null, $domain = 'messages', $useDB = null)
     {
-        return $this->get($id, $parameters, $locale, $useDB);
+        return $this->get($id, $parameters, $locale, true, $useDB);
     }
 
     /**
@@ -494,7 +497,7 @@ HTML;
             }
         }
         if (!$this->suspendInPlaceEdit && $this->inPlaceEditing() && $inplaceEditMode == 1) {
-            return $this->get($key, $replace, $locale, $useDB);
+            return $this->get($key, $replace, $locale, true, $useDB);
         } else {
             if ($useDB !== null) {
                 $oldUseDB = $this->useDB;

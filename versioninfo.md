@@ -3,6 +3,22 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.2.x and 2.3.x for
 Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
 
+#### 2.4.20
+
+* Fix: #90, Incompatibilities with mcamara/laravel-localization. This is an API breaking fix
+  because order of arguments was changed to match the contract and/or the parent methods:
+
+  From `transChoice($id, $number, array $parameters = array(), $domain = 'messages', $locale =
+  null, $useDB = null)` to `transChoice($id, $number, array $parameters = array(), $locale =
+  null, $domain = 'messages', $useDB = null)`
+  
+  From `trans($id, array $parameters = array(), $domain = 'messages', $locale = null, $useDB =
+  null)` to `trans($id, array $parameters = array(), $locale = null, $domain = 'messages',
+  $useDB = null)`
+  
+  From `get($key, array $replace = array(), $locale = null, $useDB = null)` to `get($key, array
+  $replace = array(), $locale = null, $fallback = true, $useDB = null)`
+  
 #### 2.4.14
 
 * Fix: #88, Import fails without feedback, file translations being deleted on publishing
