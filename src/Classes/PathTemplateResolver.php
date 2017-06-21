@@ -325,8 +325,8 @@ class PathTemplateResolver
         $prefix = str_replace("\\", "/", $prefix);
 
         for (; ;) {
-            if ($prefix == '/' || array_key_exists($prefix, $this->processed_dirs) || !file_exists($prefix) || !is_dir($prefix)) {
-                // already handled this one or it does not exist, or is the root directory
+            if (array_key_exists($prefix, $this->processed_dirs) || ($prefix != '/' && (!file_exists($prefix) || !is_dir($prefix)))) {
+                // already handled this one or it does not exist
                 return;
             }
 

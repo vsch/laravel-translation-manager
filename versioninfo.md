@@ -3,6 +3,10 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.2.x and 2.3.x for
 Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
 
+#### 2.4.22
+
+* Fix: #92, Translation files can not be loaded 
+
 #### 2.4.20
 
 * Fix: #90, Incompatibilities with mcamara/laravel-localization. This is an API breaking fix
