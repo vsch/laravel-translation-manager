@@ -24,4 +24,13 @@ class Translation extends Model
 
     protected $table = 'ltm_translations';
     protected $guarded = array('id', 'created_at', 'updated_at');
+    
+    /**
+     * @param array $attributes
+     */
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+        $this->setConnection(config('laravel-translation-manager.default_connection'));
+    }
 }

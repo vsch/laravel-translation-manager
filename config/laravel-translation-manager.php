@@ -38,6 +38,12 @@ return array(
      */
     'admin_enabled' => true,
     /**
+     * use cookies to store user locale
+     *
+     * @type boolean
+     */
+    'use_cookies' => false,
+    /**
      *  Inplace edit mode
      *  1 - Using trans(), noEditTrans(), ifEditTrans() in all templates
      *  2 - Only by modifying application template (disables ifEditTrans and reverts trans() to default functionality)

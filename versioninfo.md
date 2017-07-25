@@ -3,6 +3,10 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.2.x and 2.3.x for
 Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
 
+#### 2.4.24
+
+* Fix: #93, laravel 5.4 default_connection setting in `Translation` and `UserLocales` models.
+
 #### 2.4.22
 
 * Fix: #92, Translation files can not be loaded 
@@ -188,7 +192,7 @@ Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
   being used to retrieve the user list for the given connection.
 * Fix: change default config sample from `caouecs/laravel4-lang` to `caouecs/laravel-lang` as
   needed by this package for Laravel 5.
-* Fix: #33, Laravel 5.2 - "symfony/finder": "2.8.*|3.0.*" dependency mismatch
+* Fix: #33, Laravel 5.2 - `"symfony/finder": "2.8.*|3.0.*"` dependency mismatch
 
 #### 2.1.1
 
