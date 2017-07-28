@@ -7,6 +7,7 @@ use Illuminate\Translation\Translator as LaravelTranslator;
 
 class Translator extends LaravelTranslator
 {
+    protected $useLottery;
 
     /** @var  Dispatcher */
     protected $events;
@@ -36,6 +37,7 @@ class Translator extends LaravelTranslator
      */
     public function __construct(Application $app, LoaderInterface $loader, $locale)
     {
+        $this->useLottery = null;
         parent::__construct($loader, $locale);
         $this->suspendInPlaceEdit = 0;
         $this->suspendUsageLogging = 0;
@@ -52,6 +54,13 @@ class Translator extends LaravelTranslator
         return $this->manager;
     }
 
+    protected function isUseLottery() {
+        if ($this->useLottery === null) {
+            $this->useLottery = !\Gate::allows(Manager::ABILITY_BYPASS_LOTTERY);
+        }
+        return $this->useLottery;
+    }
+    
     public function inPlaceEditing($inPlaceEditing = null)
     {
         if ($inPlaceEditing !== null) {
@@ -293,7 +302,7 @@ class Translator extends LaravelTranslator
         if ($useDB == 2) {
             list($namespace, $group, $item) = $this->parseKey($key);
             if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
-                $t = $this->manager->missingKey($namespace, $group, $item, $locale, !\Gate::allows(Manager::ABILITY_BYPASS_LOTTERY), true);
+                $t = $this->manager->missingKey($namespace, $group, $item, $locale, $this->isUseLottery(), true);
                 if ($t) {
                     $result = $t->value ?: $key;
                     if ($t->isDirty()) $t->save();
@@ -308,7 +317,7 @@ class Translator extends LaravelTranslator
             if ($useDB === 1) {
                 list($namespace, $group, $item) = $this->parseKey($key);
                 if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
-                    $t = $this->manager->missingKey($namespace, $group, $item, $locale, !\Gate::allows(Manager::ABILITY_BYPASS_LOTTERY), true);
+                    $t = $this->manager->missingKey($namespace, $group, $item, $locale, $this->isUseLottery(), true);
                     if ($t) {
                         $result = $t->saved_value ?: $key;
                         if ($t->isDirty()) $t->save();
