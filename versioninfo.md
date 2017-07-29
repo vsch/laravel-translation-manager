@@ -3,6 +3,10 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.2.x and 2.3.x for
 Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
 
+#### 2.4.28
+
+* Fix: additional Gate access for `Manager::ABILITY_BYPASS_LOTTERY` in `Translator`
+
 #### 2.4.26
 
 * Fix: #94, Laravel Gate, possible performance impact of logging missing keys

@@ -533,7 +533,7 @@ HTML;
     {
         list($namespace, $group, $item) = $this->parseKey($key);
         if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
-            $this->manager->missingKey($namespace, $group, $item, $locale, !\Gate::allows(Manager::ABILITY_BYPASS_LOTTERY), false);
+            $this->manager->missingKey($namespace, $group, $item, $locale, $this->isUseLottery(), false);
         }
     }
 
@@ -542,7 +542,7 @@ HTML;
         if (!$this->suspendUsageLogging) {
             list($namespace, $group, $item) = $this->parseKey($key);
             if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
-                $this->manager->usingKey($namespace, $group, $item, $locale, !\Gate::allows(Manager::ABILITY_BYPASS_LOTTERY));
+                $this->manager->usingKey($namespace, $group, $item, $locale, $this->isUseLottery());
             }
         }
     }
