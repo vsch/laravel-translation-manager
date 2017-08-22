@@ -3,6 +3,10 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.2.x and 2.3.x for
 Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility
 
+#### 2.4.30
+
+* Fix: #96, laravel 5.5 support?, remove the <5.5 restriction from laravel version
+
 #### 2.4.28
 
 * Fix: additional Gate access for `Manager::ABILITY_BYPASS_LOTTERY` in `Translator`

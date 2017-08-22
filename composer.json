@@ -17,9 +17,9 @@
     ],
     "require": {
         "php": ">=5.6.4",
-        "illuminate/support": "^5.4,<5.5",
-        "laravelcollective/html": "^5.4,<5.5",
-        "illuminate/translation": "^5.4,<5.5",
+        "illuminate/support": "^5.4",
+        "laravelcollective/html": "^5.4",
+        "illuminate/translation": "^5.4",
         "doctrine/dbal": "~2.3",
         "symfony/finder": "~3.0"
     },
