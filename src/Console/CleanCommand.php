@@ -34,7 +34,16 @@ class CleanCommand extends Command
      *
      * @return void
      */
-    public function fire()
+    public function fire() {
+        $this->handle();
+    }
+
+    /**
+     * Execute the console command.
+     *
+     * @return void
+     */
+    public function handle()
     {
         $this->manager->cleanTranslations();
         $this->info("Done cleaning translations");

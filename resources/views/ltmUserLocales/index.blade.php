@@ -40,7 +40,7 @@
                 <tbody>
                     <tr class="form-group-xs">
                         <td>
-                            <a href="{!! \URL::route('userlocales.index', \Input::only('page')) !!}" role="button" class="btn btn-default btn-xs">@lang('messages.reset')</a>
+                            <a href="{!! \URL::route('userlocales.index', \Input::all('page')) !!}" role="button" class="btn btn-default btn-xs">@lang('messages.reset')</a>
                             {!! formSubmit(trans('messages.apply'), ['form' => 'filter-userlocales', 'class' => 'btn btn-xs btn-success']) !!}
                         </td>
                         <td>{!! Form::text('user', Input::get('user'), ['form' => 'filter-userlocales', 'data-vsch_completion'=>'users:id;id:user_id','class'=>'form-control', 'placeholder'=>noEditTrans('ltm-user-locales.user_id'), ]) !!}

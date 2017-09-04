@@ -2,7 +2,7 @@
 
 use Illuminate\Events\Dispatcher;
 use Illuminate\Foundation\Application;
-use Illuminate\Translation\LoaderInterface;
+use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Translation\Translator as LaravelTranslator;
 
 class Translator extends LaravelTranslator
@@ -10,7 +10,7 @@ class Translator extends LaravelTranslator
     protected $useLottery;
 
     /** @var  Dispatcher */
-    protected $events;
+    protected $dispatchesEvents;
 
     /* @var $manager Manager */
     protected $manager;
@@ -32,10 +32,10 @@ class Translator extends LaravelTranslator
      * Translator constructor.
      *
      * @param \Illuminate\Foundation\Application      $app
-     * @param \Illuminate\Translation\LoaderInterface $loader
+     * @param \Illuminate\Contracts\Translation\Loader $loader
      * @param                                         $locale
      */
-    public function __construct(Application $app, LoaderInterface $loader, $locale)
+    public function __construct(Application $app, Loader $loader, $locale)
     {
         $this->useLottery = null;
         parent::__construct($loader, $locale);

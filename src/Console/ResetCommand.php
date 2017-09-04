@@ -34,7 +34,16 @@ class ResetCommand extends Command
      *
      * @return void
      */
-    public function fire()
+    public function fire() {
+        $this->handle();
+    }
+
+    /**
+     * Execute the console command.
+     *
+     * @return void
+     */
+    public function handle()
     {
         $this->manager->truncateTranslations();
         $this->info("All translations are deleted");

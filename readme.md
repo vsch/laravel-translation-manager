@@ -14,6 +14,8 @@ system with a ton of practical functionality. [Features]
 
 [![GitQ](https://gitq.com/badge.svg)](https://gitq.com/vsch/laravel-translation-manager)
 
+> * For Laravel 5.5 require: `"vsch/laravel-translation-manager": "~2.5"`
+>
 > * For Laravel 5.4 require: `"vsch/laravel-translation-manager": "~2.4"`
 >
 > * For Laravel 5.3 require: `"vsch/laravel-translation-manager": "~2.3"`
@@ -31,6 +33,10 @@ system with a ton of practical functionality. [Features]
 >
 > :exclamation: If you have made correction to the auto-translated localization and would like
 > to share them with others please do so. It will be greatly appreciated.
+
+### Version 2.5.0 released
+
+Code updated for Laravel 5.5 compatibility
 
 ### Version 2.4.20 released
 

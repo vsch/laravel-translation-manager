@@ -51,7 +51,7 @@ class Manager
     /** @var \Illuminate\Filesystem\Filesystem */
     protected $files;
     /** @var \Illuminate\Events\Dispatcher */
-    protected $events;
+    protected $dispathesEvents;
 
     protected $config;
     protected $imported;
@@ -248,7 +248,7 @@ class Manager
         $this->preloadedGroupLocales = array_combine($locales, $locales);
     }
 
-    public function __construct(Application $app, Filesystem $files, Dispatcher $events, Translation $translation, ITranslatorRepository $translatorRepository)
+    public function __construct(Application $app, Filesystem $files, Dispatcher $dispatchesEvents, Translation $translation, ITranslatorRepository $translatorRepository)
     {
         $this->app = $app;
         $this->translatorRepository = $translatorRepository;
@@ -257,7 +257,7 @@ class Manager
         $this->config = $this->app['config'][$this->package];
 
         $this->files = $files;
-        $this->events = $events;
+        $this->dispathesEvents = $dispatchesEvents;
         $this->translation = $translation;
         $this->default_connection = $translation->getConnectionName();
         $this->default_translation_connection = $this->config(self::DEFAULT_DB_CONNECTION_KEY, null);

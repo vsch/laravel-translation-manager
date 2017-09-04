@@ -34,7 +34,16 @@ class FindCommand extends Command
      *
      * @return void
      */
-    public function fire()
+    public function fire() {
+        $this->handle();
+    }
+
+    /**
+     * Execute the console command.
+     *
+     * @return void
+     */
+    public function handle()
     {
         $counter = $this->manager->findTranslations();
         $this->info('Done importing, processed ' . $counter . ' items!');
