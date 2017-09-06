@@ -628,7 +628,7 @@ class Manager
                     }
                 }
 
-                if ($lottery === 1) {
+                if ($lottery == 1) {
                     $locale = $locale ?: $this->app['config']['app.locale'];
                     $this->cacheUsageInfo('', $group, $key, 1, $locale);
                 }
