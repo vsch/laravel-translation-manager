@@ -325,9 +325,7 @@ class Translator extends LaravelTranslator
                         // save in cache even if it has no value to prevent hitting the database every time just to figure it out
                         if (true || $result !== $key) {
                             // save in cache
-                            $group = Manager::fixGroup($group);
-                            $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
-                            $this->manager->cacheTranslation($group, $item, $result, $locale ?: $this->getLocale());
+                            $this->manager->cacheTranslation($namespace, $group, $item, $result, $locale ?: $this->getLocale());
                             return $this->processResult($result, $replace);
                         }
                         $this->notifyUsingKey($key, $locale);

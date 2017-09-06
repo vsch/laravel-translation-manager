@@ -484,9 +484,10 @@ class Manager
         return [$group, $key];
     }
 
-    public function cacheTranslation($group, $transKey, $value, $locale)
+    public function cacheTranslation($namespace, $group, $transKey, $value, $locale)
     {
-        //list($group, $transKey) = self::groupKeyList($key);
+        $group = self::fixGroup($group);
+        $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
 
         if ($group) {
             if (!array_key_exists($group, $this->cache())) {
@@ -497,18 +498,20 @@ class Manager
         }
     }
 
-    public function cachedTranslation($namespace, $group, $item, $locale)
+    public function cachedTranslation($namespace, $group, $transKey, $locale)
     {
         $group = self::fixGroup($group);
         $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
-        $cacheKey = $this->cacheKey($item, $locale);
+        
+        $cacheKey = $this->cacheKey($transKey, $locale);
         $value = $group && array_key_exists($group, $this->cache()) && array_key_exists($cacheKey, $this->cache[$group]) ? $this->cache[$group][$cacheKey] : null;
         return $value;
     }
 
-    public function cacheUsageInfo($key, $value, $locale)
+    public function cacheUsageInfo($namespace, $group, $transKey, $value, $locale)
     {
-        list($group, $transKey) = self::groupKeyList($key);
+        $group = self::fixGroup($group);
+        $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
 
         if ($group) {
             if (!array_key_exists($group, $this->usageCache())) {
@@ -519,9 +522,11 @@ class Manager
         }
     }
 
-    public function cachedUsageInfo($key, $locale)
+    public function cachedUsageInfo($namespace, $group, $transKey, $locale)
     {
-        list($group, $transKey) = self::groupKeyList($key);
+        $group = self::fixGroup($group);
+        $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
+        
         $cacheKey = $this->usageCacheKey($transKey, $locale);
         $value = $group && array_key_exists($group, $this->usageCache()) && array_key_exists($cacheKey, $this->usageCache[$group]) ? $this->usageCache[$group][$cacheKey] : null;
         return $value;
@@ -625,7 +630,7 @@ class Manager
 
                 if ($lottery == 1) {
                     $locale = $locale ?: $this->app['config']['app.locale'];
-                    $this->cacheUsageInfo($group . '.' . $key, 1, $locale);
+                    $this->cacheUsageInfo('', $group,  $key, 1, $locale);
                 }
             }
         }
@@ -985,7 +990,7 @@ class Manager
             $this->clearCache($group);
             $this->clearUsageCache(false, $group);
             $translations->each(function ($tr) {
-                $this->cacheTranslation($tr->group, $tr->key, $tr->saved_value, $tr->locale);
+                $this->cacheTranslation('', $tr->group, $tr->key, $tr->saved_value, $tr->locale);
             });
         }
 
