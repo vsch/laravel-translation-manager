@@ -553,9 +553,10 @@ SQL
     }
 
     public
-    function cacheTranslation($key, $value, $locale)
+    function cacheTranslation($namespace, $group, $transKey, $value, $locale)
     {
-        list($group, $transKey) = self::groupKeyList($key);
+        $group = self::fixGroup($group);
+        $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
 
         if ($group) {
             if (!array_key_exists($group, $this->cache())) $this->cache[$group] = [];
@@ -565,18 +566,21 @@ SQL
     }
 
     public
-    function cachedTranslation($key, $locale)
+    function cachedTranslation($namespace, $group, $transKey, $locale)
     {
-        list($group, $transKey) = self::groupKeyList($key);
+        $group = self::fixGroup($group);
+        $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
+
         $cacheKey = $this->cacheKey($transKey, $locale);
         $value = $group && array_key_exists($group, $this->cache()) && array_key_exists($cacheKey, $this->cache[$group]) ? $this->cache[$group][$cacheKey] : null;
         return $value;
     }
 
     public
-    function cacheUsageInfo($key, $value, $locale)
+    function cacheUsageInfo($namespace, $group, $transKey, $value, $locale)
     {
-        list($group, $transKey) = self::groupKeyList($key);
+        $group = self::fixGroup($group);
+        $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
 
         if ($group) {
             if (!array_key_exists($group, $this->usageCache())) $this->usageCache[$group] = [];
@@ -586,9 +590,11 @@ SQL
     }
 
     public
-    function cachedUsageInfo($key, $locale)
+    function cachedUsageInfo($namespace, $group, $transKey, $locale)
     {
-        list($group, $transKey) = self::groupKeyList($key);
+        $group = self::fixGroup($group);
+        $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
+
         $cacheKey = $this->usageCacheKey($transKey, $locale);
         $value = $group && array_key_exists($group, $this->usageCache()) && array_key_exists($cacheKey, $this->usageCache[$group]) ? $this->usageCache[$group][$cacheKey] : null;
         return $value;
@@ -613,7 +619,6 @@ SQL
      * @param      $namespace string
      * @param      $group     string
      * @param      $key       string
-     *
      * @param null $locale
      * @param bool $useLottery
      * @param bool $findOrNew
@@ -637,7 +642,7 @@ SQL
                     }
                 }
 
-                if ($lottery === 1) {
+                if ($lottery == 1) {
                     // here need to map a local group to wbn: or vnd: package if the local file does not already exist so that
                     // new keys will be added to the appropriate package
                     $augmentedGroupList = $this->getGroupAugmentedList();
@@ -650,14 +655,14 @@ SQL
                     if ($findOrNew) {
                         $translation = $this->firstOrNewTranslation(array(
                             'locale' => $locale,
-                            'group' => $group,
-                            'key' => $key,
+                            'group'  => $group,
+                            'key'    => $key,
                         ));
                     } else {
                         $translation = $this->firstOrCreateTranslation(array(
                             'locale' => $locale,
-                            'group' => $group,
-                            'key' => $key,
+                            'group'  => $group,
+                            'key'    => $key,
                         ));
                     }
 
@@ -672,7 +677,6 @@ SQL
      * @param      $namespace string
      * @param      $group     string
      * @param      $key       string
-     *
      * @param null $locale
      * @param bool $useLottery
      */
@@ -693,9 +697,9 @@ SQL
                     }
                 }
 
-                if ($lottery === 1) {
+                if ($lottery == 1) {
                     $locale = $locale ?: $this->app['config']['app.locale'];
-                    $this->cacheUsageInfo($group . '.' . $key, 1, $locale);
+                    $this->cacheUsageInfo('', $group, $key, 1, $locale);
                 }
             }
         }
@@ -739,8 +743,8 @@ SQL
             } else {
                 $translation = new Translation(array(
                     'locale' => $locale,
-                    'group' => $db_group,
-                    'key' => $key,
+                    'group'  => $db_group,
+                    'key'    => $key,
                 ));
 
                 $translation->setConnection($connectionName);
@@ -780,7 +784,7 @@ SQL
                     ')';
 
                 $values[] = $sql;
-            } else if ($translation->isDirty()) {
+            } elseif ($translation->isDirty()) {
                 if ($translation->isDirty(['value', 'source', 'saved_value', 'was_used',])) {
                     $translation->save();
                 } else {
@@ -917,7 +921,7 @@ SQL
             'Lang::trans',
             'Lang::transChoice',
             '@lang',
-            '@choice'
+            '@choice',
         );
         $pattern =                              // See http://regexr.com/392hu
             "(" . implode('|', $functions) . ")" .  // Must start with one of the functions
@@ -1087,7 +1091,7 @@ SQL
                     'group',
                     'key',
                     'locale',
-                    'saved_value'
+                    'saved_value',
                 ]);
             } else {
                 $this->getConnection()->affectingStatement(<<<SQL
@@ -1098,7 +1102,7 @@ SQL
                     'group',
                     'key',
                     'locale',
-                    'saved_value'
+                    'saved_value',
                 ]);
             }
 
@@ -1106,15 +1110,15 @@ SQL
             $this->clearCache($group);
             $this->clearUsageCache(false, $group);
             $translations->each(function ($tr) {
-                $this->cacheTranslation($tr->group . '.' . $tr->key, $tr->saved_value, $tr->locale);
+                $this->cacheTranslation('', $tr->group, $tr->key, $tr->saved_value, $tr->locale);
             });
         }
 
-        if (!$inDatabasePublishing || $inDatabasePublishing === 2 || $inDatabasePublishing === 3) {
+        if (!$inDatabasePublishing || $inDatabasePublishing == 2 || $inDatabasePublishing == 3) {
             if (!in_array($group, $this->config(self::EXCLUDE_GROUPS_KEY))) {
                 if ($group == '*') $this->exportAllTranslations(1);
 
-                if ($inDatabasePublishing !== 3) {
+                if ($inDatabasePublishing != 3) {
                     $this->clearCache($group);
                     $this->clearUsageCache(false, $group);
                 }
@@ -1167,9 +1171,9 @@ SQL
 
                 if (!$inDatabasePublishing) {
                     $this->translation->where('group', $group)->update(array(
-                        'status' => Translation::STATUS_SAVED,
+                        'status'        => Translation::STATUS_SAVED,
                         'is_auto_added' => 0,
-                        'saved_value' => (new Expression('value'))
+                        'saved_value'   => (new Expression('value')),
                     ));
                 }
             }

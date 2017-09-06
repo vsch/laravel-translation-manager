@@ -3,6 +3,10 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3.x for Laravel
 5.3 compatibility.
 
+#### 2.3.8
+
+- Fix #98, indatabase_publish not working as intended
+
 #### 2.3.7
 
 - Fix: #63, Setting PDO Fetch mode to FETCH_CLASS
