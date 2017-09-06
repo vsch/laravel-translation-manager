@@ -484,10 +484,11 @@ class Manager
         return [$group, $key];
     }
 
-    public function cacheTranslation($key, $value, $locale)
+    public function cacheTranslation($namespace, $group, $transKey, $value, $locale)
     {
-        list($group, $transKey) = self::groupKeyList($key);
-
+        $group = self::fixGroup($group);
+        $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
+        
         if ($group) {
             if (!array_key_exists($group, $this->cache())) {
                 $this->cache[$group] = [];
@@ -497,17 +498,20 @@ class Manager
         }
     }
 
-    public function cachedTranslation($key, $locale)
+    public function cachedTranslation($namespace, $group, $transKey, $locale)
     {
-        list($group, $transKey) = self::groupKeyList($key);
+        $group = self::fixGroup($group);
+        $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
+
         $cacheKey = $this->cacheKey($transKey, $locale);
         $value = $group && array_key_exists($group, $this->cache()) && array_key_exists($cacheKey, $this->cache[$group]) ? $this->cache[$group][$cacheKey] : null;
         return $value;
     }
 
-    public function cacheUsageInfo($key, $value, $locale)
+    public function cacheUsageInfo($namespace, $group, $transKey, $value, $locale)
     {
-        list($group, $transKey) = self::groupKeyList($key);
+        $group = self::fixGroup($group);
+        $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
 
         if ($group) {
             if (!array_key_exists($group, $this->usageCache())) {
@@ -518,9 +522,11 @@ class Manager
         }
     }
 
-    public function cachedUsageInfo($key, $locale)
+    public function cachedUsageInfo($namespace, $group, $transKey, $locale)
     {
-        list($group, $transKey) = self::groupKeyList($key);
+        $group = self::fixGroup($group);
+        $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
+
         $cacheKey = $this->usageCacheKey($transKey, $locale);
         $value = $group && array_key_exists($group, $this->usageCache()) && array_key_exists($cacheKey, $this->usageCache[$group]) ? $this->usageCache[$group][$cacheKey] : null;
         return $value;
@@ -567,7 +573,7 @@ class Manager
                     }
                 }
 
-                if ($lottery === 1) {
+                if ($lottery == 1) {
                     // here need to map a local group to wbn: or vnd: package if the local file does not already exist so that
                     // new keys will be added to the appropriate package
                     $augmentedGroupList = $this->getGroupAugmentedList();
@@ -624,7 +630,7 @@ class Manager
 
                 if ($lottery === 1) {
                     $locale = $locale ?: $this->app['config']['app.locale'];
-                    $this->cacheUsageInfo($group . '.' . $key, 1, $locale);
+                    $this->cacheUsageInfo('', $group, $key, 1, $locale);
                 }
             }
         }
@@ -984,15 +990,15 @@ class Manager
             $this->clearCache($group);
             $this->clearUsageCache(false, $group);
             $translations->each(function ($tr) {
-                $this->cacheTranslation($tr->group . '.' . $tr->key, $tr->saved_value, $tr->locale);
+                $this->cacheTranslation('', $tr->group, $tr->key, $tr->saved_value, $tr->locale);
             });
         }
 
-        if (!$inDatabasePublishing || $inDatabasePublishing === 2 || $inDatabasePublishing === 3) {
+        if (!$inDatabasePublishing || $inDatabasePublishing == 2 || $inDatabasePublishing == 3) {
             if (!in_array($group, $this->config(self::EXCLUDE_GROUPS_KEY))) {
                 if ($group == '*') $this->exportAllTranslations(1);
 
-                if ($inDatabasePublishing !== 3) {
+                if ($inDatabasePublishing != 3) {
                     $this->clearCache($group);
                     $this->clearUsageCache(false, $group);
                 }
@@ -1002,11 +1008,11 @@ class Manager
                 $lostDotTranslations = $this->getLostDotTranslation($rawTranslations, $tree);
                 if ($lostDotTranslations) {
                     $errorText = "Incorrect use of dot convention for translation keys (value will be overwritten with an array of child values):";
-                    
+
                     foreach ($lostDotTranslations as $group => $groupKeys) {
                         $keys = $groupKeys;
                         $errorText .= "<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>$group::</strong>";
-                        
+
                         foreach ($keys as $key => $value) {
                             $errorText .= "<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$key";
                         }

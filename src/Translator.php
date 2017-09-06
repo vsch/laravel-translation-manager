@@ -276,6 +276,7 @@ class Translator extends LaravelTranslator
     public function get($key, array $replace = array(), $locale = null, $fallback = true, $useDB = null)
     {
         $inplaceEditMode = $this->manager->config('inplace_edit_mode');
+        list($namespace, $group, $item) = $this->parseKey($key);
 
         if ($this->inPlaceEditing() && $inplaceEditMode == 2) {
             if (!in_array($key, $this->usedKeys)) {
@@ -292,7 +293,7 @@ class Translator extends LaravelTranslator
         if ($useDB === null) $useDB = $this->useDB;
 
         if ($useDB && $useDB !== 2) {
-            $result = $this->manager->cachedTranslation($key, $locale ?: $this->locale());
+            $result = $this->manager->cachedTranslation($namespace, $group, $item, $locale ?: $this->locale());
             if ($result) {
                 $this->notifyUsingKey($key, $locale);
                 return $this->processResult($result, $replace);
@@ -300,7 +301,6 @@ class Translator extends LaravelTranslator
         }
 
         if ($useDB == 2) {
-            list($namespace, $group, $item) = $this->parseKey($key);
             if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
                 $t = $this->manager->missingKey($namespace, $group, $item, $locale, $this->isUseLottery(), true);
                 if ($t) {
@@ -315,7 +315,6 @@ class Translator extends LaravelTranslator
         $result = parent::get($key, $replace, $locale, $fallback);
         if ($result === $key) {
             if ($useDB === 1) {
-                list($namespace, $group, $item) = $this->parseKey($key);
                 if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
                     $t = $this->manager->missingKey($namespace, $group, $item, $locale, $this->isUseLottery(), true);
                     if ($t) {
@@ -325,7 +324,7 @@ class Translator extends LaravelTranslator
                         // save in cache even if it has no value to prevent hitting the database every time just to figure it out
                         if (true || $result !== $key) {
                             // save in cache
-                            $this->manager->cacheTranslation($key, $result, $locale ?: $this->getLocale());
+                            $this->manager->cacheTranslation($namespace, $group, $item, $result, $locale ?: $this->getLocale());
                             return $this->processResult($result, $replace);
                         }
                         $this->notifyUsingKey($key, $locale);
