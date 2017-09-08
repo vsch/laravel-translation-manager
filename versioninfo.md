@@ -4,15 +4,19 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
 Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility and 2.5.x for Laravel 5.5
 compatibility. 
 
+#### 2.5.4
+
+* Fix: #99, Regex doesnt clear on Php7.1
+
 #### 2.5.2
 
 * Fix: #98, indatabase_publish not working as intended
 
-#### 2.3.8
+#### 2.4.32
 
 * Fix: #98, indatabase_publish not working as intended
 
-#### 2.4.32
+#### 2.3.8
 
 * Fix: #98, indatabase_publish not working as intended
 

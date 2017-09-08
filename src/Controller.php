@@ -938,8 +938,8 @@ class Controller extends BaseController
             $this->transFilters['filter'] = $filter;
         }
 
-        $regex = \Request::get("regex", null);
-        if ($regex !== null) {
+        if (\Request::has('regex')) {
+            $regex = \Request::get("regex", "");
             $this->transFilters['regex'] = $regex;
         }
 
