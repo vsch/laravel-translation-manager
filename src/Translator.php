@@ -2,6 +2,7 @@
 
 use Illuminate\Events\Dispatcher;
 use Illuminate\Foundation\Application;
+use Illuminate\Translation\FileLoader;
 use Illuminate\Translation\LoaderInterface;
 use Illuminate\Translation\Translator as LaravelTranslator;
 
@@ -32,10 +33,10 @@ class Translator extends LaravelTranslator
      * Translator constructor.
      *
      * @param \Illuminate\Foundation\Application      $app
-     * @param \Illuminate\Translation\LoaderInterface $loader
+     * @param \Illuminate\Translation\FileLoader $loader
      * @param                                         $locale
      */
-    public function __construct(Application $app, LoaderInterface $loader, $locale)
+    public function __construct(Application $app, FileLoader $loader, $locale)
     {
         $this->useLottery = null;
         parent::__construct($loader, $locale);
