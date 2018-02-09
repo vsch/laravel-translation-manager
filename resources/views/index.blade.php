@@ -199,26 +199,28 @@
                                         <?php endif; ?>
                                         <?php endif; ?>
                                     </div>
-                                    <?= ifEditTrans($package . '::messages.confirm-delete') ?>
-                                    <form id="form-delete-group" class="form-inline form-delete-group" method="POST"
-                                            action="<?= action($controller . '@postDeleteAll', $group) ?>"
-                                            data-remote="true" role="form"
-                                            data-confirm="<?= noEditTrans($package . '::messages.confirm-delete', ['group' => $group]) ?>">
-                                        <input type="hidden" name="_token" value="<?php echo csrf_token(); ?>">
-                                    </form>
-                                    <form id="form-import-group" class="form-inline form-import-group" method="POST"
-                                            action="<?= action($controller . '@postImport', $group) ?>"
-                                            data-remote="true" role="form">
-                                        <input type="hidden" name="_token"
-                                                value="<?php echo csrf_token(); ?>">
-                                    </form>
-                                    <form role="form" class="form" id="form-select"></form>
-                                    <form id="form-publish-group" class="form-inline form-publish-group" method="POST"
-                                            action="<?= action($controller . '@postPublish', $group) ?>"
-                                            data-remote="true" role="form">
-                                        <input type="hidden" name="_token"
-                                                value="<?php echo csrf_token(); ?>">
-                                    </form>
+                                    <?php if ($group): ?>
+                                        <?= ifEditTrans($package . '::messages.confirm-delete') ?>
+                                        <form id="form-delete-group" class="form-inline form-delete-group" method="POST"
+                                                action="<?= action($controller . '@postDeleteAll', $group) ?>"
+                                                data-remote="true" role="form"
+                                                data-confirm="<?= noEditTrans($package . '::messages.confirm-delete', ['group' => $group]) ?>">
+                                            <input type="hidden" name="_token" value="<?php echo csrf_token(); ?>">
+                                        </form>
+                                        <form id="form-import-group" class="form-inline form-import-group" method="POST"
+                                                action="<?= action($controller . '@postImport', $group) ?>"
+                                                data-remote="true" role="form">
+                                            <input type="hidden" name="_token"
+                                                    value="<?php echo csrf_token(); ?>">
+                                        </form>
+                                        <form role="form" class="form" id="form-select"></form>
+                                        <form id="form-publish-group" class="form-inline form-publish-group" method="POST"
+                                                action="<?= action($controller . '@postPublish', $group) ?>"
+                                                data-remote="true" role="form">
+                                            <input type="hidden" name="_token"
+                                                    value="<?php echo csrf_token(); ?>">
+                                        </form>
+                                    <?php endif; ?>    
                                     <form id="form-publish-all" class="form-inline form-publish-all" method="POST"
                                             action="<?= action($controller . '@postPublish', '*') ?>"
                                             data-remote="true" role="form">
