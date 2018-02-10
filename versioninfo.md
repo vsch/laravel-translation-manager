@@ -1,8 +1,25 @@
 ### Version Notes
 
-The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3.x for
-Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility and 2.5.x for Laravel 5.5
-compatibility. 
+The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3.x for Laravel
+5.3, 2.4.x for Laravel 5.4, 2.5.x for Laravel 5.5 and 2.6.x for
+Laravel 5.6 compatibility.
+
+#### 2.6.0
+
+* Fix: update for Laravel 5.6, merged PR from **[aiankile](https://github.com/aiankile)**
+
+#### 2.4.36
+
+* [ ] Fix: #106, Working with arrays
+
+* [ ] Fix: #91, Cookies generating wrong locales
+
+* [ ] Add: preview mode for editors/admins, fix for #101, Is there a way to preview the changes
+      before publishing
+
+#### 2.4.34
+
+* Fix: LoaderInterface to FileLoader
 
 #### 2.5.4
 
@@ -26,7 +43,7 @@ compatibility.
 
 #### 2.4.30
 
-* Fix: #96, laravel 5.5 support?, remove the <5.5 restriction from laravel version
+* Fix: #96, laravel 5.5 support?, remove the <5.5 restriction from laravel version 
 
 #### 2.4.28
 
@@ -38,7 +55,7 @@ compatibility.
 
 #### 2.4.24
 
-* Fix: #93, laravel 5.4 default_connection setting in `Translation` and `UserLocales` models.
+* Fix: #93, laravel 5.4 default_connection setting in `Translation` and `UserLocales` models. 
 
 #### 2.4.22
 
