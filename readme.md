@@ -14,6 +14,8 @@ system with a ton of practical functionality. [Features]
 
 [![GitQ](https://gitq.com/badge.svg)](https://gitq.com/vsch/laravel-translation-manager)
 
+> * For Laravel 5.6 require: `"vsch/laravel-translation-manager": "~2.6"`
+>
 > * For Laravel 5.5 require: `"vsch/laravel-translation-manager": "~2.5"`
 >
 > * For Laravel 5.4 require: `"vsch/laravel-translation-manager": "~2.4"`
