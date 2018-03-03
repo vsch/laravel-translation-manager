@@ -4,6 +4,10 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
 5.3, 2.4.x for Laravel 5.4, 2.5.x for Laravel 5.5 and 2.6.x for
 Laravel 5.6 compatibility.
 
+#### 2.6.2
+
+* Fix: replace aliases with facades, merged PR from **[aiankile](https://github.com/aiankile)**
+
 #### 2.6.0
 
 * Fix: update for Laravel 5.6, merged PR from **[aiankile](https://github.com/aiankile)**
