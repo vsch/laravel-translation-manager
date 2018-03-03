@@ -3,6 +3,11 @@
 use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Translation\Translator as LaravelTranslator;
 
 class Translator extends LaravelTranslator
@@ -57,7 +62,7 @@ class Translator extends LaravelTranslator
     protected function isUseLottery()
     {
         if ($this->useLottery === null) {
-            $this->useLottery = !\Gate::allows(Manager::ABILITY_BYPASS_LOTTERY);
+            $this->useLottery = !Gate::allows(Manager::ABILITY_BYPASS_LOTTERY);
         }
         return $this->useLottery;
     }
@@ -67,7 +72,7 @@ class Translator extends LaravelTranslator
         if ($inPlaceEditing !== null) {
             $this->inPlaceEditing = $inPlaceEditing;
             if ($this->useCookies) {
-                \Cookie::queue($this->cookiePrefix . 'lang_inplaceedit', $this->inPlaceEditing);
+                Cookie::queue($this->cookiePrefix . 'lang_inplaceedit', $this->inPlaceEditing);
             } else {
                 $session = $this->app->make('session');
                 if ($session->all()) {
@@ -79,8 +84,8 @@ class Translator extends LaravelTranslator
 
         if ($this->inPlaceEditing === null) {
             if ($this->useCookies) {
-                if (\Cookie::has($this->cookiePrefix . 'lang_inplaceedit')) {
-                    $this->inPlaceEditing = \Cookie::get($this->cookiePrefix . 'lang_inplaceedit', 0);
+                if (Cookie::has($this->cookiePrefix . 'lang_inplaceedit')) {
+                    $this->inPlaceEditing = Cookie::get($this->cookiePrefix . 'lang_inplaceedit', 0);
                 }
             } else {
                 $session = $this->app->make('session');
@@ -89,7 +94,7 @@ class Translator extends LaravelTranslator
         }
 
         // reset in place edit mode if not logged in
-        if ($this->inPlaceEditing != 0 && !\Auth::check()) {
+        if ($this->inPlaceEditing != 0 && !Auth::check()) {
             $this->inPlaceEditing = 0;
         }
         return $this->inPlaceEditing;
@@ -108,7 +113,7 @@ class Translator extends LaravelTranslator
     public function getLocale()
     {
         if ($this->useCookies) {
-            $locale = \Cookie::get($this->cookiePrefix . 'lang_locale', parent::getLocale());
+            $locale = Cookie::get($this->cookiePrefix . 'lang_locale', parent::getLocale());
             if ($locale != parent::getLocale()) {
                 parent::setLocale($locale);
             }
@@ -126,7 +131,7 @@ class Translator extends LaravelTranslator
     public function setLocale($locale)
     {
         if ($this->useCookies) {
-            \Cookie::queue($this->cookiePrefix . 'lang_locale', $locale);
+            Cookie::queue($this->cookiePrefix . 'lang_locale', $locale);
         }
         $this->locale = $locale;
     }
@@ -226,7 +231,7 @@ class Translator extends LaravelTranslator
 
                 if ($t->value === null) $t->value = ''; //$t->value = parent::get($key, $replace, $locale);
 
-                $action = \URL::action(ManagerServiceProvider::CONTROLLER_PREFIX . 'Vsch\TranslationManager\Controller@postEdit', array($t->group));
+                $action = URL::action(ManagerServiceProvider::CONTROLLER_PREFIX . 'Vsch\TranslationManager\Controller@postEdit', array($t->group));
 
                 $result = '<a href="#edit" class="vsch_editable status-' . ($t->status ?: 0)
                     . ' locale-' . $t->locale
@@ -555,7 +560,7 @@ HTML;
     public function getLocales()
     {
         //Set the default locale as the first one.
-        $currentLocale = \Config::get('app.locale');
+        $currentLocale = Config::get('app.locale');
         $locales = ManagerServiceProvider::getLists($this->manager->getTranslation()->groupBy('locale')->pluck('locale')) ?: [];
 
         // limit the locale list to what is in the config

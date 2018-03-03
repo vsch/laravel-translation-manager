@@ -10,6 +10,9 @@ use Illuminate\Database\Query\Expression;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
 use Symfony\Component\Finder\Finder;
 use Vsch\TranslationManager\Classes\PathTemplateResolver;
 use Vsch\TranslationManager\Classes\TranslationFileRewriter;
@@ -145,7 +148,7 @@ class Manager
     public function getUserListProvider($connection)
     {
         return function ($user, $connection_name, &$user_list) {
-            return \Gate::forUser($user)->allows(self::ABILITY_LIST_EDITORS, [$connection_name, &$user_list]);
+            return Gate::forUser($user)->allows(self::ABILITY_LIST_EDITORS, [$connection_name, &$user_list]);
         };
     }
 
@@ -163,7 +166,7 @@ class Manager
         }
 
         $db_connections = $this->config(self::DB_CONNECTIONS_KEY);
-        $environment = \App::environment();
+        $environment = App::environment();
 
         $db_connection = $connectionName !== null && array_key_exists($environment, $db_connections) && array_key_exists($connectionName, $db_connections[$environment]) ? $db_connections[$environment][$connectionName] : null;
 
@@ -373,8 +376,8 @@ class Manager
     public function cache()
     {
         if ($this->cache === null) {
-            $this->cache = $this->cachePrefix() !== '' && $this->indatabase_publish != 0 && \Cache::has($this->cacheTransKey) ? \Cache::get($this->cacheTransKey) : [];
-            $this->cacheIsDirty = $this->persistentPrefix !== '' && !\Cache::has($this->cacheTransKey);
+            $this->cache = $this->cachePrefix() !== '' && $this->indatabase_publish != 0 && Cache::has($this->cacheTransKey) ? Cache::get($this->cacheTransKey) : [];
+            $this->cacheIsDirty = $this->persistentPrefix !== '' && !Cache::has($this->cacheTransKey);
         }
         return $this->cache;
     }
@@ -382,8 +385,8 @@ class Manager
     public function usageCache()
     {
         if ($this->usageCache === null) {
-            $this->usageCache = $this->usageCachePrefix() !== '' && \Cache::has($this->usageCacheTransKey) ? \Cache::get($this->usageCacheTransKey) : [];
-            $this->usageCacheIsDirty = $this->persistentPrefix !== '' && !\Cache::has($this->usageCacheTransKey);
+            $this->usageCache = $this->usageCachePrefix() !== '' && Cache::has($this->usageCacheTransKey) ? Cache::get($this->usageCacheTransKey) : [];
+            $this->usageCacheIsDirty = $this->persistentPrefix !== '' && !Cache::has($this->usageCacheTransKey);
         }
         return $this->usageCache;
     }
@@ -391,7 +394,7 @@ class Manager
     public function saveCache()
     {
         if ($this->persistentPrefix && $this->cacheIsDirty) {
-            \Cache::put($this->cacheTransKey, $this->cache, 60 * 24 * 365);
+            Cache::put($this->cacheTransKey, $this->cache, 60 * 24 * 365);
             $this->cacheIsDirty = false;
         }
     }
@@ -401,8 +404,8 @@ class Manager
         if ($this->persistentPrefix && $this->usageCacheIsDirty) {
             // we never save it in the cache, it is only in database use, otherwise every page it will save the full cache to the database
             // instead of only the accessed keys
-            //\Cache::put($this->usageCacheTransKey, $this->usageCache, 60 * 24 * 365);
-            \Cache::put($this->usageCacheTransKey, [], 60 * 24 * 365);
+            //Cache::put($this->usageCacheTransKey, $this->usageCache, 60 * 24 * 365);
+            Cache::put($this->usageCacheTransKey, [], 60 * 24 * 365);
             $this->usageCacheIsDirty = false;
 
             // now update the keys in the database

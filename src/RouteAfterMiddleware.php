@@ -3,6 +3,7 @@
 namespace Vsch\TranslationManager;
 
 use Closure;
+use Illuminate\Support\Facades\App;
 
 class RouteAfterMiddleware
 {
@@ -16,7 +17,7 @@ class RouteAfterMiddleware
     public function handle($request, Closure $next)
     {
         /* @var $translationManager Manager */
-        $translationManager = \App::make(ManagerServiceProvider::PACKAGE);
+        $translationManager = App::make(ManagerServiceProvider::PACKAGE);
 
         $response = $next($request);
 
