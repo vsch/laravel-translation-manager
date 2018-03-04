@@ -1,8 +1,21 @@
 ### Version Notes
 
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3.x for Laravel
-5.3, 2.4.x for Laravel 5.4, 2.5.x for Laravel 5.5 and 2.6.x for
-Laravel 5.6 compatibility.
+5.3, 2.4.x for Laravel 5.4, 2.5.x for Laravel 5.5 and 2.6.x for Laravel 5.6 compatibility.
+
+#### 2.6.4
+
+* Add: JSON translation file handling
+  * Stored in the LTM table under `JSON` group. JSON translation keys to LTM translation keys
+    are stored in the same group under the `json` locale.
+  * On import LTM keys are generated from Alphanumeric characters with _ between runs of
+    Alphanumeric up to a maximum of 120 or `'json_dbkey_length'`, whichever is smaller.
+  * On export the JSON to LTM key map is exported to `json.json` file in `resources/lang`
+    directory. It is needed for efficient conversion of JSON to LTM keys
+  * All features of LTM translations are supported for JSON translations: import, export, zip,
+    in-database publishing, display database value via additional `useDB` argument added to
+    `getFromJson()`
+* Fix: usage information was not being set
 
 #### 2.6.2
 
@@ -47,7 +60,7 @@ Laravel 5.6 compatibility.
 
 #### 2.4.30
 
-* Fix: #96, laravel 5.5 support?, remove the <5.5 restriction from laravel version 
+* Fix: #96, laravel 5.5 support?, remove the <5.5 restriction from laravel version
 
 #### 2.4.28
 
@@ -59,11 +72,11 @@ Laravel 5.6 compatibility.
 
 #### 2.4.24
 
-* Fix: #93, laravel 5.4 default_connection setting in `Translation` and `UserLocales` models. 
+* Fix: #93, laravel 5.4 default_connection setting in `Translation` and `UserLocales` models.
 
 #### 2.4.22
 
-* Fix: #92, Translation files can not be loaded 
+* Fix: #92, Translation files can not be loaded
 
 #### 2.4.20
 
@@ -73,24 +86,25 @@ Laravel 5.6 compatibility.
   From `transChoice($id, $number, array $parameters = array(), $domain = 'messages', $locale =
   null, $useDB = null)` to `transChoice($id, $number, array $parameters = array(), $locale =
   null, $domain = 'messages', $useDB = null)`
-  
+
   From `trans($id, array $parameters = array(), $domain = 'messages', $locale = null, $useDB =
   null)` to `trans($id, array $parameters = array(), $locale = null, $domain = 'messages',
   $useDB = null)`
-  
+
   From `get($key, array $replace = array(), $locale = null, $useDB = null)` to `get($key, array
   $replace = array(), $locale = null, $fallback = true, $useDB = null)`
-  
+
 #### 2.4.14
 
 * Fix: #88, Import fails without feedback, file translations being deleted on publishing
 
 #### 2.4.12
 
-* Add: `Vsch\\TranslationManager\\Events\\TranslationsPublished` event class with two attributes:
-  * `groups`, string of the groups parameter, either `*` if all or group name 
+* Add: `Vsch\\TranslationManager\\Events\\TranslationsPublished` event class with two
+  attributes:
+  * `groups`, string of the groups parameter, either `*` if all or group name
   * `errors`, array of errors resulting from the publishing.
-       
+
   Event is generated when publish is invoked through the Web UI or export from the command line.
 
 * Fix: #86, After publish file takes another array format. Added an error message when incorrect
@@ -210,9 +224,9 @@ Laravel 5.6 compatibility.
 * Add: routes entry for translations. Old routes handling no longer works, now need to add a
   call to `Translator::routes()` wrapped in appropriate middleware and prefix grouping:
 
-        \Route::group(['middleware' => 'web', 'prefix' => 'translations'], function () {
-            Translator::routes();
-        });
+      \Route::group(['middleware' => 'web', 'prefix' => 'translations'], function () {
+          Translator::routes();
+      });
 
   to be added to routes/web.php to create translator routes
 * Fix: search to list columns explicitly

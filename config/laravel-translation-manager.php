@@ -5,10 +5,21 @@ return array(
     /**
      * Specify the locale that is used for creating the initial translation strings. This locale is considered
      * to be the driver of all other translations.
+     * 
+     * For exported JSON translations that were newly created, it is this locale's database value that will be used  
+     * as the JSON translation key for all locales, and if no translation for primary locale is set then the key will be used as the translation 
      *
      * @type string
      */
     'primary_locale' => 'en',
+    /**
+     * Specify the maximum translation key length to generate for JSON translation keys
+     * it will be the smaller of 120 and this value. These are keys in the database, not JSON translation files
+     * making them too long will makes the WebUI waste more space displaying keys
+     * 
+     * @type integer
+     */
+    'json_dbkey_length' => 32,
     /**
      * Specify any additional locales that you want to be shown even if they have no translation files or translations in the database
      *

@@ -265,6 +265,92 @@ class Translator extends LaravelTranslator
     }
 
     /**
+     * Get the translation for a given key from the JSON translation files.
+     *
+     * @param  string $key
+     * @param  array  $replace
+     * @param  string $locale
+     * @param  int    $useDB null - check usedb field which is set to 1 by default,
+     *                       0 - don't use,
+     *                       1 - only if key is missing in files or saved in the translator cache, use saved_value
+     *                       fallback on $key,
+     *                       2 - always use value from db, (unpublished value) not cached.
+     *
+     * @return string
+     */
+    public function getFromJson($key, array $replace = [], $locale = null, $useDB = null)
+    {
+        // see if json key and can be translated to ltm key
+        $this->load('*', '*', 'json');
+        // see if have it in the cache
+        $item = $this->manager->cachedTranslation('', 'JSON', $key,'json');
+        if ($item === null) {
+            if (array_key_exists($key, $this->loaded['*']['*']['json'])) {
+                $item = $this->loaded['*']['*']['json'][$key];
+            }
+        }
+        if ($item == null) return $this->get($key, $replace, $locale, true, $useDB);   // not a json key
+
+        $locale = $locale ?: $this->locale;
+        if ($useDB === null) $useDB = $this->useDB;
+        $group = 'JSON';
+        $namespace = '';
+
+        if ($useDB && $useDB !== 2) {
+            $result = $this->manager->cachedTranslation($namespace, $group, $item, $locale ?: $this->locale());
+            if ($result) {
+                $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
+                return $this->processResult($result, $replace);
+            }
+        }
+
+        if ($useDB == 2) {
+            if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
+                $t = $this->manager->missingKey($namespace, $group, $item, $locale, $this->isUseLottery(), true);
+                if ($t) {
+                    $result = $t->value ?: $key;
+                    if ($t->isDirty()) $t->save();
+                    $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
+                    return $this->processResult($result, $replace);
+                }
+            }
+        }
+
+        // get the JSON translation
+        $this->load('*', '*', $locale);
+        if (array_key_exists($key,$this->loaded['*']['*'][$locale])) {
+            $result = $this->loaded['*']['*'][$locale][$key];
+        } else {
+            unset($result);
+        }
+
+        // If we can't find a translation for the JSON key, we will attempt to translate it
+        // using the typical translation file. This way developers can always just use a
+        // helper such as __ instead of having to pick between trans or __ with views.
+        if (!isset($result)) {
+            if ($useDB === 1) {
+                if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
+                    $t = $this->manager->missingKey($namespace, $group, $item, $locale, $this->isUseLottery(), true);
+                    if ($t) {
+                        $result = $t->saved_value ?: $key;
+                        if ($t->isDirty()) $t->save();
+
+                        // save in cache even if it has no value to prevent hitting the database every time just to figure it out
+                        $this->manager->cacheTranslation($namespace, $group, $item, $result, $locale ?: $this->getLocale());
+                        return $this->processResult($result, $replace);
+                    }
+                }
+            }
+
+            $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
+            $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
+        } else {
+            $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
+        }
+        return $result;
+    }
+
+    /**
      * Get the translation for the given key.
      *
      * @param  string $key
@@ -291,17 +377,16 @@ class Translator extends LaravelTranslator
         }
 
         if (!$this->suspendInPlaceEdit && $this->inPlaceEditing() && $inplaceEditMode == 1) {
-            $this->notifyUsingKey($key, $locale);
+            $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
             return $this->inPlaceEditLink(null, true, $key, $locale);
         }
 
-        $cacheKey = null;
         if ($useDB === null) $useDB = $this->useDB;
 
         if ($useDB && $useDB !== 2) {
-            $result = $this->manager->cachedTranslation($namespace, $group, $item,$locale ?: $this->locale());
+            $result = $this->manager->cachedTranslation($namespace, $group, $item, $locale ?: $this->locale());
             if ($result) {
-                $this->notifyUsingKey($key, $locale);
+                $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
                 return $this->processResult($result, $replace);
             }
         }
@@ -312,7 +397,7 @@ class Translator extends LaravelTranslator
                 if ($t) {
                     $result = $t->value ?: $key;
                     if ($t->isDirty()) $t->save();
-                    $this->notifyUsingKey($key, $locale);
+                    $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
                     return $this->processResult($result, $replace);
                 }
             }
@@ -333,16 +418,16 @@ class Translator extends LaravelTranslator
                             $this->manager->cacheTranslation($namespace, $group, $item, $result, $locale ?: $this->getLocale());
                             return $this->processResult($result, $replace);
                         }
-                        $this->notifyUsingKey($key, $locale);
+                        $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
                         return $result;
                     }
                 }
             }
 
-            $this->notifyMissingKey($key, $locale);
-            $this->notifyUsingKey($key, $locale);
+            $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
+            $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
         } else {
-            $this->notifyUsingKey($key, $locale);
+            $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
         }
         return $result;
     }
@@ -534,18 +619,34 @@ HTML;
         $this->useCookies = $this->manager->config('use_cookies', true);
     }
 
-    protected function notifyMissingKey($key, $locale = null)
+    //protected function notifyMissingKey($key, $locale = null)
+    //{
+    //    list($namespace, $group, $item) = $this->parseKey($key);
+    //    if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
+    //        $this->manager->missingKey($namespace, $group, $item, $locale, $this->isUseLottery(), false);
+    //    }
+    //}
+
+    protected function notifyMissingGroupItem($namespace, $group, $item, $locale = null)
     {
-        list($namespace, $group, $item) = $this->parseKey($key);
         if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
             $this->manager->missingKey($namespace, $group, $item, $locale, $this->isUseLottery(), false);
         }
     }
 
-    protected function notifyUsingKey($key, $locale = null)
+    //protected function notifyUsingKey($key, $locale = null)
+    //{
+    //    if (!$this->suspendUsageLogging) {
+    //        list($namespace, $group, $item) = $this->parseKey($key);
+    //        if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
+    //            $this->manager->usingKey($namespace, $group, $item, $locale, $this->isUseLottery());
+    //        }
+    //    }
+    //}
+
+    protected function notifyUsingGroupItem($namespace, $group, $item, $locale = null)
     {
         if (!$this->suspendUsageLogging) {
-            list($namespace, $group, $item) = $this->parseKey($key);
             if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
                 $this->manager->usingKey($namespace, $group, $item, $locale, $this->isUseLottery());
             }
