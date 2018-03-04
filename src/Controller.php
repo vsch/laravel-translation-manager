@@ -1,6 +1,17 @@
 <?php namespace Vsch\TranslationManager;
 
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
 use Vsch\TranslationManager\Events\TranslationsPublished;
 use Vsch\TranslationManager\Models\Translation;
 use Vsch\TranslationManager\Models\UserLocales;
@@ -39,14 +50,14 @@ class Controller extends BaseController
     {
         $this->package = \Vsch\TranslationManager\ManagerServiceProvider::PACKAGE;
         $this->packagePrefix = $this->package . '::';
-        $this->manager = \App::make($this->package);
+        $this->manager = App::make($this->package);
         $this->translatorRepository = $translatorRepository;
 
         $this->connectionList = [];
         $this->connectionList[''] = 'default';
         $connections = $this->manager->config(Manager::DB_CONNECTIONS_KEY);
-        if ($connections && array_key_exists(\App::environment(), $connections)) {
-            foreach ($connections[\App::environment()] as $key => $value) {
+        if ($connections && array_key_exists(App::environment(), $connections)) {
+            foreach ($connections[App::environment()] as $key => $value) {
                 if (array_key_exists('description', $value)) {
                     $this->connectionList[$key] = $value['description'];
                 } else {
@@ -65,19 +76,19 @@ class Controller extends BaseController
 
     private function initialize()
     {
-        $connectionName = \Cookie::has($this->cookieName(self::COOKIE_CONNECTION_NAME)) ? \Cookie::get($this->cookieName(self::COOKIE_CONNECTION_NAME)) : '';
+        $connectionName = Cookie::has($this->cookieName(self::COOKIE_CONNECTION_NAME)) ? Cookie::get($this->cookieName(self::COOKIE_CONNECTION_NAME)) : '';
         $this->setConnectionName($connectionName);
 
-        $locale = \Cookie::get($this->cookieName(self::COOKIE_LANG_LOCALE), \Lang::getLocale());
-        \App::setLocale($locale);
-        $this->primaryLocale = \Cookie::get($this->cookieName(self::COOKIE_PRIM_LOCALE), $this->manager->config('primary_locale', 'en'));
+        $locale = Cookie::get($this->cookieName(self::COOKIE_LANG_LOCALE), Lang::getLocale());
+        App::setLocale($locale);
+        $this->primaryLocale = Cookie::get($this->cookieName(self::COOKIE_PRIM_LOCALE), $this->manager->config('primary_locale', 'en'));
 
         $this->locales = $this->loadLocales();
         $locales = $this->locales;
 
-        if ((!\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) && $this->manager->areUserLocalesEnabled()) {
+        if ((!Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) && $this->manager->areUserLocalesEnabled()) {
             // see what locales are available for this user
-            $userId = \Auth::id();
+            $userId = Auth::id();
             if ($userId !== null) {
                 $userLocale = new UserLocales();
                 $userLocale->setConnection($connectionName);
@@ -91,13 +102,13 @@ class Controller extends BaseController
         $packedLocales = implode(',', array_intersect($this->locales, $locales));
         $this->userLocales = $packedLocales ? ',' . $packedLocales . ',' : '';
 
-        $this->translatingLocale = \Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE));
-        $this->showUsageInfo = \Cookie::get($this->cookieName(self::COOKIE_SHOW_USAGE));
-        $this->transFilters = \Cookie::get($this->cookieName(self::COOKIE_TRANS_FILTERS), ['filter' => 'show-all', 'regex' => '']);
+        $this->translatingLocale = Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE));
+        $this->showUsageInfo = Cookie::get($this->cookieName(self::COOKIE_SHOW_USAGE));
+        $this->transFilters = Cookie::get($this->cookieName(self::COOKIE_TRANS_FILTERS), ['filter' => 'show-all', 'regex' => '']);
 
         if (!$this->translatingLocale || ($this->translatingLocale === $this->primaryLocale && count($this->locales) > 1)) {
             $this->translatingLocale = count($this->locales) > 1 ? $this->locales[1] : $this->locales[0];
-            \Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $this->translatingLocale, 60 * 24 * 365 * 1);
+            Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $this->translatingLocale, 60 * 24 * 365 * 1);
         }
 
         $this->displayLocales = \Cookie::has($this->cookieName(self::COOKIE_DISP_LOCALES)) ? \Cookie::get($this->cookieName(self::COOKIE_DISP_LOCALES)) : implode(',', array_slice($this->locales, 0, 5));
@@ -124,20 +135,20 @@ class Controller extends BaseController
     public function setConnectionName($connection)
     {
         if (!array_key_exists($connection, $this->connectionList)) $connection = '';
-        \Cookie::queue($this->cookieName(self::COOKIE_CONNECTION_NAME), $connection, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_CONNECTION_NAME), $connection, 60 * 24 * 365 * 1);
         $this->manager->setConnectionName($connection);
     }
 
     protected function loadLocales()
     {
         //Set the default locale as the first one.
-        $currentLocale = \Config::get('app.locale');
+        $currentLocale = Config::get('app.locale');
         $primaryLocale = $this->primaryLocale;
         if (!$currentLocale) {
             $currentLocale = $primaryLocale;
         }
 
-        $translatingLocale = \Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE), $currentLocale);
+        $translatingLocale = Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE), $currentLocale);
         $locales = ManagerServiceProvider::getLists($this->getTranslation()->groupBy('locale')->pluck('locale')) ?: [];
 
         // limit the locale list to what is in the config
@@ -161,39 +172,39 @@ class Controller extends BaseController
 
     public static function routes()
     {
-        \Route::get('view/{group?}', '\\Vsch\\TranslationManager\\Controller@getView');
+        Route::get('view/{group?}', '\\Vsch\\TranslationManager\\Controller@getView');
 
-        //deprecated: \Route::controller('admin/translations', '\\Vsch\\TranslationManager\\Controller');
-        \Route::get('/', '\\Vsch\\TranslationManager\\Controller@getIndex');
-        \Route::get('connection', '\\Vsch\\TranslationManager\\Controller@getConnection');
-        \Route::get('import', '\\Vsch\\TranslationManager\\Controller@getImport');
-        \Route::get('index', '\\Vsch\\TranslationManager\\Controller@getIndex');
-        \Route::get('interface_locale', '\\Vsch\\TranslationManager\\Controller@getInterfaceLocale');
-        \Route::get('keyop/{group}/{op?}', '\\Vsch\\TranslationManager\\Controller@getKeyop');
-        \Route::get('publish/{group}', '\\Vsch\\TranslationManager\\Controller@getPublish');
-        \Route::get('search', '\\Vsch\\TranslationManager\\Controller@getSearch');
-        \Route::get('toggle_in_place_edit', '\\Vsch\\TranslationManager\\Controller@getToggleInPlaceEdit');
-        \Route::get('trans_filters', '\\Vsch\\TranslationManager\\Controller@getTransFilters');
-        \Route::get('translation', '\\Vsch\\TranslationManager\\Controller@getTranslation');
-        \Route::get('usage_info', '\\Vsch\\TranslationManager\\Controller@getUsageInfo');
-        \Route::get('view', '\\Vsch\\TranslationManager\\Controller@getView');
-        \Route::get('zipped_translations/{group?}', '\\Vsch\\TranslationManager\\Controller@getZippedTranslations');
-        \Route::post('add/{group}', '\\Vsch\\TranslationManager\\Controller@postAdd');
-        \Route::post('copy_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postCopyKeys');
-        \Route::post('delete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postDelete');
-        \Route::post('delete_all/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteAll');
-        \Route::post('delete_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteKeys');
-        \Route::post('delete_suffixed_keys{group?}', '\\Vsch\\TranslationManager\\Controller@postDeleteSuffixedKeys');
-        \Route::post('edit/{group}', '\\Vsch\\TranslationManager\\Controller@postEdit');
-        \Route::post('find', '\\Vsch\\TranslationManager\\Controller@postFind');
-        \Route::post('import/{group}', '\\Vsch\\TranslationManager\\Controller@postImport');
-        \Route::post('move_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postMoveKeys');
-        \Route::post('preview_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postPreviewKeys');
-        \Route::post('publish/{group}', '\\Vsch\\TranslationManager\\Controller@postPublish');
-        \Route::post('show_source/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postShowSource');
-        \Route::post('undelete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postUndelete');
-        \Route::post('user_locales', '\\Vsch\\TranslationManager\\Controller@postUserLocales');
-        \Route::post('yandex_key', '\\Vsch\\TranslationManager\\Controller@postYandexKey');
+        //deprecated: Route::controller('admin/translations', '\\Vsch\\TranslationManager\\Controller');
+        Route::get('/', '\\Vsch\\TranslationManager\\Controller@getIndex');
+        Route::get('connection', '\\Vsch\\TranslationManager\\Controller@getConnection');
+        Route::get('import', '\\Vsch\\TranslationManager\\Controller@getImport');
+        Route::get('index', '\\Vsch\\TranslationManager\\Controller@getIndex');
+        Route::get('interface_locale', '\\Vsch\\TranslationManager\\Controller@getInterfaceLocale');
+        Route::get('keyop/{group}/{op?}', '\\Vsch\\TranslationManager\\Controller@getKeyop');
+        Route::get('publish/{group}', '\\Vsch\\TranslationManager\\Controller@getPublish');
+        Route::get('search', '\\Vsch\\TranslationManager\\Controller@getSearch');
+        Route::get('toggle_in_place_edit', '\\Vsch\\TranslationManager\\Controller@getToggleInPlaceEdit');
+        Route::get('trans_filters', '\\Vsch\\TranslationManager\\Controller@getTransFilters');
+        Route::get('translation', '\\Vsch\\TranslationManager\\Controller@getTranslation');
+        Route::get('usage_info', '\\Vsch\\TranslationManager\\Controller@getUsageInfo');
+        Route::get('view', '\\Vsch\\TranslationManager\\Controller@getView');
+        Route::get('zipped_translations/{group?}', '\\Vsch\\TranslationManager\\Controller@getZippedTranslations');
+        Route::post('add/{group}', '\\Vsch\\TranslationManager\\Controller@postAdd');
+        Route::post('copy_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postCopyKeys');
+        Route::post('delete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postDelete');
+        Route::post('delete_all/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteAll');
+        Route::post('delete_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteKeys');
+        Route::post('delete_suffixed_keys{group?}', '\\Vsch\\TranslationManager\\Controller@postDeleteSuffixedKeys');
+        Route::post('edit/{group}', '\\Vsch\\TranslationManager\\Controller@postEdit');
+        Route::post('find', '\\Vsch\\TranslationManager\\Controller@postFind');
+        Route::post('import/{group}', '\\Vsch\\TranslationManager\\Controller@postImport');
+        Route::post('move_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postMoveKeys');
+        Route::post('preview_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postPreviewKeys');
+        Route::post('publish/{group}', '\\Vsch\\TranslationManager\\Controller@postPublish');
+        Route::post('show_source/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postShowSource');
+        Route::post('undelete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postUndelete');
+        Route::post('user_locales', '\\Vsch\\TranslationManager\\Controller@postUserLocales');
+        Route::post('yandex_key', '\\Vsch\\TranslationManager\\Controller@postYandexKey');
     }
 
     /**
@@ -203,14 +214,14 @@ class Controller extends BaseController
     {
         $url = url($url, null, false);
         $url = str_replace('https:', 'http:', $url);
-        $req = str_replace('https:', 'http:', \Request::url());
+        $req = str_replace('https:', 'http:', Request::url());
         $ret = ($pos = strpos($req, $url)) === 0 && (strlen($req) === strlen($url) || substr($req, strlen($url), 1) === '?' || substr($req, strlen($url), 1) === '#');
         return $ret;
     }
 
     public function getSearch()
     {
-        $q = \Request::get('q');
+        $q = Request::get('q');
 
         if ($q === '') $translations = [];
         else {
@@ -224,7 +235,7 @@ class Controller extends BaseController
 
         $numTranslations = count($translations);
 
-        return \View::make($this->packagePrefix . 'search')
+        return View::make($this->packagePrefix . 'search')
             ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
             ->with('userLocales', $this->userLocales)
             ->with('package', $this->package)
@@ -259,14 +270,14 @@ class Controller extends BaseController
     private function processIndex($group = null)
     {
         $locales = $this->locales;
-        $currentLocale = \Lang::getLocale();
+        $currentLocale = Lang::getLocale();
         $primaryLocale = $this->primaryLocale;
         $translatingLocale = $this->translatingLocale;
 
         $groups = array('' => noEditTrans($this->packagePrefix . 'messages.choose-group')) + $this->manager->getGroupList();
 
         if ($group != null && !array_key_exists($group, $groups)) {
-            return \Redirect::action(ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this) . '@getIndex');
+            return Redirect::action(ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this) . '@getIndex');
         }
 
         $numChanged = $this->getTranslation()->where('group', $group)->where('status', Translation::STATUS_CHANGED)->count();
@@ -405,13 +416,13 @@ class Controller extends BaseController
         $show_usage_enabled = $this->manager->config('log_key_usage_info', false);
 
         $userList = [];
-        $admin_translations = \Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS);
+        $admin_translations = Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS);
         if ($admin_translations && $this->manager->areUserLocalesEnabled()) {
             $connection_name = $this->getConnectionName();
             $userListProvider = $this->manager->getUserListProvider($connection_name);
             if ($userListProvider !== null && is_a($userListProvider, "Closure")) {
                 $userList = null;
-                $haveUsers = $userListProvider(\Auth::user(), $this->manager->getUserListConnection($connection_name), $userList);
+                $haveUsers = $userListProvider(Auth::user(), $this->manager->getUserListConnection($connection_name), $userList);
                 if ($haveUsers && is_array($userList)) {
                     /* @var $connection_name string */
                     /* @var $query  \Illuminate\Database\Eloquent\Builder */
@@ -437,11 +448,11 @@ class Controller extends BaseController
         }
 
         $adminEnabled = $this->manager->config('admin_enabled') &&
-            \Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS);
+            Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS);
 
         $userLocalesEnabled = $this->manager->areUserLocalesEnabled() && $userList;
 
-        return \View::make($this->packagePrefix . 'index')
+        return View::make($this->packagePrefix . 'index')
             ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
             ->with('package', $this->package)
             ->with('public_prefix', ManagerServiceProvider::PUBLIC_PREFIX)
@@ -478,9 +489,9 @@ class Controller extends BaseController
 
     public function postAdd($group)
     {
-        if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
-            $keys = explode("\n", trim(\Request::get('keys')));
-            $suffixes = explode("\n", trim(\Request::get('suffixes')));
+        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+            $keys = explode("\n", trim(Request::get('keys')));
+            $suffixes = explode("\n", trim(Request::get('suffixes')));
             $group = explode('::', $group, 2);
             $namespace = '*';
             if (count($group) > 1) $namespace = array_shift($group);
@@ -499,16 +510,16 @@ class Controller extends BaseController
                 }
             }
         }
-        //Session::flash('_old_data', \Request::except('keys'));
-        return \Redirect::back()->withInput();
+        //Session::flash('_old_data', Request::except('keys'));
+        return Redirect::back()->withInput();
     }
 
     public function postDeleteSuffixedKeys($group)
     {
-        if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
-                $keys = explode("\n", trim(\Request::get('keys')));
-                $suffixes = explode("\n", trim(\Request::get('suffixes')));
+                $keys = explode("\n", trim(Request::get('keys')));
+                $suffixes = explode("\n", trim(Request::get('suffixes')));
 
                 if (count($suffixes) === 1 && $suffixes[0] === '') $suffixes = [];
 
@@ -528,14 +539,14 @@ class Controller extends BaseController
                 }
             }
         }
-        return \Redirect::back()->withInput();
+        return Redirect::back()->withInput();
     }
 
     public function postEdit($group)
     {
         if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY))) {
-            $name = \Request::get('name');
-            $value = \Request::get('value');
+            $name = Request::get('name');
+            $value = Request::get('value');
 
             list($locale, $key) = explode('|', $name, 2);
             if ($this->isLocaleEnabled($locale)) {
@@ -593,7 +604,7 @@ class Controller extends BaseController
 
     public function postDelete($group, $key)
     {
-        if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $key = decodeKey($key);
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
                 //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
@@ -626,7 +637,7 @@ class Controller extends BaseController
 
     public function postUndelete($group, $key)
     {
-        if (\Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             $key = decodeKey($key);
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
                 //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
@@ -651,8 +662,8 @@ class Controller extends BaseController
         if ($userLocales) $userLocales = "'" . str_replace(',', "','", substr($userLocales, 1, -1)) . "'";
 
         if ($userLocales && !in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
-            $srckeys = explode("\n", trim(\Request::get('srckeys')));
-            $dstkeys = explode("\n", trim(\Request::get('dstkeys')));
+            $srckeys = explode("\n", trim(Request::get('srckeys')));
+            $dstkeys = explode("\n", trim(Request::get('dstkeys')));
 
             array_walk($srckeys, function (&$val, $key) use (&$srckeys) {
                 $val = trim($val);
@@ -769,7 +780,7 @@ class Controller extends BaseController
         }
 
         $this->logSql = 0;
-        return \View::make($this->packagePrefix . 'keyop')
+        return View::make($this->packagePrefix . 'keyop')
             ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
             ->with('package', $this->package)
             ->with('errors', $errors)
@@ -828,35 +839,35 @@ class Controller extends BaseController
 
     public function postImport($group)
     {
-        $replace = \Request::get('replace', false);
+        $replace = Request::get('replace', false);
         $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : 1)
             , $group === '*' ? null : [$group]);
-        return \Response::json(array('status' => 'ok', 'counter' => $counter));
+        return Response::json(array('status' => 'ok', 'counter' => $counter));
     }
 
     public function getImport()
     {
-        $replace = \Request::get('replace', false);
-        $group = \Request::get('group', '*');
+        $replace = Request::get('replace', false);
+        $group = Request::get('group', '*');
         $this->manager->clearErrors();
         $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : 1)
             , $group === '*' ? null : [$group]);
         $errors = $this->manager->errors();
-        return \Response::json(array('status' => 'ok', 'counter' => $counter, 'errors' => $errors));
+        return Response::json(array('status' => 'ok', 'counter' => $counter, 'errors' => $errors));
     }
 
     public function postFind()
     {
         $numFound = $this->manager->findTranslations();
 
-        return \Response::json(array('status' => 'ok', 'counter' => (int)$numFound));
+        return Response::json(array('status' => 'ok', 'counter' => (int)$numFound));
     }
 
     public function postDeleteAll($group)
     {
         $this->manager->truncateTranslations($group);
 
-        return \Response::json(array('status' => 'ok', 'counter' => (int)0));
+        return Response::json(array('status' => 'ok', 'counter' => (int)0));
     }
 
     public function getPublish($group)
@@ -865,7 +876,7 @@ class Controller extends BaseController
         $errors = $this->manager->errors();
 
         event(new TranslationsPublished($group, $errors));
-        return \Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
+        return Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
     }
 
     public function postPublish($group)
@@ -874,47 +885,47 @@ class Controller extends BaseController
         $errors = $this->manager->errors();
 
         event(new TranslationsPublished($group, $errors));
-        return \Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
+        return Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
     }
 
     public function getToggleInPlaceEdit()
     {
         inPlaceEditing(!inPlaceEditing());
-        if (\App::runningUnitTests()) return \Redirect::to('/');
-        return !is_null(\Request::header('referer')) ? \Redirect::back() : \Redirect::to('/');
+        if (App::runningUnitTests()) return Redirect::to('/');
+        return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
     }
 
     public function getInterfaceLocale()
     {
-        $locale = \Request::get("l");
-        $translating = \Request::get("t");
-        $primary = \Request::get("p");
-        $connection = \Request::get("c");
-        $displayLocales = \Request::get("d");
+        $locale = Request::get("l");
+        $translating = Request::get("t");
+        $primary = Request::get("p");
+        $connection = Request::get("c");
+        $displayLocales = Request::get("d");
         $display = implode(',', $displayLocales ?: []);
 
-        \App::setLocale($locale);
-        \Cookie::queue($this->cookieName(self::COOKIE_LANG_LOCALE), $locale, 60 * 24 * 365 * 1);
-        \Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $translating, 60 * 24 * 365 * 1);
-        \Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $primary, 60 * 24 * 365 * 1);
-        \Cookie::queue($this->cookieName(self::COOKIE_DISP_LOCALES), $display, 60 * 24 * 365 * 1);
+        App::setLocale($locale);
+        Cookie::queue($this->cookieName(self::COOKIE_LANG_LOCALE), $locale, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $translating, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $primary, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_DISP_LOCALES), $display, 60 * 24 * 365 * 1);
 
         $this->setConnectionName($connection);
 
-        if (\App::runningUnitTests()) {
-            return \Redirect::to('/');
+        if (App::runningUnitTests()) {
+            return Redirect::to('/');
         }
-        return !is_null(\Request::header('referer')) ? \Redirect::back() : \Redirect::to('/');
+        return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
     }
 
     public function getUsageInfo()
     {
-        $group = \Request::get('group');
-        $reset = \Request::get('reset-usage-info');
-        $show = \Request::get('show-usage-info');
+        $group = Request::get('group');
+        $reset = Request::get('reset-usage-info');
+        $show = Request::get('show-usage-info');
 
         // need to store this so that it can be displayed again
-        \Cookie::queue($this->cookieName(self::COOKIE_SHOW_USAGE), $show, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_SHOW_USAGE), $show, 60 * 24 * 365 * 1);
 
         if ($reset) {
             // TODO: add show usage info to view variables so that a class can be added to keys that have no usage info
@@ -922,10 +933,10 @@ class Controller extends BaseController
             $this->manager->clearUsageCache(true, $group);
         }
 
-        if (\App::runningUnitTests()) {
-            return \Redirect::to('/');
+        if (App::runningUnitTests()) {
+            return Redirect::to('/');
         }
-        return !is_null(\Request::header('referer')) ? \Redirect::back() : \Redirect::to('/');
+        return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
     }
 
     public function getTransFilters()
@@ -933,26 +944,26 @@ class Controller extends BaseController
         $filter = null;
         $regex = null;
 
-        if (\Request::has('filter')) {
-            $filter = \Request::get("filter");
+        if (Request::has('filter')) {
+            $filter = Request::get("filter");
             $this->transFilters['filter'] = $filter;
         }
 
-        $regex = \Request::get("regex", null);
-        if ($regex !== null) {
+        if (Request::has('regex')) {
+            $regex = Request::get("regex", "");
             $this->transFilters['regex'] = $regex;
         }
 
-        \Cookie::queue($this->cookieName(self::COOKIE_TRANS_FILTERS), $this->transFilters, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_TRANS_FILTERS), $this->transFilters, 60 * 24 * 365 * 1);
 
-        if (\Request::wantsJson()) {
-            return \Response::json(array(
+        if (Request::wantsJson()) {
+            return Response::json(array(
                 'status'       => 'ok',
                 'transFilters' => $this->transFilters,
             ));
         }
 
-        return !is_null(\Request::header('referer')) ? \Redirect::back() : \Redirect::to('/');
+        return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
     }
 
     public function getZippedTranslations($group = null)
@@ -985,7 +996,7 @@ class Controller extends BaseController
 
     public function postYandexKey()
     {
-        return \Response::json(array(
+        return Response::json(array(
             'status'     => 'ok',
             'yandex_key' => $this->manager->config('yandex_translator_key', null),
         ));
@@ -993,8 +1004,8 @@ class Controller extends BaseController
 
     public function postUserLocales()
     {
-        $user_id = \Request::get("pk");
-        $values = \Request::get("value") ?: [];
+        $user_id = Request::get("pk");
+        $values = Request::get("value") ?: [];
         $userLocale = new UserLocales();
 
         $connection_name = $this->getConnectionName();
@@ -1010,6 +1021,6 @@ class Controller extends BaseController
         $userLocales->locales = implode(",", $values);
         $userLocales->save();
         $errors = "";
-        return \Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
+        return Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
     }
 }

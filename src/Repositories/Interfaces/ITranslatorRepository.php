@@ -31,6 +31,8 @@ interface ITranslatorRepository
     public function deleteTranslationWhereIsDeleted($group = null);
 
     public function deleteTranslationByGroup($group);
+    
+    public function deleteTranslationByGroupLocale($group, $locale);
 
     public function updateValueInGroup($group);
 

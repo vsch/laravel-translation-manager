@@ -28,49 +28,52 @@ class PathTemplateResolver
     protected $group_sep;
 
     protected static $defaults = array(
-        'lang' => [
+        'lang'      => [
             'db_group' => '{group}',
-            'root' => '',
-            'files' => [
+            'root'     => '',
+            'json'     => [
+                '*' => '/resources/lang/{locale}.json',
+            ],
+            'files'    => [
                 '4' => '/app/lang/{locale}/{group}',
                 '*' => '/resources/lang/{locale}/{group}',
             ],
-            'vars' => [
-                '{vendor}' => '',
+            'vars'     => [
+                '{vendor}'  => '',
                 '{package}' => '',
             ],
         ],
-        'packages' => [
+        'packages'  => [
             'db_group' => '{package}::{group}',
-            'include' => '*',
-            'root' => '',
-            'files' => [
+            'include'  => '*',
+            'root'     => '',
+            'files'    => [
                 '4' => '/app/lang/packages/{locale}/{package}/{group}',
                 '*' => '/resources/lang/vendor/{package}/{locale}/{group}',
             ],
-            'vars' => [
+            'vars'     => [
                 '{vendor}' => '',
             ],
         ],
         'workbench' => [
             'db_group' => 'wbn:{vendor}.{package}::{group}',
-            'include' => '*/*',
-            'root' => '/workbench/{vendor}/{package}',
-            'files' => [
+            'include'  => '*/*',
+            'root'     => '/workbench/{vendor}/{package}',
+            'files'    => [
                 '4' => 'src/lang/{locale}/{group}',
                 '*' => 'resources/lang/{locale}/{group}',
             ],
-            'vars' => [],
+            'vars'     => [],
         ],
-        'vendor' => [
+        'vendor'    => [
             'db_group' => 'vnd:{vendor}.{package}::{group}',
-            'include' => [],
-            'root' => '/vendor/{vendor}/{package}',
-            'files' => [
+            'include'  => [],
+            'root'     => '/vendor/{vendor}/{package}',
+            'files'    => [
                 '4' => 'src/lang/{locale}/{group}',
                 '*' => 'resources/lang/{locale}/{group}',
             ],
-            'vars' => [],
+            'vars'     => [],
         ],
         //// these will be merged with vendor or workbench type and create their own types named by the package
         //// the first section whose include is satisfied will be used, the other ignored. Since vendor section requires
@@ -127,7 +130,7 @@ class PathTemplateResolver
 
                     if (!array_key_exists($defKey, $value)) {
                         // add it, use version if applicable
-                        if ($defKey === 'files') {
+                        if ($defKey === 'files' || $defKey === 'json') {
                             $value[$defKey] = is_array($defValue) ? (array_key_exists($version, $defValue) ? $defValue[$version] : $defValue['*']) : $defValue;
                         } else {
                             $value[$defKey] = $defValue;
@@ -247,6 +250,26 @@ class PathTemplateResolver
             $path_parts = explode('/', $full_path);
             array_shift($path_parts);
             $this->loadFileList('/', $path_parts, []);
+        }
+
+        // load json translations if they exist to JSON group
+        if (array_key_exists("json", $this->config["lang"])) {
+            $jsonPath = $this->config["lang"]["json"];
+            if ($jsonPath) {
+                $jsonDir = appendPath($this->base_path, $this->files->dirname($jsonPath));
+                $jsonLocale = $this->files->name($jsonPath);
+                $jsonExtension = $this->files->extension($jsonPath);
+                $files = $this->files->files($jsonDir);
+                foreach ($files as $file) {
+                    $file = str_replace("\\", "/", $file);
+                    $extension = $this->files->extension($file);
+                    if ($extension === $jsonExtension) {
+                        $name = $this->files->name($file);
+                        $vars = ['{locale}' => $name, '{db_group}' => 'JSON'];
+                        $this->lang_files[$file] = $vars;
+                    }
+                }
+            }
         }
 
         return $this->lang_files;
@@ -445,6 +468,11 @@ class PathTemplateResolver
 
     public static function getDbGroupPath($config, $group, $locale)
     {
+        if ($group === 'JSON') {
+            // call groupFilePath, not this static method
+            return null;
+        }
+        
         $db_group = $config['db_group'];
         $path = $config['path'];
         if ($vars = static::extractTemplateVars($db_group, $group)) {
@@ -469,6 +497,18 @@ class PathTemplateResolver
 
     public function groupFilePath($group, $locale)
     {
+        if ($group === "JSON") {
+            if (array_key_exists("json", $this->config["lang"])) {
+                $jsonPath = $this->config["lang"]["json"];
+                if ($jsonPath) {
+                    $jsonDir = $this->files->dirname($jsonPath);
+                    $jsonFile = $this->files->basename($jsonPath);
+                    return $jsonDir . "/" . str_replace_first("{locale}", $locale, $jsonFile);
+                }
+            }
+            return null;
+        }
+
         $config_paths = self::configValues($this->config, 'path');
         $sorted_paths = array_keys($config_paths);
         sort($sorted_paths, SORT_STRING);

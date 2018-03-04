@@ -35,7 +35,16 @@ class ImportCommand extends Command
      *
      * @return void
      */
-    public function fire()
+    public function fire() {
+        $this->handle();
+    }
+
+    /**
+     * Execute the console command.
+     *
+     * @return void
+     */
+    public function handle()
     {
         $replace = $this->option('replace');
         $counter = $this->manager->importTranslations($replace);
