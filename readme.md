@@ -36,9 +36,11 @@ system with a ton of practical functionality. [Features]
 > :exclamation: If you have made correction to the auto-translated localization and would like
 > to share them with others please do so. It will be greatly appreciated.
 
-### Version 2.6.0 released
+### Version 2.6.4 released
 
 Code updated for Laravel 5.6 compatibility
+
+Support for JSON translation files added.
 
 ### Version 2.5.0 released
 
