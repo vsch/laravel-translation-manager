@@ -25,6 +25,28 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
 
 * Fix: update for Laravel 5.6, merged PR from **[aiankile](https://github.com/aiankile)**
 
+#### 2.5.6
+
+* Add: JSON translation file handling
+  * Stored in the LTM table under `JSON` group. JSON translation keys to LTM translation keys
+    are stored in the same group under the `json` locale.
+  * On import LTM keys are generated from Alphanumeric characters with _ between runs of
+    Alphanumeric up to a maximum of 120 or `'json_dbkey_length'`, whichever is smaller.
+  * On export the JSON to LTM key map is exported to `json.json` file in `resources/lang`
+    directory. It is needed for efficient conversion of JSON to LTM keys
+  * All features of LTM translations are supported for JSON translations: import, export, zip,
+    in-database publishing, display database value via additional `useDB` argument added to
+    `getFromJson()`
+* Fix: usage information was not being set
+
+#### 2.5.4
+
+* Fix: #99, Regex doesnt clear on Php7.1
+
+#### 2.5.2
+
+* Fix: #98, indatabase_publish not working as intended
+
 #### 2.4.36
 
 * [ ] Fix: #106, Working with arrays
@@ -37,14 +59,6 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
 #### 2.4.34
 
 * Fix: LoaderInterface to FileLoader
-
-#### 2.5.4
-
-* Fix: #99, Regex doesnt clear on Php7.1
-
-#### 2.5.2
-
-* Fix: #98, indatabase_publish not working as intended
 
 #### 2.4.32
 

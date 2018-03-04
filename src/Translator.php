@@ -619,30 +619,12 @@ HTML;
         $this->useCookies = $this->manager->config('use_cookies', true);
     }
 
-    //protected function notifyMissingKey($key, $locale = null)
-    //{
-    //    list($namespace, $group, $item) = $this->parseKey($key);
-    //    if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
-    //        $this->manager->missingKey($namespace, $group, $item, $locale, $this->isUseLottery(), false);
-    //    }
-    //}
-
     protected function notifyMissingGroupItem($namespace, $group, $item, $locale = null)
     {
         if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
             $this->manager->missingKey($namespace, $group, $item, $locale, $this->isUseLottery(), false);
         }
     }
-
-    //protected function notifyUsingKey($key, $locale = null)
-    //{
-    //    if (!$this->suspendUsageLogging) {
-    //        list($namespace, $group, $item) = $this->parseKey($key);
-    //        if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
-    //            $this->manager->usingKey($namespace, $group, $item, $locale, $this->isUseLottery());
-    //        }
-    //    }
-    //}
 
     protected function notifyUsingGroupItem($namespace, $group, $item, $locale = null)
     {

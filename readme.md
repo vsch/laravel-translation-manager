@@ -26,7 +26,7 @@ system with a ton of practical functionality. [Features]
 >
 > * For Laravel 5.2 require: `"vsch/laravel-translation-manager": "~2.1"`
 >
-> #### Laravel version 4.2 is no longer supported. 
+> #### Laravel version 4.2 is no longer supported.
 >
 > You can still get access to the last updated version. Use the `laravel4` branch, or require:
 > `"vsch/laravel-translation-manager": "~1.0"`
@@ -40,13 +40,17 @@ system with a ton of practical functionality. [Features]
 
 Code updated for Laravel 5.6 compatibility
 
-Support for JSON translation files added.
+Support for JSON translation files added. [Versioninfo.md](versioninfo.md#264) 
 
-### Version 2.5.0 released
+### Version 2.5.6 released
+
+Support for JSON translation files added. [Versioninfo.md](versioninfo.md#256)
 
 Code updated for Laravel 5.5 compatibility
 
-### Version 2.4.20 released
+### Version 2.4.36 released
+
+Support for JSON translation files added.  [Versioninfo.md](versioninfo.md#2436)
 
 Important LTM Translator method changes to restore compatibility with Laravel 5.4 API. These
 changes affect the order of arguments to the LTM Translator implementation. If you were using
