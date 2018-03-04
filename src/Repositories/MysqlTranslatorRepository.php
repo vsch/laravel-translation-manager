@@ -26,7 +26,7 @@ class MysqlTranslatorRepository extends TranslatorRepository
 
         if ($setKeys) {
             $this->connection->affectingStatement($this->adjustTranslationTable(<<<SQL
-                UPDATE ltm_translations SET was_used = 1 WHERE was_used <> 0 AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?)
+                UPDATE ltm_translations SET was_used = 1 WHERE was_used = 0 AND (`group` = ? OR `group` LIKE ? OR `group` LIKE ?) AND `key` IN ($setKeys)
 SQL
             ), [$group, 'vnd:%.' . $group, 'wbn:%.' . $group]);
         }
@@ -92,6 +92,11 @@ SQL
     public function deleteTranslationByGroup($group)
     {
         $this->connection->affectingStatement($this->adjustTranslationTable("DELETE FROM ltm_translations WHERE `group` = ?"), [$group]);
+    }
+
+    public function deleteTranslationByGroupLocale($group, $locale)
+    {
+        $this->connection->affectingStatement($this->adjustTranslationTable("DELETE FROM ltm_translations WHERE `group` = ? AND locale = ?"), [$group, $locale]);
     }
 
     public function updateValueInGroup($group)
@@ -263,7 +268,7 @@ SQL
                     '%' . mb_substr($srckey, 1),
                     $dstgrp,
                     mb_strlen($srckey) - 1,
-                    mb_substr($dstkey, 1)
+                    mb_substr($dstkey, 1),
                 ]);
             }
         } elseif ((substr($src, -1, 1) === '*')) {
@@ -297,7 +302,7 @@ SQL
                     $dstgrp,
                     mb_substr($dstkey, 0, -1),
                     mb_strlen($srckey) - 1,
-                    mb_strlen($srckey) - 1
+                    mb_strlen($srckey) - 1,
                 ]);
             }
         } else {
