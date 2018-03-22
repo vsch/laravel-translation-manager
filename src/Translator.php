@@ -640,6 +640,11 @@ HTML;
         Controller::routes();
     }
 
+    public static function apiRoutes()
+    {
+        Controller::apiRoutes();
+    }
+
     public function getLocales()
     {
         //Set the default locale as the first one.

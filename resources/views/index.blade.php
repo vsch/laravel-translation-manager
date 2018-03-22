@@ -343,7 +343,6 @@
                                 <div class=" col-sm-8">
                                     <div class="input-group-sm">
                                         @foreach($locales as $locale)
-                                            <?php $isLocaleEnabled = str_contains($userLocales, ',' . $locale . ','); ?>
                                             <label>
                                                 <input <?= $locale !== $primaryLocale && $locale !== $translatingLocale ? ' class="display-locale" ' : '' ?> name="d[]"
                                                         type="checkbox"

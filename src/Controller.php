@@ -26,6 +26,7 @@ class Controller extends BaseController
     const COOKIE_PRIM_LOCALE = 'prim';
     const COOKIE_DISP_LOCALES = 'disp';
     const COOKIE_SHOW_USAGE = 'show-usage';
+    const COOKIE_WEB_UI_STATE = 'web-ui-state';
     const COOKIE_CONNECTION_NAME = 'connection-name';
     const COOKIE_TRANS_FILTERS = 'trans-filters';
     /** @var \Vsch\TranslationManager\Manager */
@@ -41,6 +42,7 @@ class Controller extends BaseController
     private $translatingLocale;
     private $displayLocales;
     private $showUsageInfo;
+    private $webUIState;
     private $locales;
     private $translatorRepository;
     // list of locales that the user is allowed to modify
@@ -104,7 +106,22 @@ class Controller extends BaseController
 
         $this->translatingLocale = Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE));
         $this->showUsageInfo = Cookie::get($this->cookieName(self::COOKIE_SHOW_USAGE));
-        $this->transFilters = Cookie::get($this->cookieName(self::COOKIE_TRANS_FILTERS), ['filter' => 'show-all', 'regex' => '']);
+        
+        $this->webUIState = json_decode(Cookie::get($this->cookieName(self::COOKIE_WEB_UI_STATE, "{}")), true);
+        if (!$this->webUIState) {
+            // put defaults in it
+            $this->webUIState = [];
+            $this->webUIState['showDashboardView'] = true;
+        }
+        
+        $transFilters = Cookie::get($this->cookieName(self::COOKIE_TRANS_FILTERS));
+        if (is_array($transFilters)) {
+            $this->transFilters = $transFilters;
+        } elseif (is_string($transFilters)) {
+            $this->transFilters = json_decode($transFilters, true);
+        } else {
+            $this->transFilters = ['filter' => 'show-all', 'regex' => ''];
+        }
 
         if (!$this->translatingLocale || ($this->translatingLocale === $this->primaryLocale && count($this->locales) > 1)) {
             $this->translatingLocale = count($this->locales) > 1 ? $this->locales[1] : $this->locales[0];
@@ -176,6 +193,8 @@ class Controller extends BaseController
 
         //deprecated: Route::controller('admin/translations', '\\Vsch\\TranslationManager\\Controller');
         Route::get('/', '\\Vsch\\TranslationManager\\Controller@getIndex');
+        Route::get('ui', '\\Vsch\\TranslationManager\\Controller@getUI');
+        Route::get('ui/{all}', '\\Vsch\\TranslationManager\\Controller@getUI')->where('all','.*');
         Route::get('connection', '\\Vsch\\TranslationManager\\Controller@getConnection');
         Route::get('import', '\\Vsch\\TranslationManager\\Controller@getImport');
         Route::get('index', '\\Vsch\\TranslationManager\\Controller@getIndex');
@@ -463,6 +482,7 @@ class Controller extends BaseController
             ->with('currentLocale', $currentLocale)
             ->with('translatingLocale', $translatingLocale)
             ->with('displayLocales', $displayLocales)
+            ->with('userLocales', $this->userLocales)
             ->with('groups', $groups)
             ->with('group', $group)
             ->with('numTranslations', $numTranslations)
@@ -476,10 +496,170 @@ class Controller extends BaseController
             ->with('usage_info_enabled', $show_usage_enabled)
             ->with('connection_list', $this->connectionList)
             ->with('transFilters', $this->transFilters)
-            ->with('userLocales', $this->userLocales)
             ->with('markdownKeySuffix', $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX))
             ->with('userList', $userList)
             ->with('connection_name', ($this->manager->isDefaultTranslationConnection($this->getConnectionName()) ? '' : $this->getConnectionName()));
+    }
+
+    public static function apiRoutes()
+    {
+        // REST API for Rect-UI
+        Route::get('uiSettings', '\\Vsch\\TranslationManager\\Controller@getUISettings');
+        Route::get('get/{group}/{locale}', '\\Vsch\\TranslationManager\\Controller@getTranslations');
+        Route::post('uiSettings', '\\Vsch\\TranslationManager\\Controller@postUISettings');
+    }
+
+    public function getUI()
+    {
+        // TODO: make this resolved from routes so as to be config independent
+        $appURL = "/admin/translations/";
+        
+        try {
+            return View::make($this->packagePrefix . 'ui')->with("appUrl", $appURL);
+        } catch (\Exception $e) {
+            // if have non default connection, reset it
+            if ($this->getConnectionName()) {
+                $this->setConnectionName('');
+            }
+        }
+        return View::make($this->packagePrefix . 'ui')->with("appUrl", $appURL);
+    }
+
+    public function getUISettings()
+    {
+        $locales = $this->locales;
+        $currentLocale = Lang::getLocale();
+        $primaryLocale = $this->primaryLocale;
+        $translatingLocale = $this->translatingLocale;
+
+        // returned result set lists group key ru, en columns for the locale translations, ru has different values for same values in en
+        $displayLocales = array_values(array_intersect($locales, explode(',', $this->displayLocales)));
+
+        // need to put display locales first in the $locales list
+        $locales = array_merge($displayLocales, array_diff($locales, $displayLocales));
+
+        // make it into associative array
+        //$displayLocales = array_combine($displayLocales, $displayLocales);
+        $userLocales = explode(',', substr($this->userLocales, 1, strlen($this->userLocales) - 2));
+        $show_usage_enabled = $this->manager->config('log_key_usage_info', false);
+
+        $adminEnabled = $this->manager->config('admin_enabled') &&
+            Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS);
+
+        $data = array(
+            'isAdminEnabled' => $adminEnabled,
+            'yandexKey' => $this->manager->config('yandex_translator_key'),
+            'connectionName' => ($this->manager->isDefaultTranslationConnection($this->getConnectionName()) ? '' : $this->getConnectionName()),
+            'markdownKeySuffix' => $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX),
+            'transFilters' => $this->transFilters,
+            'connectionList' => $this->connectionList,
+            'usageInfoEnabled' => $show_usage_enabled,
+            'showUsage' => $this->showUsageInfo && $show_usage_enabled,
+            'currentLocale' => $currentLocale,
+            'primaryLocale' => $primaryLocale,
+            'translatingLocale' => $translatingLocale,
+            'locales' => $locales,
+            'userLocales' => $userLocales,
+            'displayLocales' => $displayLocales,
+        );
+        
+        // merge in the webUIState
+        $data = array_merge($this->webUIState, $data);
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES /*| JSON_PRETTY_PRINT*/);
+    }
+
+    public function postUISettings()
+    {
+        $json = Request::json();
+        $handled=[];
+
+        if ($json->has("currentLocale")) {
+            $locale = $json->get("currentLocale");
+            $handled[] = "currentLocale";
+            Cookie::queue($this->cookieName(self::COOKIE_LANG_LOCALE), $locale, 60 * 24 * 365 * 1);
+            App::setLocale($locale);
+        }
+
+        if ($json->has("translatingLocale")) {
+            $handled[] = "translatingLocale";
+            $translating = $json->get("translatingLocale");
+            Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $translating, 60 * 24 * 365 * 1);
+        }
+
+        if ($json->has("primaryLocale")) {
+            $handled[] = "primaryLocale";
+            $primary = $json->get("primaryLocale");
+            Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $primary, 60 * 24 * 365 * 1);
+        }
+
+        if ($json->has("displayLocales")) {
+            $handled[] = "displayLocales";
+            $json->displayLocales[] = $this->primaryLocale;
+            $json->displayLocales[] = $this->translatingLocale;
+            $displayLocales = implode(',', array_values(array_unique($json->get("displayLocales"))));
+
+            Cookie::queue($this->cookieName(self::COOKIE_DISP_LOCALES), $displayLocales, 60 * 24 * 365 * 1);
+            $this->displayLocales = $displayLocales;
+        }
+
+        if ($json->has("connectionName")) {
+            $handled[] = "connectionName";
+            $connection = $json->get("connectionName");
+            $this->setConnectionName($connection);
+        }
+
+        if ($json->has('showUsage')) {
+            $show = $json->get('showUsage');
+            $group = $json->get('group', '');
+            $reset = $json->get('resetUsage', false);
+            $handled[] = "showUsage";
+            $handled[] = "group";
+            $handled[] = "resetUsage";
+
+            // need to store this so that it can be displayed again
+            Cookie::queue($this->cookieName(self::COOKIE_SHOW_USAGE), $show, 60 * 24 * 365 * 1);
+            $this->showUsageInfo = $show;
+
+            if ($reset) {
+                // TODO: add show usage info to view variables so that a class can be added to keys that have no usage info
+                // need to clear the usage information
+                $this->manager->clearUsageCache(true, $group);
+            }
+        }
+
+        $handled = array_combine($handled,$handled);
+        
+        // save the rest as persisted settings, we don't do anything with them but return the react app
+        $hadWebUIState = false;
+        foreach ($json as $key => $value) {
+            if (!array_key_exists($key,$handled)) {
+                $this->webUIState[$key] = $value;
+                $hadWebUIState = true;
+            }
+        }
+
+        if ($hadWebUIState) {
+            Cookie::queue($this->cookieName(self::COOKIE_WEB_UI_STATE), json_encode($this->webUIState), 60 * 24 * 365 * 1);
+        }
+
+        return $this->getUISettings();
+    }
+
+    public function getTranslations($group, $locale)
+    {
+        // return the translations for the given group as JSON result
+        $translations = $this->manager->getTranslations('', $group, $locale);
+        $parts = explode('::', $group, 2);
+        if (count($parts) > 1) {
+            $namespace = $parts[0];
+            $group = $parts[1];
+            $jsonResponse = Response::json(array($group => $translations), 200, [], /*JSON_PRETTY_PRINT |*/
+                JSON_UNESCAPED_SLASHES);
+        } else {
+            $jsonResponse = Response::json(array("messages" => $translations), 200, [], /*JSON_PRETTY_PRINT |*/
+                JSON_UNESCAPED_SLASHES);
+        }
+        return $jsonResponse;
     }
 
     public function getConnectionName()
@@ -954,7 +1134,7 @@ class Controller extends BaseController
             $this->transFilters['regex'] = $regex;
         }
 
-        Cookie::queue($this->cookieName(self::COOKIE_TRANS_FILTERS), $this->transFilters, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_TRANS_FILTERS), json_encode($this->transFilters), 60 * 24 * 365 * 1);
 
         if (Request::wantsJson()) {
             return Response::json(array(

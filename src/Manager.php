@@ -285,6 +285,16 @@ class Manager
         $this->augmentedGroupList = null;
     }
 
+    public function getPackagePublicPath()
+    {
+        return $this->app->publicPath() . $this->getPackagePublicSuffix();
+    }
+
+    public function getPackagePublicSuffix()
+    {
+        return '/vendor/' . $this->package;
+    }
+
     public function afterRoute($request, $response)
     {
         $this->saveCache();
@@ -502,7 +512,15 @@ class Manager
             $this->cacheIsDirty = $this->persistentPrefix !== '';
         }
     }
-
+    
+    /**
+     * @param $namespace
+     * @param $group
+     * @param $transKey
+     * @param $locale
+     *
+     * @return string|null translation value
+     */
     public function cachedTranslation($namespace, $group, $transKey, $locale)
     {
         $group = self::fixGroup($group);
@@ -807,6 +825,30 @@ class Manager
         }
     }
 
+    public function getTranslations($namespace, $group, $locale)
+    {
+        $group = self::fixGroup($group);
+        $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
+        
+        // may need to create new jsonKeys from default locale values for any that are missing from json locale of JSON group
+        $jsonTranslations = $this->translation->query()->where('group', '=', $group)->where('locale', '=', $locale)->get([
+            'key',
+            'value',
+        ]);
+
+        $translations = [];
+        $jsonTranslations->each(function ($tr) use ($namespace, $group, $locale, &$translations) {
+            $translation = $this->cachedTranslation($namespace, $group, $tr->key, $locale);
+            if ($translation) {
+                $translations[$tr->key] = $translation;
+            } else {
+                $translations[$tr->key] = $tr->value;
+            }
+        });
+        
+        return $translations; 
+    }
+
     public function importTranslations($replace, $groups = null)
     {
         // this can come from the command line
@@ -1079,7 +1121,7 @@ class Manager
         }
 
         $primaryLocale = $this->config("primary_locale", 'en');
-        
+
         if (($group === 'JSON' || !$group || $group == '*') && !isset($this->ltmJsonKeys)) {
             // may need to create new jsonKeys from default locale values for any that are missing from json locale of JSON group
             $this->loadLtmJsonKeys();

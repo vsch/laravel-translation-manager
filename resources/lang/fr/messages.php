@@ -81,6 +81,7 @@ TEXT
     'keys'                          => 'Touches',
     'loading'                       => 'De l\'importation...',
     'locale'                        => 'Paramètres régionaux',
+    'locale-settings'               => 'Paramètres Régionaux',
     'mismatches'                    => 'Incompatibles traductions',
     'missing'                       => 'Manquant',
     'missmatched-quotes'            => 'incompatibles ou manquant des citations en :attribut de chaîne',
