@@ -70,8 +70,20 @@ class Controller extends BaseController
 
         $this->cookiePrefix = $this->manager->config('persistent_prefix', 'K9N6YPi9WHwKp6E3jGbx');
 
+        // cookies are not available yet (they are but appear to be encrypted). They will be by the time middleware is called 
         $this->middleware(function ($request, $next) {
-            $this->initialize();
+            if (!$this->manager->isDefaultTranslationConnection($this->getConnectionName())) {
+                try {
+                    $this->initialize();
+                } catch (\Exception $e) {
+                    // invalid database config
+                    $this->setConnectionName('');
+                    $this->initialize();
+                }
+            } else {
+                $this->initialize();
+            }
+
             return $next($request);
         });
     }
@@ -106,14 +118,14 @@ class Controller extends BaseController
 
         $this->translatingLocale = Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE));
         $this->showUsageInfo = Cookie::get($this->cookieName(self::COOKIE_SHOW_USAGE));
-        
+
         $this->webUIState = json_decode(Cookie::get($this->cookieName(self::COOKIE_WEB_UI_STATE, "{}")), true);
         if (!$this->webUIState) {
             // put defaults in it
             $this->webUIState = [];
             $this->webUIState['showDashboardView'] = true;
         }
-        
+
         $transFilters = Cookie::get($this->cookieName(self::COOKIE_TRANS_FILTERS));
         if (is_array($transFilters)) {
             $this->transFilters = $transFilters;
@@ -193,8 +205,6 @@ class Controller extends BaseController
 
         //deprecated: Route::controller('admin/translations', '\\Vsch\\TranslationManager\\Controller');
         Route::get('/', '\\Vsch\\TranslationManager\\Controller@getIndex');
-        Route::get('ui', '\\Vsch\\TranslationManager\\Controller@getUI');
-        Route::get('ui/{all}', '\\Vsch\\TranslationManager\\Controller@getUI')->where('all','.*');
         Route::get('connection', '\\Vsch\\TranslationManager\\Controller@getConnection');
         Route::get('import', '\\Vsch\\TranslationManager\\Controller@getImport');
         Route::get('index', '\\Vsch\\TranslationManager\\Controller@getIndex');
@@ -504,6 +514,8 @@ class Controller extends BaseController
     public static function apiRoutes()
     {
         // REST API for Rect-UI
+        Route::get('ui', '\\Vsch\\TranslationManager\\Controller@getUI');
+        Route::get('ui/{all}', '\\Vsch\\TranslationManager\\Controller@getUI')->where('all', '.*');
         Route::get('uiSettings', '\\Vsch\\TranslationManager\\Controller@getUISettings');
         Route::get('get/{group}/{locale}', '\\Vsch\\TranslationManager\\Controller@getTranslations');
         Route::post('uiSettings', '\\Vsch\\TranslationManager\\Controller@postUISettings');
@@ -513,7 +525,7 @@ class Controller extends BaseController
     {
         // TODO: make this resolved from routes so as to be config independent
         $appURL = "/admin/translations/";
-        
+
         try {
             return View::make($this->packagePrefix . 'ui')->with("appUrl", $appURL);
         } catch (\Exception $e) {
@@ -528,7 +540,7 @@ class Controller extends BaseController
     public function getUISettings()
     {
         $locales = $this->locales;
-        $currentLocale = Lang::getLocale();
+        $currentLocale = App::getLocale();
         $primaryLocale = $this->primaryLocale;
         $translatingLocale = $this->translatingLocale;
 
@@ -562,7 +574,7 @@ class Controller extends BaseController
             'userLocales' => $userLocales,
             'displayLocales' => $displayLocales,
         );
-        
+
         // merge in the webUIState
         $data = array_merge($this->webUIState, $data);
         return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES /*| JSON_PRETTY_PRINT*/);
@@ -571,7 +583,7 @@ class Controller extends BaseController
     public function postUISettings()
     {
         $json = Request::json();
-        $handled=[];
+        $handled = [];
 
         if ($json->has("currentLocale")) {
             $locale = $json->get("currentLocale");
@@ -584,12 +596,14 @@ class Controller extends BaseController
             $handled[] = "translatingLocale";
             $translating = $json->get("translatingLocale");
             Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $translating, 60 * 24 * 365 * 1);
+            $this->translatingLocale = $translating;
         }
 
         if ($json->has("primaryLocale")) {
             $handled[] = "primaryLocale";
             $primary = $json->get("primaryLocale");
             Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $primary, 60 * 24 * 365 * 1);
+            $this->primaryLocale = $primary;
         }
 
         if ($json->has("displayLocales")) {
@@ -627,12 +641,12 @@ class Controller extends BaseController
             }
         }
 
-        $handled = array_combine($handled,$handled);
-        
+        $handled = array_combine($handled, $handled);
+
         // save the rest as persisted settings, we don't do anything with them but return the react app
         $hadWebUIState = false;
         foreach ($json as $key => $value) {
-            if (!array_key_exists($key,$handled)) {
+            if (!array_key_exists($key, $handled)) {
                 $this->webUIState[$key] = $value;
                 $hadWebUIState = true;
             }
@@ -732,8 +746,8 @@ class Controller extends BaseController
             if ($this->isLocaleEnabled($locale)) {
                 $translation = $this->manager->firstOrNewTranslation(array(
                     'locale' => $locale,
-                    'group'  => $group,
-                    'key'    => $key,
+                    'group' => $group,
+                    'key' => $key,
                 ));
 
                 $markdownSuffix = $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX);
@@ -758,8 +772,8 @@ class Controller extends BaseController
 
                     $translation = $this->manager->firstOrNewTranslation(array(
                         'locale' => $locale,
-                        'group'  => $group,
-                        'key'    => $key,
+                        'group' => $group,
+                        'key' => $key,
                     ));
 
                     $value = $markdownValue !== null ? \Markdown::convertToHtml(str_replace("\xc2\xa0", ' ', $markdownValue)) : null;
@@ -1138,7 +1152,7 @@ class Controller extends BaseController
 
         if (Request::wantsJson()) {
             return Response::json(array(
-                'status'       => 'ok',
+                'status' => 'ok',
                 'transFilters' => $this->transFilters,
             ));
         }
@@ -1177,7 +1191,7 @@ class Controller extends BaseController
     public function postYandexKey()
     {
         return Response::json(array(
-            'status'     => 'ok',
+            'status' => 'ok',
             'yandex_key' => $this->manager->config('yandex_translator_key', null),
         ));
     }
