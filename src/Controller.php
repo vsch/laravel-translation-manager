@@ -324,114 +324,13 @@ class Controller extends BaseController
 
         $this->manager->cacheGroupTranslations($group, $this->displayLocales, $translations);
 
-        $stats = $this->translatorRepository->stats($this->displayLocales);
-
-        // returned result set lists missing, changed, group, locale
-        $summary = [];
-        foreach ($stats as $stat) {
-            if (!isset($summary[$stat->group])) {
-                $item = $summary[$stat->group] = new \stdClass();
-                $item->missing = '';
-                $item->changed = '';
-                $item->cached = '';
-                $item->deleted = '';
-                $item->group = $stat->group;
-            }
-
-            $item = $summary[$stat->group];
-            if ($stat->missing) {
-                $item->missing .= $stat->locale . ":" . $stat->missing . " ";
-            }
-
-            if ($stat->changed) {
-                $item->changed .= $stat->locale . ":" . $stat->changed . " ";
-            }
-
-            if ($stat->cached) {
-                $item->cached .= $stat->locale . ":" . $stat->cached . " ";
-            }
-
-            if ($stat->deleted) {
-                $item->deleted .= $stat->locale . ":" . $stat->deleted . " ";
-            }
-        }
+        $summary = $this->computeSummary();
 
         $mismatches = null;
         $mismatchEnabled = $this->manager->config('mismatch_enabled');
 
         if ($mismatchEnabled) {
-            // get mismatches
-            $mismatches = $this->translatorRepository->findMismatches($this->displayLocales, $primaryLocale, $translatingLocale);
-
-            $key = '';
-            $translatingList = [];
-            $primaryList = [];
-            $translatingBases = [];    // by key
-            $primaryBases = [];    // by key
-            $extra = new \stdClass();
-            $extra->key = '';
-            $mismatches[] = $extra;
-            foreach ($mismatches as $mismatch) {
-                if ($mismatch->key !== $key) {
-                    if ($key) {
-                        // process diff for key
-                        $translatingText = '';
-                        $primaryText = '';
-                        if (count($primaryList) > 1) {
-                            $maxPrimary = 0;
-                            foreach ($primaryList as $en => $count) {
-                                if ($maxPrimary < $count) {
-                                    $maxPrimary = $count;
-                                    $primaryText = $en;
-                                }
-                            }
-                            $primaryBases[$key] = $primaryText;
-                        } else {
-                            $primaryText = array_keys($primaryList)[0];
-                            $primaryBases[$key] = $primaryText;
-                        }
-                        if (count($translatingList) > 1) {
-                            $maxTranslating = 0;
-                            foreach ($translatingList as $ru => $count) {
-                                if ($maxTranslating < $count) {
-                                    $maxTranslating = $count;
-                                    $translatingText = $ru;
-                                }
-                            }
-                            $translatingBases[$key] = $translatingText;
-                        } else {
-                            $translatingText = array_keys($translatingList)[0];
-                            $translatingBases[$key] = $translatingText;
-                        }
-                    }
-                    $key = $mismatch->key;
-                    $translatingList = [];
-                    $primaryList = [];
-                }
-
-                if ($mismatch->key === '') break;
-
-                if (!isset($primaryList[$mismatch->en])) {
-                    $primaryList[$mismatch->en] = 1;
-                } else {
-                    $primaryList[$mismatch->en]++;
-                }
-
-                if (!isset($translatingList[$mismatch->ru])) {
-                    $translatingList[$mismatch->ru] = 1;
-                } else {
-                    $translatingList[$mismatch->ru]++;
-                }
-            }
-
-            array_splice($mismatches, count($mismatches) - 1, 1);
-
-            foreach ($mismatches as $mismatch) {
-                $mismatch->en_value = $mismatch->ru;
-                $mismatch->en = mb_renderDiffHtml($primaryBases[$mismatch->key], $mismatch->en);
-                $mismatch->ru_value = $mismatch->ru;
-                $mismatch->ru = mb_renderDiffHtml($translatingBases[$mismatch->key], $mismatch->ru);
-            }
+            $mismatches = $this->computeMismatches($primaryLocale, $translatingLocale);
         }
 
         // returned result set lists group key ru, en columns for the locale translations, ru has different values for same values in en
@@ -444,37 +343,7 @@ class Controller extends BaseController
 
         $show_usage_enabled = $this->manager->config('log_key_usage_info', false);
 
-        $userList = [];
-        $admin_translations = Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS);
-        if ($admin_translations && $this->manager->areUserLocalesEnabled()) {
-            $connection_name = $this->getConnectionName();
-            $userListProvider = $this->manager->getUserListProvider($connection_name);
-            if ($userListProvider !== null && is_a($userListProvider, "Closure")) {
-                $userList = null;
-                $haveUsers = $userListProvider(Auth::user(), $this->manager->getUserListConnection($connection_name), $userList);
-                if ($haveUsers && is_array($userList)) {
-                    /* @var $connection_name string */
-                    /* @var $query  \Illuminate\Database\Eloquent\Builder */
-                    $userLocalesModel = new UserLocales();
-                    $userLocaleList = $userLocalesModel->on($connection_name)->get();
-
-                    $userLocales = [];
-                    foreach ($userLocaleList as $userLocale) {
-                        $userLocales[$userLocale->user_id] = $userLocale;
-                    }
-
-                    foreach ($userList as $user) {
-                        if (array_key_exists($user->id, $userLocales)) {
-                            $user->locales = $userLocales[$user->id]->locales;
-                        } else {
-                            $user->locales = '';
-                        }
-                    }
-                } else {
-                    $userList = [];
-                }
-            }
-        }
+        $userList = $this->computeUserList();
 
         $adminEnabled = $this->manager->config('admin_enabled') &&
             Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS);
@@ -506,8 +375,8 @@ class Controller extends BaseController
             ->with('usage_info_enabled', $show_usage_enabled)
             ->with('connection_list', $this->connectionList)
             ->with('transFilters', $this->transFilters)
-            ->with('markdownKeySuffix', $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX))
             ->with('userList', $userList)
+            ->with('markdownKeySuffix', $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX))
             ->with('connection_name', ($this->manager->isDefaultTranslationConnection($this->getConnectionName()) ? '' : $this->getConnectionName()));
     }
 
@@ -518,7 +387,46 @@ class Controller extends BaseController
         Route::get('ui/{all}', '\\Vsch\\TranslationManager\\Controller@getUI')->where('all', '.*');
         Route::get('uiSettings', '\\Vsch\\TranslationManager\\Controller@getUISettings');
         Route::get('get/{group}/{locale}', '\\Vsch\\TranslationManager\\Controller@getTranslations');
+        Route::get('summary', '\\Vsch\\TranslationManager\\Controller@getSummary');
+        Route::get('mismatches', '\\Vsch\\TranslationManager\\Controller@getMismatches');
+        Route::get('user-list', '\\Vsch\\TranslationManager\\Controller@getUserList');
+        Route::get('translation-table/{group}', '\\Vsch\\TranslationManager\\Controller@getTranslationTable');
+
+        // posts
         Route::post('uiSettings', '\\Vsch\\TranslationManager\\Controller@postUISettings');
+    }
+
+    public function getTranslationTable($group)
+    {
+        $groups = array('' => noEditTrans($this->packagePrefix . 'messages.choose-group')) + $this->manager->getGroupList();
+
+        if ($group != null && !array_key_exists($group, $groups)) {
+            $data = [];
+            // return no data
+            return Response::json($data, 404, [], JSON_UNESCAPED_SLASHES /*| JSON_PRETTY_PRINT*/);
+        }
+
+        $allTranslations = $this->translatorRepository->allTranslations($group, $this->displayLocales);
+
+        $numTranslations = count($allTranslations);
+        $translations = array();
+
+        /* @var $translator \Vsch\TranslationManager\Translator */
+        $translator = App::make('translator');
+
+        foreach ($allTranslations as $t) {
+            $t = $translator->getTranslationForEditLink($t, true, $t->group . '.' . $t->key, $t->locale, null, $t->group);
+            $translations[$t->key][$t->locale] = $t;
+        }
+
+        $this->manager->cacheGroupTranslations($group, $this->displayLocales, $translations);
+
+        $data = [
+            'group' => $group,
+            'yandexKey' => $this->manager->config('yandex_translator_key', null),
+            'translations' => $translations,
+        ];
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES /*| JSON_PRETTY_PRINT*/);
     }
 
     public function getUI()
@@ -527,14 +435,22 @@ class Controller extends BaseController
         $appURL = "/admin/translations/";
 
         try {
-            return View::make($this->packagePrefix . 'ui')->with("appUrl", $appURL);
+            return View::make($this->packagePrefix . 'ui')
+                ->with('markdownKeySuffix', $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX))
+                ->with('yandex_key', !!$this->manager->config('yandex_translator_key'))
+                ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
+                ->with("appUrl", $appURL);
         } catch (\Exception $e) {
             // if have non default connection, reset it
             if ($this->getConnectionName()) {
                 $this->setConnectionName('');
             }
         }
-        return View::make($this->packagePrefix . 'ui')->with("appUrl", $appURL);
+        return View::make($this->packagePrefix . 'ui')
+            ->with('markdownKeySuffix', $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX))
+            ->with('yandex_key', !!$this->manager->config('yandex_translator_key'))
+            ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
+            ->with("appUrl", $appURL);
     }
 
     public function getUISettings()
@@ -558,6 +474,8 @@ class Controller extends BaseController
         $adminEnabled = $this->manager->config('admin_enabled') &&
             Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS);
 
+        $userLocalesEnabled = $this->manager->areUserLocalesEnabled();
+
         $data = array(
             'isAdminEnabled' => $adminEnabled,
             'yandexKey' => $this->manager->config('yandex_translator_key'),
@@ -572,7 +490,9 @@ class Controller extends BaseController
             'translatingLocale' => $translatingLocale,
             'locales' => $locales,
             'userLocales' => $userLocales,
+            'userLocalesEnabled' => $userLocalesEnabled,
             'displayLocales' => $displayLocales,
+            'groups' => array_values($this->manager->getGroupList()),
         );
 
         // merge in the webUIState
@@ -657,6 +577,40 @@ class Controller extends BaseController
         }
 
         return $this->getUISettings();
+    }
+
+    public function getSummary()
+    {
+        $summary = $this->computeSummary();
+        $data = ['summary' => array_values($summary)];
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES /*| JSON_PRETTY_PRINT*/);
+    }
+
+    public function getUserList()
+    {
+        $summary = $this->computeUserList();
+        $data = ['userList' => $summary];
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES /*| JSON_PRETTY_PRINT*/);
+    }
+
+    public function getMismatches()
+    {
+        $primaryLocale = Request::get('primaryLocale', $this->primaryLocale);
+        $translatingLocale = Request::get('translatingLocale', $this->translatingLocale);
+        $mismatches = $this->computeMismatches($primaryLocale, $translatingLocale);
+        $summary = [];
+        foreach ($mismatches as $mismatch) {
+            $summary[] = [
+                'key' => $mismatch->key,
+                'group' => $mismatch->group,
+                'pr' => $mismatch->en,
+                'pr_value' => $mismatch->en_value,
+                'tr' => $mismatch->ru,
+                'tr_value' => $mismatch->ru_value,
+            ];
+        }
+        $data = ['mismatches' => $summary];
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES /*| JSON_PRETTY_PRINT*/);
     }
 
     public function getTranslations($group, $locale)
@@ -887,7 +841,6 @@ class Controller extends BaseController
                     $keyerrors = [];
 
                     if ($dst !== null) {
-
                         if ((substr($src, 0, 1) === '*') !== (substr($dst, 0, 1) === '*')) {
                             $keyerrors[] = trans($this->packagePrefix . 'messages.keyop-wildcard-mustmatch');
                         }
@@ -917,7 +870,6 @@ class Controller extends BaseController
 
                 if (!$hadErrors && ($op === 'copy' || $op === 'move' || $op === 'delete')) {
                     foreach ($keys as $src => $dst) {
-
                         $rows = $keymap[$src]['rows'];
 
                         $rowids = array_reduce($rows, function ($carry, $row) {
@@ -1216,5 +1168,165 @@ class Controller extends BaseController
         $userLocales->save();
         $errors = "";
         return Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
+    }
+
+    /**
+     * @return array
+     */
+    private function computeSummary(): array
+    {
+        $stats = $this->translatorRepository->stats($this->displayLocales);
+
+        // returned result set lists missing, changed, group, locale
+        $summary = [];
+        foreach ($stats as $stat) {
+            if (!isset($summary[$stat->group])) {
+                $item = $summary[$stat->group] = new \stdClass();
+                $item->missing = '';
+                $item->changed = '';
+                $item->cached = '';
+                $item->deleted = '';
+                $item->group = $stat->group;
+            }
+
+            $item = $summary[$stat->group];
+            if ($stat->missing) {
+                $item->missing .= $stat->locale . ":" . $stat->missing . " ";
+            }
+
+            if ($stat->changed) {
+                $item->changed .= $stat->locale . ":" . $stat->changed . " ";
+            }
+
+            if ($stat->cached) {
+                $item->cached .= $stat->locale . ":" . $stat->cached . " ";
+            }
+
+            if ($stat->deleted) {
+                $item->deleted .= $stat->locale . ":" . $stat->deleted . " ";
+            }
+        }
+        return $summary;
+    }
+
+    /**
+     * @param $primaryLocale
+     * @param $translatingLocale
+     * @return array
+     */
+    private function computeMismatches($primaryLocale, $translatingLocale): array
+    {
+// get mismatches
+        $mismatches = $this->translatorRepository->findMismatches($this->displayLocales, $primaryLocale, $translatingLocale);
+
+        $key = '';
+        $translatingList = [];
+        $primaryList = [];
+        $translatingBases = [];    // by key
+        $primaryBases = [];    // by key
+        $extra = new \stdClass();
+        $extra->key = '';
+        $mismatches[] = $extra;
+        foreach ($mismatches as $mismatch) {
+            if ($mismatch->key !== $key) {
+                if ($key) {
+                    // process diff for key
+                    $translatingText = '';
+                    $primaryText = '';
+                    if (count($primaryList) > 1) {
+                        $maxPrimary = 0;
+                        foreach ($primaryList as $en => $count) {
+                            if ($maxPrimary < $count) {
+                                $maxPrimary = $count;
+                                $primaryText = $en;
+                            }
+                        }
+                        $primaryBases[$key] = $primaryText;
+                    } else {
+                        $primaryText = array_keys($primaryList)[0];
+                        $primaryBases[$key] = $primaryText;
+                    }
+                    if (count($translatingList) > 1) {
+                        $maxTranslating = 0;
+                        foreach ($translatingList as $ru => $count) {
+                            if ($maxTranslating < $count) {
+                                $maxTranslating = $count;
+                                $translatingText = $ru;
+                            }
+                        }
+                        $translatingBases[$key] = $translatingText;
+                    } else {
+                        $translatingText = array_keys($translatingList)[0];
+                        $translatingBases[$key] = $translatingText;
+                    }
+                }
+                $key = $mismatch->key;
+                $translatingList = [];
+                $primaryList = [];
+            }
+
+            if ($mismatch->key === '') break;
+
+            if (!isset($primaryList[$mismatch->en])) {
+                $primaryList[$mismatch->en] = 1;
+            } else {
+                $primaryList[$mismatch->en]++;
+            }
+
+            if (!isset($translatingList[$mismatch->ru])) {
+                $translatingList[$mismatch->ru] = 1;
+            } else {
+                $translatingList[$mismatch->ru]++;
+            }
+        }
+
+        array_splice($mismatches, count($mismatches) - 1, 1);
+
+        foreach ($mismatches as $mismatch) {
+            $mismatch->en_value = $mismatch->ru;
+            $mismatch->en = mb_renderDiffHtml($primaryBases[$mismatch->key], $mismatch->en);
+            $mismatch->ru_value = $mismatch->ru;
+            $mismatch->ru = mb_renderDiffHtml($translatingBases[$mismatch->key], $mismatch->ru);
+        }
+        return $mismatches;
+    }
+
+    /**
+     * @return array|null
+     */
+    private function computeUserList()
+    {
+        $userList = [];
+        $admin_translations = Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS);
+        if ($admin_translations && $this->manager->areUserLocalesEnabled()) {
+            $connection_name = $this->getConnectionName();
+            $userListProvider = $this->manager->getUserListProvider($connection_name);
+            if ($userListProvider !== null && is_a($userListProvider, "Closure")) {
+                $userList = null;
+                $haveUsers = $userListProvider(Auth::user(), $this->manager->getUserListConnection($connection_name), $userList);
+                if ($haveUsers && is_array($userList)) {
+                    /* @var $connection_name string */
+                    /* @var $query  \Illuminate\Database\Eloquent\Builder */
+                    $userLocalesModel = new UserLocales();
+                    $userLocaleList = $userLocalesModel->on($connection_name)->get();
+
+                    $userLocales = [];
+                    foreach ($userLocaleList as $userLocale) {
+                        $userLocales[$userLocale->user_id] = $userLocale;
+                    }
+
+                    foreach ($userList as $user) {
+                        if (array_key_exists($user->id, $userLocales)) {
+                            $user->locales = $userLocales[$user->id]->locales;
+                        } else {
+                            $user->locales = '';
+                        }
+                    }
+                } else {
+                    $userList = [];
+                }
+            }
+        }
+        return $userList;
     }
 }

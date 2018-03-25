@@ -49,23 +49,6 @@
                 data-disable-with="<?=noEditTrans($package . '::messages.auto-prop-case-disabled')?>"
                         href="#">Ab Ab <i class="glyphicon glyphicon-share-alt"></i> Ab ab
                 </a>
-                <!-- split button -->
-                <!--
-                <div class="btn-group">
-                    <button type="button" class="btn btn-xs btn-primary">< ? = noEditTrans($package . '::messages.auto-translate') ? ></button>
-                    <button type="button" class="btn btn-xs btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <span class="caret"></span>
-                        <span class="sr-only">Toggle Dropdown</span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a href="#">ab abc<i class="glyphicon glyphicon-share-alt"></i> Ab Abc</a></li>
-                        <li><a href="#">Ab Abc <i class="glyphicon glyphicon-share-alt"></i> ab abc</a></li>
-                        <li><a href="#">Ab Abc <i class="glyphicon glyphicon-share-alt"></i> Ab abc</a></li>
-                        <li role="separator" class="divider"></li>
-                        <li><a href="#">< ? = noEditTrans($package . '::messages.auto-translate') ? ></a></li>
-                    </ul>
-                </div>
-                -->
             </th>
             <?php else: ?>
             <th width="<?=$mainWidth?>%"><?= $locale ?></th><?php endif;?>

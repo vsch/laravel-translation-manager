@@ -36,7 +36,7 @@ class Translator extends LaravelTranslator
     /**
      * Translator constructor.
      *
-     * @param \Illuminate\Foundation\Application       $app
+     * @param \Illuminate\Foundation\Application $app
      * @param \Illuminate\Contracts\Translation\Loader $loader
      * @param                                          $locale
      */
@@ -190,12 +190,20 @@ class Translator extends LaravelTranslator
         return preg_match('/^[a-zA-Z0-9_-]+$/', $namespace);
     }
 
-    public function inPlaceEditLink($t, $withDiff = false, $key = null, $locale = null, $useDB = null, $group = null)
+    /**
+     * @param $t
+     * @param $withDiff
+     * @param $key
+     * @param $locale
+     * @param $useDB
+     * @param $group
+     * @return $t resolved or adjusted for details needed for edit link generation
+     */
+    public function getTranslationForEditLink($t, $withDiff, $key, $locale, $useDB, $group)
     {
         try {
             $this->suspendUsageLogging();
 
-            $diff = '';
             if (!$t && $key) {
                 if ($useDB === null) $useDB = $this->useDB;
 
@@ -216,7 +224,7 @@ class Translator extends LaravelTranslator
                             $t->saved_value = parent::get($key, [], $locale);
                             $t->status = 0;
                             if ($withDiff) {
-                                $diff = ' [' . $t->saved_value . ']';
+                                $t->diff = ' [' . $t->saved_value . ']';
                             }
                         }
                     }
@@ -224,12 +232,29 @@ class Translator extends LaravelTranslator
             }
 
             if ($t) {
-                if ($withDiff && $diff === '') {
-                    $diff = ($t->saved_value == $t->value ? '' : ($t->saved_value === $t->value ? '' : ' [' . mb_renderDiffHtml($t->saved_value, $t->value) . ']'));
-                }
-                $title = parent::get($this->packagePrefix . 'messages.enter-translation');
+                if ($t->value === null) $t->value = '';
 
-                if ($t->value === null) $t->value = ''; //$t->value = parent::get($key, $replace, $locale);
+                if ($withDiff && (!isset($t->diff) || $t->diff === '')) {
+                    $t->diff = ($t->saved_value == $t->value ? '' : ($t->saved_value === $t->value ? '' : mb_renderDiffHtml($t->saved_value, $t->value)));
+                } else {
+                    $t->diff = '';
+                }
+            }
+            return $t;
+        } finally {
+            $this->resumeUsageLogging();
+        }
+    }
+
+    public function inPlaceEditLink($t, $withDiff = false, $key = null, $locale = null, $useDB = null, $group = null)
+    {
+        try {
+            $this->suspendUsageLogging();
+
+            $t = $this->getTranslationForEditLink($t, $withDiff, $key, $locale, $useDB, $group);
+
+            if ($t) {
+                $title = parent::get($this->packagePrefix . 'messages.enter-translation');
 
                 $action = URL::action(ManagerServiceProvider::CONTROLLER_PREFIX . 'Vsch\TranslationManager\Controller@postEdit', array($t->group));
 
@@ -241,7 +266,7 @@ class Translator extends LaravelTranslator
                     . '"  data-type="textarea" data-pk="' . ($t->id ?: 0) . '" '
                     . 'data-url="' . $action
                     . '" ' . 'data-inputclass="editable-input" data-saved_value="' . htmlentities($t->saved_value, ENT_QUOTES, 'UTF-8', false) . '" '
-                    . 'data-title="' . $title . ': [' . $t->locale . '] ' . $t->group . '.' . $t->key . '">' . ($t ? htmlentities($t->value, ENT_QUOTES, 'UTF-8', false) : '') . '</a> ' . $diff;
+                    . 'data-title="' . $title . ': [' . $t->locale . '] ' . $t->group . '.' . $t->key . '">' . (htmlentities($t->value, ENT_QUOTES, 'UTF-8', false)) . '</a> ' . ($t->diff ? " [$t->diff]" : '');
                 return $result;
             }
 
@@ -268,9 +293,9 @@ class Translator extends LaravelTranslator
      * Get the translation for a given key from the JSON translation files.
      *
      * @param  string $key
-     * @param  array  $replace
+     * @param  array $replace
      * @param  string $locale
-     * @param  int    $useDB null - check usedb field which is set to 1 by default,
+     * @param  int $useDB null - check usedb field which is set to 1 by default,
      *                       0 - don't use,
      *                       1 - only if key is missing in files or saved in the translator cache, use saved_value
      *                       fallback on $key,
@@ -283,7 +308,7 @@ class Translator extends LaravelTranslator
         // see if json key and can be translated to ltm key
         $this->load('*', '*', 'json');
         // see if have it in the cache
-        $item = $this->manager->cachedTranslation('', 'JSON', $key,'json');
+        $item = $this->manager->cachedTranslation('', 'JSON', $key, 'json');
         if ($item === null) {
             if (array_key_exists($key, $this->loaded['*']['*']['json'])) {
                 $item = $this->loaded['*']['*']['json'][$key];
@@ -318,7 +343,7 @@ class Translator extends LaravelTranslator
 
         // get the JSON translation
         $this->load('*', '*', $locale);
-        if (array_key_exists($key,$this->loaded['*']['*'][$locale])) {
+        if (array_key_exists($key, $this->loaded['*']['*'][$locale])) {
             $result = $this->loaded['*']['*'][$locale][$key];
         } else {
             unset($result);
@@ -354,10 +379,10 @@ class Translator extends LaravelTranslator
      * Get the translation for the given key.
      *
      * @param  string $key
-     * @param  array  $replace
+     * @param  array $replace
      * @param  string $locale
-     * @param bool    $fallback
-     * @param  int    $useDB null - check usedb field which is set to 1 by default,
+     * @param bool $fallback
+     * @param  int $useDB null - check usedb field which is set to 1 by default,
      *                       0 - don't use,
      *                       1 - only if key is missing in files or saved in the translator cache, use saved_value
      *                       fallback on $key,
@@ -548,11 +573,11 @@ HTML;
      * Get a translation according to an integer value.
      *
      * @param  string $id
-     * @param  int    $number
-     * @param  array  $parameters
+     * @param  int $number
+     * @param  array $parameters
      * @param  string $locale
      * @param  string $domain
-     * @param null    $useDB
+     * @param null $useDB
      *
      * @return string
      */
@@ -565,10 +590,10 @@ HTML;
      * Get the translation for a given key.
      *
      * @param  string $id
-     * @param  array  $parameters
+     * @param  array $parameters
      * @param  string $locale
      * @param  string $domain
-     * @param null    $useDB
+     * @param null $useDB
      *
      * @return string
      */
@@ -581,8 +606,8 @@ HTML;
      * Get a translation according to an integer value.
      *
      * @param  string $key
-     * @param  int    $number
-     * @param  array  $replace
+     * @param  int $number
+     * @param  array $replace
      * @param  string $locale
      *
      * @return string
