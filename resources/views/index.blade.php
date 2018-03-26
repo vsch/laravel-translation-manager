@@ -854,6 +854,22 @@
         var URL_TRANSLATOR_FILTERS = '<?= action($controller . '@getTransFilters') ?>';
         var CURRENT_GROUP = '<?= $group ?>';
         var MARKDOWN_KEY_SUFFIX = '<?= $markdownKeySuffix ?>';
+        
+        // provide translations for JavaScript
+        var MISMATCHED_QUOTES_MESSAGE = "<?= noEditTrans(($package . '::messages.mismatched-quotes'))?>";
+        var TITLE_SAVE_CHANGES = "<?= noEditTrans(($package . '::messages.title-save-changes'))?>";
+        var TITLE_CANCEL_CHANGES = "<?= noEditTrans(($package . '::messages.title-cancel-changes'))?>";
+        var TITLE_TRANSLATE = "<?= noEditTrans(($package . '::messages.title-translate'))?>";
+        var TITLE_CONVERT_KEY = "<?= noEditTrans(($package . '::messages.title-convert-key'))?>";
+        var TITLE_GENERATE_PLURALS = "<?= noEditTrans(($package . '::messages.title-generate-plurals'))?>";
+        var TITLE_CLEAN_HTML_MARKDOWN = "<?= noEditTrans(($package . '::messages.title-clean-html-markdown'))?>";
+        var TITLE_CAPITALIZE = "<?= noEditTrans(($package . '::messages.title-capitalize'))?>";
+        var TITLE_LOWERCASE = "<?= noEditTrans(($package . '::messages.title-lowercase'))?>";
+        var TITLE_CAPITALIZE_FIRST_WORD = "<?= noEditTrans(($package . '::messages.title-capitalize-first-word'))?>";
+        var TITLE_SIMULATED_COPY = "<?= noEditTrans(($package . '::messages.title-simulated-copy'))?>";
+        var TITLE_SIMULATED_PASTE = "<?= noEditTrans(($package . '::messages.title-simulated-paste'))?>";
+        var TITLE_RESET_EDITOR = "<?= noEditTrans(($package . '::messages.title-reset-editor'))?>";
+        var TITLE_LOAD_LAST = "<?= noEditTrans(($package . '::messages.title-load-last'))?>";
     </script>
 
     <!-- Moved out to allow auto-format in PhpStorm w/o screwing up HTML format -->

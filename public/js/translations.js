@@ -3,7 +3,6 @@
  * Created by vlad on 15-02-10.
  */
 var CLIP_TEXT;
-var MISSMATCHED_QUOTES_MESSAGE;
 var YANDEX_TRANSLATOR_KEY;
 var URL_YANDEX_TRANSLATOR_KEY;
 var PRIMARY_LOCALE;
@@ -13,6 +12,7 @@ var xtranslateText;
 var xtranslateService;
 var MARKDOWN_KEY_SUFFIX;
 
+var MISMATCHED_QUOTES_MESSAGE;
 var TITLE_SAVE_CHANGES;
 var TITLE_CANCEL_CHANGES;
 var TITLE_TRANSLATE;
@@ -233,7 +233,7 @@ $(document).ready(function () {
         // check for open or mismatched quotes in href=  and src=, attributes if any
         var regex = /\b(href=|src=)\s*("|')?([^"'>]*)("|')?/;
         var regexErr = /:string/g;
-        var message = MISSMATCHED_QUOTES_MESSAGE || "mismatched or missing quotes in :string attribute";
+        var message = MISMATCHED_QUOTES_MESSAGE || "mismatched or missing quotes in :string attribute";
         var messages = [];
         var offs = 0, pos;
         var matches, val = value, maxlen = value.length;
