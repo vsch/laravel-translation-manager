@@ -79,7 +79,7 @@ TEXT
     'locale'                    => 'Paramètres régionaux',
     'mismatches'                => 'Incompatibles Traductions',
     'missing'                   => 'Manquant',
-    'missmatched-quotes'        => 'incompatibles ou manquant des citations en :attribut de chaîne',
+    'mismatched-quotes'        => 'incompatibles ou manquant des citations en :attribut de chaîne',
     'movekeys'                  => 'Déplacer Les Touches',
     'preview'                   => 'Aperçu',
     'primary-locale'            => 'Primaire',

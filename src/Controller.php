@@ -421,7 +421,21 @@ class Controller extends BaseController
 
         $this->manager->cacheGroupTranslations($group, $this->displayLocales, $translations);
 
+        $locales = $this->locales;
+        $primaryLocale = $this->primaryLocale;
+        $translatingLocale = $this->translatingLocale;
+
+        // returned result set lists group key ru, en columns for the locale translations, ru has different values for same values in en
+        $displayLocales = array_values(array_intersect($locales, explode(',', $this->displayLocales)));
+
+        // need to put display locales first in the $locales list
+        $locales = array_merge($displayLocales, array_diff($locales, $displayLocales));
+
         $data = [
+            'primaryLocale' => $primaryLocale,
+            'translatingLocale' => $translatingLocale,
+            'displayLocales' => $displayLocales,
+            'locales' => $locales,
             'group' => $group,
             'yandexKey' => $this->manager->config('yandex_translator_key', null),
             'translations' => $translations,
@@ -542,6 +556,22 @@ class Controller extends BaseController
             $this->setConnectionName($connection);
         }
 
+        if ($json->has("transFilters")) {
+            $handled[] = "transFilters";
+            $connection = $json->get("transFilters");
+            if (isset($connection['filter'])) {
+                $filter = $connection["filter"];
+                $this->transFilters['filter'] = $filter;
+            }
+
+            if (isset($connection['regex'])) {
+                $regex = $connection["regex"];
+                $this->transFilters['regex'] = $regex;
+            }
+
+            Cookie::queue($this->cookieName(self::COOKIE_TRANS_FILTERS), json_encode($this->transFilters), 60 * 24 * 365 * 1);
+        }
+
         if ($json->has('showUsage')) {
             $show = $json->get('showUsage');
             $group = $json->get('group', '');
@@ -569,6 +599,12 @@ class Controller extends BaseController
             if (!array_key_exists($key, $handled)) {
                 $this->webUIState[$key] = $value;
                 $hadWebUIState = true;
+            } else {
+                // delete old keys that got there by mistake
+                if (array_key_exists($key, $this->webUIState)) {
+                    unset($this->webUIState[$key]);
+                    $hadWebUIState = true;
+                }
             }
         }
 
@@ -617,16 +653,16 @@ class Controller extends BaseController
     {
         // return the translations for the given group as JSON result
         $translations = $this->manager->getTranslations('', $group, $locale);
+        
         $parts = explode('::', $group, 2);
         if (count($parts) > 1) {
             $namespace = $parts[0];
-            $group = $parts[1];
-            $jsonResponse = Response::json(array($group => $translations), 200, [], /*JSON_PRETTY_PRINT |*/
-                JSON_UNESCAPED_SLASHES);
+            $translationGroup = $parts[1];
         } else {
-            $jsonResponse = Response::json(array("messages" => $translations), 200, [], /*JSON_PRETTY_PRINT |*/
-                JSON_UNESCAPED_SLASHES);
+            $translationGroup = "messages";
         }
+        
+        $jsonResponse = Response::json(array($translationGroup => $translations), 200, [], /*JSON_PRETTY_PRINT |*/JSON_UNESCAPED_SLASHES);
         return $jsonResponse;
     }
 

@@ -79,7 +79,7 @@ TEXT
     'locale'                    => 'Locale',
     'mismatches'                => 'Mismatched Translations',
     'missing'                   => 'Missing',
-    'missmatched-quotes'        => 'mismatched or missing quotes in :string attribute',
+    'mismatched-quotes'        => 'mismatched or missing quotes in :string attribute',
     'movekeys'                  => 'Move Keys',
     'preview'                   => 'Preview',
     'primary-locale'            => 'Primary',

@@ -429,10 +429,7 @@
             </div>
         </div>
         <?= ifEditTrans($package . '::messages.enter-translation') ?>
-        <?= ifEditTrans($package . '::messages.missmatched-quotes') ?>
-        <script>
-            var MISSMATCHED_QUOTES_MESSAGE = "<?= noEditTrans(($package . '::messages.missmatched-quotes'))?>";
-        </script>
+        <?= ifEditTrans($package . '::messages.mismatched-quotes') ?>
         <?php if($group): ?>
         <div class="row">
             <div class="col-sm-12 ">

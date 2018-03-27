@@ -246,7 +246,7 @@ $(document).ready(function () {
             if (!matches) {
                 break;
             }
-            // see if any are missmatched or missing
+            // see if any are mismatched or missing
             if (matches[2] === undefined || matches[2] !== matches[4]) {
                 messages.push(message.replace(regexErr, matches[0]));
             }

@@ -15,18 +15,6 @@
 <div class="container-fluid">
     <div id="root"></div>
 </div>
-<script>
-    var URL_YANDEX_TRANSLATOR_KEY = '<?= action($controller . '@postYandexKey') ?>';
-    var URL_TRANSLATOR_FILTERS = '<?= action($controller . '@getTransFilters') ?>';
-    var MARKDOWN_KEY_SUFFIX = '<?= $markdownKeySuffix ?>';
-    
-    // TODO: review translation.js to make sure these are not used 
-    //{{--var PRIMARY_LOCALE = '{{$primaryLocale}}';--}}
-    //{{--var CURRENT_LOCALE = '{{$currentLocale}}';--}}
-    //{{--var TRANSLATING_LOCALE = '{{$translatingLocale}}';--}}
-    //{{--var URL_TRANSLATOR_GROUP = '<?= action($controller . '@getView') ?>/';--}}
-    //{{--var URL_TRANSLATOR_ALL = '<?= action($controller . '@getIndex') ?>';--}}
-</script>
 <script src="{{mix('js/index.js')}}"></script>
 </body>
 </html>

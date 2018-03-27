@@ -79,7 +79,7 @@ TEXT
     'locale'                    => 'Configuración regional',
     'mismatches'                => 'No Coinciden Las Traducciones',
     'missing'                   => 'Falta',
-    'missmatched-quotes'        => 'no coinciden o que faltan citas en :string atributo',
+    'mismatched-quotes'        => 'no coinciden o que faltan citas en :string atributo',
     'movekeys'                  => 'Mover Las Teclas De',
     'preview'                   => 'Vista previa',
     'primary-locale'            => 'Primaria',
