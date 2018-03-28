@@ -347,7 +347,7 @@
                                                 <input <?= $locale !== $primaryLocale && $locale !== $translatingLocale ? ' class="display-locale" ' : '' ?> name="d[]"
                                                         type="checkbox"
                                                         value="<?=$locale?>"
-                                                <?= ($locale === $primaryLocale || $locale === $translatingLocale || array_key_exists($locale, $displayLocales)) ? 'checked' : '' ?>
+                                                <?= ($locale === $primaryLocale || $locale === $translatingLocale || array_search($locale, $displayLocales) !== false) ? 'checked' : '' ?>
                                                     <?= $locale === $primaryLocale ? ' disabled' : '' ?>><?= $locale ?>
                                             </label>
                                         @endforeach
@@ -879,32 +879,31 @@
         if ($user->locales) {
             foreach (explode(",", $user->locales) as $userLocale) {
                 $userLocale = trim($userLocale);
-                if ($userLocale) $userLocaleList[$userLocale] = $userLocale;
+                if ($userLocale) $userLocaleList[] = $userLocale;
             }
         }
     }
 
     foreach ($displayLocales as $userLocale) {
-        $userLocaleList[$userLocale] = $userLocale;
+        $userLocaleList[] = $userLocale;
     }
 
+    $userLocaleList = array_unique($userLocaleList);
     natsort($userLocaleList);
     ?>
 
     <script>
-        var TRANS_FILTERS = ({
-            filter: "<?= isset($transFilters['filter']) ? $transFilters['filter'] : "" ?>",
-            regex: "<?= isset($transFilters['regex']) ? $transFilters['regex'] : ""  ?>"
-        });
+var TRANS_FILTERS = ({
+filter: "<?= isset($transFilters['filter']) ? $transFilters['filter'] : "" ?>",
+regex: "<?= isset($transFilters['regex']) ? $transFilters['regex'] : ""  ?>"
+});
 
-        var USER_LOCALES = [
-                <?php $addComma = false; ?>
-                <?php foreach ($userLocaleList as $locale): ?>
-                <?php if ($addComma) echo ","; else $addComma = true; ?> {
-                value: '<?= $locale ?>', text: '<?= $locale ?>'
-            }
-            <?php endforeach; ?>
-        ];
+<?php $addComma = false; ?>
+var USER_LOCALES = [
+<?php foreach ($userLocaleList as $locale): ?>
+  <?php if ($addComma) echo ","; else $addComma = true; ?> { value: '<?= $locale ?>', text: '<?= $locale ?>' }
+<?php endforeach; ?>
+];
     </script>
 @stop
 

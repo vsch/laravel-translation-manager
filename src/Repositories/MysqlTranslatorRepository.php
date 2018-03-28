@@ -126,7 +126,7 @@ SQL
 
     public function allTranslations($group, $displayLocales)
     {
-        $displayWhere = $displayLocales ? ' AND locale IN (\'' . implode("','", explode(',', $displayLocales)) . "')" : '';
+        $displayWhere = $displayLocales ? " AND locale IN ('" . implode("','", $displayLocales) . "')" : '';
 
         return $this->getTranslation()->fromQuery($this->adjustTranslationTable(<<<SQL
 SELECT  
@@ -170,7 +170,7 @@ SQL
 
     public function stats($displayLocales)
     {
-        $displayWhere = $displayLocales ? ' AND locale IN (\'' . implode("','", explode(',', $displayLocales)) . "')" : '';
+        $displayWhere = $displayLocales ? " AND locale IN ('" . implode("','", $displayLocales) . "')" : '';
 
         return $this->connection->select($this->adjustTranslationTable(<<<SQL
 SELECT (mx.total_keys - lcs.total) missing, lcs.changed, lcs.cached, lcs.deleted, lcs.locale, lcs.`group`
@@ -196,7 +196,7 @@ SQL
 
     public function findMismatches($displayLocales, $primaryLocale, $translatingLocale)
     {
-        $displayWhere = $displayLocales ? ' AND locale IN (\'' . implode("','", explode(',', $displayLocales)) . "')" : '';
+        $displayWhere = $displayLocales ? " AND locale IN ('" . implode("','", $displayLocales) . "')" : '';
 
         return $this->connection->select($this->adjustTranslationTable(<<<SQL
 SELECT DISTINCT lt.*, ft.ru, ft.en
@@ -235,8 +235,9 @@ SQL
         ), [$group, $key, $locale]);
     }
 
-    public function selectKeys($src, $dst, $userLocales, $srcgrp, $srckey, $dstkey, $dstgrp)
+    public function selectKeys($src, $dst, $locales, $srcgrp, $srckey, $dstkey, $dstgrp)
     {
+        $userLocales = "'" . implode("','", $locales) . "'";
         $ltm_translations = $this->getTranslationsTableName();
 
         if ((substr($src, 0, 1) === '*')) {

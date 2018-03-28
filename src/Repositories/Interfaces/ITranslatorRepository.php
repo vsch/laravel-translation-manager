@@ -46,7 +46,7 @@ interface ITranslatorRepository
 
     public function selectToDeleteTranslations($group, $key, $locale, $rowIds);
 
-    public function selectKeys($src, $dst, $userLocales, $srcgrp, $srckey, $dstkey, $dstgrp);
+    public function selectKeys($src, $dst, $locales, $srcgrp, $srckey, $dstkey, $dstgrp);
 
     public function copyKeys($dstgrp, $dstkey, $rowId);
 

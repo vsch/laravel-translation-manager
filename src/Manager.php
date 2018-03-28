@@ -249,7 +249,6 @@ class Manager
     {
         $this->preloadedGroupKeys = $translations;
         $this->preloadedGroup = $group;
-        $locales = explode(',', $locales);
         $this->preloadedGroupLocales = array_combine($locales, $locales);
     }
 

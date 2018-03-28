@@ -3,7 +3,6 @@
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Lang;
@@ -12,6 +11,7 @@ use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
+use Symfony\Component\HttpFoundation\ParameterBag;
 use Vsch\TranslationManager\Events\TranslationsPublished;
 use Vsch\TranslationManager\Models\Translation;
 use Vsch\TranslationManager\Models\UserLocales;
@@ -36,8 +36,9 @@ class Controller extends BaseController
     protected $sqltraces;
     protected $logSql;
     protected $connectionList;
-    protected $userLocales;
+    protected $currentLocale;
     private $cookiePrefix;
+    protected $userLocales;
     private $primaryLocale;
     private $translatingLocale;
     private $displayLocales;
@@ -72,58 +73,46 @@ class Controller extends BaseController
 
         // cookies are not available yet (they are but appear to be encrypted). They will be by the time middleware is called 
         $this->middleware(function ($request, $next) {
-            if (!$this->manager->isDefaultTranslationConnection($this->getConnectionName())) {
-                try {
-                    $this->initialize();
-                } catch (\Exception $e) {
-                    // invalid database config
-                    $this->setConnectionName('');
-                    $this->initialize();
-                }
-            } else {
-                $this->initialize();
-            }
-
+            $this->initialize();
             return $next($request);
         });
     }
 
+    private static function packLocales($locales)
+    {
+        $packedLocales = implode(',', $locales);
+        return $packedLocales ? ',' . $packedLocales . ',' : '';
+    }
+
+    private static function nat_sort($arr)
+    {
+        natsort($arr);
+        return $arr;
+    }
+
     private function initialize()
     {
+        $this->loadCookieData();
+        $this->normalizeLocaleData();
+    }
+    
+    private function loadCookieData()
+    {
+        $appLocale = App::getLocale();
         $connectionName = Cookie::has($this->cookieName(self::COOKIE_CONNECTION_NAME)) ? Cookie::get($this->cookieName(self::COOKIE_CONNECTION_NAME)) : '';
         $this->setConnectionName($connectionName);
-
-        $locale = Cookie::get($this->cookieName(self::COOKIE_LANG_LOCALE), Lang::getLocale());
-        App::setLocale($locale);
+        
+        $this->currentLocale = Cookie::get($this->cookieName(self::COOKIE_LANG_LOCALE), $appLocale);
         $this->primaryLocale = Cookie::get($this->cookieName(self::COOKIE_PRIM_LOCALE), $this->manager->config('primary_locale', 'en'));
+        $this->translatingLocale = Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE), $this->currentLocale);
+        $displayLocales = Cookie::get($this->cookieName(self::COOKIE_DISP_LOCALES));
+        $displayLocales = $displayLocales ? array_unique(explode(',', $displayLocales)) : [];
+        $this->displayLocales = $displayLocales;
 
-        $this->locales = $this->loadLocales();
-        $locales = $this->locales;
-
-        if ((!Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) && $this->manager->areUserLocalesEnabled()) {
-            // see what locales are available for this user
-            $userId = Auth::id();
-            if ($userId !== null) {
-                $userLocale = new UserLocales();
-                $userLocale->setConnection($connectionName);
-                $userLocales = $userLocale->query()->where('user_id', $userId)->first();
-                if ($userLocales && trim($userLocales->locales)) {
-                    $locales = explode(',', $userLocales->locales);
-                }
-            }
-        }
-
-        $packedLocales = implode(',', array_intersect($this->locales, $locales));
-        $this->userLocales = $packedLocales ? ',' . $packedLocales . ',' : '';
-
-        $this->translatingLocale = Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE));
-        $this->showUsageInfo = Cookie::get($this->cookieName(self::COOKIE_SHOW_USAGE));
-
-        $this->webUIState = json_decode(Cookie::get($this->cookieName(self::COOKIE_WEB_UI_STATE, "{}")), true);
+        $this->webUIState = json_decode(Cookie::get($this->cookieName(self::COOKIE_WEB_UI_STATE), "{}"), true);
         if (!$this->webUIState) {
             // put defaults in it
             $this->webUIState = [];
-            $this->webUIState['showDashboardView'] = true;
         }
 
         $transFilters = Cookie::get($this->cookieName(self::COOKIE_TRANS_FILTERS));
@@ -135,25 +124,108 @@ class Controller extends BaseController
             $this->transFilters = ['filter' => 'show-all', 'regex' => ''];
         }
 
-        if (!$this->translatingLocale || ($this->translatingLocale === $this->primaryLocale && count($this->locales) > 1)) {
-            $this->translatingLocale = count($this->locales) > 1 ? $this->locales[1] : $this->locales[0];
-            Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $this->translatingLocale, 60 * 24 * 365 * 1);
+        $this->showUsageInfo = Cookie::get($this->cookieName(self::COOKIE_SHOW_USAGE), false);
+    }
+
+    private function normalizeLocaleData()
+    {
+        if (!$this->manager->isDefaultTranslationConnection($this->getConnectionName())) {
+            try {
+                $this->normalizeLocaleDataRaw();
+            } catch (\Exception $e) {
+                // invalid database config
+                $this->setConnectionName('');
+                $this->normalizeLocaleDataRaw();
+            }
+        } else {
+            $this->normalizeLocaleDataRaw();
+        }
+    }
+    
+    private function normalizeLocaleDataRaw()
+    {
+        $appLocale = App::getLocale();
+        $currentLocale = $this->currentLocale;
+        $primaryLocale = $this->primaryLocale;
+        $translatingLocale = $this->translatingLocale;
+        $connectionName = $this->getConnectionName();
+        $displayLocales = $this->displayLocales;
+
+        // get all locales in the translation table
+        $allLocales = ManagerServiceProvider::getLists($this->getTranslation()->groupBy('locale')->pluck('locale')) ?: [];
+
+        // limit the locale list to what is in the config
+        $configShowLocales = $this->manager->config(Manager::SHOW_LOCALES_KEY, []);
+        if ($configShowLocales) {
+            if (!is_array($configShowLocales)) $configShowLocales = array($configShowLocales);
         }
 
-        $this->displayLocales = Cookie::has($this->cookieName(self::COOKIE_DISP_LOCALES)) ? Cookie::get($this->cookieName(self::COOKIE_DISP_LOCALES)) : implode(',', array_slice($this->locales, 0, 5));
-        $this->displayLocales .= implode(',', array_flatten(array_unique(explode(',', ($this->displayLocales ? ',' : '') . $this->primaryLocale . ',' . $this->translatingLocale))));
+        $userLocales = $allLocales;
+        if ((!Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) && $this->manager->areUserLocalesEnabled()) {
+            // see what locales are available for this user
+            $userId = Auth::id();
+            if ($userId !== null) {
+                $userLocalesModel = new UserLocales();
+                $userLocalesModel->setConnection($connectionName);
+                $userLocalesResult = $userLocalesModel->query()->where('user_id', $userId)->first();
+                if ($userLocalesResult && trim($userLocalesResult->locales)) {
+                    $userLocales = explode(',', $userLocalesResult->locales);
+                }
+            }
+        }
 
-        //$this->sqltraces = [];
-        //$this->logSql = 0;
-        //
-        //$thisController = $this;
-        //\Event::listen('illuminate.query', function ($query, $bindings, $time, $name) use ($thisController)
-        //{
-        //    if ($thisController->logSql)
-        //    {
-        //        $thisController->sqltraces[] = ['query' => $query, 'bindings' => $bindings, 'time' => $time];
-        //    }
-        //});
+        $addConfigLocales = $this->manager->config(Manager::ADDITIONAL_LOCALES_KEY, []);
+        if (!is_array($addConfigLocales)) $addConfigLocales = array($addConfigLocales);
+
+        // always add the current locale as reported by the application
+        $addConfigLocales[] = $appLocale;
+
+        // trim to show locales and add additional locales
+        $allShowLocales = $configShowLocales ? array_intersect($allLocales, $configShowLocales) : $allLocales;
+        $locales = array_unique(array_merge($allShowLocales, $addConfigLocales));
+        $userLocales = array_values(array_unique(array_intersect($userLocales, $locales)));
+
+        // now make sure primary, translating and current locale are part of the $locale list
+        if (array_search($currentLocale, $locales) === false) $currentLocale = $appLocale;
+        if (array_search($primaryLocale, $locales) === false) $primaryLocale = $appLocale;
+        App::setLocale($currentLocale);
+
+        if ($translatingLocale === $primaryLocale
+            || array_search($translatingLocale, $locales) === false
+            || array_search($translatingLocale, $userLocales) === false) {
+            $translatingLocale = null;
+        }
+
+        if (!$translatingLocale) {
+            $userTranslatableLocales = self::nat_sort(array_diff($userLocales, array($primaryLocale)));
+            $translatingLocale = $userTranslatableLocales ? $userTranslatableLocales[0] : $primaryLocale;
+        }
+
+        // now need to create displayLocales
+        $displayLocales = array_intersect($displayLocales, $locales);
+
+        // add primary, translating to list
+        $firstLocales = array($primaryLocale);
+        if ($translatingLocale !== $primaryLocale) $firstLocales[] = $translatingLocale;
+        $displayLocales = self::nat_sort(array_diff($displayLocales, $firstLocales));
+
+        // display has primary, translating then the rest of displayed locales
+        $displayLocales = array_values(array_merge($firstLocales, $displayLocales));
+        // locales has displayed locales then the rest displayable ones
+        $locales = array_values(array_merge($displayLocales, self::nat_sort(array_diff($locales, $displayLocales))));
+
+        // save them in case they changed
+        Cookie::queue($this->cookieName(self::COOKIE_DISP_LOCALES), implode(',', $displayLocales), 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_LANG_LOCALE), $currentLocale, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $primaryLocale, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $translatingLocale, 60 * 24 * 365 * 1);
+
+        $this->currentLocale = $currentLocale;
+        $this->primaryLocale = $primaryLocale;
+        $this->translatingLocale = $translatingLocale;
+        $this->userLocales = $userLocales;
+        $this->displayLocales = $displayLocales;
+        $this->locales = $locales;
     }
 
     public function cookieName($cookie)
@@ -166,32 +238,6 @@ class Controller extends BaseController
         if (!array_key_exists($connection, $this->connectionList)) $connection = '';
         Cookie::queue($this->cookieName(self::COOKIE_CONNECTION_NAME), $connection, 60 * 24 * 365 * 1);
         $this->manager->setConnectionName($connection);
-    }
-
-    protected function loadLocales()
-    {
-        //Set the default locale as the first one.
-        $currentLocale = Config::get('app.locale');
-        $primaryLocale = $this->primaryLocale;
-        if (!$currentLocale) {
-            $currentLocale = $primaryLocale;
-        }
-
-        $translatingLocale = Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE), $currentLocale);
-        $locales = ManagerServiceProvider::getLists($this->getTranslation()->groupBy('locale')->pluck('locale')) ?: [];
-
-        // limit the locale list to what is in the config
-        $configShowLocales = $this->manager->config(Manager::SHOW_LOCALES_KEY, []);
-        if ($configShowLocales) {
-            if (!is_array($configShowLocales)) $configShowLocales = array($configShowLocales);
-            $locales = array_intersect($locales, $configShowLocales);
-        }
-
-        $configLocales = $this->manager->config(Manager::ADDITIONAL_LOCALES_KEY, []);
-        if (!is_array($configLocales)) $configLocales = array($configLocales);
-
-        $locales = array_merge(array($primaryLocale, $translatingLocale, $currentLocale), $configLocales, $locales);
-        return array_flatten(array_unique($locales));
     }
 
     protected function getTranslation()
@@ -254,7 +300,7 @@ class Controller extends BaseController
 
         if ($q === '') $translations = [];
         else {
-            $displayWhere = $this->displayLocales ? ' AND locale IN (\'' . implode("','", explode(',', $this->displayLocales)) . "')" : '';
+            $displayWhere = $this->displayLocales ? " AND locale IN ('" . implode("','", $this->displayLocales) . "')" : '';
 
             if (strpos($q, '%') === false) $q = "%$q%";
 
@@ -266,7 +312,7 @@ class Controller extends BaseController
 
         return View::make($this->packagePrefix . 'search')
             ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
-            ->with('userLocales', $this->userLocales)
+            ->with('userLocales', self::packLocales($this->userLocales))
             ->with('package', $this->package)
             ->with('translations', $translations)
             ->with('numTranslations', $numTranslations);
@@ -298,10 +344,12 @@ class Controller extends BaseController
 
     private function processIndex($group = null)
     {
-        $locales = $this->locales;
-        $currentLocale = Lang::getLocale();
+        $currentLocale = $this->currentLocale;
         $primaryLocale = $this->primaryLocale;
         $translatingLocale = $this->translatingLocale;
+        $locales = $this->locales;
+        $displayLocales = $this->displayLocales;
+        $userLocales = $this->userLocales;
 
         $groups = array('' => noEditTrans($this->packagePrefix . 'messages.choose-group')) + $this->manager->getGroupList();
 
@@ -333,14 +381,6 @@ class Controller extends BaseController
             $mismatches = $this->computeMismatches($primaryLocale, $translatingLocale);
         }
 
-        // returned result set lists group key ru, en columns for the locale translations, ru has different values for same values in en
-        $displayLocales = array_intersect($locales, explode(',', $this->displayLocales));
-
-        // need to put display locales first in the $locales list
-        $locales = array_merge($displayLocales, array_diff($locales, $displayLocales));
-
-        $displayLocales = array_combine($displayLocales, $displayLocales);
-
         $show_usage_enabled = $this->manager->config('log_key_usage_info', false);
 
         $userList = $this->computeUserList();
@@ -361,7 +401,7 @@ class Controller extends BaseController
             ->with('currentLocale', $currentLocale)
             ->with('translatingLocale', $translatingLocale)
             ->with('displayLocales', $displayLocales)
-            ->with('userLocales', $this->userLocales)
+            ->with('userLocales', self::packLocales($userLocales))
             ->with('groups', $groups)
             ->with('group', $group)
             ->with('numTranslations', $numTranslations)
@@ -377,7 +417,7 @@ class Controller extends BaseController
             ->with('transFilters', $this->transFilters)
             ->with('userList', $userList)
             ->with('markdownKeySuffix', $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX))
-            ->with('connection_name', ($this->manager->isDefaultTranslationConnection($this->getConnectionName()) ? '' : $this->getConnectionName()));
+            ->with('connection_name', $this->connectionNameForUI());
     }
 
     public static function apiRoutes()
@@ -385,7 +425,7 @@ class Controller extends BaseController
         // REST API for Rect-UI
         Route::get('ui', '\\Vsch\\TranslationManager\\Controller@getUI');
         Route::get('ui/{all}', '\\Vsch\\TranslationManager\\Controller@getUI')->where('all', '.*');
-        Route::get('uiSettings', '\\Vsch\\TranslationManager\\Controller@getUISettings');
+        Route::get('ui-settings', '\\Vsch\\TranslationManager\\Controller@getUISettings');
         Route::get('get/{group}/{locale}', '\\Vsch\\TranslationManager\\Controller@getTranslations');
         Route::get('summary', '\\Vsch\\TranslationManager\\Controller@getSummary');
         Route::get('mismatches', '\\Vsch\\TranslationManager\\Controller@getMismatches');
@@ -393,11 +433,18 @@ class Controller extends BaseController
         Route::get('translation-table/{group}', '\\Vsch\\TranslationManager\\Controller@getTranslationTable');
 
         // posts
-        Route::post('uiSettings', '\\Vsch\\TranslationManager\\Controller@postUISettings');
+        Route::post('ui-settings', '\\Vsch\\TranslationManager\\Controller@postUISettings');
+        Route::get('ui-settings-json', '\\Vsch\\TranslationManager\\Controller@getUISettingsJson');
     }
 
     public function getTranslationTable($group)
     {
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
+        $primaryLocale = $this->primaryLocale;
+        $translatingLocale = $this->translatingLocale;
+        $locales = $this->locales;
+        $displayLocales = $this->displayLocales;
+        $userLocales = $this->userLocales;
         $groups = array('' => noEditTrans($this->packagePrefix . 'messages.choose-group')) + $this->manager->getGroupList();
 
         if ($group != null && !array_key_exists($group, $groups)) {
@@ -421,26 +468,18 @@ class Controller extends BaseController
 
         $this->manager->cacheGroupTranslations($group, $this->displayLocales, $translations);
 
-        $locales = $this->locales;
-        $primaryLocale = $this->primaryLocale;
-        $translatingLocale = $this->translatingLocale;
-
-        // returned result set lists group key ru, en columns for the locale translations, ru has different values for same values in en
-        $displayLocales = array_values(array_intersect($locales, explode(',', $this->displayLocales)));
-
-        // need to put display locales first in the $locales list
-        $locales = array_merge($displayLocales, array_diff($locales, $displayLocales));
-
         $data = [
+            'connectionName' => $this->connectionNameForUI(),
             'primaryLocale' => $primaryLocale,
             'translatingLocale' => $translatingLocale,
             'displayLocales' => $displayLocales,
             'locales' => $locales,
+            'userLocales' => $userLocales,
             'group' => $group,
             'yandexKey' => $this->manager->config('yandex_translator_key', null),
             'translations' => $translations,
         ];
-        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES /*| JSON_PRETTY_PRINT*/);
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
     }
 
     public function getUI()
@@ -469,20 +508,14 @@ class Controller extends BaseController
 
     public function getUISettings()
     {
-        $locales = $this->locales;
-        $currentLocale = App::getLocale();
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
+        $currentLocale = $this->currentLocale;
         $primaryLocale = $this->primaryLocale;
         $translatingLocale = $this->translatingLocale;
+        $locales = $this->locales;
+        $displayLocales = $this->displayLocales;
+        $userLocales = $this->userLocales;
 
-        // returned result set lists group key ru, en columns for the locale translations, ru has different values for same values in en
-        $displayLocales = array_values(array_intersect($locales, explode(',', $this->displayLocales)));
-
-        // need to put display locales first in the $locales list
-        $locales = array_merge($displayLocales, array_diff($locales, $displayLocales));
-
-        // make it into associative array
-        //$displayLocales = array_combine($displayLocales, $displayLocales);
-        $userLocales = explode(',', substr($this->userLocales, 1, strlen($this->userLocales) - 2));
         $show_usage_enabled = $this->manager->config('log_key_usage_info', false);
 
         $adminEnabled = $this->manager->config('admin_enabled') &&
@@ -493,7 +526,7 @@ class Controller extends BaseController
         $data = array(
             'isAdminEnabled' => $adminEnabled,
             'yandexKey' => $this->manager->config('yandex_translator_key'),
-            'connectionName' => ($this->manager->isDefaultTranslationConnection($this->getConnectionName()) ? '' : $this->getConnectionName()),
+            'connectionName' => $this->connectionNameForUI(),
             'markdownKeySuffix' => $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX),
             'transFilters' => $this->transFilters,
             'connectionList' => $this->connectionList,
@@ -511,42 +544,52 @@ class Controller extends BaseController
 
         // merge in the webUIState
         $data = array_merge($this->webUIState, $data);
-        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES /*| JSON_PRETTY_PRINT*/);
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
     }
 
     public function postUISettings()
     {
         $json = Request::json();
+        return $this->processUISettings($json);
+    }
+        
+    public function getUISettingsJson()
+    {
+        $json = Request::get('json');
+        $jsonParameter = new ParameterBag(json_decode($json,true));
+        return $this->processUISettings($jsonParameter);
+    }
+        
+    private function processUISettings($json)
+    {
         $handled = [];
 
         if ($json->has("currentLocale")) {
-            $locale = $json->get("currentLocale");
+            $currentLocale = $json->get("currentLocale");
             $handled[] = "currentLocale";
-            Cookie::queue($this->cookieName(self::COOKIE_LANG_LOCALE), $locale, 60 * 24 * 365 * 1);
-            App::setLocale($locale);
+            Cookie::queue($this->cookieName(self::COOKIE_LANG_LOCALE), $currentLocale, 60 * 24 * 365 * 1);
+            Lang::setLocale($currentLocale);
+            $this->currentLocale = $currentLocale;
         }
 
         if ($json->has("translatingLocale")) {
             $handled[] = "translatingLocale";
-            $translating = $json->get("translatingLocale");
-            Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $translating, 60 * 24 * 365 * 1);
-            $this->translatingLocale = $translating;
+            $translatingLocale = $json->get("translatingLocale");
+            Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $translatingLocale, 60 * 24 * 365 * 1);
+            $this->translatingLocale = $translatingLocale;
         }
 
         if ($json->has("primaryLocale")) {
             $handled[] = "primaryLocale";
-            $primary = $json->get("primaryLocale");
-            Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $primary, 60 * 24 * 365 * 1);
-            $this->primaryLocale = $primary;
+            $primaryLocale = $json->get("primaryLocale");
+            Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $primaryLocale, 60 * 24 * 365 * 1);
+            $this->primaryLocale = $primaryLocale;
         }
 
         if ($json->has("displayLocales")) {
             $handled[] = "displayLocales";
-            $json->displayLocales[] = $this->primaryLocale;
-            $json->displayLocales[] = $this->translatingLocale;
-            $displayLocales = implode(',', array_values(array_unique($json->get("displayLocales"))));
-
-            Cookie::queue($this->cookieName(self::COOKIE_DISP_LOCALES), $displayLocales, 60 * 24 * 365 * 1);
+            $displayLocales = array_values($json->get("displayLocales"));
+            Cookie::queue($this->cookieName(self::COOKIE_DISP_LOCALES), implode(',', $displayLocales), 60 * 24 * 365 * 1);
             $this->displayLocales = $displayLocales;
         }
 
@@ -573,7 +616,7 @@ class Controller extends BaseController
         }
 
         if ($json->has('showUsage')) {
-            $show = $json->get('showUsage');
+            $showUsageInfo = $json->get('showUsage');
             $group = $json->get('group', '');
             $reset = $json->get('resetUsage', false);
             $handled[] = "showUsage";
@@ -581,11 +624,9 @@ class Controller extends BaseController
             $handled[] = "resetUsage";
 
             // need to store this so that it can be displayed again
-            Cookie::queue($this->cookieName(self::COOKIE_SHOW_USAGE), $show, 60 * 24 * 365 * 1);
-            $this->showUsageInfo = $show;
-
+            Cookie::queue($this->cookieName(self::COOKIE_SHOW_USAGE), $showUsageInfo, 60 * 24 * 365 * 1);
+            $this->showUsageInfo = $showUsageInfo;
             if ($reset) {
-                // TODO: add show usage info to view variables so that a class can be added to keys that have no usage info
                 // need to clear the usage information
                 $this->manager->clearUsageCache(true, $group);
             }
@@ -612,25 +653,40 @@ class Controller extends BaseController
             Cookie::queue($this->cookieName(self::COOKIE_WEB_UI_STATE), json_encode($this->webUIState), 60 * 24 * 365 * 1);
         }
 
+        // do all the init processing so the returned results are adjusted for display locales and the rest
+        $this->normalizeLocaleData();
         return $this->getUISettings();
     }
 
     public function getSummary()
     {
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
+        $displayLocales = $this->displayLocales;
+
         $summary = $this->computeSummary();
-        $data = ['summary' => array_values($summary)];
-        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES /*| JSON_PRETTY_PRINT*/);
+        $data = [
+            'connectionName' => $this->connectionNameForUI(),
+            'displayLocales' => $displayLocales,
+            'summary' => array_values($summary),
+        ];
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
     }
 
     public function getUserList()
     {
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
         $summary = $this->computeUserList();
-        $data = ['userList' => $summary];
-        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES /*| JSON_PRETTY_PRINT*/);
+        $data = [
+            'connectionName' => $this->connectionNameForUI(),
+            'displayLocales' => $this->displayLocales,
+            'userLocaleList' => $summary,
+        ];
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
     }
 
     public function getMismatches()
     {
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
         $primaryLocale = Request::get('primaryLocale', $this->primaryLocale);
         $translatingLocale = Request::get('translatingLocale', $this->translatingLocale);
         $mismatches = $this->computeMismatches($primaryLocale, $translatingLocale);
@@ -645,15 +701,21 @@ class Controller extends BaseController
                 'tr_value' => $mismatch->ru_value,
             ];
         }
-        $data = ['mismatches' => $summary];
-        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES /*| JSON_PRETTY_PRINT*/);
+        $data = [
+            'connectionName' => $this->connectionNameForUI(),
+            'primaryLocale' => $primaryLocale,
+            'translatingLocale' => $translatingLocale,
+            'mismatches' => $summary,
+        ];
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
     }
 
     public function getTranslations($group, $locale)
     {
         // return the translations for the given group as JSON result
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
         $translations = $this->manager->getTranslations('', $group, $locale);
-        
+
         $parts = explode('::', $group, 2);
         if (count($parts) > 1) {
             $namespace = $parts[0];
@@ -661,8 +723,11 @@ class Controller extends BaseController
         } else {
             $translationGroup = "messages";
         }
-        
-        $jsonResponse = Response::json(array($translationGroup => $translations), 200, [], /*JSON_PRETTY_PRINT |*/JSON_UNESCAPED_SLASHES);
+
+        $jsonResponse = Response::json(array(
+            'connectionName' => $this->connectionNameForUI(),
+            $translationGroup => $translations,
+        ), 200, [], JSON_UNESCAPED_SLASHES | $pretty);
         return $jsonResponse;
     }
 
@@ -779,9 +844,10 @@ class Controller extends BaseController
 
     public function isLocaleEnabled($locale)
     {
+        $packLocales = self::packLocales($this->userLocales);
         if (!is_array($locale)) $locale = array($locale);
         foreach ($locale as $item) {
-            if (!str_contains($this->userLocales, ',' . $item . ',')) return false;
+            if (!str_contains($packLocales, ',' . $item . ',')) return false;
         }
         return true;
     }
@@ -843,7 +909,6 @@ class Controller extends BaseController
         $this->logSql = 1;
         $this->sqltraces = [];
         $userLocales = $this->userLocales;
-        if ($userLocales) $userLocales = "'" . str_replace(',', "','", substr($userLocales, 1, -1)) . "'";
 
         if ($userLocales && !in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
             $srckeys = explode("\n", trim(Request::get('srckeys')));
@@ -1364,5 +1429,13 @@ class Controller extends BaseController
             }
         }
         return $userList;
+    }
+
+    /**
+     * @return string
+     */
+    private function connectionNameForUI(): string
+    {
+        return ($this->manager->isDefaultTranslationConnection($this->getConnectionName()) ? '' : $this->getConnectionName());
     }
 }
