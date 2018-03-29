@@ -12,6 +12,7 @@
             <?php endif; ?>
             <?php
             $setWidth = count($displayLocales);
+            $userLocalesString = $userLocales;
             if ($setWidth > 3) {
                 $mainWidth = 25;
             } else if ($setWidth == 3) {
@@ -26,7 +27,7 @@
                 <span class="key-filter" id="key-filter"><?=$translationRows?></span>
             </th>
             <?php foreach($locales as $locale): ?>
-            <?php $isLocaleEnabled = str_contains($userLocales, ',' . $locale . ','); ?>
+            <?php $isLocaleEnabled = str_contains($userLocalesString, ',' . $locale . ','); ?>
             <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
             <?php if ($col < 3): ?>
             <?php if ($col === 0): ?>
@@ -155,7 +156,7 @@
                 </a><?php
                 } ?></td>
             <?php foreach($locales as $locale): ?>
-            <?php $isLocaleEnabled = str_contains($userLocales, ',' . $locale . ','); ?>
+            <?php $isLocaleEnabled = str_contains($userLocalesString, ',' . $locale . ','); ?>
             <?php if (!array_key_exists($locale, $displayLocales)) continue; ?>
             <?php $t = isset($translation[$locale]) ? $translation[$locale] : null ?>
             <td class="<?= $locale !== $primaryLocale ? 'auto-translatable-' . $locale : ($locale === $primaryLocale ? 'auto-fillable' : '') ?><?= ($has_changed[$locale] ? ' has-unpublished-translation' : '') . ($has_changes_cached[$locale] ? ' has-cached-translation' : '') ?>">

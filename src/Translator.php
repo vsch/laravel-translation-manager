@@ -421,7 +421,10 @@ class Translator extends LaravelTranslator
                 $t = $this->manager->missingKey($namespace, $group, $item, $locale, $this->isUseLottery(), true);
                 if ($t) {
                     $result = $t->value ?: $key;
-                    if ($t->isDirty()) $t->save();
+                    if ($t->isDirty()) {
+                        unset($t->diff); // remove value added by inplaceedit link
+                        $t->save();
+                    }
                     $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
                     return $this->processResult($result, $replace);
                 }
@@ -435,7 +438,10 @@ class Translator extends LaravelTranslator
                     $t = $this->manager->missingKey($namespace, $group, $item, $locale, $this->isUseLottery(), true);
                     if ($t) {
                         $result = $t->saved_value ?: $key;
-                        if ($t->isDirty()) $t->save();
+                        if ($t->isDirty()) {
+                            unset($t->diff); // remove value added by inplaceedit link
+                            $t->save();
+                        }
 
                         // save in cache even if it has no value to prevent hitting the database every time just to figure it out
                         if (true || $result !== $key) {

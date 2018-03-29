@@ -245,43 +245,6 @@ class Controller extends BaseController
         return $this->manager->getTranslation();
     }
 
-    public static function routes()
-    {
-        Route::get('view/{group?}', '\\Vsch\\TranslationManager\\Controller@getView');
-
-        //deprecated: Route::controller('admin/translations', '\\Vsch\\TranslationManager\\Controller');
-        Route::get('/', '\\Vsch\\TranslationManager\\Controller@getIndex');
-        Route::get('connection', '\\Vsch\\TranslationManager\\Controller@getConnection');
-        Route::get('import', '\\Vsch\\TranslationManager\\Controller@getImport');
-        Route::get('index', '\\Vsch\\TranslationManager\\Controller@getIndex');
-        Route::get('interface_locale', '\\Vsch\\TranslationManager\\Controller@getInterfaceLocale');
-        Route::get('keyop/{group}/{op?}', '\\Vsch\\TranslationManager\\Controller@getKeyop');
-        Route::get('publish/{group}', '\\Vsch\\TranslationManager\\Controller@getPublish');
-        Route::get('search', '\\Vsch\\TranslationManager\\Controller@getSearch');
-        Route::get('toggle_in_place_edit', '\\Vsch\\TranslationManager\\Controller@getToggleInPlaceEdit');
-        Route::get('trans_filters', '\\Vsch\\TranslationManager\\Controller@getTransFilters');
-        Route::get('translation', '\\Vsch\\TranslationManager\\Controller@getTranslation');
-        Route::get('usage_info', '\\Vsch\\TranslationManager\\Controller@getUsageInfo');
-        Route::get('view', '\\Vsch\\TranslationManager\\Controller@getView');
-        Route::get('zipped_translations/{group?}', '\\Vsch\\TranslationManager\\Controller@getZippedTranslations');
-        Route::post('add/{group}', '\\Vsch\\TranslationManager\\Controller@postAdd');
-        Route::post('copy_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postCopyKeys');
-        Route::post('delete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postDelete');
-        Route::post('delete_all/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteAll');
-        Route::post('delete_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteKeys');
-        Route::post('delete_suffixed_keys{group?}', '\\Vsch\\TranslationManager\\Controller@postDeleteSuffixedKeys');
-        Route::post('edit/{group}', '\\Vsch\\TranslationManager\\Controller@postEdit');
-        Route::post('find', '\\Vsch\\TranslationManager\\Controller@postFind');
-        Route::post('import/{group}', '\\Vsch\\TranslationManager\\Controller@postImport');
-        Route::post('move_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postMoveKeys');
-        Route::post('preview_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postPreviewKeys');
-        Route::post('publish/{group}', '\\Vsch\\TranslationManager\\Controller@postPublish');
-        Route::post('show_source/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postShowSource');
-        Route::post('undelete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postUndelete');
-        Route::post('user_locales', '\\Vsch\\TranslationManager\\Controller@postUserLocales');
-        Route::post('yandex_key', '\\Vsch\\TranslationManager\\Controller@postYandexKey');
-    }
-
     /**
      * @return mixed
      */
@@ -390,6 +353,8 @@ class Controller extends BaseController
 
         $userLocalesEnabled = $this->manager->areUserLocalesEnabled() && $userList;
 
+        $packedUserLocales = self::packLocales($userLocales);
+        $displayLocalesAssoc = array_combine($displayLocales, $displayLocales);
         return View::make($this->packagePrefix . 'index')
             ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
             ->with('package', $this->package)
@@ -400,8 +365,8 @@ class Controller extends BaseController
             ->with('primaryLocale', $primaryLocale)
             ->with('currentLocale', $currentLocale)
             ->with('translatingLocale', $translatingLocale)
-            ->with('displayLocales', $displayLocales)
-            ->with('userLocales', self::packLocales($userLocales))
+            ->with('displayLocales', $displayLocalesAssoc)
+            ->with('userLocales', $packedUserLocales)
             ->with('groups', $groups)
             ->with('group', $group)
             ->with('numTranslations', $numTranslations)
@@ -420,6 +385,40 @@ class Controller extends BaseController
             ->with('connection_name', $this->connectionNameForUI());
     }
 
+    public static function routes()
+    {
+        Route::get('view/{group?}', '\\Vsch\\TranslationManager\\Controller@getView');
+
+        //deprecated: Route::controller('admin/translations', '\\Vsch\\TranslationManager\\Controller');
+        Route::get('/', '\\Vsch\\TranslationManager\\Controller@getIndex');
+        Route::get('connection', '\\Vsch\\TranslationManager\\Controller@getConnection');
+        Route::get('import', '\\Vsch\\TranslationManager\\Controller@getImport');
+        Route::get('index', '\\Vsch\\TranslationManager\\Controller@getIndex');
+        Route::get('interface_locale', '\\Vsch\\TranslationManager\\Controller@getInterfaceLocale');
+        Route::get('keyop/{group}/{op?}', '\\Vsch\\TranslationManager\\Controller@getKeyop');
+        Route::get('publish/{group}', '\\Vsch\\TranslationManager\\Controller@getPublish');
+        Route::get('search', '\\Vsch\\TranslationManager\\Controller@getSearch');
+        Route::get('toggle_in_place_edit', '\\Vsch\\TranslationManager\\Controller@getToggleInPlaceEdit');
+        Route::get('translation', '\\Vsch\\TranslationManager\\Controller@getTranslation');
+        Route::get('usage_info', '\\Vsch\\TranslationManager\\Controller@getUsageInfo');
+        Route::get('view', '\\Vsch\\TranslationManager\\Controller@getView');
+        Route::get('zipped_translations/{group?}', '\\Vsch\\TranslationManager\\Controller@getZippedTranslations');
+        Route::post('add/{group}', '\\Vsch\\TranslationManager\\Controller@postAdd');
+        Route::post('copy_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postCopyKeys');
+        Route::post('delete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postDelete');
+        Route::post('delete_all/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteAll');
+        Route::post('delete_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteKeys');
+        Route::post('delete_suffixed_keys{group?}', '\\Vsch\\TranslationManager\\Controller@postDeleteSuffixedKeys');
+        Route::post('find', '\\Vsch\\TranslationManager\\Controller@postFind');
+        Route::post('import/{group}', '\\Vsch\\TranslationManager\\Controller@postImport');
+        Route::post('move_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postMoveKeys');
+        Route::post('preview_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postPreviewKeys');
+        Route::post('publish/{group}', '\\Vsch\\TranslationManager\\Controller@postPublish');
+        Route::post('show_source/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postShowSource');
+        Route::post('undelete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postUndelete');
+        Route::post('yandex_key', '\\Vsch\\TranslationManager\\Controller@postYandexKey');
+    }
+
     public static function apiRoutes()
     {
         // REST API for Rect-UI
@@ -431,10 +430,14 @@ class Controller extends BaseController
         Route::get('mismatches', '\\Vsch\\TranslationManager\\Controller@getMismatches');
         Route::get('user-list', '\\Vsch\\TranslationManager\\Controller@getUserList');
         Route::get('translation-table/{group}', '\\Vsch\\TranslationManager\\Controller@getTranslationTable');
+        Route::get('trans_filters', '\\Vsch\\TranslationManager\\Controller@getTransFilters');
 
-        // posts
-        Route::post('ui-settings', '\\Vsch\\TranslationManager\\Controller@postUISettings');
         Route::get('ui-settings-json', '\\Vsch\\TranslationManager\\Controller@getUISettingsJson');
+        
+        // posts
+        Route::post('edit/{group}', '\\Vsch\\TranslationManager\\Controller@postEdit');
+        Route::post('ui-settings', '\\Vsch\\TranslationManager\\Controller@postUISettings');
+        Route::post('user_locales', '\\Vsch\\TranslationManager\\Controller@postUserLocales');
     }
 
     public function getTranslationTable($group)
