@@ -824,13 +824,17 @@ class Manager
         }
     }
 
-    public function getTranslations($namespace, $group, $locale)
+    public function getTranslations($namespace, $group, $locale, $includeMissing = true)
     {
         $group = self::fixGroup($group);
         $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
         
         // may need to create new jsonKeys from default locale values for any that are missing from json locale of JSON group
-        $jsonTranslations = $this->translation->query()->where('group', '=', $group)->where('locale', '=', $locale)->get([
+        $query = $this->translation->query()->where('group', '=', $group)->where('locale', '=', $locale);
+        if (!$includeMissing) {
+            $query = $query->where('value', '<>', '');
+        }
+        $jsonTranslations = $query->get([
             'key',
             'value',
         ]);

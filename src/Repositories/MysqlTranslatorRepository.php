@@ -107,8 +107,9 @@ SQL
         ), [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED, $group]);
     }
 
-    public function searchByRequest($q, $displayWhere)
+    public function searchByRequest($q, $displayWhere, $limit)
     {
+        $limitSQL = $limit > 0 ? 'LIMIT ' . $limit : '';
         return $this->connection->select($this->adjustTranslationTable(<<<SQL
 SELECT  
     id, status, locale, `group`, `key`, value, created_at, updated_at, source, saved_value, is_deleted, was_used
@@ -120,6 +121,7 @@ FROM (SELECT DISTINCT locale FROM ltm_translations  WHERE 1=1 $displayWhere) lt
 WHERE NOT exists(SELECT * FROM ltm_translations  tr WHERE tr.`key` = kt.`key` AND tr.`group` = kt.`group` AND tr.locale = lt.locale)
       AND `key` LIKE ?
 ORDER BY `key`, `group`, locale
+$limitSQL
 SQL
         ), [$q, $q, $q,]);
     }

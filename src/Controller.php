@@ -95,13 +95,13 @@ class Controller extends BaseController
         $this->loadCookieData();
         $this->normalizeLocaleData();
     }
-    
+
     private function loadCookieData()
     {
         $appLocale = App::getLocale();
         $connectionName = Cookie::has($this->cookieName(self::COOKIE_CONNECTION_NAME)) ? Cookie::get($this->cookieName(self::COOKIE_CONNECTION_NAME)) : '';
         $this->setConnectionName($connectionName);
-        
+
         $this->currentLocale = Cookie::get($this->cookieName(self::COOKIE_LANG_LOCALE), $appLocale);
         $this->primaryLocale = Cookie::get($this->cookieName(self::COOKIE_PRIM_LOCALE), $this->manager->config('primary_locale', 'en'));
         $this->translatingLocale = Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE), $this->currentLocale);
@@ -141,7 +141,7 @@ class Controller extends BaseController
             $this->normalizeLocaleDataRaw();
         }
     }
-    
+
     private function normalizeLocaleDataRaw()
     {
         $appLocale = App::getLocale();
@@ -152,7 +152,7 @@ class Controller extends BaseController
         $displayLocales = $this->displayLocales;
 
         // get all locales in the translation table
-        $allLocales = ManagerServiceProvider::getLists($this->getTranslation()->groupBy('locale')->pluck('locale')) ?: [];
+        $allLocales = ManagerServiceProvider::getLists($this->getTranslation()->groupBy('locale')->having('locale', '<>', 'json')->pluck('locale')) ?: [];
 
         // limit the locale list to what is in the config
         $configShowLocales = $this->manager->config(Manager::SHOW_LOCALES_KEY, []);
@@ -281,6 +281,32 @@ class Controller extends BaseController
             ->with('numTranslations', $numTranslations);
     }
 
+    public function getSearchData()
+    {
+        $searchText = Request::get('q');
+        $q = $searchText;
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
+
+        if (trim($q) === '') $translations = [];
+        else {
+            $displayWhere = $this->displayLocales ? " AND locale IN ('" . implode("','", $this->displayLocales) . "')" : '';
+
+            if (strpos($q, '%') === false) $q = "%$q%";
+
+            // need to fill-in missing locale's that match the key
+            $translations = $this->translatorRepository->searchByRequest($q, $displayWhere, 500);
+        }
+
+        $data = [
+            'connectionName' =>  $this->connectionNameForUI(),
+            'userLocales' => $this->userLocales,
+            'searchText' => $searchText,
+            'displayLocales' => $this->displayLocales,
+            'searchData' => $translations,
+        ];
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
+    }
+
     protected function getConnection()
     {
         $connection = $this->manager->getConnection();
@@ -387,6 +413,12 @@ class Controller extends BaseController
 
     public static function routes()
     {
+        self::webRoutes();
+        self::apiRoutes();
+    }
+
+    public static function webRoutes()
+    {
         Route::get('view/{group?}', '\\Vsch\\TranslationManager\\Controller@getView');
 
         //deprecated: Route::controller('admin/translations', '\\Vsch\\TranslationManager\\Controller');
@@ -405,7 +437,6 @@ class Controller extends BaseController
         Route::get('zipped_translations/{group?}', '\\Vsch\\TranslationManager\\Controller@getZippedTranslations');
         Route::post('add/{group}', '\\Vsch\\TranslationManager\\Controller@postAdd');
         Route::post('copy_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postCopyKeys');
-        Route::post('delete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postDelete');
         Route::post('delete_all/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteAll');
         Route::post('delete_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteKeys');
         Route::post('delete_suffixed_keys{group?}', '\\Vsch\\TranslationManager\\Controller@postDeleteSuffixedKeys');
@@ -415,7 +446,6 @@ class Controller extends BaseController
         Route::post('preview_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postPreviewKeys');
         Route::post('publish/{group}', '\\Vsch\\TranslationManager\\Controller@postPublish');
         Route::post('show_source/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postShowSource');
-        Route::post('undelete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postUndelete');
         Route::post('yandex_key', '\\Vsch\\TranslationManager\\Controller@postYandexKey');
     }
 
@@ -431,13 +461,17 @@ class Controller extends BaseController
         Route::get('user-list', '\\Vsch\\TranslationManager\\Controller@getUserList');
         Route::get('translation-table/{group}', '\\Vsch\\TranslationManager\\Controller@getTranslationTable');
         Route::get('trans_filters', '\\Vsch\\TranslationManager\\Controller@getTransFilters');
+        Route::get('search-data', '\\Vsch\\TranslationManager\\Controller@getSearchData');
 
         Route::get('ui-settings-json', '\\Vsch\\TranslationManager\\Controller@getUISettingsJson');
-        
+
         // posts
+        Route::post('delete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postDelete');
         Route::post('edit/{group}', '\\Vsch\\TranslationManager\\Controller@postEdit');
         Route::post('ui-settings', '\\Vsch\\TranslationManager\\Controller@postUISettings');
+        Route::post('undelete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postUndelete');
         Route::post('user_locales', '\\Vsch\\TranslationManager\\Controller@postUserLocales');
+        Route::post('missing-keys', '\\Vsch\\TranslationManager\\Controller@postMissingKeys');
     }
 
     public function getTranslationTable($group)
@@ -555,14 +589,14 @@ class Controller extends BaseController
         $json = Request::json();
         return $this->processUISettings($json);
     }
-        
+
     public function getUISettingsJson()
     {
         $json = Request::get('json');
-        $jsonParameter = new ParameterBag(json_decode($json,true));
+        $jsonParameter = new ParameterBag(json_decode($json, true));
         return $this->processUISettings($jsonParameter);
     }
-        
+
     private function processUISettings($json)
     {
         $handled = [];
@@ -675,6 +709,25 @@ class Controller extends BaseController
         return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
     }
 
+    public function postMissingKeys()
+    {
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
+        $missingKeys = Request::json('missingKeys');
+        /* @var $translator \Vsch\TranslationManager\Translator */
+        $translator = App::make('translator');
+        foreach ($missingKeys as $key) {
+            $key = decodeKey($key);
+            list($namespace, $group, $item) = $translator->parseKey($key);
+            if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY))) {
+                $this->manager->missingKey($namespace, $group, $item, null, false, false);
+            }
+        }
+        $data = [
+            'missingKeys' => [],
+        ];
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
+    }
+
     public function getUserList()
     {
         $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
@@ -717,7 +770,7 @@ class Controller extends BaseController
     {
         // return the translations for the given group as JSON result
         $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
-        $translations = $this->manager->getTranslations('', $group, $locale);
+        $translations = $this->manager->getTranslations('', $group, $locale, false);
 
         $parts = explode('::', $group, 2);
         if (count($parts) > 1) {

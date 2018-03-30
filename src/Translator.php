@@ -671,6 +671,11 @@ HTML;
         Controller::routes();
     }
 
+    public static function webRoutes()
+    {
+        Controller::webRoutes();
+    }
+
     public static function apiRoutes()
     {
         Controller::apiRoutes();

@@ -36,7 +36,7 @@ interface ITranslatorRepository
 
     public function updateValueInGroup($group);
 
-    public function searchByRequest($q, $displayWhere);
+    public function searchByRequest($q, $displayWhere, $limit);
 
     public function allTranslations($group, $displayLocales);
 
