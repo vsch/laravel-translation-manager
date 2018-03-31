@@ -298,7 +298,7 @@ class Controller extends BaseController
         }
 
         $data = [
-            'connectionName' =>  $this->connectionNameForUI(),
+            'connectionName' => $this->connectionNameForUI(),
             'userLocales' => $this->userLocales,
             'searchText' => $searchText,
             'displayLocales' => $this->displayLocales,
@@ -424,28 +424,21 @@ class Controller extends BaseController
         //deprecated: Route::controller('admin/translations', '\\Vsch\\TranslationManager\\Controller');
         Route::get('/', '\\Vsch\\TranslationManager\\Controller@getIndex');
         Route::get('connection', '\\Vsch\\TranslationManager\\Controller@getConnection');
-        Route::get('import', '\\Vsch\\TranslationManager\\Controller@getImport');
         Route::get('index', '\\Vsch\\TranslationManager\\Controller@getIndex');
         Route::get('interface_locale', '\\Vsch\\TranslationManager\\Controller@getInterfaceLocale');
         Route::get('keyop/{group}/{op?}', '\\Vsch\\TranslationManager\\Controller@getKeyop');
-        Route::get('publish/{group}', '\\Vsch\\TranslationManager\\Controller@getPublish');
         Route::get('search', '\\Vsch\\TranslationManager\\Controller@getSearch');
         Route::get('toggle_in_place_edit', '\\Vsch\\TranslationManager\\Controller@getToggleInPlaceEdit');
         Route::get('translation', '\\Vsch\\TranslationManager\\Controller@getTranslation');
         Route::get('usage_info', '\\Vsch\\TranslationManager\\Controller@getUsageInfo');
         Route::get('view', '\\Vsch\\TranslationManager\\Controller@getView');
-        Route::get('zipped_translations/{group?}', '\\Vsch\\TranslationManager\\Controller@getZippedTranslations');
         Route::post('add/{group}', '\\Vsch\\TranslationManager\\Controller@postAdd');
         Route::post('copy_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postCopyKeys');
-        Route::post('delete_all/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteAll');
         Route::post('delete_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteKeys');
         Route::post('delete_suffixed_keys{group?}', '\\Vsch\\TranslationManager\\Controller@postDeleteSuffixedKeys');
         Route::post('find', '\\Vsch\\TranslationManager\\Controller@postFind');
-        Route::post('import/{group}', '\\Vsch\\TranslationManager\\Controller@postImport');
         Route::post('move_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postMoveKeys');
         Route::post('preview_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postPreviewKeys');
-        Route::post('publish/{group}', '\\Vsch\\TranslationManager\\Controller@postPublish');
-        Route::post('show_source/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postShowSource');
         Route::post('yandex_key', '\\Vsch\\TranslationManager\\Controller@postYandexKey');
     }
 
@@ -462,10 +455,17 @@ class Controller extends BaseController
         Route::get('translation-table/{group}', '\\Vsch\\TranslationManager\\Controller@getTranslationTable');
         Route::get('trans_filters', '\\Vsch\\TranslationManager\\Controller@getTransFilters');
         Route::get('search-data', '\\Vsch\\TranslationManager\\Controller@getSearchData');
+        Route::get('zipped_translations/{group?}', '\\Vsch\\TranslationManager\\Controller@getZippedTranslations');
+        Route::get('publish/{group}', '\\Vsch\\TranslationManager\\Controller@getPublish');
+        Route::get('import', '\\Vsch\\TranslationManager\\Controller@getImport');
 
         Route::get('ui-settings-json', '\\Vsch\\TranslationManager\\Controller@getUISettingsJson');
 
         // posts
+        Route::post('show_source/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postShowSource');
+        Route::post('publish/{group}', '\\Vsch\\TranslationManager\\Controller@postPublish');
+        Route::post('import/{group}', '\\Vsch\\TranslationManager\\Controller@postImport');
+        Route::post('delete_all/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteAll');
         Route::post('delete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postDelete');
         Route::post('edit/{group}', '\\Vsch\\TranslationManager\\Controller@postEdit');
         Route::post('ui-settings', '\\Vsch\\TranslationManager\\Controller@postUISettings');
@@ -715,14 +715,24 @@ class Controller extends BaseController
         $missingKeys = Request::json('missingKeys');
         /* @var $translator \Vsch\TranslationManager\Translator */
         $translator = App::make('translator');
+        $affectedGroups = [];
         foreach ($missingKeys as $key) {
             $key = decodeKey($key);
             list($namespace, $group, $item) = $translator->parseKey($key);
-            if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY))) {
-                $this->manager->missingKey($namespace, $group, $item, null, false, false);
+            if ($item && $group) {
+                if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY))) {
+                    $t = $this->manager->missingKey($namespace, $group, $item, null, false, true);
+                    if (!$t->exists) {
+                        $affectedGroups[] = $namespace ? "$namespace::$group" : $group;
+                        $t->save();
+                    }
+                }
+            } else {
+                // TODO: return error invalid key
             }
         }
         $data = [
+            'affectedGroups' => $affectedGroups,
             'missingKeys' => [],
         ];
         return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
@@ -1168,9 +1178,11 @@ class Controller extends BaseController
 
     public function postDeleteAll($group)
     {
-        $this->manager->truncateTranslations($group);
-
-        return Response::json(array('status' => 'ok', 'counter' => (int)0));
+        if ($group && $group !== '*') {
+            $this->manager->truncateTranslations($group);
+            return Response::json(array('status' => 'ok', 'counter' => (int)0));
+        }
+        return Response::json(array('status' => 'ok', 'error' => 'missing group', 'counter' => (int)0));
     }
 
     public function getPublish($group)
@@ -1184,11 +1196,14 @@ class Controller extends BaseController
 
     public function postPublish($group)
     {
-        $this->manager->exportTranslations($group);
-        $errors = $this->manager->errors();
+        if ($group) {
+            $this->manager->exportTranslations($group);
+            $errors = $this->manager->errors();
 
-        event(new TranslationsPublished($group, $errors));
-        return Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
+            event(new TranslationsPublished($group, $errors));
+            return Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
+        }
+        return Response::json(array('status' => 'ok', 'error' => 'missing group', 'counter' => (int)0));
     }
 
     public function getToggleInPlaceEdit()

@@ -90,6 +90,8 @@ class Manager
     private $package;
     private $translatorRepository;
 
+    public const JSON_GROUP = 'JSON';
+
     public function setConnectionName($connection = null)
     {
         if ($connection === null || $connection === '') {
@@ -310,6 +312,7 @@ class Manager
             if ($excludedGroups) {
                 $groups = $groups->whereNotIn('group', $excludedGroups);
             }
+            $groups = $groups->where('group','<>', self::JSON_GROUP);
 
             $this->groupList = ManagerServiceProvider::getLists($groups->pluck('group', 'group'));
         }
@@ -810,7 +813,7 @@ class Manager
     {
         if (!isset($this->ltmJsonKeys)) {
             // may need to create new jsonKeys from default locale values for any that are missing from json locale of JSON group
-            $jsonTranslations = $this->translation->query()->where('group', '=', 'JSON')->where('locale', '=', 'json')->get([
+            $jsonTranslations = $this->translation->query()->where('group', '=', self::JSON_GROUP)->where('locale', '=', 'json')->get([
                 'key',
                 'value',
             ]);
@@ -887,7 +890,7 @@ class Manager
             $locale = $vars['{locale}'];
             $db_group = $vars['{db_group}'];
             if (in_array($db_group, $this->config(self::EXCLUDE_GROUPS_KEY))) continue;
-            if ($db_group === 'JSON') {
+            if ($db_group === self::JSON_GROUP) {
                 $json = file_get_contents($langFile);
                 if ($locale !== 'json') {
                     $jsonFiles[$langFile] = json_decode($json, true);
@@ -925,7 +928,7 @@ class Manager
 
         // need to update database JSON group json locale with key map of ltmKey to jsonKey for exporting, but
         // only those that were imported so as not to overwrite the not yet published keys
-        $this->importTranslationFile('json', 'JSON', $ltmJsonKeys, true);
+        $this->importTranslationFile('json', self::JSON_GROUP, $ltmJsonKeys, true);
 
         if ($groups !== null) {
             // now we can filter to the list of given groups or
@@ -947,7 +950,7 @@ class Manager
             $db_group = $vars['{db_group}'];
             if ($locale == 'json') continue; // don't import keys. Use Database ones
             if (in_array($db_group, $this->config(self::EXCLUDE_GROUPS_KEY))) continue;
-            if ($db_group === 'JSON') {
+            if ($db_group === self::JSON_GROUP) {
                 // just update the locale with translations, keys are already LTM keys here
                 $translations = $jsonTranslations[$locale];
             } else {
@@ -1125,12 +1128,12 @@ class Manager
 
         $primaryLocale = $this->config("primary_locale", 'en');
 
-        if (($group === 'JSON' || !$group || $group == '*') && !isset($this->ltmJsonKeys)) {
+        if (($group === self::JSON_GROUP || !$group || $group == '*') && !isset($this->ltmJsonKeys)) {
             // may need to create new jsonKeys from default locale values for any that are missing from json locale of JSON group
             $this->loadLtmJsonKeys();
 
             // need to map all keys to primary locale translation
-            $rawTranslations = $this->translation->where('group', 'JSON')->whereNotNull('value')->orderby('key')->get();
+            $rawTranslations = $this->translation->where('group', self::JSON_GROUP)->whereNotNull('value')->orderby('key')->get();
 
             $newKeys = [];
             $fallBackTranslations = [];
@@ -1164,7 +1167,7 @@ class Manager
                 }
 
                 // save these mappings to the database as new so that they will be cached if we are not saving to a file
-                $this->importTranslationFile('json', 'JSON', $this->ltmJsonKeys, false); // these will be marked as new
+                $this->importTranslationFile('json', self::JSON_GROUP, $this->ltmJsonKeys, false); // these will be marked as new
             }
         }
 
@@ -1242,12 +1245,12 @@ class Manager
                     $zipRoot = substr($zipRoot, 0, -1);
                 }
 
-                if ($group === 'JSON') {
+                if ($group === self::JSON_GROUP) {
                     // make sure primary locale has a translation for all the keys since its keys are used during import and for translation keys in the app
                     foreach ($this->ltmJsonKeys as $ltmKey => $jsonKey) {
                         // if the primary locale does not have a translation for this key, then add it as the key so future imports will have a fixed key to work with
-                        if (!isset($tree[$primaryLocale]['JSON'][$ltmKey])) {
-                            $tree[$primaryLocale]['JSON'][$ltmKey] = $jsonKey;
+                        if (!isset($tree[$primaryLocale][self::JSON_GROUP][$ltmKey])) {
+                            $tree[$primaryLocale][self::JSON_GROUP][$ltmKey] = $jsonKey;
                         }
                     }
                 }
@@ -1261,7 +1264,7 @@ class Manager
                         $path = $base_path . $computedPath;
 
                         if ($computedPath) {
-                            if ($group === 'JSON') {
+                            if ($group === self::JSON_GROUP) {
                                 if ($locale !== 'json') {
                                     // we need translation mapping keys
                                     $jsonTranslations = [];
