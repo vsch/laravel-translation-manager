@@ -529,7 +529,9 @@ class Controller extends BaseController
                 ->with('markdownKeySuffix', $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX))
                 ->with('yandex_key', !!$this->manager->config('yandex_translator_key'))
                 ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
-                ->with("appUrl", $appURL);
+                ->with("appUrl", $appURL)
+                ->with("secure", !appDebug())
+                ;
         } catch (\Exception $e) {
             // if have non default connection, reset it
             if ($this->getConnectionName()) {
@@ -540,7 +542,9 @@ class Controller extends BaseController
             ->with('markdownKeySuffix', $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX))
             ->with('yandex_key', !!$this->manager->config('yandex_translator_key'))
             ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
-            ->with("appUrl", $appURL);
+            ->with("appUrl", $appURL)
+            ->with("secure", !appDebug())
+            ;
     }
 
     public function getUISettings()
