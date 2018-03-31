@@ -224,7 +224,7 @@ class Translator extends LaravelTranslator
                             $t->saved_value = parent::get($key, [], $locale);
                             $t->status = 0;
                             if ($withDiff) {
-                                $t->diff = ' [' . $t->saved_value . ']';
+                                $t->diff = ''; // ' [' . $t->saved_value . ']';
                             }
                         }
                     }
@@ -235,7 +235,7 @@ class Translator extends LaravelTranslator
                 if ($t->value === null) $t->value = '';
 
                 if ($withDiff && (!isset($t->diff) || $t->diff === '')) {
-                    $t->diff = ($t->saved_value == $t->value ? '' : ($t->saved_value === $t->value ? '' : mb_renderDiffHtml($t->saved_value, $t->value)));
+                    $t->diff = ($t->saved_value == $t->value || !$t->save_value || !$t->value ? '' : ($t->saved_value === $t->value ? '' : mb_renderDiffHtml($t->saved_value, $t->value)));
                 } else {
                     $t->diff = '';
                 }

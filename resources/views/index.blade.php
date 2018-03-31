@@ -99,12 +99,12 @@
                                                 </div>
                                             </div>
                                             <div class="col-sm-6">
-                                                <?= ifEditTrans($package . '::messages.import-groups') ?>
+                                                <?= ifEditTrans($package . '::messages.import-all-groups') ?>
                                                 <?= ifEditTrans($package . '::messages.loading') ?>
                                                 <button id="submit-import-all" type="submit" form="form-import-all"
                                                         class="btn btn-sm btn-success"
                                                         data-disable-with="<?= noEditTrans($package . '::messages.loading') ?>">
-                                                    <?= noEditTrans($package . '::messages.import-groups') ?>
+                                                    <?= noEditTrans($package . '::messages.import-all-groups') ?>
                                                 </button>
                                                 <?= ifEditTrans($package . '::messages.zip-all') ?>
                                                 <a href="<?= action($controller . '@getZippedTranslations', ['group' => '*']) ?>"
@@ -112,19 +112,19 @@
                                                     <?= noEditTrans($package . '::messages.zip-all') ?>
                                                 </a>
                                                 <div class="input-group" style="float:right; display:inline">
-                                                    <?= ifEditTrans($package . '::messages.publish-all') ?>
+                                                    <?= ifEditTrans($package . '::messages.publish-all-groups') ?>
                                                     <?= ifEditTrans($package . '::messages.publishing') ?>
                                                     <button type="submit" form="form-publish-all"
                                                             class="btn btn-sm btn-warning input-control"
                                                             data-disable-with="<?= noEditTrans($package . '::messages.publishing') ?>">
-                                                        <?= noEditTrans($package . '::messages.publish-all') ?>
+                                                        <?= noEditTrans($package . '::messages.publish-all-groups') ?>
                                                     </button>
-                                                    <?= ifEditTrans($package . '::messages.find-in-files') ?>
+                                                    <?= ifEditTrans($package . '::messages.add-references') ?>
                                                     <?= ifEditTrans($package . '::messages.searching') ?>
                                                     <button type="submit" form="form-find"
                                                             class="btn btn-sm btn-danger"
                                                             data-disable-with="<?= noEditTrans($package . '::messages.searching') ?>">
-                                                        <?= noEditTrans($package . '::messages.find-in-files') ?>
+                                                        <?= noEditTrans($package . '::messages.add-references') ?>
                                                     </button>
                                                 </div>
                                             </div>
@@ -183,11 +183,11 @@
                                                     data-disable-with="<?= noEditTrans($package . '::messages.loading') ?>">
                                                 <?= noEditTrans($package . '::messages.import-group') ?>
                                             </button>
-                                            <?= ifEditTrans($package . '::messages.delete') ?>
+                                            <?= ifEditTrans($package . '::messages.delete-group') ?>
                                             <?= ifEditTrans($package . '::messages.deleting') ?>
                                             <button type="submit" form="form-delete-group" class="btn btn-sm btn-danger"
                                                     data-disable-with="<?= noEditTrans($package . '::messages.deleting') ?>">
-                                                <?= noEditTrans($package . '::messages.delete') ?>
+                                                <?= noEditTrans($package . '::messages.delete-group') ?>
                                             </button>
                                             <?php endif; ?>
                                         </div>
