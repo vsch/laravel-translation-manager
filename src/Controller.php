@@ -530,7 +530,7 @@ class Controller extends BaseController
                 ->with('yandex_key', !!$this->manager->config('yandex_translator_key'))
                 ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
                 ->with("appUrl", $appURL)
-                ->with("secure", !appDebug())
+                ->with("secure", true)
                 ;
         } catch (\Exception $e) {
             // if have non default connection, reset it
@@ -543,7 +543,7 @@ class Controller extends BaseController
             ->with('yandex_key', !!$this->manager->config('yandex_translator_key'))
             ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
             ->with("appUrl", $appURL)
-            ->with("secure", !appDebug())
+            ->with("secure", true)
             ;
     }
 
