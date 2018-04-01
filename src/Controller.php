@@ -521,17 +521,17 @@ class Controller extends BaseController
 
     public function getUI()
     {
-        // TODO: make this resolved from routes so as to be config independent
-        $appURL = "/admin/translations/";
+        $apiURL = url(action(ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this) . '@getIndex', []), [], !appDebug());
+        $appURL = action(ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this) . '@getUI', ['all' => ''], false);
+        $apiURL = substr($apiURL, 0, strlen($apiURL) - strlen("/index"));
 
         try {
             return View::make($this->packagePrefix . 'ui')
                 ->with('markdownKeySuffix', $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX))
                 ->with('yandex_key', !!$this->manager->config('yandex_translator_key'))
                 ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
-                ->with("appUrl", $appURL)
-                ->with("secure", true)
-                ;
+                ->with("apiUrl", $apiURL)
+                ->with("appUrl", $appURL);
         } catch (\Exception $e) {
             // if have non default connection, reset it
             if ($this->getConnectionName()) {
@@ -542,9 +542,8 @@ class Controller extends BaseController
             ->with('markdownKeySuffix', $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX))
             ->with('yandex_key', !!$this->manager->config('yandex_translator_key'))
             ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
-            ->with("appUrl", $appURL)
-            ->with("secure", true)
-            ;
+            ->with("apiUrl", $apiURL)
+            ->with("appUrl", $appURL);
     }
 
     public function getUISettings()
