@@ -75,7 +75,7 @@ TEXT
     'dstkeys'                           => 'To Keys',
     'dstkeys-placeholder'               => 'Add 1 key per line, with or without the group prefix',
     'enter-translation'                 => 'Enter translation',
-    'export-warning-text'               => 'Warning, translations are not visible until they are published by your administrator.',
+    'export-warning-text'               => 'Translations are not visible until they are published by your administrator.',
     'find-in-files'                     => 'Add References',
     'group'                             => 'Group',
     'group-admin'                       => 'Group Administration',

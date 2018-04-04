@@ -75,7 +75,7 @@ TEXT
     'dstkeys'                           => 'À clés',
     'dstkeys-placeholder'               => 'Ajouter 1 clé par ligne, avec ou sans le préfixe de groupe',
     'enter-translation'                 => 'Entrez traduction',
-    'export-warning-text'               => 'Avertissement, les traductions ne sont pas visibles jusqu\'à ce qu\'ils sont publiés par votre administrateur.',
+    'export-warning-text'               => 'Les traductions ne sont pas visibles jusqu\'à ce qu\'ils sont publiés par votre administrateur.',
     'find-in-files'                     => 'Ajouter des références',
     'group'                             => 'Groupe',
     'group-admin'                       => 'L\'Administration des groupes',
