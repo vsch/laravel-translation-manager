@@ -312,7 +312,7 @@ class Manager
             if ($excludedGroups) {
                 $groups = $groups->whereNotIn('group', $excludedGroups);
             }
-            $groups = $groups->where('group','<>', self::JSON_GROUP);
+//            $groups = $groups->where('group','<>', self::JSON_GROUP);
 
             $this->groupList = ManagerServiceProvider::getLists($groups->pluck('group', 'group'));
         }
