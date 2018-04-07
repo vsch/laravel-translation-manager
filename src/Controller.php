@@ -381,7 +381,8 @@ class Controller extends BaseController
 
         $packedUserLocales = self::packLocales($userLocales);
         $displayLocalesAssoc = array_combine($displayLocales, $displayLocales);
-        return View::make($this->packagePrefix . 'index')
+
+        $view = View::make($this->packagePrefix . 'index')
             ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
             ->with('package', $this->package)
             ->with('public_prefix', ManagerServiceProvider::PUBLIC_PREFIX)
@@ -409,6 +410,8 @@ class Controller extends BaseController
             ->with('userList', $userList)
             ->with('markdownKeySuffix', $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX))
             ->with('connection_name', $this->connectionNameForUI());
+
+        return $view;
     }
 
     public static function routes()
