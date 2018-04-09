@@ -40,6 +40,7 @@ class Manager
     const EXCLUDE_GROUPS_KEY = 'exclude_groups';
     const MISSING_KEYS_LOTTERY_KEY = 'missing_keys_lottery';
     const LOTTERY_PERSISTENT_SUFFIX = 'lottery';
+    const WEB_UI_SETTINGS_PERSISTENT_SUFFIX = 'web_ui_settings';
     const LOG_KEY_USAGE_INFO_KEY = 'log_key_usage_info';
     const ADDITIONAL_LOCALES_KEY = 'locales';
     const SHOW_LOCALES_KEY = 'show_locales';

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\View;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Vsch\TranslationManager\Events\TranslationsPublished;
@@ -26,9 +27,9 @@ class Controller extends BaseController
     const COOKIE_PRIM_LOCALE = 'prim';
     const COOKIE_DISP_LOCALES = 'disp';
     const COOKIE_SHOW_USAGE = 'show-usage';
-    const COOKIE_WEB_UI_STATE = 'web-ui-state';
     const COOKIE_CONNECTION_NAME = 'connection-name';
     const COOKIE_TRANS_FILTERS = 'trans-filters';
+
     /** @var \Vsch\TranslationManager\Manager */
     protected $manager;
     protected $packagePrefix;
@@ -109,7 +110,8 @@ class Controller extends BaseController
         $displayLocales = $displayLocales ? array_unique(explode(',', $displayLocales)) : [];
         $this->displayLocales = $displayLocales;
 
-        $this->webUIState = json_decode(Cookie::get($this->cookieName(self::COOKIE_WEB_UI_STATE), "{}"), true);
+//        $this->webUIState = json_decode(Cookie::get($this->cookieName(self::COOKIE_WEB_UI_STATE), "{}"), true);
+        $this->webUIState = Session::get($this->manager->config(Manager::PERSISTENT_PREFIX_KEY) . Manager::WEB_UI_SETTINGS_PERSISTENT_SUFFIX, null);
         if (!$this->webUIState) {
             // put defaults in it
             $this->webUIState = [];
@@ -268,7 +270,7 @@ class Controller extends BaseController
             if (strpos($q, '%') === false) $q = "%$q%";
 
             // need to fill-in missing locale's that match the key
-            $translations = $this->translatorRepository->searchByRequest($q, $displayWhere);
+            $translations = $this->translatorRepository->searchByRequest($q, $displayWhere, 500);
         }
 
         $numTranslations = count($translations);
@@ -693,7 +695,9 @@ class Controller extends BaseController
         }
 
         if ($hadWebUIState) {
-            Cookie::queue($this->cookieName(self::COOKIE_WEB_UI_STATE), json_encode($this->webUIState), 60 * 24 * 365 * 1);
+            Session::put($this->manager->config(Manager::PERSISTENT_PREFIX_KEY) . Manager::WEB_UI_SETTINGS_PERSISTENT_SUFFIX, $this->webUIState);
+        } else {
+            Session::remove($this->manager->config(Manager::PERSISTENT_PREFIX_KEY) . Manager::WEB_UI_SETTINGS_PERSISTENT_SUFFIX);
         }
 
         // do all the init processing so the returned results are adjusted for display locales and the rest
