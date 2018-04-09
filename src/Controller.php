@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\View;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Vsch\TranslationManager\Events\TranslationsPublished;
@@ -111,7 +110,18 @@ class Controller extends BaseController
         $this->displayLocales = $displayLocales;
 
 //        $this->webUIState = json_decode(Cookie::get($this->cookieName(self::COOKIE_WEB_UI_STATE), "{}"), true);
-        $this->webUIState = Session::get($this->manager->config(Manager::PERSISTENT_PREFIX_KEY) . Manager::WEB_UI_SETTINGS_PERSISTENT_SUFFIX, null);
+//        $this->webUIState = Session::get($this->manager->config(Manager::PERSISTENT_PREFIX_KEY) . Manager::WEB_UI_SETTINGS_PERSISTENT_SUFFIX, null);
+        $this->webUIState = null;
+        $userId = Auth::id();
+        if ($userId !== null) {
+            $userLocalesModel = new UserLocales();
+            $userLocalesModel->setConnection($connectionName);
+            $userLocalesResult = $userLocalesModel->query()->where('user_id', $userId)->first();
+            if ($userLocalesResult && $userLocalesResult->ui_settings) {
+                $this->webUIState = json_decode($userLocalesResult->ui_settings, true);
+            }
+        }
+
         if (!$this->webUIState) {
             // put defaults in it
             $this->webUIState = [];
@@ -170,7 +180,7 @@ class Controller extends BaseController
                 $userLocalesModel = new UserLocales();
                 $userLocalesModel->setConnection($connectionName);
                 $userLocalesResult = $userLocalesModel->query()->where('user_id', $userId)->first();
-                if ($userLocalesResult && trim($userLocalesResult->locales)) {
+                if ($userLocalesResult && $userLocalesResult->locales && trim($userLocalesResult->locales)) {
                     $userLocales = explode(',', $userLocalesResult->locales);
                 }
             }
@@ -694,10 +704,18 @@ class Controller extends BaseController
             }
         }
 
-        if ($hadWebUIState) {
-            Session::put($this->manager->config(Manager::PERSISTENT_PREFIX_KEY) . Manager::WEB_UI_SETTINGS_PERSISTENT_SUFFIX, $this->webUIState);
-        } else {
-            Session::remove($this->manager->config(Manager::PERSISTENT_PREFIX_KEY) . Manager::WEB_UI_SETTINGS_PERSISTENT_SUFFIX);
+        $userId = Auth::id();
+        if ($userId !== null) {
+            if ($hadWebUIState) {
+                $userLocalesModel = new UserLocales();
+                $userLocalesModel->setConnection($this->getConnectionName());
+                $userLocalesResult = $userLocalesModel->query()->where('user_id', $userId)->firstOrNew([]);
+                $json_encode = json_encode($this->webUIState, JSON_PRETTY_PRINT);
+                $userLocalesResult->ui_settings = $json_encode;
+                $userLocalesResult->user_id = $userLocalesResult->user_id ?: $userId;
+                $userLocalesResult->locales = $userLocalesResult->locales ?: '';
+                $userLocalesResult->save();
+            }
         }
 
         // do all the init processing so the returned results are adjusted for display locales and the rest
