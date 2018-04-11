@@ -964,36 +964,15 @@ class Manager
 
     public function findTranslations($path = null)
     {
-        $functions = array(
-            'trans',
-            'trans_choice',
-            'noEditTrans',
-            'ifEditTrans',
-            'Lang::get',
-            'Lang::choice',
-            'Lang::trans',
-            'Lang::transChoice',
-            '@lang',
-            '@choice',
-            '__',
-        );
-        $pattern =                                  // See http://regexr.com/392hu
-            "(" . implode('|', $functions) . ")" .  // Must start with one of the functions
-            "\\(" .                                 // Match opening parentheses
-            "(['\"])" .                             // Match " or '
-            "(" .                                   // Start a new group to match:
-            "[a-zA-Z0-9_-]+" .                  // Must start with group
-            "([.][^\1)]+)+" .                   // Be followed by one or more items/keys
-            ")" .                                   // Close group
-            "['\"]" .                               // Closing quote
-            "[\\),]";                               // Close parentheses or new parameter
+        $functions = config('laravel-translation-manager.find.functions');
+        $pattern = implode('', config('laravel-translation-manager.find.pattern'));
 
         // Find all PHP + Twig files in the app folder, except for storage
         $paths = $path ? [$path] : array_merge([$this->app->basePath() . '/app'], $this->app['config']['view']['paths']);
         $keys = array();
         foreach ($paths as $path) {
             $finder = new Finder();
-            $finder->in($path)->name('*.php')->name('*.twig')->files();
+            $finder->in($path)->name("*.{" . implode(',', config('laravel-translation-manager.find.files')) . "}")->files();
 
             /** @var \Symfony\Component\Finder\SplFileInfo $file */
             foreach ($finder as $file) {
