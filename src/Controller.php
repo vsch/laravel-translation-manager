@@ -164,7 +164,7 @@ class Controller extends BaseController
         $displayLocales = $this->displayLocales;
 
         // get all locales in the translation table
-        $allLocales = ManagerServiceProvider::getLists($this->getTranslation()->groupBy('locale')->having('locale', '<>', 'json')->pluck('locale')) ?: [];
+        $allLocales = ManagerServiceProvider::getLists($this->getTranslation()->groupBy('locale')/*->having('locale', '<>', 'json')*/->pluck('locale')) ?: [];
 
         // limit the locale list to what is in the config
         $configShowLocales = $this->manager->config(Manager::SHOW_LOCALES_KEY, []);
@@ -447,13 +447,7 @@ class Controller extends BaseController
         Route::get('translation', '\\Vsch\\TranslationManager\\Controller@getTranslation');
         Route::get('usage_info', '\\Vsch\\TranslationManager\\Controller@getUsageInfo');
         Route::get('view', '\\Vsch\\TranslationManager\\Controller@getView');
-        Route::post('add/{group}', '\\Vsch\\TranslationManager\\Controller@postAdd');
-        Route::post('copy_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postCopyKeys');
-        Route::post('delete_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteKeys');
-        Route::post('delete_suffixed_keys{group?}', '\\Vsch\\TranslationManager\\Controller@postDeleteSuffixedKeys');
         Route::post('find', '\\Vsch\\TranslationManager\\Controller@postFind');
-        Route::post('move_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postMoveKeys');
-        Route::post('preview_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postPreviewKeys');
         Route::post('yandex_key', '\\Vsch\\TranslationManager\\Controller@postYandexKey');
     }
 
@@ -477,6 +471,12 @@ class Controller extends BaseController
         Route::get('ui-settings-json', '\\Vsch\\TranslationManager\\Controller@getUISettingsJson');
 
         // posts
+        Route::post('add/{group}', '\\Vsch\\TranslationManager\\Controller@postAdd');
+        Route::post('delete_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteKeys');
+        Route::post('delete_suffixed_keys/{group?}', '\\Vsch\\TranslationManager\\Controller@postDeleteSuffixedKeys');
+        Route::post('copy_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postCopyKeys');
+        Route::post('move_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postMoveKeys');
+        Route::post('preview_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postPreviewKeys');
         Route::post('show_source/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postShowSource');
         Route::post('publish/{group}', '\\Vsch\\TranslationManager\\Controller@postPublish');
         Route::post('import/{group}', '\\Vsch\\TranslationManager\\Controller@postImport');
