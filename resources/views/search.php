@@ -1,7 +1,9 @@
 <?php
 ?>
-<h4><?php trans($package . '::messages.search-header', ['count' => $numTranslations]) ?></h4>
-<table class="table">
+<h4><?php use Vsch\TranslationManager\Manager;
+
+    trans($package . '::messages.search-header', ['count' => $numTranslations]) ?></h4>
+<table class="table table-translations">
   <thead>
     <tr>
       <th width="15%"><?= trans($package . '::messages.group') ?></th>
@@ -11,11 +13,16 @@
     </tr>
   </thead>
   <tbody>
-      <?php $translator = App::make('translator') ?>
-      <?php foreach ($translations as $t): ?>
-          <?php $groupUrl = action($controller . '@getView', $t->group); ?>
-          <?php $isLocaleEnabled = str_contains($userLocales, ',' . $t->locale . ','); ?>
-        <tr>
+      <?php 
+      $translator = App::make('translator'); 
+      foreach ($translations as $t):
+          $groupUrl = action($controller . '@getView', $t->group); 
+          $isLocaleEnabled = str_contains($userLocales, ',' . $t->locale . ',');
+          if ($t->group === Manager::JSON_GROUP && $t->locale === 'json' && $t->value === null || $t->value === '') {
+              $t->value = $t->key;
+          }
+      ?>
+        <tr id='<?=str_replace('.','-', $t->key)?>'>
           <td>
             <a href="<?= $groupUrl ?>#<?= $t->key ?>"><?= $t->group ?></a>
           </td>

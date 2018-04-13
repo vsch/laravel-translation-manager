@@ -48,6 +48,8 @@ class Manager
     const ABILITY_ADMIN_TRANSLATIONS = 'ltm-admin-translations';
     const ABILITY_BYPASS_LOTTERY = 'ltm-bypass-lottery';
     const ABILITY_LIST_EDITORS = 'ltm-list-editors';
+    const DISABLE_REACT_UI = 'disable-react-ui';
+    const DISABLE_REACT_UI_LINK = 'disable-react-ui-link';
 
     /** @var \Illuminate\Foundation\Application */
     protected $app;
@@ -821,6 +823,9 @@ class Manager
             $this->ltmJsonKeys = [];
             $this->jsonLtmKeys = [];
             $jsonTranslations->each(function ($tr) {
+                if ($tr->value === null || $tr->value === '') {
+                    $tr->value = $tr->key;
+                }
                 $this->ltmJsonKeys[$tr->key] = $tr->value;
                 $this->jsonLtmKeys[$tr->value] = $tr->key;
             });
@@ -1307,6 +1312,12 @@ class Manager
                         'is_auto_added' => 0,
                         'saved_value'   => (new Expression('value')),
                     ));
+
+                    if ($group === self::JSON_GROUP) {
+                        // save the ltm keys in the database 
+                        // now we can save all the json keys
+                        $this->importTranslationFile('json', self::JSON_GROUP, $this->ltmJsonKeys, true);
+                    }
                 }
             }
         }

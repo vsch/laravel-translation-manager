@@ -6,7 +6,11 @@
             <div class="col-sm-8">
                 <div class="row">
                     <div class="col-sm-12">
-                        <h1>@lang($package . '::messages.translation-manager')</h1>
+                        <h1>@lang($package . '::messages.translation-manager')
+                            @if(!$disableUiLink)
+                                <a style='float: right; font-size: 14px;' href='<?= action($controller . '@getUI', []) ?>'>@lang($package . '::messages.try-new-ui')</a>
+                            @endif
+                        </h1>
                         {{-- csrf_token() --}}
                         {{--{!! $userLocales !!}--}}
                     </div>

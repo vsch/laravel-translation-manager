@@ -164,7 +164,8 @@ class Controller extends BaseController
         $displayLocales = $this->displayLocales;
 
         // get all locales in the translation table
-        $allLocales = ManagerServiceProvider::getLists($this->getTranslation()->groupBy('locale')/*->having('locale', '<>', 'json')*/->pluck('locale')) ?: [];
+        $allLocales = ManagerServiceProvider::getLists($this->getTranslation()->groupBy('locale')/*->having('locale', '<>', 'json')*/
+        ->pluck('locale')) ?: [];
 
         // limit the locale list to what is in the config
         $configShowLocales = $this->manager->config(Manager::SHOW_LOCALES_KEY, []);
@@ -307,6 +308,11 @@ class Controller extends BaseController
 
             // need to fill-in missing locale's that match the key
             $translations = $this->translatorRepository->searchByRequest($q, $displayWhere, 500);
+            foreach ($translations as $t) {
+                if ($t->group === Manager::JSON_GROUP && $t->locale === 'json' && $t->value === null || $t->value === '') {
+                    $t->value = $t->key;
+                }
+            }
         }
 
         $data = [
@@ -368,6 +374,9 @@ class Controller extends BaseController
         $numTranslations = count($allTranslations);
         $translations = array();
         foreach ($allTranslations as $translation) {
+            if ($translation->group === Manager::JSON_GROUP && $translation->locale === 'json' && ($translation->value === '' || $translation->value === null)) {
+                $translation->value = $translation->key;
+            }
             $translations[$translation->key][$translation->locale] = $translation;
         }
 
@@ -382,7 +391,7 @@ class Controller extends BaseController
             $mismatches = $this->computeMismatches($primaryLocale, $translatingLocale);
         }
 
-        $show_usage_enabled = $this->manager->config('log_key_usage_info', false);
+        $show_usage_enabled = $this->manager->config(Manager::LOG_KEY_USAGE_INFO_KEY, false);
 
         $userList = $this->computeUserList();
 
@@ -394,7 +403,11 @@ class Controller extends BaseController
         $packedUserLocales = self::packLocales($userLocales);
         $displayLocalesAssoc = array_combine($displayLocales, $displayLocales);
 
+        $disableReactUI = $this->manager->config(Manager::DISABLE_REACT_UI, false);
+        $disableReactUILink = $this->manager->config(Manager::DISABLE_REACT_UI_LINK, false);
+
         $view = View::make($this->packagePrefix . 'index')
+            ->with('disableUiLink', $disableReactUI || $disableReactUILink)
             ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
             ->with('package', $this->package)
             ->with('public_prefix', ManagerServiceProvider::PUBLIC_PREFIX)
@@ -451,24 +464,28 @@ class Controller extends BaseController
         Route::post('yandex_key', '\\Vsch\\TranslationManager\\Controller@postYandexKey');
     }
 
-    public static function apiRoutes()
+    public static function apiRoutes($disableReactUI)
     {
         // REST API for Rect-UI
-        Route::get('ui', '\\Vsch\\TranslationManager\\Controller@getUI');
-        Route::get('ui/{all}', '\\Vsch\\TranslationManager\\Controller@getUI')->where('all', '.*');
-        Route::get('ui-settings', '\\Vsch\\TranslationManager\\Controller@getUISettings');
-        Route::get('get/{group}/{locale}', '\\Vsch\\TranslationManager\\Controller@getTranslations');
-        Route::get('summary', '\\Vsch\\TranslationManager\\Controller@getSummary');
-        Route::get('mismatches', '\\Vsch\\TranslationManager\\Controller@getMismatches');
-        Route::get('user-list', '\\Vsch\\TranslationManager\\Controller@getUserList');
-        Route::get('translation-table/{group}', '\\Vsch\\TranslationManager\\Controller@getTranslationTable');
+        if (!$disableReactUI) {
+            Route::get('ui', '\\Vsch\\TranslationManager\\Controller@getUI');
+            Route::get('ui/{all?}', '\\Vsch\\TranslationManager\\Controller@getUI')->where('all', '.*');
+            Route::get('ui-settings-json', '\\Vsch\\TranslationManager\\Controller@getUISettingsJson');
+            Route::get('ui-settings', '\\Vsch\\TranslationManager\\Controller@getUISettings');
+            Route::get('get/{group}/{locale}', '\\Vsch\\TranslationManager\\Controller@getTranslations');
+            Route::get('summary', '\\Vsch\\TranslationManager\\Controller@getSummary');
+            Route::get('mismatches', '\\Vsch\\TranslationManager\\Controller@getMismatches');
+            Route::get('user-list', '\\Vsch\\TranslationManager\\Controller@getUserList');
+            Route::get('translation-table/{group}', '\\Vsch\\TranslationManager\\Controller@getTranslationTable');
+            Route::get('search-data', '\\Vsch\\TranslationManager\\Controller@getSearchData');
+            Route::post('ui-settings', '\\Vsch\\TranslationManager\\Controller@postUISettings');
+            Route::post('missing-keys', '\\Vsch\\TranslationManager\\Controller@postMissingKeys');
+        }
+
         Route::get('trans_filters', '\\Vsch\\TranslationManager\\Controller@getTransFilters');
-        Route::get('search-data', '\\Vsch\\TranslationManager\\Controller@getSearchData');
         Route::get('zipped_translations/{group?}', '\\Vsch\\TranslationManager\\Controller@getZippedTranslations');
         Route::get('publish/{group}', '\\Vsch\\TranslationManager\\Controller@getPublish');
         Route::get('import', '\\Vsch\\TranslationManager\\Controller@getImport');
-
-        Route::get('ui-settings-json', '\\Vsch\\TranslationManager\\Controller@getUISettingsJson');
 
         // posts
         Route::post('add/{group}', '\\Vsch\\TranslationManager\\Controller@postAdd');
@@ -483,10 +500,9 @@ class Controller extends BaseController
         Route::post('delete_all/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteAll');
         Route::post('delete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postDelete');
         Route::post('edit/{group}', '\\Vsch\\TranslationManager\\Controller@postEdit');
-        Route::post('ui-settings', '\\Vsch\\TranslationManager\\Controller@postUISettings');
+        Route::post('clear-ui-settings', '\\Vsch\\TranslationManager\\Controller@postClearUISettings');
         Route::post('undelete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postUndelete');
         Route::post('user_locales', '\\Vsch\\TranslationManager\\Controller@postUserLocales');
-        Route::post('missing-keys', '\\Vsch\\TranslationManager\\Controller@postMissingKeys');
     }
 
     public function getTranslationTable($group)
@@ -514,6 +530,9 @@ class Controller extends BaseController
         $translator = App::make('translator');
 
         foreach ($allTranslations as $t) {
+            if ($t->group === Manager::JSON_GROUP && $t->locale === 'json' && ($t->value === '' || $t->value === null)) {
+                $t->value = $t->key;
+            }
             $t = $translator->getTranslationForEditLink($t, true, $t->group . '.' . $t->key, $t->locale, null, $t->group);
             $translations[$t->key][$t->locale] = $t;
         }
@@ -545,6 +564,8 @@ class Controller extends BaseController
                 ->with('markdownKeySuffix', $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX))
                 ->with('yandex_key', !!$this->manager->config('yandex_translator_key'))
                 ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
+                ->with("packagePrefix", /*appDebug() ? '' : */
+                    $this->packagePrefix)
                 ->with("apiUrl", $apiURL)
                 ->with("appUrl", $appURL);
         } catch (\Exception $e) {
@@ -571,7 +592,7 @@ class Controller extends BaseController
         $displayLocales = $this->displayLocales;
         $userLocales = $this->userLocales;
 
-        $show_usage_enabled = $this->manager->config('log_key_usage_info', false);
+        $show_usage_enabled = $this->manager->config(Manager::LOG_KEY_USAGE_INFO_KEY, false);
 
         $adminEnabled = $this->manager->config('admin_enabled') &&
             Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS);
@@ -828,6 +849,23 @@ class Controller extends BaseController
     public function getConnectionName()
     {
         return $this->manager->getConnectionName();
+    }
+
+    public function postClearUISettings()
+    {
+        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+            $userId = Request::get('user_id');
+            //Session::flash('_old_data', Request::except('keys'));
+            $userLocalesModel = new UserLocales();
+            $userLocalesModel->setConnection($this->getConnectionName());
+            $userLocalesResult = $userLocalesModel->query()->where('user_id', $userId)->first();
+            if ($userLocalesResult && $userLocalesResult->ui_settings) {
+                $userLocalesResult->ui_settings = null;
+                $userLocalesResult->save();
+            }
+            return Response::json(array('status' => 'ok'), 200, [], JSON_UNESCAPED_SLASHES);
+        }
+        return Response::json(array('status' => 'error', 'error' => 'not admin'), 200, [], JSON_UNESCAPED_SLASHES);
     }
 
     public function postAdd($group)

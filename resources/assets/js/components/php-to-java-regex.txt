@@ -1,0 +1,15 @@
+find: <\?=\s*([^>]+)\s*\?>
+replace: {$1}
+
+find: "\{([^"}]+)\}"
+replace: {$1}
+
+find: "\{([^"}]+)\}([^"]*)"
+replace: {$1 + "$2"}
+
+find: @lang\(\$package \. '::messages\.([^"']+)'\)
+replace: {t("messages.$1")}
+
+find: noEditTrans\(\$package \. '::messages\.([^"']+)'\)
+replace: t("messages.$1")
+

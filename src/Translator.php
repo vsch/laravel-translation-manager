@@ -3,6 +3,7 @@
 use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Cookie;
@@ -678,7 +679,11 @@ HTML;
 
     public static function apiRoutes()
     {
-        Controller::apiRoutes();
+        $config = App::get('config')[\Vsch\TranslationManager\ManagerServiceProvider::PACKAGE];
+        $key = \Vsch\TranslationManager\Manager::DISABLE_REACT_UI;
+
+        $disableReactUI = array_key_exists($key, $config) ? $config[$key] : false;
+        Controller::apiRoutes($disableReactUI);
     }
 
     public function getLocales()

@@ -29,6 +29,18 @@ return array(
         'en',
     ],
     /**
+     * Disable React-UI link in WebUI and route to UI
+     *
+     * @type boolean
+     */
+    'disable-react-ui' => false,
+    /**
+     * Disable React-UI link only
+     *
+     * @type boolean
+     */
+    'disable-react-ui-link' => false,
+    /**
      * Specify locales that you want to show in the web interface, if empty or not provided then all locales in the database
      * will be shown
      *

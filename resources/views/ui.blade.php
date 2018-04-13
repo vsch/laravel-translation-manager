@@ -12,7 +12,7 @@
     <meta name="api-url" content="{{ $apiUrl }}" />
     <meta name="app-url" content="{{ $appUrl }}" />
     <link href="https://use.fontawesome.com/releases/v5.0.8/css/all.css" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ mix('css/index.css') }}"/>
+    <link rel="stylesheet" href="{{mix('vendor/laravel-translation-manager/css/index.css') }}"/>
     <title>React App</title>
 </head>
 <body role="document">
@@ -20,7 +20,7 @@
 <div class="container-fluid">
     <div id="root"></div>
 </div>
-<script src="{{mix('js/index.js')}}"></script>
+<script src="{{mix('vendor/laravel-translation-manager/js/index.js')}}"></script>
 </body>
 </html>
 

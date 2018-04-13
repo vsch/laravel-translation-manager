@@ -1,0 +1,82 @@
+// stylelint-disable
+$white: #fff !default;
+$gray-100: #f8f9fa !default;
+$gray-200: #e9ecef !default;
+$gray-300: #dee2e6 !default;
+$gray-400: #ced4da !default;
+$gray-500: #adb5bd !default;
+$gray-600: #6c757d !default;
+$gray-700: #495057 !default;
+$gray-800: #343a40 !default;
+$gray-900: #212529 !default;
+$black: #000 !default;
+
+$grays: () !default;
+$grays: map-merge((
+        "100": $gray-100,
+        "200": $gray-200,
+        "300": $gray-300,
+        "400": $gray-400,
+        "500": $gray-500,
+        "600": $gray-600,
+        "700": $gray-700,
+        "800": $gray-800,
+        "900": $gray-900
+), $grays);
+
+$blue: #007bff !default;
+$indigo: #6610f2 !default;
+$purple: #6f42c1 !default;
+$pink: #e83e8c !default;
+$red: #dc3545 !default;
+$orange: #fd7e14 !default;
+$yellow: #ffc107 !default;
+$green: #28a745 !default;
+$teal: #20c997 !default;
+$cyan: #17a2b8 !default;
+
+// Body
+$body-bg: #ffffff;
+
+$primary: #337ab7;
+$secondary: #6c757d;
+$success: #449d44;
+$info: #5bc0de;
+$warning: #ec971f;
+$danger: #c12e2a;
+
+// Typography
+$font-family-sans-serif: "Raleway", sans-serif;
+$font-size-base: 0.9rem;
+$line-height-base: 1.6;
+
+// Sidebar
+$side-bar-width: 80px;
+$side-bar-bg: $primary;
+$side-bar-fg-hover: #FFFFFF;
+$side-bar-bg-hover: #723dcc;//lighten($side-bar-bg, 30%);
+$side-bar-fg: #fff;
+$side-bar-active: $danger;//lighten($danger, 10%);
+$side-bar-font-size: 0.9em;
+$side-bar-menu-font-size: 1.1em;
+$side-bar-menu-item-height: 1.5em;
+
+$side-bar-sub-menu-width: 400px;
+$side-bar-sub-menu-separator-height: $side-bar-menu-item-height/4;
+$side-bar-sub-menu-transition: 200ms ease-out;
+$side-bar-sub-menu-transition-property: all;
+
+$card-spacer-y: 0.3rem;
+$card-spacer-x: 1.0rem;
+
+$hr-margin-y: 1rem/2;
+
+//$input-placeholder-color: $secondary;
+$input-placeholder-color: $gray-500;
+
+$form-check-inline-margin-x: 0.25rem;
+
+$transition-time: 0.15s;
+$transition-collapse: height .15s ease;
+$transition-collapse-all: all .2s ease;
+

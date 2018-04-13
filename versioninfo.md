@@ -3,11 +3,15 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3.x for Laravel
 5.3, 2.4.x for Laravel 5.4, 2.5.x for Laravel 5.5 and 2.6.x for Laravel 5.6 compatibility.
 
-#### Next: 2.6.8
+#### Next: 2.6.10
 
 * Add: ui_settings to ltm_user_locales to store the user's react ui app settings for
   persistence. Sessions are too short and too much data for one cookie and splitting is a pain.
 * Fix: change ltm_user_locales index on user_id to unique 
+* Fix: JSON json locale, used for key mapping was never saved to the database on publishing of
+  the JSON group.
+* Fix: creating new keys in the JSON group caused the `json` locale keys to stay empty instead
+  of defaulting to key name.
 
 #### Next: 2.6.6
 
