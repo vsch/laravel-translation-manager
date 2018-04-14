@@ -396,7 +396,7 @@ class Manager
             } else {
                 $this->persistentPrefix = '';
             }
-        } elseif ($this->cacheTransKey == null) {
+        } else if ($this->cacheTransKey == null) {
             $this->cacheTransKey = $this->persistentPrefix ? $this->persistentPrefix . 'translations' : '';
         }
         return $this->persistentPrefix;
@@ -458,7 +458,7 @@ class Manager
         if (!$groups || $groups === '*') {
             $this->cache = [];
             $this->cacheIsDirty = !!$this->persistentPrefix;
-        } elseif ($this->cache()) {
+        } else if ($this->cache()) {
             if (!is_array($groups)) $groups = [$groups];
 
             foreach ($groups as $group) {
@@ -481,7 +481,7 @@ class Manager
             if ($clearDatabase) {
                 $this->translatorRepository->setNotUsedForAllTranslations();
             }
-        } elseif ($this->usageCache()) {
+        } else if ($this->usageCache()) {
             $this->usageCache();
             if (!is_array($groups)) {
                 $groups = [$groups];
@@ -736,7 +736,11 @@ class Manager
             $translation->is_auto_added = 0;
             $translation->saved_value = $value;
 
-            $newStatus = ($translation->value === $translation->saved_value ? Translation::STATUS_SAVED : ($translation->status === Translation::STATUS_SAVED ? Translation::STATUS_SAVED_CACHED : Translation::STATUS_CHANGED));
+            if ($translation->value === $translation->saved_value) {
+                $newStatus = (Translation::STATUS_SAVED);
+            } else {
+                $newStatus = (($translation->status === Translation::STATUS_SAVED ? Translation::STATUS_SAVED_CACHED : Translation::STATUS_CHANGED));
+            }
 
             if ($newStatus !== (int)$translation->status) {
                 $translation->status = $newStatus;
@@ -744,7 +748,7 @@ class Manager
 
             if (!$translation->exists) {
                 $values[] = $this->translatorRepository->getInsertTranslationsElement($translation, $timeStamp);
-            } elseif ($translation->isDirty()) {
+            } else if ($translation->isDirty()) {
                 if ($translation->isDirty(['value', 'source', 'saved_value', 'was_used',])) {
                     $translation->save();
                 } else {
@@ -782,9 +786,10 @@ class Manager
             foreach ($dbTransMap as $translation) {
                 // mark it as saved cached or changed
                 if (((int)$translation->status) === Translation::STATUS_SAVED) {
-                    $translation->status = Translation::STATUS_SAVED_CACHED;
-                    $translation->save();
+                    $translation->status = $replace ? Translation::STATUS_SAVED_CACHED : Translation::STATUS_CHANGED;
+                    $translation->saved_value = null;
                 }
+                $translation->save();
             }
         }
 
@@ -812,7 +817,7 @@ class Manager
                 if ($hadUnderscore) $newKey .= "_";
                 $newKey .= $c;
                 $hadUnderscore = false;
-            } elseif (!$hadUnderscore) {
+            } else if (!$hadUnderscore) {
                 $hadUnderscore = true;
             }
             if (strlen($newKey) >= $maxJsonKey) {
@@ -1149,7 +1154,7 @@ class Manager
 
         if ($group && $group !== '*') {
             $this->translatorRepository->deleteTranslationWhereIsDeleted();
-        } elseif (!$recursing) {
+        } else if (!$recursing) {
             $this->translatorRepository->deleteTranslationWhereIsDeleted($group);
         }
 

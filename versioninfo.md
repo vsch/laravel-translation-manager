@@ -5,9 +5,20 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
 
 #### Next: 2.6.10
 
-* Add: ui_settings to ltm_user_locales to store the user's react ui app settings for
+**Need to run migrations**
+
+```bash
+$ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=public --force
+$ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=migrations
+$ php artisan migrate
+```
+
+and 
+
+* Add: React UI for LTM
+* Add: `ui_settings` to `ltm_user_locales` table to store the user's react ui app settings for
   persistence. Sessions are too short and too much data for one cookie and splitting is a pain.
-* Fix: change ltm_user_locales index on user_id to unique 
+* Fix: change `ltm_user_locales` index on user_id to unique
 * Fix: JSON json locale, used for key mapping was never saved to the database on publishing of
   the JSON group.
 * Fix: creating new keys in the JSON group caused the `json` locale keys to stay empty instead

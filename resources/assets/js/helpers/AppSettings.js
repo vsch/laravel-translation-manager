@@ -298,7 +298,9 @@ export class AppSettings extends GlobalSetting {
         this.setStateTransforms(transforms);
         this.setDefaultSettings(defaultSettings, updateSettingsType);
 
-        this.load();
+        window.setTimeout(()=>{
+            this.load();
+        }, 100);
     }
 
     // implement to test if can request settings from server

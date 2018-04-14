@@ -59,7 +59,7 @@ class TranslationsTable extends DashboardComponent {
             group: group,
             yandexKey: appTranslations_$.yandexKey(),
             translations: appTranslations_$.translations(),
-            importReplace: 0,
+            importReplace: appSettings_$.uiSettings.importReplace() || 0,
             getConnectionNameParam: getConnectionNameParam,
             replaceFields: () => URL_IMPORT_GROUP(group, this.state.importReplace, appSettings.getState().connectionName).data,
         }, isAdminEnabled ? 'collapsePublishButtons' : null);
@@ -88,8 +88,8 @@ class TranslationsTable extends DashboardComponent {
     }
 
     handleImportReplace(e) {
-        this.state_$.importReplace = e.target.value;
-        this.state_$.save();
+        appSettings_$.uiSettings.importReplace = e.target.value;
+        appSettings_$.save();
     }
 
     isDoneLoading() {
@@ -120,6 +120,13 @@ class TranslationsTable extends DashboardComponent {
             }
         } else {
             // TODO: set urls for actions
+            if (group !== 'JSON') {
+                const index = displayLocales.indexOf('json');
+                if (index !== -1) {
+                    displayLocales.splice(index, 1);
+                }
+            }
+
             const allLocalesList = displayLocales;
             const userLocaleList = [];
             let i = 1;

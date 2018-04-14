@@ -182,7 +182,7 @@ FROM
          (SELECT count(value) total,
           sum(CASE WHEN status = 1 THEN 1 ELSE 0 END) changed,
           sum(CASE WHEN status = 2 AND value IS NOT NULL THEN 1 ELSE 0 END) cached,
-         sum(is_deleted) deleted,
+          sum(is_deleted) deleted,
          `group`, locale
                 FROM ltm_translations lt WHERE 1=1 $displayWhere GROUP BY `group`, locale
           UNION ALL
@@ -191,7 +191,7 @@ FROM
      GROUP BY `group`, locale) lcs
     JOIN (SELECT count(DISTINCT `key`) total_keys, `group` FROM ltm_translations WHERE 1=1 $displayWhere GROUP BY `group`) mx
         ON lcs.`group` = mx.`group`
-WHERE lcs.total < mx.total_keys OR lcs.changed > 0 OR lcs.cached > 0 OR lcs.deleted > 0
+WHERE (lcs.total < mx.total_keys OR lcs.changed > 0 OR lcs.cached > 0 OR lcs.deleted > 0) AND locale <> 'json'
 SQL
         ));
     }

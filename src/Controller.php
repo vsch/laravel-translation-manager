@@ -729,7 +729,7 @@ class Controller extends BaseController
     public function postImport($group)
     {
         $replace = Request::get('replace', false);
-        $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : 1)
+        $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : $replace)
             , $group === '*' ? null : [$group]);
         return Response::json(array('status' => 'ok', 'counter' => $counter));
     }
@@ -739,7 +739,7 @@ class Controller extends BaseController
         $replace = Request::get('replace', false);
         $group = Request::get('group', '*');
         $this->manager->clearErrors();
-        $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : 1)
+        $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : $replace)
             , $group === '*' ? null : [$group]);
         $errors = $this->manager->errors();
         return Response::json(array('status' => 'ok', 'counter' => $counter, 'errors' => $errors));
@@ -1498,7 +1498,7 @@ class Controller extends BaseController
                 $this->normalizeTranslationLocales();
 
                 $replace = Request::get('replace', false);
-                $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : 1)
+                $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : $replace)
                     , $group === '*' ? null : [$group]);
                 return Response::json(array('status' => 'ok', 'counter' => $counter));
             }
