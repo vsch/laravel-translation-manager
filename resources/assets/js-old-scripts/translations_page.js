@@ -140,7 +140,7 @@ function unhookTranslationPage() {
                 //     vars.GLOBAL_SETTINGS_CHANGED({transFilters: data});
                 // } else {
                 var jqxhr = $.ajax({
-                    type: 'GET',
+                    type: 'POST',
                     url: vars.URL_TRANSLATOR_FILTERS,
                     data: data,
 

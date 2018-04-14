@@ -70,7 +70,7 @@ class SummaryDashboard extends DashboardComponent {
 
     showGroup(group) {
         this.props.history.push('/');
-        appTranslations.load(group);
+        appTranslations.changeGroup(group);
     }
 
     getEntry(stat) {
@@ -98,7 +98,7 @@ class SummaryDashboard extends DashboardComponent {
             body = <div>Error: {error.message}</div>;
         } else if (!isLoaded) {
             body = <tr>
-                <td colSpan='5' width='100%' className='text-center'><img src='../images/loading.gif'/></td>
+                <td colSpan='5' width='100%' className='text-center'><div className='show-loading'/></td>
             </tr>;
         } else {
             body = summary.map((item, index) => {

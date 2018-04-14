@@ -103,7 +103,7 @@ class GroupManagementDashboard extends DashboardComponent {
             body = <div>Error: {error.message}</div>;
         } else if (!isLoaded) {
             body = <tr>
-                <td colSpan='4' width='100%' className='text-center'><img src='../images/loading.gif'/></td>
+                <td colSpan='4' width='100%' className='text-center'><div className='show-loading'/></td>
             </tr>;
         } else {
             const deleteGroupURL = (group, newGroup) => apiURL([RENAME_GROUP_URL, group, newGroup]);

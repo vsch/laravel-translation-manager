@@ -1,7 +1,7 @@
 import GlobalSetting from './GlobalSetting';
 import axios from "axios";
 import appSettings, { appSettings_$ } from "./AppSettings";
-import { apiURL, GET_USER_LIST } from "./ApiRoutes";
+import { URL_GET_USER_LIST } from "./ApiRoutes";
 
 export class GlobalUserLocales extends GlobalSetting {
     constructor() {
@@ -37,7 +37,9 @@ export class GlobalUserLocales extends GlobalSetting {
 
     // implement to request settings from server
     serverLoad() {
-        axios.get(apiURL(GET_USER_LIST))
+        const {connectionName, displayLocales} = appSettings.getState();
+        const api = URL_GET_USER_LIST(connectionName, displayLocales);
+        axios.post(api.url, api.data)
             .then((result) => {
                 this.connectionName = result.data.connectionName;
                 this.displayLocales = result.data.displayLocales;

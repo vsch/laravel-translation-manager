@@ -3,11 +3,11 @@ import { connect } from "react-redux";
 import { translate } from 'react-i18next';
 import { compose } from "redux";
 import Dashboard from "./Dashboard";
-import { appSettings_$ } from "../helpers/AppSettings";
+import appSettings, { appSettings_$ } from "../helpers/AppSettings";
 import PropTypes from "prop-types";
 import DashboardComponent from "./DashboardComponent";
 import ModalDialog from "./ModalDialog";
-import { apiURL, POST_ADD_SUFFIXED_KEYS, POST_DELETE_SUFFIXED_KEYS } from "../helpers/ApiRoutes";
+import { POST_ADD_SUFFIXED_KEYS, POST_DELETE_SUFFIXED_KEYS, URL_ADD_SUFFIXED_KEYS, URL_DELETE_SUFFIXED_KEYS } from "../helpers/ApiRoutes";
 import SearchTranslations from "./SearchTranslations";
 
 const ADD_SUFFIXED_KEYS = "confirmAddSuffixedKeys";
@@ -47,10 +47,7 @@ class KeyOperationsDashboard extends DashboardComponent {
             hideSearch: this.state.hideSearch || false,
         });
 
-        state.suffixedKeysExtraFields = {
-            keys: state.keys,
-            suffixes: state.suffixes,
-        };
+        state.suffixedKeysExtraFields = URL_ADD_SUFFIXED_KEYS(state.group, state.keys,state.suffixes, appSettings.getState().connectionName).data;
 
         state.confirmationExtra = null;
         const keysList = state.keys.trim().split('\n').filter(item => !!item.trim());
@@ -199,15 +196,13 @@ class KeyOperationsDashboard extends DashboardComponent {
             body = <div>Error: {error.message}</div>;
         } else if (!isLoaded) {
             body = <tr>
-                <div className='text-center mx-auto'><img src='../images/loading.gif'/></div>
+                <div className='text-center mx-auto'>
+                    <div className='show-loading'/>
+                </div>
             </tr>;
         } else {
-            const postAddSuffixedKeysUrl = (group) => apiURL(POST_ADD_SUFFIXED_KEYS, group);
-            const postDeleteSuffixedKeysUrl = (group) => apiURL(POST_DELETE_SUFFIXED_KEYS, group);
-            const suffixedKeysExtraFields = JSON.stringify({
-                keys: this.state.keys,
-                suffixes: this.state.suffixes,
-            });
+            const postAddSuffixedKeys = URL_ADD_SUFFIXED_KEYS(group, this.state.keys, this.state.suffixes, appSettings_$.connectionName());
+            const postDeleteSuffixedKeys = URL_DELETE_SUFFIXED_KEYS(group, this.state.keys, this.state.suffixes, appSettings_$.connectionName());
 
             const keysDisabled = (!keys.trim() ? "disabled " : "");
             const suffixesDisabled = (!suffixes.trim() ? "disabled " : "");
@@ -223,7 +218,7 @@ class KeyOperationsDashboard extends DashboardComponent {
                                     <button type="button"
                                         className={keysDisabled + " btn btn-sm btn-primary mr-2"}
                                         onClick={keysDisabled ? null : this.handleButtonClick}
-                                        data-post-url={postAddSuffixedKeysUrl(group)}
+                                        data-post-url={postAddSuffixedKeys.url}
                                         data-confirmation-key={ADD_SUFFIXED_KEYS}
                                         data-extra-fields='suffixedKeysExtraFields'
                                         data-invalidate-group={group}
@@ -235,7 +230,7 @@ class KeyOperationsDashboard extends DashboardComponent {
                                         <button type="button"
                                             className={keysDisabled + "btn btn-sm btn-danger"}
                                             onClick={keysDisabled ? null : this.handleButtonClick}
-                                            data-post-url={postDeleteSuffixedKeysUrl(group)}
+                                            data-post-url={postDeleteSuffixedKeys.url}
                                             data-confirmation-key={DELETE_SUFFIXED_KEYS}
                                             data-extra-fields='suffixedKeysExtraFields'
                                             data-invalidate-group={group}

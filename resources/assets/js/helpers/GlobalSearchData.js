@@ -2,7 +2,7 @@ import GlobalSetting from './GlobalSetting';
 import appSettings, { appSettings_$ } from './AppSettings';
 import axios from "axios";
 import store from "./CreateAppStore";
-import { apiURL, GET_SEARCH } from "./ApiRoutes";
+import { URL_GET_SEARCH } from "./ApiRoutes";
 import { isNullOrUndefined, noneNullOrUndefined } from "./helpers";
 
 export class GlobalSearchData extends GlobalSetting {
@@ -32,16 +32,17 @@ export class GlobalSearchData extends GlobalSetting {
             if (noneNullOrUndefined(appSettings_$.displayLocales(), appSettings_$.uiSettings.searchText())) {
                 if (!isNullOrUndefined(appSettings_$.primaryLocale())) {
                     const displayLocales = appSettings_$.displayLocales.$_ifArray(Array.prototype.join, ',');
-                    const userLocales = appSettings_$.userLocales.$_ifArray(Array.prototype.join, ',');
-                    const connectionName = this.connectionName !== appSettings_$.connectionName();
-                    const searchText = this.searchText !== (appSettings_$.uiSettings.searchText.$_value || '');
+                    // const userLocales = appSettings_$.userLocales.$_ifArray(Array.prototype.join, ',');
+                    const connectionNameDiff = this.connectionName !== appSettings_$.connectionName();
+                    const searchText = (appSettings_$.uiSettings.searchText.$_value || '');
+                    const searchTextDiff = this.searchText !== searchText;
                     const displayLocaleDiff = this.displayLocales.join(',') !== displayLocales;
-                    const userLocaleDiff = this.userLocales.join(',') !== userLocales;
-                    if ((!this.displayLocales || !this.userLocales ||
-                        connectionName ||
-                        searchText ||
-                        displayLocaleDiff ||
-                        userLocaleDiff
+                    // const userLocaleDiff = this.userLocales.join(',') !== userLocales;
+                    if (searchText && (!this.displayLocales || !this.userLocales ||
+                        connectionNameDiff ||
+                        searchTextDiff ||
+                        displayLocaleDiff 
+                        // || userLocaleDiff
                     )) {
                         if (!this.isStaleData) {
                             this.isStaleData = true;
@@ -71,10 +72,11 @@ export class GlobalSearchData extends GlobalSetting {
 
     // implement to request settings from server
     serverLoad(searchText) {
+        const { connectionName, displayLocales, } = appSettings.getState();
         searchText = searchText || appSettings_$.uiSettings.searchText();
         if (searchText) {
-            const url = apiURL(GET_SEARCH, { q: searchText });
-            axios.get(url)
+            const api = URL_GET_SEARCH(connectionName, displayLocales, searchText);
+            axios.post(api.url, api.data)
                 .then((result) => {
                     this.connectionName = result.data.connectionName;
                     this.displayLocales = result.data.displayLocales;
@@ -87,13 +89,16 @@ export class GlobalSearchData extends GlobalSetting {
                     appSettings_$.save();
                 });
         } else {
-            this.connectionName = appSettings_$.connectionName();
-            this.displayLocales = appSettings_$.displayLocales();
-            this.userLocales = appSettings_$.userLocales();
-            this.searchText = searchText;
-            this.processServerUpdate({
-                searchText: this.searchText,
-            });
+            window.setTimeout(() => {
+                this.connectionName = appSettings_$.connectionName();
+                this.displayLocales = appSettings_$.displayLocales();
+                this.userLocales = appSettings_$.userLocales();
+                this.searchText = searchText;
+                this.processServerUpdate({
+                    searchText: this.searchText,
+                    loadedSearchText: this.searchText,
+                });
+            }, 50);
         }
     }
 

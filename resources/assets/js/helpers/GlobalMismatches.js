@@ -1,7 +1,7 @@
 import GlobalSetting from './GlobalSetting';
 import appSettings, { appSettings_$ } from './AppSettings';
 import axios from "axios";
-import { apiURL, GET_MISMATCHES } from "./ApiRoutes";
+import { URL_GET_MISMATCHES } from "./ApiRoutes";
 import { anyNullOrUndefined } from "./helpers";
 
 export class GlobalMismatches extends GlobalSetting {
@@ -45,8 +45,9 @@ export class GlobalMismatches extends GlobalSetting {
 
     // implement to request settings from server
     serverLoad() {
-        let { primaryLocale, translatingLocale, } = appSettings.getState();
-        axios.get(apiURL(GET_MISMATCHES, { primaryLocale: primaryLocale, translatingLocale: translatingLocale }))
+        let { primaryLocale, translatingLocale, connectionName } = appSettings.getState();
+        const api = URL_GET_MISMATCHES(connectionName, primaryLocale, translatingLocale);
+        axios.post(api.url, api.data)
             .then((result) => {
                 this.connectionName = result.data.connectionName;
                 this.primaryLocale = result.data.primaryLocale;

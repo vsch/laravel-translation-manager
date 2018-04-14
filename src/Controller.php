@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Symfony\Component\HttpFoundation\ParameterBag;
+use Vsch\TranslationManager\Classes\TranslationLocales;
 use Vsch\TranslationManager\Events\TranslationsPublished;
 use Vsch\TranslationManager\Models\Translation;
 use Vsch\TranslationManager\Models\UserLocales;
@@ -36,18 +37,16 @@ class Controller extends BaseController
     protected $sqltraces;
     protected $logSql;
     protected $connectionList;
-    protected $currentLocale;
     private $cookiePrefix;
-    protected $userLocales;
-    private $primaryLocale;
-    private $translatingLocale;
-    private $displayLocales;
     private $showUsageInfo;
     private $webUIState;
-    private $locales;
     private $translatorRepository;
-    // list of locales that the user is allowed to modify
+
+    /* @var $transLocales TranslationLocales */
+    private $transLocales; // all translation locale information for the session
     private $transFilters;
+
+    private $localeData;
 
     public function __construct(ITranslatorRepository $translatorRepository)
     {
@@ -78,55 +77,85 @@ class Controller extends BaseController
         });
     }
 
-    private static function packLocales($locales)
-    {
-        $packedLocales = implode(',', $locales);
-        return $packedLocales ? ',' . $packedLocales . ',' : '';
-    }
-
-    private static function nat_sort($arr)
-    {
-        natsort($arr);
-        return $arr;
-    }
-
     private function initialize()
     {
-        $this->loadCookieData();
-        $this->normalizeLocaleData();
+        $connectionName = Cookie::has($this->cookieName(self::COOKIE_CONNECTION_NAME)) ? Cookie::get($this->cookieName(self::COOKIE_CONNECTION_NAME)) : '';
+        if (!$this->changeConnectionName($connectionName)) {
+            // did not load the data since the connection was already set to default or same 
+            $this->loadPersistentData();
+        }
     }
 
-    private function loadCookieData()
+    public function getConnectionName()
     {
-        $appLocale = App::getLocale();
-        $connectionName = Cookie::has($this->cookieName(self::COOKIE_CONNECTION_NAME)) ? Cookie::get($this->cookieName(self::COOKIE_CONNECTION_NAME)) : '';
-        $this->setConnectionName($connectionName);
+        return $this->manager->getConnectionName();
+    }
 
-        $this->currentLocale = Cookie::get($this->cookieName(self::COOKIE_LANG_LOCALE), $appLocale);
-        $this->primaryLocale = Cookie::get($this->cookieName(self::COOKIE_PRIM_LOCALE), $this->manager->config('primary_locale', 'en'));
-        $this->translatingLocale = Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE), $this->currentLocale);
-        $displayLocales = Cookie::get($this->cookieName(self::COOKIE_DISP_LOCALES));
-        $displayLocales = $displayLocales ? array_unique(explode(',', $displayLocales)) : [];
-        $this->displayLocales = $displayLocales;
+    protected function getConnection()
+    {
+        $connection = $this->manager->getConnection();
+        return $connection;
+    }
 
-//        $this->webUIState = json_decode(Cookie::get($this->cookieName(self::COOKIE_WEB_UI_STATE), "{}"), true);
-//        $this->webUIState = Session::get($this->manager->config(Manager::PERSISTENT_PREFIX_KEY) . Manager::WEB_UI_SETTINGS_PERSISTENT_SUFFIX, null);
-        $this->webUIState = null;
-        $userId = Auth::id();
-        if ($userId !== null) {
-            $userLocalesModel = new UserLocales();
-            $userLocalesModel->setConnection($connectionName);
-            $userLocalesResult = $userLocalesModel->query()->where('user_id', $userId)->first();
-            if ($userLocalesResult && $userLocalesResult->ui_settings) {
-                $this->webUIState = json_decode($userLocalesResult->ui_settings, true);
+    /**
+     * @return string
+     */
+    private function normalizedConnectionName(): string
+    {
+        return ($this->manager->getNormalizedConnectionName($this->getConnectionName()));
+    }
+
+    /**
+     * Change default connection used for this login/session and reload
+     * persistent data if it the connection is different from what was before
+     *
+     * @param $connection string    connection name to change to
+     *
+     * @return bool  true if connection changed and data reloaded
+     */
+    public function changeConnectionName($connection)
+    {
+        if ($this->setConnectionName($connection)) {
+            try {
+                $this->loadPersistentData();
+                return true;
+            } catch (\Exception $e) {
+                // invalid database config
+                if ($this->setConnectionName('')) {
+                    $this->loadPersistentData();
+                    return true;
+                }
             }
         }
+        return false;
+    }
 
-        if (!$this->webUIState) {
-            // put defaults in it
-            $this->webUIState = [];
+    /**
+     * @param $connection  string connection name (null or empty for default)
+     * @return bool true if connection was changed from what it was before
+     */
+    public function setConnectionName($connection)
+    {
+        $connection = $this->manager->getResolvedConnectionName($connection);
+        if ($connection != $this->getConnectionName()) {
+            // changed
+            if (!array_key_exists($connection, $this->connectionList)) $connection = '';
+            // save the new connection to be used as default for the user
+            Cookie::queue($this->cookieName(self::COOKIE_CONNECTION_NAME), $connection, 60 * 24 * 365 * 1);
+            $this->manager->setConnectionName($connection);
+            return true;
         }
+        return false;
+    }
 
+    private function loadPersistentData()
+    {
+        $this->initTranslationLocales();
+        $this->normalizeTranslationLocales();
+
+        // save them in case they changed
+        $transLocales = $this->transLocales;
+        
         $transFilters = Cookie::get($this->cookieName(self::COOKIE_TRANS_FILTERS));
         if (is_array($transFilters)) {
             $this->transFilters = $transFilters;
@@ -139,118 +168,54 @@ class Controller extends BaseController
         $this->showUsageInfo = Cookie::get($this->cookieName(self::COOKIE_SHOW_USAGE), false);
     }
 
-    private function normalizeLocaleData()
-    {
-        if (!$this->manager->isDefaultTranslationConnection($this->getConnectionName())) {
-            try {
-                $this->normalizeLocaleDataRaw();
-            } catch (\Exception $e) {
-                // invalid database config
-                $this->setConnectionName('');
-                $this->normalizeLocaleDataRaw();
-            }
-        } else {
-            $this->normalizeLocaleDataRaw();
-        }
-    }
-
-    private function normalizeLocaleDataRaw()
+    private function initTranslationLocales()
     {
         $appLocale = App::getLocale();
-        $currentLocale = $this->currentLocale;
-        $primaryLocale = $this->primaryLocale;
-        $translatingLocale = $this->translatingLocale;
-        $connectionName = $this->getConnectionName();
-        $displayLocales = $this->displayLocales;
+        $currentLocale = Cookie::get($this->cookieName(self::COOKIE_LANG_LOCALE), $appLocale);
+        $primaryLocale = Cookie::get($this->cookieName(self::COOKIE_PRIM_LOCALE), $this->manager->config('primary_locale', 'en'));
+        $translatingLocale = Cookie::get($this->cookieName(self::COOKIE_TRANS_LOCALE), $currentLocale);
+        $displayLocales = Cookie::get($this->cookieName(self::COOKIE_DISP_LOCALES));
+        $displayLocales = $displayLocales ? array_unique(explode(',', $displayLocales)) : [];
 
-        // get all locales in the translation table
-        $allLocales = ManagerServiceProvider::getLists($this->getTranslation()->groupBy('locale')/*->having('locale', '<>', 'json')*/
-        ->pluck('locale')) ?: [];
+        $appLocale = App::getLocale();
+        $transLocales = new TranslationLocales($this->manager);
+        $transLocales->appLocale = $appLocale;
+        $transLocales->currentLocale = $currentLocale;
+        $transLocales->primaryLocale = $primaryLocale;
+        $transLocales->translatingLocale = $translatingLocale;
+        $transLocales->displayLocales = $displayLocales;
 
-        // limit the locale list to what is in the config
-        $configShowLocales = $this->manager->config(Manager::SHOW_LOCALES_KEY, []);
-        if ($configShowLocales) {
-            if (!is_array($configShowLocales)) $configShowLocales = array($configShowLocales);
-        }
+        // this messes up React UI because TransFilters overwrites it before appSettings get a chance to save
+//        App::setLocale($transLocales->currentLocale);
+        $this->transLocales = $transLocales;
+    }
 
-        $userLocales = $allLocales;
+    private function normalizeTranslationLocales()
+    {
+        $transLocales = $this->transLocales;
+
+        $allLocales = ManagerServiceProvider::getLists($this->getTranslation()->groupBy('locale')->pluck('locale')) ?: [];
+        $transLocales->allLocales = $allLocales;
+
         if ((!Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) && $this->manager->areUserLocalesEnabled()) {
             // see what locales are available for this user
             $userId = Auth::id();
             if ($userId !== null) {
                 $userLocalesModel = new UserLocales();
-                $userLocalesModel->setConnection($connectionName);
+                $userLocalesModel->setConnection($this->getConnectionName());
                 $userLocalesResult = $userLocalesModel->query()->where('user_id', $userId)->first();
                 if ($userLocalesResult && $userLocalesResult->locales && trim($userLocalesResult->locales)) {
-                    $userLocales = explode(',', $userLocalesResult->locales);
+                    $transLocales->userLocales = explode(',', $userLocalesResult->locales);
                 }
             }
         }
 
-        $addConfigLocales = $this->manager->config(Manager::ADDITIONAL_LOCALES_KEY, []);
-        if (!is_array($addConfigLocales)) $addConfigLocales = array($addConfigLocales);
-
-        // always add the current locale as reported by the application
-        $addConfigLocales[] = $appLocale;
-
-        // trim to show locales and add additional locales
-        $allShowLocales = $configShowLocales ? array_intersect($allLocales, $configShowLocales) : $allLocales;
-        $locales = array_unique(array_merge($allShowLocales, $addConfigLocales));
-        $userLocales = array_values(array_unique(array_intersect($userLocales, $locales)));
-
-        // now make sure primary, translating and current locale are part of the $locale list
-        if (array_search($currentLocale, $locales) === false) $currentLocale = $appLocale;
-        if (array_search($primaryLocale, $locales) === false) $primaryLocale = $appLocale;
-        App::setLocale($currentLocale);
-
-        if ($translatingLocale === $primaryLocale
-            || array_search($translatingLocale, $locales) === false
-            || array_search($translatingLocale, $userLocales) === false) {
-            $translatingLocale = null;
-        }
-
-        if (!$translatingLocale) {
-            $userTranslatableLocales = self::nat_sort(array_diff($userLocales, array($primaryLocale)));
-            $translatingLocale = $userTranslatableLocales ? $userTranslatableLocales[0] : $primaryLocale;
-        }
-
-        // now need to create displayLocales
-        $displayLocales = array_intersect($displayLocales, $locales);
-
-        // add primary, translating to list
-        $firstLocales = array($primaryLocale);
-        if ($translatingLocale !== $primaryLocale) $firstLocales[] = $translatingLocale;
-        $displayLocales = self::nat_sort(array_diff($displayLocales, $firstLocales));
-
-        // display has primary, translating then the rest of displayed locales
-        $displayLocales = array_values(array_merge($firstLocales, $displayLocales));
-        // locales has displayed locales then the rest displayable ones
-        $locales = array_values(array_merge($displayLocales, self::nat_sort(array_diff($locales, $displayLocales))));
-
-        // save them in case they changed
-        Cookie::queue($this->cookieName(self::COOKIE_DISP_LOCALES), implode(',', $displayLocales), 60 * 24 * 365 * 1);
-        Cookie::queue($this->cookieName(self::COOKIE_LANG_LOCALE), $currentLocale, 60 * 24 * 365 * 1);
-        Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $primaryLocale, 60 * 24 * 365 * 1);
-        Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $translatingLocale, 60 * 24 * 365 * 1);
-
-        $this->currentLocale = $currentLocale;
-        $this->primaryLocale = $primaryLocale;
-        $this->translatingLocale = $translatingLocale;
-        $this->userLocales = $userLocales;
-        $this->displayLocales = $displayLocales;
-        $this->locales = $locales;
+        $transLocales->normalize();
     }
 
     public function cookieName($cookie)
     {
         return $this->cookiePrefix . $cookie;
-    }
-
-    public function setConnectionName($connection)
-    {
-        if (!array_key_exists($connection, $this->connectionList)) $connection = '';
-        Cookie::queue($this->cookieName(self::COOKIE_CONNECTION_NAME), $connection, 60 * 24 * 365 * 1);
-        $this->manager->setConnectionName($connection);
     }
 
     protected function getTranslation()
@@ -270,65 +235,34 @@ class Controller extends BaseController
         return $ret;
     }
 
+    public function isLocaleEnabled($locale)
+    {
+        $packLocales = TranslationLocales::packLocales($this->transLocales->userLocales);
+        if (!is_array($locale)) $locale = array($locale);
+        foreach ($locale as $item) {
+            if (!str_contains($packLocales, ',' . $item . ',')) return false;
+        }
+        return true;
+    }
+
+    /*
+         * Standard WEB UI - API, not REST
+         * 
+         */
+
     public function getSearch()
     {
         $q = Request::get('q');
 
-        if ($q === '') $translations = [];
-        else {
-            $displayWhere = $this->displayLocales ? " AND locale IN ('" . implode("','", $this->displayLocales) . "')" : '';
-
-            if (strpos($q, '%') === false) $q = "%$q%";
-
-            // need to fill-in missing locale's that match the key
-            $translations = $this->translatorRepository->searchByRequest($q, $displayWhere, 500);
-        }
-
+        $translations = $this->computeSearch($q, $this->transLocales->displayLocales);
         $numTranslations = count($translations);
 
         return View::make($this->packagePrefix . 'search')
             ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
-            ->with('userLocales', self::packLocales($this->userLocales))
+            ->with('userLocales', TranslationLocales::packLocales($this->transLocales->userLocales))
             ->with('package', $this->package)
             ->with('translations', $translations)
             ->with('numTranslations', $numTranslations);
-    }
-
-    public function getSearchData()
-    {
-        $searchText = Request::get('q');
-        $q = $searchText;
-        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
-
-        if (trim($q) === '') $translations = [];
-        else {
-            $displayWhere = $this->displayLocales ? " AND locale IN ('" . implode("','", $this->displayLocales) . "')" : '';
-
-            if (strpos($q, '%') === false) $q = "%$q%";
-
-            // need to fill-in missing locale's that match the key
-            $translations = $this->translatorRepository->searchByRequest($q, $displayWhere, 500);
-            foreach ($translations as $t) {
-                if ($t->group === Manager::JSON_GROUP && $t->locale === 'json' && $t->value === null || $t->value === '') {
-                    $t->value = $t->key;
-                }
-            }
-        }
-
-        $data = [
-            'connectionName' => $this->connectionNameForUI(),
-            'userLocales' => $this->userLocales,
-            'searchText' => $searchText,
-            'displayLocales' => $this->displayLocales,
-            'searchData' => $translations,
-        ];
-        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
-    }
-
-    protected function getConnection()
-    {
-        $connection = $this->manager->getConnection();
-        return $connection;
     }
 
     public function getView($group = null)
@@ -342,8 +276,9 @@ class Controller extends BaseController
             return $this->processIndex($group);
         } catch (\Exception $e) {
             // if have non default connection, reset it
-            if ($this->getConnectionName()) {
-                $this->setConnectionName('');
+            if ($this->setConnectionName('')) {
+                // reload connection dependent data
+                $this->initialize();
             }
         }
         return $this->processIndex($group);
@@ -351,12 +286,12 @@ class Controller extends BaseController
 
     private function processIndex($group = null)
     {
-        $currentLocale = $this->currentLocale;
-        $primaryLocale = $this->primaryLocale;
-        $translatingLocale = $this->translatingLocale;
-        $locales = $this->locales;
-        $displayLocales = $this->displayLocales;
-        $userLocales = $this->userLocales;
+        $currentLocale = $this->transLocales->currentLocale;
+        $primaryLocale = $this->transLocales->primaryLocale;
+        $translatingLocale = $this->transLocales->translatingLocale;
+        $locales = $this->transLocales->locales;
+        $displayLocales = $this->transLocales->displayLocales;
+        $userLocales = $this->transLocales->userLocales;
 
         $groups = array('' => noEditTrans($this->packagePrefix . 'messages.choose-group')) + $this->manager->getGroupList();
 
@@ -369,7 +304,7 @@ class Controller extends BaseController
         // to allow proper handling of nested directory structure we need to copy the keys for the group for all missing
         // translations, otherwise we don't know what the group and key looks like.
         //$allTranslations = $this->getTranslation()->where('group', $group)->orderBy('key', 'asc')->get();
-        $allTranslations = $this->translatorRepository->allTranslations($group, $this->displayLocales);
+        $allTranslations = $this->translatorRepository->allTranslations($group, $this->transLocales->displayLocales);
 
         $numTranslations = count($allTranslations);
         $translations = array();
@@ -380,7 +315,7 @@ class Controller extends BaseController
             $translations[$translation->key][$translation->locale] = $translation;
         }
 
-        $this->manager->cacheGroupTranslations($group, $this->displayLocales, $translations);
+        $this->manager->cacheGroupTranslations($group, $this->transLocales->displayLocales, $translations);
 
         $summary = $this->computeSummary();
 
@@ -400,7 +335,7 @@ class Controller extends BaseController
 
         $userLocalesEnabled = $this->manager->areUserLocalesEnabled() && $userList;
 
-        $packedUserLocales = self::packLocales($userLocales);
+        $packedUserLocales = TranslationLocales::packLocales($userLocales);
         $displayLocalesAssoc = array_combine($displayLocales, $displayLocales);
 
         $disableReactUI = $this->manager->config(Manager::DISABLE_REACT_UI, false);
@@ -434,459 +369,110 @@ class Controller extends BaseController
             ->with('transFilters', $this->transFilters)
             ->with('userList', $userList)
             ->with('markdownKeySuffix', $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX))
-            ->with('connection_name', $this->connectionNameForUI());
+            ->with('connection_name', $this->normalizedConnectionName());
 
         return $view;
     }
 
-    public static function routes()
+    public function getToggleInPlaceEdit()
     {
-        self::webRoutes();
-        self::apiRoutes();
+        inPlaceEditing(!inPlaceEditing());
+        if (App::runningUnitTests()) return Redirect::to('/');
+        return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
     }
 
-    public static function webRoutes()
+    public function getInterfaceLocale()
     {
-        Route::get('view/{group?}', '\\Vsch\\TranslationManager\\Controller@getView');
+        $locale = Request::get("l");
+        $translating = Request::get("t");
+        $primary = Request::get("p");
+        $connection = Request::get("c");
+        $displayLocales = Request::get("d");
+        $display = implode(',', $displayLocales ?: []);
 
-        //deprecated: Route::controller('admin/translations', '\\Vsch\\TranslationManager\\Controller');
-        Route::get('/', '\\Vsch\\TranslationManager\\Controller@getIndex');
-        Route::get('connection', '\\Vsch\\TranslationManager\\Controller@getConnection');
-        Route::get('index', '\\Vsch\\TranslationManager\\Controller@getIndex');
-        Route::get('interface_locale', '\\Vsch\\TranslationManager\\Controller@getInterfaceLocale');
-        Route::get('keyop/{group}/{op?}', '\\Vsch\\TranslationManager\\Controller@getKeyop');
-        Route::get('search', '\\Vsch\\TranslationManager\\Controller@getSearch');
-        Route::get('toggle_in_place_edit', '\\Vsch\\TranslationManager\\Controller@getToggleInPlaceEdit');
-        Route::get('translation', '\\Vsch\\TranslationManager\\Controller@getTranslation');
-        Route::get('usage_info', '\\Vsch\\TranslationManager\\Controller@getUsageInfo');
-        Route::get('view', '\\Vsch\\TranslationManager\\Controller@getView');
-        Route::post('find', '\\Vsch\\TranslationManager\\Controller@postFind');
-        Route::post('yandex_key', '\\Vsch\\TranslationManager\\Controller@postYandexKey');
+        App::setLocale($locale);
+        Cookie::queue($this->cookieName(self::COOKIE_LANG_LOCALE), $locale, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $translating, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $primary, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_DISP_LOCALES), $display, 60 * 24 * 365 * 1);
+
+        $this->setConnectionName($connection);
+
+        if (App::runningUnitTests()) {
+            return Redirect::to('/');
+        }
+        return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
     }
 
-    public static function apiRoutes($disableReactUI)
+    public function getUsageInfo()
     {
-        // REST API for Rect-UI
-        if (!$disableReactUI) {
-            Route::get('ui', '\\Vsch\\TranslationManager\\Controller@getUI');
-            Route::get('ui/{all?}', '\\Vsch\\TranslationManager\\Controller@getUI')->where('all', '.*');
-            Route::get('ui-settings-json', '\\Vsch\\TranslationManager\\Controller@getUISettingsJson');
-            Route::get('ui-settings', '\\Vsch\\TranslationManager\\Controller@getUISettings');
-            Route::get('get/{group}/{locale}', '\\Vsch\\TranslationManager\\Controller@getTranslations');
-            Route::get('summary', '\\Vsch\\TranslationManager\\Controller@getSummary');
-            Route::get('mismatches', '\\Vsch\\TranslationManager\\Controller@getMismatches');
-            Route::get('user-list', '\\Vsch\\TranslationManager\\Controller@getUserList');
-            Route::get('translation-table/{group}', '\\Vsch\\TranslationManager\\Controller@getTranslationTable');
-            Route::get('search-data', '\\Vsch\\TranslationManager\\Controller@getSearchData');
-            Route::post('ui-settings', '\\Vsch\\TranslationManager\\Controller@postUISettings');
-            Route::post('missing-keys', '\\Vsch\\TranslationManager\\Controller@postMissingKeys');
+        $group = Request::get('group');
+        $reset = Request::get('reset-usage-info');
+        $show = Request::get('show-usage-info');
+
+        // need to store this so that it can be displayed again
+        Cookie::queue($this->cookieName(self::COOKIE_SHOW_USAGE), $show, 60 * 24 * 365 * 1);
+
+        if ($reset) {
+            // TODO: add show usage info to view variables so that a class can be added to keys that have no usage info
+            // need to clear the usage information
+            $this->manager->clearUsageCache(true, $group);
         }
 
-        Route::get('trans_filters', '\\Vsch\\TranslationManager\\Controller@getTransFilters');
-        Route::get('zipped_translations/{group?}', '\\Vsch\\TranslationManager\\Controller@getZippedTranslations');
-        Route::get('publish/{group}', '\\Vsch\\TranslationManager\\Controller@getPublish');
-        Route::get('import', '\\Vsch\\TranslationManager\\Controller@getImport');
-
-        // posts
-        Route::post('add/{group}', '\\Vsch\\TranslationManager\\Controller@postAdd');
-        Route::post('delete_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteKeys');
-        Route::post('delete_suffixed_keys/{group?}', '\\Vsch\\TranslationManager\\Controller@postDeleteSuffixedKeys');
-        Route::post('copy_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postCopyKeys');
-        Route::post('move_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postMoveKeys');
-        Route::post('preview_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postPreviewKeys');
-        Route::post('show_source/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postShowSource');
-        Route::post('publish/{group}', '\\Vsch\\TranslationManager\\Controller@postPublish');
-        Route::post('import/{group}', '\\Vsch\\TranslationManager\\Controller@postImport');
-        Route::post('delete_all/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteAll');
-        Route::post('delete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postDelete');
-        Route::post('edit/{group}', '\\Vsch\\TranslationManager\\Controller@postEdit');
-        Route::post('clear-ui-settings', '\\Vsch\\TranslationManager\\Controller@postClearUISettings');
-        Route::post('undelete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postUndelete');
-        Route::post('user_locales', '\\Vsch\\TranslationManager\\Controller@postUserLocales');
+        if (App::runningUnitTests()) {
+            return Redirect::to('/');
+        }
+        return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
     }
 
-    public function getTranslationTable($group)
+    public function getTransFilters()
     {
-        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
-        $primaryLocale = $this->primaryLocale;
-        $translatingLocale = $this->translatingLocale;
-        $locales = $this->locales;
-        $displayLocales = $this->displayLocales;
-        $userLocales = $this->userLocales;
-        $groups = array('' => noEditTrans($this->packagePrefix . 'messages.choose-group')) + $this->manager->getGroupList();
+        $filter = null;
+        $regex = null;
 
-        if ($group != null && !array_key_exists($group, $groups)) {
-            $data = [];
-            // return no data
-            return Response::json($data, 404, [], JSON_UNESCAPED_SLASHES /*| JSON_PRETTY_PRINT*/);
+        if (Request::has('filter')) {
+            $filter = Request::get("filter");
+            $this->transFilters['filter'] = $filter;
         }
 
-        $allTranslations = $this->translatorRepository->allTranslations($group, $this->displayLocales);
-
-        $numTranslations = count($allTranslations);
-        $translations = array();
-
-        /* @var $translator \Vsch\TranslationManager\Translator */
-        $translator = App::make('translator');
-
-        foreach ($allTranslations as $t) {
-            if ($t->group === Manager::JSON_GROUP && $t->locale === 'json' && ($t->value === '' || $t->value === null)) {
-                $t->value = $t->key;
-            }
-            $t = $translator->getTranslationForEditLink($t, true, $t->group . '.' . $t->key, $t->locale, null, $t->group);
-            $translations[$t->key][$t->locale] = $t;
+        if (Request::has('regex')) {
+            $regex = Request::get("regex", "");
+            $this->transFilters['regex'] = $regex;
         }
 
-        $this->manager->cacheGroupTranslations($group, $this->displayLocales, $translations);
+        Cookie::queue($this->cookieName(self::COOKIE_TRANS_FILTERS), json_encode($this->transFilters), 60 * 24 * 365 * 1);
 
-        $data = [
-            'connectionName' => $this->connectionNameForUI(),
-            'primaryLocale' => $primaryLocale,
-            'translatingLocale' => $translatingLocale,
-            'displayLocales' => $displayLocales,
-            'locales' => $locales,
-            'userLocales' => $userLocales,
-            'group' => $group,
-            'yandexKey' => $this->manager->config('yandex_translator_key', null),
-            'translations' => $translations,
-        ];
-        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
+        if (Request::wantsJson()) {
+            return Response::json(array(
+                'status' => 'ok',
+                'transFilters' => $this->transFilters,
+            ));
+        }
+
+        return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
     }
 
-    public function getUI()
-    {
-        $apiURL = url(action(ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this) . '@getIndex', []), [], !appDebug());
-        $appURL = action(ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this) . '@getUI', ['all' => ''], false);
-        $apiURL = substr($apiURL, 0, strlen($apiURL) - strlen("/index"));
-
-        try {
-            return View::make($this->packagePrefix . 'ui')
-                ->with('markdownKeySuffix', $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX))
-                ->with('yandex_key', !!$this->manager->config('yandex_translator_key'))
-                ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
-                ->with("packagePrefix", /*appDebug() ? '' : */
-                    $this->packagePrefix)
-                ->with("apiUrl", $apiURL)
-                ->with("appUrl", $appURL);
-        } catch (\Exception $e) {
-            // if have non default connection, reset it
-            if ($this->getConnectionName()) {
-                $this->setConnectionName('');
-            }
-        }
-        return View::make($this->packagePrefix . 'ui')
-            ->with('markdownKeySuffix', $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX))
-            ->with('yandex_key', !!$this->manager->config('yandex_translator_key'))
-            ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
-            ->with("apiUrl", $apiURL)
-            ->with("appUrl", $appURL);
-    }
-
-    public function getUISettings()
-    {
-        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
-        $currentLocale = $this->currentLocale;
-        $primaryLocale = $this->primaryLocale;
-        $translatingLocale = $this->translatingLocale;
-        $locales = $this->locales;
-        $displayLocales = $this->displayLocales;
-        $userLocales = $this->userLocales;
-
-        $show_usage_enabled = $this->manager->config(Manager::LOG_KEY_USAGE_INFO_KEY, false);
-
-        $adminEnabled = $this->manager->config('admin_enabled') &&
-            Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS);
-
-        $userLocalesEnabled = $this->manager->areUserLocalesEnabled();
-
-        $data = array(
-            'isAdminEnabled' => $adminEnabled,
-            'yandexKey' => $this->manager->config('yandex_translator_key'),
-            'connectionName' => $this->connectionNameForUI(),
-            'markdownKeySuffix' => $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX),
-            'transFilters' => $this->transFilters,
-            'connectionList' => $this->connectionList,
-            'usageInfoEnabled' => $show_usage_enabled,
-            'showUsage' => $this->showUsageInfo && $show_usage_enabled,
-            'currentLocale' => $currentLocale,
-            'primaryLocale' => $primaryLocale,
-            'translatingLocale' => $translatingLocale,
-            'locales' => $locales,
-            'userLocales' => $userLocales,
-            'userLocalesEnabled' => $userLocalesEnabled,
-            'displayLocales' => $displayLocales,
-            'groups' => array_values($this->manager->getGroupList()),
-        );
-
-        // merge in the webUIState
-        $data = array_merge($this->webUIState, $data);
-        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
-    }
-
-    public function postUISettings()
-    {
-        $json = Request::json();
-        return $this->processUISettings($json);
-    }
-
-    public function getUISettingsJson()
-    {
-        $json = Request::get('json');
-        $jsonParameter = new ParameterBag(json_decode($json, true));
-        return $this->processUISettings($jsonParameter);
-    }
-
-    private function processUISettings($json)
-    {
-        $handled = [];
-
-        if ($json->has("currentLocale")) {
-            $currentLocale = $json->get("currentLocale");
-            $handled[] = "currentLocale";
-            Cookie::queue($this->cookieName(self::COOKIE_LANG_LOCALE), $currentLocale, 60 * 24 * 365 * 1);
-            Lang::setLocale($currentLocale);
-            $this->currentLocale = $currentLocale;
-        }
-
-        if ($json->has("translatingLocale")) {
-            $handled[] = "translatingLocale";
-            $translatingLocale = $json->get("translatingLocale");
-            Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $translatingLocale, 60 * 24 * 365 * 1);
-            $this->translatingLocale = $translatingLocale;
-        }
-
-        if ($json->has("primaryLocale")) {
-            $handled[] = "primaryLocale";
-            $primaryLocale = $json->get("primaryLocale");
-            Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $primaryLocale, 60 * 24 * 365 * 1);
-            $this->primaryLocale = $primaryLocale;
-        }
-
-        if ($json->has("displayLocales")) {
-            $handled[] = "displayLocales";
-            $displayLocales = array_values($json->get("displayLocales"));
-            Cookie::queue($this->cookieName(self::COOKIE_DISP_LOCALES), implode(',', $displayLocales), 60 * 24 * 365 * 1);
-            $this->displayLocales = $displayLocales;
-        }
-
-        if ($json->has("connectionName")) {
-            $handled[] = "connectionName";
-            $connection = $json->get("connectionName");
-            $this->setConnectionName($connection);
-        }
-
-        if ($json->has("transFilters")) {
-            $handled[] = "transFilters";
-            $connection = $json->get("transFilters");
-            if (isset($connection['filter'])) {
-                $filter = $connection["filter"];
-                $this->transFilters['filter'] = $filter;
-            }
-
-            if (isset($connection['regex'])) {
-                $regex = $connection["regex"];
-                $this->transFilters['regex'] = $regex;
-            }
-
-            Cookie::queue($this->cookieName(self::COOKIE_TRANS_FILTERS), json_encode($this->transFilters), 60 * 24 * 365 * 1);
-        }
-
-        if ($json->has('showUsage')) {
-            $showUsageInfo = $json->get('showUsage');
-            $group = $json->get('group', '');
-            $reset = $json->get('resetUsage', false);
-            $handled[] = "showUsage";
-            $handled[] = "group";
-            $handled[] = "resetUsage";
-
-            // need to store this so that it can be displayed again
-            Cookie::queue($this->cookieName(self::COOKIE_SHOW_USAGE), $showUsageInfo, 60 * 24 * 365 * 1);
-            $this->showUsageInfo = $showUsageInfo;
-            if ($reset) {
-                // need to clear the usage information
-                $this->manager->clearUsageCache(true, $group);
-            }
-        }
-
-        $handled = array_combine($handled, $handled);
-
-        // save the rest as persisted settings, we don't do anything with them but return the react app
-        $hadWebUIState = false;
-        foreach ($json as $key => $value) {
-            if (!array_key_exists($key, $handled)) {
-                $this->webUIState[$key] = $value;
-                $hadWebUIState = true;
-            } else {
-                // delete old keys that got there by mistake
-                if (array_key_exists($key, $this->webUIState)) {
-                    unset($this->webUIState[$key]);
-                    $hadWebUIState = true;
-                }
-            }
-        }
-
-        $userId = Auth::id();
-        if ($userId !== null) {
-            if ($hadWebUIState) {
-                $userLocalesModel = new UserLocales();
-                $userLocalesModel->setConnection($this->getConnectionName());
-                $userLocalesResult = $userLocalesModel->query()->where('user_id', $userId)->firstOrNew([]);
-                $json_encode = json_encode($this->webUIState, JSON_PRETTY_PRINT);
-                $userLocalesResult->ui_settings = $json_encode;
-                $userLocalesResult->user_id = $userLocalesResult->user_id ?: $userId;
-                $userLocalesResult->locales = $userLocalesResult->locales ?: '';
-                $userLocalesResult->save();
-            }
-        }
-
-        // do all the init processing so the returned results are adjusted for display locales and the rest
-        $this->normalizeLocaleData();
-        return $this->getUISettings();
-    }
-
-    public function getSummary()
-    {
-        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
-        $displayLocales = $this->displayLocales;
-
-        $summary = $this->computeSummary();
-        $data = [
-            'connectionName' => $this->connectionNameForUI(),
-            'displayLocales' => $displayLocales,
-            'summary' => array_values($summary),
-        ];
-        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
-    }
-
-    public function postMissingKeys()
-    {
-        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
-        $missingKeys = Request::json('missingKeys');
-        /* @var $translator \Vsch\TranslationManager\Translator */
-        $translator = App::make('translator');
-        $affectedGroups = [];
-        foreach ($missingKeys as $key) {
-            $key = decodeKey($key);
-            list($namespace, $group, $item) = $translator->parseKey($key);
-            if ($item && $group) {
-                if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY))) {
-                    $t = $this->manager->missingKey($namespace, $group, $item, null, false, true);
-                    if (!$t->exists) {
-                        $affectedGroups[] = $namespace ? "$namespace::$group" : $group;
-                        $t->save();
-                    }
-                }
-            } else {
-                // TODO: return error invalid key
-            }
-        }
-        $data = [
-            'affectedGroups' => $affectedGroups,
-            'missingKeys' => [],
-        ];
-        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
-    }
-
-    public function getUserList()
-    {
-        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
-        $summary = $this->computeUserList();
-        $data = [
-            'connectionName' => $this->connectionNameForUI(),
-            'displayLocales' => $this->displayLocales,
-            'userLocaleList' => $summary,
-        ];
-        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
-    }
-
-    public function getMismatches()
-    {
-        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
-        $primaryLocale = Request::get('primaryLocale', $this->primaryLocale);
-        $translatingLocale = Request::get('translatingLocale', $this->translatingLocale);
-        $mismatches = $this->computeMismatches($primaryLocale, $translatingLocale);
-        $summary = [];
-        foreach ($mismatches as $mismatch) {
-            $summary[] = [
-                'key' => $mismatch->key,
-                'group' => $mismatch->group,
-                'pr' => $mismatch->en,
-                'pr_value' => $mismatch->en_value,
-                'tr' => $mismatch->ru,
-                'tr_value' => $mismatch->ru_value,
-            ];
-        }
-        $data = [
-            'connectionName' => $this->connectionNameForUI(),
-            'primaryLocale' => $primaryLocale,
-            'translatingLocale' => $translatingLocale,
-            'mismatches' => $summary,
-        ];
-        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
-    }
-
-    public function getTranslations($group, $locale)
-    {
-        // return the translations for the given group as JSON result
-        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
-        $translations = $this->manager->getTranslations('', $group, $locale, false);
-
-        $parts = explode('::', $group, 2);
-        if (count($parts) > 1) {
-            $namespace = $parts[0];
-            $translationGroup = $parts[1];
-        } else {
-            $translationGroup = "messages";
-        }
-
-        $jsonResponse = Response::json(array(
-            'connectionName' => $this->connectionNameForUI(),
-            $translationGroup => $translations,
-        ), 200, [], JSON_UNESCAPED_SLASHES | $pretty);
-        return $jsonResponse;
-    }
-
-    public function getConnectionName()
-    {
-        return $this->manager->getConnectionName();
-    }
-
-    public function postClearUISettings()
+    public function postAddSuffixedKeys($group)
     {
         if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
-            $userId = Request::get('user_id');
-            //Session::flash('_old_data', Request::except('keys'));
-            $userLocalesModel = new UserLocales();
-            $userLocalesModel->setConnection($this->getConnectionName());
-            $userLocalesResult = $userLocalesModel->query()->where('user_id', $userId)->first();
-            if ($userLocalesResult && $userLocalesResult->ui_settings) {
-                $userLocalesResult->ui_settings = null;
-                $userLocalesResult->save();
-            }
-            return Response::json(array('status' => 'ok'), 200, [], JSON_UNESCAPED_SLASHES);
-        }
-        return Response::json(array('status' => 'error', 'error' => 'not admin'), 200, [], JSON_UNESCAPED_SLASHES);
-    }
+            if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
+                $keys = explode("\n", trim(Request::get('keys')));
+                $suffixes = explode("\n", trim(Request::get('suffixes')));
+                $group = explode('::', $group, 2);
+                $namespace = '*';
+                if (count($group) > 1) $namespace = array_shift($group);
+                $group = $group[0];
 
-    public function postAdd($group)
-    {
-        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
-            $keys = explode("\n", trim(Request::get('keys')));
-            $suffixes = explode("\n", trim(Request::get('suffixes')));
-            $group = explode('::', $group, 2);
-            $namespace = '*';
-            if (count($group) > 1) $namespace = array_shift($group);
-            $group = $group[0];
-
-            foreach ($keys as $key) {
-                $key = trim($key);
-                if ($group && $key) {
-                    if ($suffixes) {
-                        foreach ($suffixes as $suffix) {
-                            $this->manager->missingKey($namespace, $group, $key . trim($suffix), null, false, false);
+                foreach ($keys as $key) {
+                    $key = trim($key);
+                    if ($group && $key) {
+                        if ($suffixes) {
+                            foreach ($suffixes as $suffix) {
+                                $this->manager->missingKey($namespace, $group, $key . trim($suffix), null, false, false);
+                            }
+                        } else {
+                            $this->manager->missingKey($namespace, $group, $key, null, false, false);
                         }
-                    } else {
-                        $this->manager->missingKey($namespace, $group, $key, null, false, false);
                     }
                 }
             }
@@ -923,112 +509,6 @@ class Controller extends BaseController
         return Redirect::back()->withInput();
     }
 
-    public function postEdit($group)
-    {
-        if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY))) {
-            $name = Request::get('name');
-            $value = Request::get('value');
-
-            list($locale, $key) = explode('|', $name, 2);
-            if ($this->isLocaleEnabled($locale)) {
-                $translation = $this->manager->firstOrNewTranslation(array(
-                    'locale' => $locale,
-                    'group' => $group,
-                    'key' => $key,
-                ));
-
-                $markdownSuffix = $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX);
-                $isMarkdownKey = $markdownSuffix != '' && ends_with($key, $markdownSuffix) && $key !== $markdownSuffix;
-
-                if (!$isMarkdownKey) {
-                    // strip off trailing spaces and eol's and &nbsps; that seem to be added when multiple spaces are entered in the x-editable textarea
-                    $value = trim(str_replace("\xc2\xa0", ' ', $value));
-                }
-
-                $value = $value !== '' ? $value : null;
-
-                $translation->value = $value;
-                $translation->status = (($translation->isDirty() && $value != $translation->saved_value) ? Translation::STATUS_CHANGED : Translation::STATUS_SAVED);
-                $translation->save();
-
-                if ($isMarkdownKey) {
-                    $markdownKey = $key;
-                    $markdownValue = $value;
-
-                    $key = substr($markdownKey, 0, -strlen($markdownSuffix));
-
-                    $translation = $this->manager->firstOrNewTranslation(array(
-                        'locale' => $locale,
-                        'group' => $group,
-                        'key' => $key,
-                    ));
-
-                    $value = $markdownValue !== null ? \Markdown::convertToHtml(str_replace("\xc2\xa0", ' ', $markdownValue)) : null;
-
-                    $translation->value = $value;
-                    $translation->status = (($translation->isDirty() && $value != $translation->saved_value) ? Translation::STATUS_CHANGED : Translation::STATUS_SAVED);
-                    $translation->save();
-                }
-            }
-        }
-        return array('status' => 'ok');
-    }
-
-    public function isLocaleEnabled($locale)
-    {
-        $packLocales = self::packLocales($this->userLocales);
-        if (!is_array($locale)) $locale = array($locale);
-        foreach ($locale as $item) {
-            if (!str_contains($packLocales, ',' . $item . ',')) return false;
-        }
-        return true;
-    }
-
-    public function postDelete($group, $key)
-    {
-        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
-            $key = decodeKey($key);
-            if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
-                //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
-                $result = $this->translatorRepository->updateIsDeletedByGroupAndKey($group, $key, 1);
-            }
-        }
-        return array('status' => 'ok');
-    }
-
-    public function postShowSource($group, $key)
-    {
-        $key = decodeKey($key);
-        $results = '';
-        if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
-            $result = $this->translatorRepository->selectSourceByGroupAndKey($group, $key);
-
-            foreach ($result as $item) {
-                $results .= $item->source;
-            }
-        }
-
-        foreach (explode("\n", $results) as $ref) {
-            if ($ref != '') {
-                $refs[] = $ref;
-            }
-        }
-        sort($refs);
-        return array('status' => 'ok', 'result' => $refs, 'key_name' => "$group.$key");
-    }
-
-    public function postUndelete($group, $key)
-    {
-        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
-            $key = decodeKey($key);
-            if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
-                //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
-                $result = $this->translatorRepository->updateIsDeletedByGroupAndKey($group, $key, 0);
-            }
-        }
-        return array('status' => 'ok');
-    }
-
     public function getKeyop($group, $op = 'preview')
     {
         return $this->keyOp($group, $op);
@@ -1040,7 +520,7 @@ class Controller extends BaseController
         $keymap = [];
         $this->logSql = 1;
         $this->sqltraces = [];
-        $userLocales = $this->userLocales;
+        $userLocales = $this->transLocales->userLocales;
 
         if ($userLocales && !in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
             $srckeys = explode("\n", trim(Request::get('srckeys')));
@@ -1216,6 +696,36 @@ class Controller extends BaseController
         return $this->keyOp($group, 'preview');
     }
 
+    public function postDeleteAll($group)
+    {
+        if ($group && $group !== '*') {
+            $this->manager->truncateTranslations($group);
+            return Response::json(array('status' => 'ok', 'counter' => (int)0));
+        }
+        return Response::json(array('status' => 'ok', 'error' => 'missing group', 'counter' => (int)0));
+    }
+
+    public function postShowSource($group, $key)
+    {
+        $key = decodeKey($key);
+        $results = '';
+        if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
+            $result = $this->translatorRepository->selectSourceByGroupAndKey($group, $key);
+
+            foreach ($result as $item) {
+                $results .= $item->source;
+            }
+        }
+
+        foreach (explode("\n", $results) as $ref) {
+            if ($ref != '') {
+                $refs[] = $ref;
+            }
+        }
+        sort($refs);
+        return array('status' => 'ok', 'result' => $refs, 'key_name' => "$group.$key");
+    }
+
     public function postImport($group)
     {
         $replace = Request::get('replace', false);
@@ -1235,22 +745,11 @@ class Controller extends BaseController
         return Response::json(array('status' => 'ok', 'counter' => $counter, 'errors' => $errors));
     }
 
-    public function postFind()
-    {
-        $numFound = $this->manager->findTranslations();
-
-        return Response::json(array('status' => 'ok', 'counter' => (int)$numFound));
-    }
-
-    public function postDeleteAll($group)
-    {
-        if ($group && $group !== '*') {
-            $this->manager->truncateTranslations($group);
-            return Response::json(array('status' => 'ok', 'counter' => (int)0));
-        }
-        return Response::json(array('status' => 'ok', 'error' => 'missing group', 'counter' => (int)0));
-    }
-
+    /**
+     * Test for postPublish
+     * @param $group
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getPublish($group)
     {
         $this->manager->exportTranslations($group);
@@ -1270,84 +769,6 @@ class Controller extends BaseController
             return Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
         }
         return Response::json(array('status' => 'ok', 'error' => 'missing group', 'counter' => (int)0));
-    }
-
-    public function getToggleInPlaceEdit()
-    {
-        inPlaceEditing(!inPlaceEditing());
-        if (App::runningUnitTests()) return Redirect::to('/');
-        return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
-    }
-
-    public function getInterfaceLocale()
-    {
-        $locale = Request::get("l");
-        $translating = Request::get("t");
-        $primary = Request::get("p");
-        $connection = Request::get("c");
-        $displayLocales = Request::get("d");
-        $display = implode(',', $displayLocales ?: []);
-
-        App::setLocale($locale);
-        Cookie::queue($this->cookieName(self::COOKIE_LANG_LOCALE), $locale, 60 * 24 * 365 * 1);
-        Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $translating, 60 * 24 * 365 * 1);
-        Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $primary, 60 * 24 * 365 * 1);
-        Cookie::queue($this->cookieName(self::COOKIE_DISP_LOCALES), $display, 60 * 24 * 365 * 1);
-
-        $this->setConnectionName($connection);
-
-        if (App::runningUnitTests()) {
-            return Redirect::to('/');
-        }
-        return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
-    }
-
-    public function getUsageInfo()
-    {
-        $group = Request::get('group');
-        $reset = Request::get('reset-usage-info');
-        $show = Request::get('show-usage-info');
-
-        // need to store this so that it can be displayed again
-        Cookie::queue($this->cookieName(self::COOKIE_SHOW_USAGE), $show, 60 * 24 * 365 * 1);
-
-        if ($reset) {
-            // TODO: add show usage info to view variables so that a class can be added to keys that have no usage info
-            // need to clear the usage information
-            $this->manager->clearUsageCache(true, $group);
-        }
-
-        if (App::runningUnitTests()) {
-            return Redirect::to('/');
-        }
-        return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
-    }
-
-    public function getTransFilters()
-    {
-        $filter = null;
-        $regex = null;
-
-        if (Request::has('filter')) {
-            $filter = Request::get("filter");
-            $this->transFilters['filter'] = $filter;
-        }
-
-        if (Request::has('regex')) {
-            $regex = Request::get("regex", "");
-            $this->transFilters['regex'] = $regex;
-        }
-
-        Cookie::queue($this->cookieName(self::COOKIE_TRANS_FILTERS), json_encode($this->transFilters), 60 * 24 * 365 * 1);
-
-        if (Request::wantsJson()) {
-            return Response::json(array(
-                'status' => 'ok',
-                'transFilters' => $this->transFilters,
-            ));
-        }
-
-        return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
     }
 
     public function getZippedTranslations($group = null)
@@ -1376,6 +797,870 @@ class Controller extends BaseController
         readfile($file);
         unlink($file);
         //\Log::info("sending file, zlib.compression current setting " . ini_get('zlib.output_compression'));
+    }
+
+    public function postTransFilters()
+    {
+        $filter = null;
+        $regex = null;
+
+        if (Request::has('filter')) {
+            $filter = Request::get("filter");
+            $this->transFilters['filter'] = $filter;
+        }
+
+        if (Request::has('regex')) {
+            $regex = Request::get("regex", "");
+            $this->transFilters['regex'] = $regex;
+        }
+
+        Cookie::queue($this->cookieName(self::COOKIE_TRANS_FILTERS), json_encode($this->transFilters), 60 * 24 * 365 * 1);
+
+        if (Request::wantsJson()) {
+            return Response::json(array(
+                'status' => 'ok',
+                'transFilters' => $this->transFilters,
+            ));
+        }
+
+        return Response::json(array('status' => 'ok'));
+    }
+
+    public static function webRoutes()
+    {
+        Route::get('view/{group?}', '\\Vsch\\TranslationManager\\Controller@getView');
+
+        //deprecated: Route::controller('admin/translations', '\\Vsch\\TranslationManager\\Controller');
+        Route::get('/', '\\Vsch\\TranslationManager\\Controller@getIndex');
+        Route::get('connection', '\\Vsch\\TranslationManager\\Controller@getConnection');
+        Route::get('index', '\\Vsch\\TranslationManager\\Controller@getIndex');
+        Route::get('interface_locale', '\\Vsch\\TranslationManager\\Controller@getInterfaceLocale');
+        Route::get('keyop/{group}/{op?}', '\\Vsch\\TranslationManager\\Controller@getKeyop');
+        Route::get('search', '\\Vsch\\TranslationManager\\Controller@getSearch');
+        Route::get('toggle_in_place_edit', '\\Vsch\\TranslationManager\\Controller@getToggleInPlaceEdit');
+        Route::get('translation', '\\Vsch\\TranslationManager\\Controller@getTranslation');
+        Route::get('usage_info', '\\Vsch\\TranslationManager\\Controller@getUsageInfo');
+        Route::get('view', '\\Vsch\\TranslationManager\\Controller@getView');
+        Route::get('trans_filters', '\\Vsch\\TranslationManager\\Controller@getTransFilters');
+        Route::post('find', '\\Vsch\\TranslationManager\\Controller@postFind');
+        Route::post('yandex_key', '\\Vsch\\TranslationManager\\Controller@postYandexKey');
+        Route::post('delete_suffixed_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteSuffixedKeys');
+        Route::post('add/{group}', '\\Vsch\\TranslationManager\\Controller@postAddSuffixedKeys');
+        Route::post('show_source/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postShowSource');
+        Route::post('delete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postDelete');
+        Route::post('delete_all/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteAll');
+        Route::post('publish/{group}', '\\Vsch\\TranslationManager\\Controller@postPublish');
+        Route::post('import/{group}', '\\Vsch\\TranslationManager\\Controller@postImport');
+        Route::get('zipped_translations/{group?}', '\\Vsch\\TranslationManager\\Controller@getZippedTranslations');
+        Route::get('publish/{group}', '\\Vsch\\TranslationManager\\Controller@getPublish');
+        Route::get('import', '\\Vsch\\TranslationManager\\Controller@getImport');
+
+        // shared web and api urls 
+        // TODO: migrate to Rest Controller for implementation
+        Route::post('edit/{group}', '\\Vsch\\TranslationManager\\Controller@postEdit');
+        Route::post('undelete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postUndelete');
+        Route::post('user_locales', '\\Vsch\\TranslationManager\\Controller@postUserLocales');
+
+        // TODO: implement a json api for wild-card key ops
+        Route::post('delete_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postDeleteKeys');
+        Route::post('copy_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postCopyKeys');
+        Route::post('move_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postMoveKeys');
+        Route::post('preview_keys/{group}', '\\Vsch\\TranslationManager\\Controller@postPreviewKeys');
+    }
+
+    public static function routes($disableReactUI)
+    {
+        self::webRoutes();
+        self::apiRoutes($disableReactUI);
+    }
+
+    /*
+     * React UI - API
+     * 
+     */
+    public static function apiRoutes($disableReactUI)
+    {
+        // REST API for Rect-UI
+        if (!$disableReactUI) {
+            Route::get('ui', '\\Vsch\\TranslationManager\\Controller@getUI');
+            Route::get('ui/{all?}', '\\Vsch\\TranslationManager\\Controller@getUI')->where('all', '.*');
+
+            Route::get('api/app-settings', '\\Vsch\\TranslationManager\\Controller@getAppSettings');
+            Route::post('api/app-settings', '\\Vsch\\TranslationManager\\Controller@postAppSettings');
+
+            Route::get('api/translations/{group}/{locale}', '\\Vsch\\TranslationManager\\Controller@getTranslations');
+            Route::post('api/search', '\\Vsch\\TranslationManager\\Controller@apiSearch');
+            Route::post('api/summary', '\\Vsch\\TranslationManager\\Controller@apiSummary');
+            Route::post('api/translation-table/{group}', '\\Vsch\\TranslationManager\\Controller@apiTranslationTable');
+            Route::post('api/user-list', '\\Vsch\\TranslationManager\\Controller@apiUserList');
+            Route::post('api/mismatches', '\\Vsch\\TranslationManager\\Controller@apiMismatches');
+
+            Route::post('api/delete-suffixed-keys/{group}', '\\Vsch\\TranslationManager\\Controller@apiDeleteSuffixedKeys');
+            Route::post('api/add-suffixed-keys/{group}', '\\Vsch\\TranslationManager\\Controller@apiAddSuffixedKeys');
+            Route::post('api/key-references/{group}/{key?}', '\\Vsch\\TranslationManager\\Controller@apiKeyReferences');
+            Route::post('api/delete-group/{group}', '\\Vsch\\TranslationManager\\Controller@apiDeleteGroup');
+            Route::post('api/find-references', '\\Vsch\\TranslationManager\\Controller@apiFindReferences');
+            Route::post('api/clear-ui-settings', '\\Vsch\\TranslationManager\\Controller@postClearUISettings');
+
+            Route::post('api/publish-group/{group}', '\\Vsch\\TranslationManager\\Controller@apiPublishGroup');
+            Route::post('api/import-group/{group}', '\\Vsch\\TranslationManager\\Controller@apiImportGroup');
+            Route::get('api/zipped-translations/{group?}', '\\Vsch\\TranslationManager\\Controller@apiZippedTranslations');
+
+            // TODO: convert to Rest API
+            Route::get('api/app-settings-json', '\\Vsch\\TranslationManager\\Controller@getAppSettingsJson');
+            Route::post('api/missing-keys', '\\Vsch\\TranslationManager\\Controller@postMissingKeys');
+
+            Route::post('api/trans-filters', '\\Vsch\\TranslationManager\\Controller@apiTransFilters');
+
+            // shared web and api urls 
+            // TODO: migrate to Rest Controller for implementation
+            Route::post('api/delete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postDelete');
+            Route::post('api/edit/{group}', '\\Vsch\\TranslationManager\\Controller@postEdit');
+            Route::post('api/undelete/{group}/{key}', '\\Vsch\\TranslationManager\\Controller@postUndelete');
+            Route::post('api/user_locales', '\\Vsch\\TranslationManager\\Controller@postUserLocales');
+        }
+    }
+
+    /**
+     * @return View   react ui app load page
+     */
+    public function getUI()
+    {
+        $apiURL = url(action(ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this) . '@getIndex', []), [], !appDebug());
+        $appURL = action(ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this) . '@getUI', ['all' => ''], false);
+        $apiURL = substr($apiURL, 0, strlen($apiURL) - strlen("/index"));
+
+        // TODO: validate that this is still needed
+        try {
+            return View::make($this->packagePrefix . 'ui')
+                ->with("apiUrl", $apiURL)
+                ->with("appUrl", $appURL);
+        } catch (\Exception $e) {
+            // if have non default connection, reset it
+            if ($this->getConnectionName()) {
+                $this->setConnectionName('');
+            }
+        }
+        return View::make($this->packagePrefix . 'ui')
+            ->with("apiUrl", $apiURL)
+            ->with("appUrl", $appURL);
+    }
+
+    public function apiSearch()
+    {
+        $this->changeConnectionName(Request::get('connectionName'));
+        $displayLocales = Request::get('displayLocales', $this->transLocales->displayLocales);
+        $searchText = Request::get('searchText');
+
+        $translations = $this->computeSearch($searchText, $displayLocales);
+
+        $data = [
+            'connectionName' => $this->normalizedConnectionName(),
+            'displayLocales' => $displayLocales,
+            'userLocales' => $this->transLocales->userLocales,
+            'searchText' => $searchText,
+            'searchData' => $translations,
+        ];
+
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
+    }
+
+    public function apiMismatches()
+    {
+        $this->changeConnectionName(Request::get('connectionName'));
+        $primaryLocale = Request::get('primaryLocale', $this->transLocales->primaryLocale);
+        $translatingLocale = Request::get('translatingLocale', $this->transLocales->translatingLocale);
+
+        $mismatches = $this->computeMismatches($primaryLocale, $translatingLocale);
+        $summary = [];
+        foreach ($mismatches as $mismatch) {
+            $summary[] = [
+                'key' => $mismatch->key,
+                'group' => $mismatch->group,
+                'pr' => $mismatch->en,
+                'pr_value' => $mismatch->en_value,
+                'tr' => $mismatch->ru,
+                'tr_value' => $mismatch->ru_value,
+            ];
+        }
+
+        $data = [
+            'connectionName' => $this->normalizedConnectionName(),
+            'primaryLocale' => $primaryLocale,
+            'translatingLocale' => $translatingLocale,
+            'mismatches' => $summary,
+        ];
+
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
+    }
+
+    /**
+     * Handles missing keys from the React App
+     *
+     * @return \Illuminate\Http\JsonResponse provides affected groups so translations table can be reloaded
+     */
+    public function postMissingKeys()
+    {
+        $missingKeys = Request::json('missingKeys');
+
+        // always on the default connection
+        $this->manager->setConnectionName('');
+
+        /* @var $translator \Vsch\TranslationManager\Translator */
+        $translator = App::make('translator');
+
+        $affectedGroups = [];
+        foreach ($missingKeys as $key) {
+            $key = decodeKey($key);
+            list($namespace, $group, $item) = $translator->parseKey($key);
+            if ($item && $group) {
+                if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY))) {
+                    $t = $this->manager->missingKey($namespace, $group, $item, null, false, true);
+                    if (!$t->exists) {
+                        $affectedGroups[] = $namespace ? "$namespace::$group" : $group;
+                        $t->save();
+                    }
+                }
+            } else {
+                // TODO: return error invalid key
+            }
+        }
+
+        $data = [
+            'connectionName' => '',
+            'affectedGroups' => $affectedGroups,
+            'missingKeys' => [],
+        ];
+
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
+    }
+
+    public function getTranslations($group, $locale)
+    {
+        // return the translations for the given group as JSON result
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
+
+        // this always comes from the default connection and does not affect the connection used by the UI
+        $this->setConnectionName('');
+
+        $translations = $this->manager->getTranslations('', $group, $locale, false);
+
+        $parts = explode('::', $group, 2);
+        if (count($parts) > 1) {
+            $namespace = $parts[0];
+            $translationGroup = $parts[1];
+        } else {
+            $translationGroup = "messages";
+        }
+
+        $jsonResponse = Response::json(array(
+            'connectionName' => $this->normalizedConnectionName(),
+            $translationGroup => $translations,
+        ), 200, [], JSON_UNESCAPED_SLASHES | $pretty);
+        return $jsonResponse;
+    }
+
+    public function apiTranslationTable($group)
+    {
+        $this->setConnectionName(Request::get('connectionName'));
+        $this->initTranslationLocales();
+
+        $this->transLocales->primaryLocale = Request::get('primaryLocale');
+        $this->transLocales->translatingLocale = Request::get('translatingLocale');
+        $this->transLocales->displayLocales = Request::get('displayLocales');
+        $this->normalizeTranslationLocales();
+
+        // now we can use them
+        $locales = $this->transLocales->locales;
+        $displayLocales = $this->transLocales->displayLocales;
+        $userLocales = $this->transLocales->userLocales;
+
+        $allTranslations = $this->translatorRepository->allTranslations($group, $this->transLocales->displayLocales);
+
+        $numTranslations = count($allTranslations);
+        $translations = array();
+
+        /* @var $translator \Vsch\TranslationManager\Translator */
+        $translator = App::make('translator');
+
+        foreach ($allTranslations as $t) {
+            if ($t->group === Manager::JSON_GROUP && $t->locale === 'json' && ($t->value === '' || $t->value === null)) {
+                $t->value = $t->key;
+            }
+            $t = $translator->getTranslationForEditLink($t, true, $t->group . '.' . $t->key, $t->locale, null, $t->group);
+            $translations[$t->key][$t->locale] = $t;
+        }
+
+        $this->manager->cacheGroupTranslations($group, $this->transLocales->displayLocales, $translations);
+
+        $data = [
+            'connectionName' => $this->normalizedConnectionName(),
+            'primaryLocale' => $this->transLocales->primaryLocale,
+            'translatingLocale' => $this->transLocales->translatingLocale,
+            'displayLocales' => $this->transLocales->displayLocales,
+            'locales' => $locales,
+            'userLocales' => $userLocales,
+            'group' => $group,
+            'yandexKey' => $this->manager->config('yandex_translator_key', null),
+            'translations' => $translations,
+        ];
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
+    }
+
+    private function loadAppUISettings(): void
+    {
+        $this->webUIState = null;
+        $userId = Auth::id();
+        if ($userId !== null) {
+            $userLocalesModel = new UserLocales();
+            $userLocalesModel->setConnection($this->getConnectionName());
+            $userLocalesResult = $userLocalesModel->query()->where('user_id', $userId)->first();
+            if ($userLocalesResult && $userLocalesResult->ui_settings) {
+                $this->webUIState = json_decode($userLocalesResult->ui_settings, true);
+            }
+        }
+
+        if (!$this->webUIState) {
+            // put defaults in it
+            $this->webUIState = [];
+        }
+    }
+
+    public function getAppSettings()
+    {
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
+        $currentLocale = $this->transLocales->currentLocale;
+        $primaryLocale = $this->transLocales->primaryLocale;
+        $translatingLocale = $this->transLocales->translatingLocale;
+        $locales = $this->transLocales->locales;
+        $displayLocales = $this->transLocales->displayLocales;
+        $userLocales = $this->transLocales->userLocales;
+
+        $show_usage_enabled = $this->manager->config(Manager::LOG_KEY_USAGE_INFO_KEY, false);
+
+        $adminEnabled = $this->manager->config('admin_enabled') && Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS);
+
+        $userLocalesEnabled = $this->manager->areUserLocalesEnabled();
+
+        $this->loadAppUISettings();
+
+        $data = array(
+            'isAdminEnabled' => $adminEnabled,
+            'yandexKey' => $this->manager->config('yandex_translator_key'),
+            'connectionName' => $this->normalizedConnectionName(),
+            'markdownKeySuffix' => $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX),
+            'transFilters' => $this->transFilters,
+            'connectionList' => $this->connectionList,
+            'usageInfoEnabled' => $show_usage_enabled,
+            'showUsage' => $this->showUsageInfo && $show_usage_enabled,
+            'currentLocale' => $currentLocale,
+            'primaryLocale' => $primaryLocale,
+            'translatingLocale' => $translatingLocale,
+            'locales' => $locales,
+            'userLocales' => $userLocales,
+            'userLocalesEnabled' => $userLocalesEnabled,
+            'displayLocales' => $displayLocales,
+            'groups' => array_values($this->manager->getGroupList()),
+        );
+
+        // merge in the webUIState
+        $data = array_merge($this->webUIState, $data);
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
+    }
+
+    public function postAppSettings()
+    {
+        $json = Request::json();
+        return $this->processAppSettings($json);
+    }
+
+    public function getAppSettingsJson()
+    {
+        $json = Request::get('json');
+        $jsonParameter = new ParameterBag(json_decode($json, true));
+        return $this->processAppSettings($jsonParameter);
+    }
+
+    private function processAppSettings($json)
+    {
+        $handled = [];
+
+        if ($json->has("connectionName")) {
+            $handled[] = "connectionName";
+            $connection = $json->get("connectionName");
+            $this->setConnectionName($connection);
+
+            // re-initialize all translation locale data
+            $this->initialize();
+        }
+
+        if ($json->has("currentLocale")) {
+            $currentLocale = $json->get("currentLocale");
+            $handled[] = "currentLocale";
+            Cookie::queue($this->cookieName(self::COOKIE_LANG_LOCALE), $currentLocale, 60 * 24 * 365 * 1);
+            Lang::setLocale($currentLocale);
+            $this->transLocales->currentLocale = $currentLocale;
+        }
+
+        if ($json->has("translatingLocale")) {
+            $handled[] = "translatingLocale";
+            $translatingLocale = $json->get("translatingLocale");
+            Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $translatingLocale, 60 * 24 * 365 * 1);
+            $this->transLocales->translatingLocale = $translatingLocale;
+        }
+
+        if ($json->has("primaryLocale")) {
+            $handled[] = "primaryLocale";
+            $primaryLocale = $json->get("primaryLocale");
+            Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $primaryLocale, 60 * 24 * 365 * 1);
+            $this->transLocales->primaryLocale = $primaryLocale;
+        }
+
+        if ($json->has("displayLocales")) {
+            $handled[] = "displayLocales";
+            $displayLocales = array_values($json->get("displayLocales"));
+            Cookie::queue($this->cookieName(self::COOKIE_DISP_LOCALES), implode(',', $displayLocales), 60 * 24 * 365 * 1);
+            $this->transLocales->displayLocales = $displayLocales;
+        }
+
+        if ($json->has("transFilters")) {
+            $handled[] = "transFilters";
+            $connection = $json->get("transFilters");
+            if (isset($connection['filter'])) {
+                $filter = $connection["filter"];
+                $this->transFilters['filter'] = $filter;
+            }
+
+            if (isset($connection['regex'])) {
+                $regex = $connection["regex"];
+                $this->transFilters['regex'] = $regex;
+            }
+
+            Cookie::queue($this->cookieName(self::COOKIE_TRANS_FILTERS), json_encode($this->transFilters), 60 * 24 * 365 * 1);
+        }
+
+        if ($json->has('showUsage')) {
+            $showUsageInfo = $json->get('showUsage');
+            $group = $json->get('group', '');
+            $reset = $json->get('resetUsage', false);
+            $handled[] = "showUsage";
+            $handled[] = "group";
+            $handled[] = "resetUsage";
+
+            // need to store this so that it can be displayed again
+            Cookie::queue($this->cookieName(self::COOKIE_SHOW_USAGE), $showUsageInfo, 60 * 24 * 365 * 1);
+            $this->showUsageInfo = $showUsageInfo;
+            if ($reset) {
+                // need to clear the usage information
+                $this->manager->clearUsageCache(true, $group);
+            }
+        }
+
+        $handled = array_combine($handled, $handled);
+
+        // save the rest as persisted settings, we don't do anything with them but return the react app
+        $this->loadAppUISettings(); 
+        
+        $hadWebUIState = false;
+        foreach ($json as $key => $value) {
+            if (!array_key_exists($key, $handled)) {
+                $this->webUIState[$key] = $value;
+                $hadWebUIState = true;
+            } else {
+                // delete old keys that got there by mistake
+                if (array_key_exists($key, $this->webUIState)) {
+                    unset($this->webUIState[$key]);
+                    $hadWebUIState = true;
+                }
+            }
+        }
+
+        $userId = Auth::id();
+        if ($userId !== null) {
+            if ($hadWebUIState) {
+                $userLocalesModel = new UserLocales();
+                $userLocalesModel->setConnection($this->getConnectionName());
+                $userLocalesResult = $userLocalesModel->query()->where('user_id', $userId)->firstOrNew([]);
+                $json_encode = json_encode($this->webUIState, JSON_PRETTY_PRINT);
+                $userLocalesResult->ui_settings = $json_encode;
+                $userLocalesResult->user_id = $userLocalesResult->user_id ?: $userId;
+                $userLocalesResult->locales = $userLocalesResult->locales ?: '';
+                $userLocalesResult->save();
+            }
+        }
+
+        // do all the init processing so the returned results are adjusted for display locales and the rest
+        $this->transLocales->normalize();
+        return $this->getAppSettings();
+    }
+
+    public function apiSummary()
+    {
+        $this->setConnectionName(Request::get('connectionName'));
+        $this->initTranslationLocales();
+
+        $this->transLocales->displayLocales = Request::get('displayLocales');
+        $this->normalizeTranslationLocales();
+
+        $summary = $this->computeSummary();
+        $data = [
+            'connectionName' => $this->normalizedConnectionName(),
+            'displayLocales' => $this->transLocales->displayLocales,
+            'summary' => array_values($summary),
+        ];
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
+    }
+
+    public function apiUserList()
+    {
+        $this->setConnectionName(Request::get('connectionName'));
+        $this->initTranslationLocales();
+
+        $this->transLocales->displayLocales = Request::get('displayLocales');
+        $this->normalizeTranslationLocales();
+
+        $summary = $this->computeUserList();
+        $data = [
+            'connectionName' => $this->normalizedConnectionName(),
+            'displayLocales' => $this->transLocales->displayLocales,
+            'userLocaleList' => $summary,
+        ];
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
+        return Response::json($data, 200, [], JSON_UNESCAPED_SLASHES | $pretty);
+    }
+
+    public function apiAddSuffixedKeys($group)
+    {
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
+
+        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+            if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
+                $this->setConnectionName(Request::get('connectionName'));
+                $this->initTranslationLocales();
+                $this->normalizeTranslationLocales();
+
+                $keys = explode("\n", trim(Request::get('keys')));
+                $suffixes = explode("\n", trim(Request::get('suffixes')));
+                $group = explode('::', $group, 2);
+                $namespace = '*';
+                if (count($group) > 1) $namespace = array_shift($group);
+                $group = $group[0];
+
+                foreach ($keys as $key) {
+                    $key = trim($key);
+                    if ($group && $key) {
+                        if ($suffixes) {
+                            foreach ($suffixes as $suffix) {
+                                $this->manager->missingKey($namespace, $group, $key . trim($suffix), null, false, false);
+                            }
+                        } else {
+                            $this->manager->missingKey($namespace, $group, $key, null, false, false);
+                        }
+                    }
+                }
+                return Response::json(array('status' => 'ok'), 200, [], JSON_UNESCAPED_SLASHES | $pretty);
+            }
+            return Response::json(array('status' => 'error', 'error' => 'group excluded'), 403, [], JSON_UNESCAPED_SLASHES | $pretty);
+        }
+        return Response::json(array('status' => 'error', 'error' => 'no admin rights'), 401, [], JSON_UNESCAPED_SLASHES | $pretty);
+    }
+
+    public function apiDeleteSuffixedKeys($group)
+    {
+        $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
+        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+            if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
+                $this->setConnectionName(Request::get('connectionName'));
+                $this->initTranslationLocales();
+                $this->normalizeTranslationLocales();
+
+                $keys = explode("\n", trim(Request::get('keys')));
+                $suffixes = explode("\n", trim(Request::get('suffixes')));
+
+                if (count($suffixes) === 1 && $suffixes[0] === '') $suffixes = [];
+
+                foreach ($keys as $key) {
+                    $key = trim($key);
+                    if ($group && $key) {
+                        if ($suffixes) {
+                            foreach ($suffixes as $suffix) {
+                                $result = $this->translatorRepository->updateIsDeletedByGroupAndKey($group, $key . trim($suffix), 1);
+                            }
+                        } else {
+                            //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
+                            $result = $this->translatorRepository->updateIsDeletedByGroupAndKey($group, $key, 1);
+                        }
+                    }
+                }
+                return Response::json(array('status' => 'ok'), 200, [], JSON_UNESCAPED_SLASHES | $pretty);
+            }
+            return Response::json(array('status' => 'error', 'error' => 'group excluded'), 403, [], JSON_UNESCAPED_SLASHES | $pretty);
+        }
+        return Response::json(array('status' => 'error', 'error' => 'no admin rights'), 401, [], JSON_UNESCAPED_SLASHES | $pretty);
+    }
+
+    public function postClearUISettings()
+    {
+        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+            $userId = Request::get('userId');
+            //Session::flash('_old_data', Request::except('keys'));
+            $userLocalesModel = new UserLocales();
+            $userLocalesModel->setConnection($this->getConnectionName());
+            $userLocalesResult = $userLocalesModel->query()->where('user_id', $userId)->first();
+            if ($userLocalesResult && $userLocalesResult->ui_settings) {
+                $userLocalesResult->ui_settings = null;
+                $userLocalesResult->save();
+            }
+            return Response::json(array('status' => 'ok'), 200, [], JSON_UNESCAPED_SLASHES);
+        }
+        return Response::json(array('status' => 'error', 'error' => 'not admin'), 200, [], JSON_UNESCAPED_SLASHES);
+    }
+
+    public function apiKeyReferences($group, $key)
+    {
+        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+            if ($key || Request::has('key')) {
+                if (Request::has('key')) {
+                    $key = Request::get('key');
+                } else {
+                    $key = decodeKey($key);
+                }
+                
+                if (Request::has('connectionName')) {
+                    $this->setConnectionName(Request::get('connectionName'));
+                    $this->initTranslationLocales();
+                    $this->normalizeTranslationLocales();
+                }
+
+                $results = '';
+                if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
+                    $result = $this->translatorRepository->selectSourceByGroupAndKey($group, $key);
+
+                    foreach ($result as $item) {
+                        $results .= $item->source;
+                    }
+                }
+
+                foreach (explode("\n", $results) as $ref) {
+                    if ($ref != '') {
+                        $refs[] = $ref;
+                    }
+                }
+                sort($refs);
+                return array('status' => 'ok', 'result' => $refs, 'key_name' => "$group.$key");
+            }
+            return Response::json(array('status' => 'error', 'error' => 'request is missing a key parameter'), 400, [], JSON_UNESCAPED_SLASHES);
+        }
+        return Response::json(array('status' => 'error', 'error' => 'not admin'), 402, [], JSON_UNESCAPED_SLASHES);
+    }
+
+    public function apiFindReferences()
+    {
+        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+            $this->setConnectionName(Request::get('connectionName'));
+            $this->initTranslationLocales();
+            $this->normalizeTranslationLocales();
+
+            $numFound = $this->manager->findTranslations();
+
+            return Response::json(array('status' => 'ok', 'counter' => (int)$numFound));
+        }
+        return Response::json(array('status' => 'error', 'error' => 'not admin'), 200, [], JSON_UNESCAPED_SLASHES);
+    }
+
+    public function apiDeleteGroup($group)
+    {
+        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+            if ($group && $group !== '*') {
+                $this->setConnectionName(Request::get('connectionName'));
+                $this->initTranslationLocales();
+                $this->normalizeTranslationLocales();
+
+                $this->manager->truncateTranslations($group);
+                return Response::json(array('status' => 'ok', 'counter' => (int)0));
+            }
+            return Response::json(array('status' => 'ok', 'error' => 'missing group', 'counter' => (int)0));
+        }
+        return Response::json(array('status' => 'error', 'error' => 'not admin'), 200, [], JSON_UNESCAPED_SLASHES);
+    }
+
+    public function apiImportGroup($group)
+    {
+        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+            if ($group) {
+                $this->setConnectionName(Request::get('connectionName'));
+                $this->initTranslationLocales();
+                $this->normalizeTranslationLocales();
+
+                $replace = Request::get('replace', false);
+                $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : 1)
+                    , $group === '*' ? null : [$group]);
+                return Response::json(array('status' => 'ok', 'counter' => $counter));
+            }
+            return Response::json(array('status' => 'ok', 'error' => 'missing group', 'counter' => (int)0));
+        }
+        return Response::json(array('status' => 'error', 'error' => 'not admin'), 200, [], JSON_UNESCAPED_SLASHES);
+    }
+
+    public function apiPublishGroup($group)
+    {
+        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+            if ($group) {
+                $this->setConnectionName(Request::get('connectionName'));
+                $this->initTranslationLocales();
+                $this->normalizeTranslationLocales();
+
+                $this->manager->exportTranslations($group);
+                $errors = $this->manager->errors();
+
+                event(new TranslationsPublished($group, $errors));
+                return Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
+            }
+            return Response::json(array('status' => 'ok', 'error' => 'missing group', 'counter' => (int)0));
+        }
+        return Response::json(array('status' => 'error', 'error' => 'not admin'), 200, [], JSON_UNESCAPED_SLASHES);
+    }
+
+    public function apiZippedTranslations($group = null)
+    {
+        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+            // disable gzip compression of this page, this causes wrapping of the zip file in gzip format
+            // does not work the zip is still gzip compressed
+            if (ini_get('zlib.output_compression')) {
+                ini_set('zlib.output_compression', 'Off');
+                //\Log::info("after turning off zlib.compression current setting " . ini_get('zlib.output_compression'));
+            }
+
+            $file = $this->manager->zipTranslations($group);
+            if ($group && $group !== '*') {
+                $zip_name = "Translations_${group}_"; // Zip name
+            } else {
+                $zip_name = "Translations_"; // Zip name
+            }
+
+            header('Content-Type: application/zip');
+            header('Content-Length: ' . filesize($file));
+            header('Content-Disposition: attachment; filename="' . $zip_name . date('Ymd-His') . '.zip"');
+            header('Content-Transfer-Encoding: binary');
+
+            ob_clean();
+            flush();
+            readfile($file);
+            unlink($file);
+            //\Log::info("sending file, zlib.compression current setting " . ini_get('zlib.output_compression'));
+        }
+        abort(403, 'Only Administrators can perform this action.');
+    }
+
+    public function apiTransFilters()
+    {
+        $filter = null;
+        $regex = null;
+
+        if (Request::has('filter')) {
+            $filter = Request::get("filter");
+            $this->transFilters['filter'] = $filter;
+        }
+
+        if (Request::has('regex')) {
+            $regex = Request::get("regex", "");
+            $this->transFilters['regex'] = $regex;
+        }
+
+        Cookie::queue($this->cookieName(self::COOKIE_TRANS_FILTERS), json_encode($this->transFilters), 60 * 24 * 365 * 1);
+
+        if (Request::wantsJson()) {
+            return Response::json(array(
+                'status' => 'ok',
+                'transFilters' => $this->transFilters,
+            ));
+        }
+
+        return Response::json(array('status' => 'ok'));
+    }
+
+    // above fixed for taking all values from the request and updated the react request
+    // below need work
+
+    // TODO: these are shared and they all need extra param for connectionName from the React UI
+    public function postEdit($group)
+    {
+        if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY))) {
+            $name = Request::get('name');
+            $value = Request::get('value');
+
+            list($locale, $key) = explode('|', $name, 2);
+            if ($this->isLocaleEnabled($locale)) {
+                $translation = $this->manager->firstOrNewTranslation(array(
+                    'locale' => $locale,
+                    'group' => $group,
+                    'key' => $key,
+                ));
+
+                $markdownSuffix = $this->manager->config(Manager::MARKDOWN_KEY_SUFFIX);
+                $isMarkdownKey = $markdownSuffix != '' && ends_with($key, $markdownSuffix) && $key !== $markdownSuffix;
+
+                if (!$isMarkdownKey) {
+                    // strip off trailing spaces and eol's and &nbsps; that seem to be added when multiple spaces are entered in the x-editable textarea
+                    $value = trim(str_replace("\xc2\xa0", ' ', $value));
+                }
+
+                $value = $value !== '' ? $value : null;
+
+                $translation->value = $value;
+                $translation->status = (($translation->isDirty() && $value != $translation->saved_value) ? Translation::STATUS_CHANGED : Translation::STATUS_SAVED);
+                $translation->save();
+
+                if ($isMarkdownKey) {
+                    $markdownKey = $key;
+                    $markdownValue = $value;
+
+                    $key = substr($markdownKey, 0, -strlen($markdownSuffix));
+
+                    $translation = $this->manager->firstOrNewTranslation(array(
+                        'locale' => $locale,
+                        'group' => $group,
+                        'key' => $key,
+                    ));
+
+                    $value = $markdownValue !== null ? \Markdown::convertToHtml(str_replace("\xc2\xa0", ' ', $markdownValue)) : null;
+
+                    $translation->value = $value;
+                    $translation->status = (($translation->isDirty() && $value != $translation->saved_value) ? Translation::STATUS_CHANGED : Translation::STATUS_SAVED);
+                    $translation->save();
+                }
+            }
+        }
+        return array('status' => 'ok');
+    }
+
+    public function postDelete($group, $key)
+    {
+        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+            $key = decodeKey($key);
+            if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
+                //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
+                $result = $this->translatorRepository->updateIsDeletedByGroupAndKey($group, $key, 1);
+            }
+        }
+        return array('status' => 'ok');
+    }
+
+    public function postUndelete($group, $key)
+    {
+        if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
+            $key = decodeKey($key);
+            if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
+                //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
+                $result = $this->translatorRepository->updateIsDeletedByGroupAndKey($group, $key, 0);
+            }
+        }
+        return array('status' => 'ok');
     }
 
     public function postYandexKey()
@@ -1413,7 +1698,7 @@ class Controller extends BaseController
      */
     private function computeSummary(): array
     {
-        $stats = $this->translatorRepository->stats($this->displayLocales);
+        $stats = $this->translatorRepository->stats($this->transLocales->displayLocales);
 
         // returned result set lists missing, changed, group, locale
         $summary = [];
@@ -1455,7 +1740,7 @@ class Controller extends BaseController
     private function computeMismatches($primaryLocale, $translatingLocale): array
     {
 // get mismatches
-        $mismatches = $this->translatorRepository->findMismatches($this->displayLocales, $primaryLocale, $translatingLocale);
+        $mismatches = $this->translatorRepository->findMismatches($this->transLocales->displayLocales, $primaryLocale, $translatingLocale);
 
         $key = '';
         $translatingList = [];
@@ -1569,10 +1854,27 @@ class Controller extends BaseController
     }
 
     /**
-     * @return string
+     * @param $searchText
+     * @param array|null $displayLocales
+     * @return array
      */
-    private function connectionNameForUI(): string
+    private function computeSearch($searchText, $displayLocales = null): array
     {
-        return ($this->manager->isDefaultTranslationConnection($this->getConnectionName()) ? '' : $this->getConnectionName());
+        if (trim($searchText) === '') $translations = [];
+        else {
+            $displayWhere = $displayLocales ? " AND locale IN ('" . implode("','", $displayLocales) . "')" : '';
+
+            if (strpos($searchText, '%') === false) $searchText = "%$searchText%";
+
+            // need to fill-in missing locale's that match the key
+            $translations = $this->translatorRepository->searchByRequest($searchText, $displayWhere, 500);
+            foreach ($translations as $t) {
+                if ($t->group === Manager::JSON_GROUP && $t->locale === 'json' && $t->value === null || $t->value === '') {
+                    $t->value = $t->key;
+                }
+            }
+        }
+        return $translations;
     }
+
 }

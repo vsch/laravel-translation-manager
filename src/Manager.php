@@ -96,7 +96,7 @@ class Manager
 
     public function setConnectionName($connection = null)
     {
-        if ($connection === null || $connection === '') {
+        if ($this->isDefaultTranslationConnection($connection)) {
             // resetting to default
             $connection = $this->default_translation_connection;
         }
@@ -105,6 +105,28 @@ class Manager
         $this->indatabase_publish = $this->getConnectionInDatabasePublish($connection);
 
         $this->clearCache();
+    }
+
+    public function getNormalizedConnectionName($connection)
+    {
+        if ($this->isDefaultTranslationConnection($connection)) {
+            $connectionName = '';
+        } else {
+            $connectionName = $this->translation->getConnectionName();
+        }
+
+        return $connectionName;
+    }
+
+    public function getResolvedConnectionName($connection)
+    {
+        if ($this->isDefaultTranslationConnection($connection)) {
+            $connectionName = $this->default_translation_connection;
+        } else {
+            $connectionName = $this->translation->getConnectionName();
+        }
+
+        return $connectionName;
     }
 
     public function getConnectionName()
@@ -120,7 +142,7 @@ class Manager
      */
     public function isDefaultTranslationConnection($connection)
     {
-        return $connection == null || $connection == $this->default_translation_connection;
+        return $connection == null || $connection == '' || $connection == $this->default_translation_connection;
     }
 
     /**
@@ -516,7 +538,7 @@ class Manager
             $this->cacheIsDirty = $this->persistentPrefix !== '';
         }
     }
-    
+
     /**
      * @param $namespace
      * @param $group
@@ -579,8 +601,8 @@ class Manager
      * @param             $group     string
      * @param             $key       string
      * @param null|string $locale
-     * @param bool        $useLottery
-     * @param bool        $findOrNew
+     * @param bool $useLottery
+     * @param bool $findOrNew
      *
      * @return \Vsch\TranslationManager\Models\Translation|null
      */
@@ -613,14 +635,14 @@ class Manager
                     if ($findOrNew) {
                         $translation = $this->firstOrNewTranslation(array(
                             'locale' => $locale,
-                            'group'  => $group,
-                            'key'    => $key,
+                            'group' => $group,
+                            'key' => $key,
                         ));
                     } else {
                         $translation = $this->firstOrCreateTranslation(array(
                             'locale' => $locale,
-                            'group'  => $group,
-                            'key'    => $key,
+                            'group' => $group,
+                            'key' => $key,
                         ));
                     }
 
@@ -637,7 +659,7 @@ class Manager
      * @param             $group     string
      * @param             $key       string
      * @param null|string $locale
-     * @param bool        $useLottery
+     * @param bool $useLottery
      */
     public function usingKey($namespace, $group, $key, $locale, $useLottery)
     {
@@ -695,8 +717,8 @@ class Manager
             } else {
                 $translation = new Translation(array(
                     'locale' => $locale,
-                    'group'  => $db_group,
-                    'key'    => $key,
+                    'group' => $db_group,
+                    'key' => $key,
                 ));
 
                 $translation->setConnection($connectionName);
@@ -836,7 +858,7 @@ class Manager
     {
         $group = self::fixGroup($group);
         $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
-        
+
         // may need to create new jsonKeys from default locale values for any that are missing from json locale of JSON group
         $query = $this->translation->query()->where('group', '=', $group)->where('locale', '=', $locale);
         if (!$includeMissing) {
@@ -856,8 +878,8 @@ class Manager
                 $translations[$tr->key] = $tr->value;
             }
         });
-        
-        return $translations; 
+
+        return $translations;
     }
 
     public function importTranslations($replace, $groups = null)
@@ -1308,9 +1330,9 @@ class Manager
 
                 if (!$inDatabasePublishing) {
                     $this->translation->where('group', $group)->update(array(
-                        'status'        => Translation::STATUS_SAVED,
+                        'status' => Translation::STATUS_SAVED,
                         'is_auto_added' => 0,
-                        'saved_value'   => (new Expression('value')),
+                        'saved_value' => (new Expression('value')),
                     ));
 
                     if ($group === self::JSON_GROUP) {

@@ -1,8 +1,8 @@
-import GlobalSetting, { UPDATE_SERVER } from './GlobalSetting';
+import GlobalSetting, { isTraceEnabled, UPDATE_SERVER } from './GlobalSetting';
 import appSettings, { appSettings_$ } from './AppSettings';
 import store from './CreateAppStore';
 import axios from "axios";
-import { apiURL, GET_TRANSLATION_TABLE, POST_MISSING_KEYS } from "./ApiRoutes";
+import { URL_GET_TRANSLATION_TABLE, URL_POST_MISSING_KEYS } from "./ApiRoutes";
 import { anyNullOrUndefined } from "./helpers";
 import { _$ } from 'boxed-immutable';
 
@@ -37,14 +37,15 @@ export class GlobalTranslations extends GlobalSetting {
 
         this.unsubscribe = appSettings.subscribeLoaded(() => {
             // start the load if group changed
-            if (!anyNullOrUndefined(appSettings_$.uiSettings.group(), appSettings_$.primaryLocale(), appSettings_$.translatingLocale())) {
+            const group = appSettings_$.uiSettings.group();
+            if (!anyNullOrUndefined(group, appSettings_$.primaryLocale(), appSettings_$.translatingLocale())) {
                 if (anyNullOrUndefined(this.group, this.primaryLocale, this.translatingLocale)) {
                     // first load
-                    const group = appSettings_$.uiSettings.group();
                     this.load(group);
                 } else {
                     if (this.primaryLocale !== appSettings_$.primaryLocale() ||
                         this.translatingLocale !== appSettings_$.translatingLocale() ||
+                        this.group !== group ||
                         !this.displayLocales ||
                         this.connectionName !== appSettings_$.connectionName() ||
                         this.displayLocales.join(',') !== appSettings_$.displayLocales.$_ifArray(Array.prototype.join, ',')) {
@@ -53,14 +54,9 @@ export class GlobalTranslations extends GlobalSetting {
                     }
                 }
             } else {
-                if (appSettings_$.uiSettings() && !appSettings_$.uiSettings.group() && appSettings_$.groups[0]()) {
+                if (appSettings_$.uiSettings() && !group && appSettings_$.groups[0]()) {
                     // no data, take the first group.
-                    let appSettingsState = appSettings.getState();
-                    let appSettings_$State = appSettings_$.$_value;
-                    let uiSettings = appSettings_$.uiSettings();
                     appSettings_$.uiSettings.group = appSettings_$.groups[0];
-                    let delta = appSettings_$.$_delta;
-                    let delta2 = appSettings_$.$_delta;
                     appSettings_$.save();
                 }
             }
@@ -68,37 +64,33 @@ export class GlobalTranslations extends GlobalSetting {
 
         this.load();
     }
-    
+
     changeGroup(group) {
-        if (group && group !== this.group) {
-            this.load(group);
-        }
+        appSettings_$.uiSettings.group = group;
+        appSettings_$.save();
     }
 
     // implement to test if can request settings from server
-    serverCanLoad(group) {
-        group = group || appSettings_$.uiSettings.group();
-        return !!group;
+    serverCanLoad() {
+        return !!appSettings_$.uiSettings.group();
     }
 
     // implement to request settings from server
-    serverLoad(group) {
-        group = group || appSettings_$.uiSettings.group();
-        axios.get(apiURL(GET_TRANSLATION_TABLE, group))
+    serverLoad() {
+        const { connectionName, primaryLocale, translatingLocale, displayLocales } = appSettings_$._$();
+        const group = appSettings_$.uiSettings.group();
+
+        if (isTraceEnabled(this.globalKey)) window.console.debug(`${this.globalKey}[Translations load request]: ${appSettings_$.translatingLocale()} requesting from server `, group);
+        const api = URL_GET_TRANSLATION_TABLE(group, connectionName, primaryLocale, translatingLocale, displayLocales);
+        axios.post(api.url, api.data)
             .then((result) => {
-                this.displayLocales = result.data.displayLocales;
                 this.connectionName = result.data.connectionName;
+                this.displayLocales = result.data.displayLocales;
                 this.group = result.data.group;
                 this.locales = result.data.locales;
                 this.primaryLocale = result.data.primaryLocale;
                 this.translatingLocale = result.data.translatingLocale;
                 this.processServerUpdate(result.data);
-
-                appSettings_$.uiSettings.group = this.group;
-                // TODO: when we have server updated flag then we can do this, otherwise we wind up overwriting pending values.
-                // if (this.locales !== settings.locales) newState.locales = this.locales;
-                // if (this.displayLocales !== settings.displayLocales) newState.displayLocales = this.displayLocales;
-                appSettings_$.save();
             });
     }
 
@@ -106,8 +98,9 @@ export class GlobalTranslations extends GlobalSetting {
     updateServer(settings, frameId) {
         const missingKeys = Object.keys(settings.missingKeys);
         if (missingKeys) {
+            const api = URL_POST_MISSING_KEYS(missingKeys);
             axios
-                .post(apiURL(POST_MISSING_KEYS), JSON.stringify({ missingKeys: missingKeys }))
+                .post(api.url, api.data)
                 .then((result) => {
                     let state = this.getState();
                     this.knownMissingKeys = Object.assign({}, this.knownMissingKeys, missingKeys);

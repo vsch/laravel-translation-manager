@@ -2,7 +2,7 @@ import i18n from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { reactI18nextModule } from 'react-i18next';
 import i18nextXHRBackend from 'i18next-xhr-backend';
-import { apiURL } from "./ApiRoutes";
+import { absoluteUrlPrefix, apiURL, URL_GET_TRANSLATIONS } from "./ApiRoutes";
 
 i18n
     .use(i18nextXHRBackend)
@@ -38,7 +38,7 @@ i18n
             // returning a path:
             // function(lngs, namespaces) { return customPath; }
             // the returned path will interpolate lng, ns if provided like giving a static path
-            loadPath: apiURL(window.axios.defaults.baseURL, 'get/{{ns}}::messages/{{lng}}'),
+            loadPath: apiURL(absoluteUrlPrefix(), URL_GET_TRANSLATIONS('{{ns}}::messages', '{{lng}}').url),
             // loadPath: '/locales/{{lng}}/{{ns}}.json',
 
             // allow cross domain requests
@@ -49,11 +49,8 @@ i18n
             allowMultiLoading: false, // set loadPath: '/locales/resources.json?lng={{lng}}&ns={{ns}}' to adapt to multiLoading
 
             // parse data after it has been fetched
-            // in example use https://www.npmjs.com/package/json5
-            // here it removes the letter a from the json (bad idea)
             parse: function (data) {
-                let json = JSON.parse(data);
-                return json;
+                return JSON.parse(data);
             },
 
             // allow credentials on cross domain requests

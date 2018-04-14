@@ -669,7 +669,11 @@ HTML;
 
     public static function routes()
     {
-        Controller::routes();
+        $config = App::get('config')[\Vsch\TranslationManager\ManagerServiceProvider::PACKAGE];
+        $key = \Vsch\TranslationManager\Manager::DISABLE_REACT_UI;
+
+        $disableReactUI = array_key_exists($key, $config) ? $config[$key] : false;
+        Controller::routes($disableReactUI);
     }
 
     public static function webRoutes()

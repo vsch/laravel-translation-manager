@@ -79,7 +79,7 @@ class SearchTranslations extends BoxedStateComponent {
             results = <h4>Error: {error.message}</h4>
         } else if (isLoading && !isLoaded) {
             results = (
-                <div className='text-center'><img src='../images/loading.gif'/></div>
+                <div className='text-center'><div className='show-loading'/></div>
             );
         } else if (!searchData || !searchData.length) {
             results = searchText && !isStaleData ? <h4 className='text-center'>{t('messages.no-results')}</h4> : "";

@@ -8,26 +8,20 @@ import "./bootstrap";
 import React from 'react';
 import ReactDOM from 'react-dom';
 import 'bootstrap';
-// needed to have i18n initialized
-import './helpers/I18n';
+import './helpers/I18n';// needed to have i18n initialized
 import './helpers/CreateAppStore';
-// import './helpers/GlobalSettings';
-// import 'jquery';
-// import 'bootstrap';
-// import './bootstrap/js/jquery';
-import './bootstrap/js/jquery.selection';
-import './bootstrap/js/oldScriptHook';
-import './bootstrap/js/bootstrap';
-import './bootstrap/js/bootstrap-editable';
-import './bootstrap/js/rails';
-import './bootstrap/js/inflection';
-import './bootstrap/js/xregexp-all';
-import './bootstrap/js/translations';
-import './bootstrap/js/translations_page';
-import './bootstrap/css/bootstrap.css';
-// import './bootstrap/css/bootstrap-theme.css';
-import './bootstrap/css/bootstrap-editable.css';
-import './bootstrap/css/translations.css';
+import '../js-old-scripts/jquery.selection';
+import '../js-old-scripts/oldScriptHook';
+import '../js-old-scripts/bootstrap';
+import '../js-old-scripts/bootstrap-editable';
+import '../js-old-scripts/rails';
+import '../js-old-scripts/inflection';
+import '../js-old-scripts/xregexp-all';
+import '../js-old-scripts/translations';
+import '../js-old-scripts/translations_page';
+import '../css-old-scripts/bootstrap.css';
+import '../css-old-scripts/bootstrap-editable.css';
+import '../css-old-scripts/translations.css';
 import $ from 'jquery';
 /**
  * Next, we will create a fresh React component instance and attach it to
@@ -47,8 +41,6 @@ import { apiURL } from "./helpers/ApiRoutes";
 // import "react-hot-loader/patch";
 // import 'babel-polyfill'
 // import registerServiceWorker from './registerServiceWorker';
-// import './sidebar.css';
-// import 'react-x-editable';
 
 // get the app url offset for in app routes
 let url = document.head.querySelector('meta[name="app-url"]');
@@ -61,8 +53,6 @@ if (url) {
 
 $.fn.OldScriptHooks.APP_URL = '';//url.content;
 $.fn.OldScriptHooks.BASE_URL = basename;//url.content;
-let translationURL = apiURL(window.axios.defaults.baseURL, 'get/{{ns}}::messages/{{lng}}');
-
 
 //ReactDOM.render(<App />, document.getElementById('root'));
 if (document.getElementById('root')) {

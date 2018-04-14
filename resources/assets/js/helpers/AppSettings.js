@@ -1,6 +1,6 @@
 import GlobalSetting, { UPDATE_IMMEDIATE, UPDATE_SERVER, UPDATE_THROTTLED } from './GlobalSetting';
 import axios from "axios";
-import { apiURL, GET_UI_SETTINGS, POST_UI_SETTINGS } from "./ApiRoutes";
+import { URL_GET_APP_SETTINGS, URL_POST_APP_SETTINGS } from "./ApiRoutes";
 import boxedImmutable from "boxed-immutable";
 
 const util = boxedImmutable.util;
@@ -323,15 +323,14 @@ export class AppSettings extends GlobalSetting {
             // merge all the default uiSettings the server may not have
             data = util.mergeDefaultProperties(result.data, { uiSettings: appSettings.getState().uiSettings }, 99, true);
         }
-        
-        delete data.appSettings;
-        
+
+        data && delete data.appSettings;
         return data;
     }
 
     // implement to request settings from server
     serverLoad() {
-        axios.get(apiURL(GET_UI_SETTINGS))
+        axios.get(URL_GET_APP_SETTINGS().url)
             .then((result) => {
                 // server may not have defaults, fill in from settings with fallback to defaults
                 const data = this.adjustServerData(result, true);
@@ -341,8 +340,9 @@ export class AppSettings extends GlobalSetting {
 
     // implement to send server request
     updateServer(settings, frameId) {
+        const api = URL_POST_APP_SETTINGS(settings);
         axios
-            .post(apiURL(POST_UI_SETTINGS), JSON.stringify(settings))
+            .post(api.url, api.data)
             .then((result) => {
                 const data = this.adjustServerData(result, false);
                 this.processServerUpdate(data, frameId);

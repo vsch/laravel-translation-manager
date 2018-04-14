@@ -59,7 +59,7 @@ window.axios.defaults.headers = {
     'Content-Type': 'application/json',
 };
 
-window.XRegExp = require('./bootstrap/js/xregexp-all');
+window.XRegExp = require('../js-old-scripts/xregexp-all');
 let tmp = 0;
 
 /**

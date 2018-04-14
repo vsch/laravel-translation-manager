@@ -8,11 +8,16 @@ import globalUserLocales, { globalUserLocales_$ } from "../helpers/GlobalUserLoc
 import appSettings, { appSettings_$ } from "../helpers/AppSettings";
 import Dashboard from "./Dashboard";
 import PropTypes from "prop-types";
-import { absoluteUrlPrefix, apiURL, POST_ADD_SUFFIXED_KEYS, POST_CLEAR_USER_UI_SETTINGS, POST_USER_LOCALES } from "../helpers/ApiRoutes";
+import { absoluteUrlPrefix, apiURL, POST_USER_LOCALES, URL_CLEAR_USER_UI_SETTINGS } from "../helpers/ApiRoutes";
 import DashboardComponent from "./DashboardComponent";
 import ModalDialog from "./ModalDialog";
 
 const CLEAR_USER_UI_SETTINGS = "confirmClearUserUiSettings";
+
+function getClearUIParams(userId) {
+    return URL_CLEAR_USER_UI_SETTINGS(userId, appSettings.getState().connectionName).data;
+}
+
 class UserManagementDashboard extends DashboardComponent {
     constructor(props) {
         super(props, 'userAdmin');
@@ -29,6 +34,7 @@ class UserManagementDashboard extends DashboardComponent {
             isStaleData: globalUserLocales_$.isStaleData() || appSettings_$.isStaleData(),
             displayLocales: appSettings_$.displayLocales(),
             userLocaleList: globalUserLocales_$.userLocaleList(),
+            getClearUIParams: getClearUIParams,
         });
     }
 
@@ -56,7 +62,9 @@ class UserManagementDashboard extends DashboardComponent {
             body = <div>Error: {error.message}</div>;
         } else if (!isLoaded) {
             body = <tr>
-                <td colSpan='4' width='100%' className='text-center'><img src='../images/loading.gif'/></td>
+                <td colSpan='4' width='100%' className='text-center'>
+                    <div className='show-loading'/>
+                </td>
             </tr>;
         } else {
             const url = apiURL(absoluteUrlPrefix(), POST_USER_LOCALES);
@@ -106,15 +114,14 @@ class UserManagementDashboard extends DashboardComponent {
                 }
             };
 
-            const postClearUserSettingsUrl = (user) => apiURL(POST_CLEAR_USER_UI_SETTINGS, {user_id: user});
-            
             body = userLocaleList.map((item, index) => {
                 const $user = this.getEntry(item);
                 const options = { ...defaultOptions };
+                const postClearUserSettingsUrl = URL_CLEAR_USER_UI_SETTINGS($user.id, appSettings_$.connectionName());
 
                 // to disable this users
                 const deleteDisabled = ($user === this.state.user ? "disabled " : "");
-                
+
                 return (
                     <tr key={index + '.' + $user.id}>
                         <td className='align-right'>{$user.id}</td>
@@ -129,7 +136,9 @@ class UserManagementDashboard extends DashboardComponent {
                             <button type="button"
                                 className={deleteDisabled + "btn btn-sm btn-outline-primary"}
                                 onClick={this.handleButtonClick}
-                                data-post-url={postClearUserSettingsUrl($user.id)}
+                                data-post-url={postClearUserSettingsUrl.url}
+                                data-extra-fields='getClearUIParams'
+                                data-extra-params={$user.id}
                                 data-confirmation-key={CLEAR_USER_UI_SETTINGS}
                                 data-disable-with={t('messages.busy-processing')}>{t('messages.delete-uisettings')}</button>
                         </td>

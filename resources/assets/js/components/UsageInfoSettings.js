@@ -75,7 +75,8 @@ class UsageInfoSettings extends BoxedStateComponent {
                             <div className=" col-sm-4">
                                 <label>
                                     <input id="show-usage-info" name="show-usage-info" type="checkbox"
-                                        checked={showUsage} onChange={this.handleShowUsageInfoChange}/>
+                                        checked={showUsage} 
+                                        onChange={this.handleShowUsageInfoChange}/>
                                     {t('messages.show-usage-info')}
                                 </label>
                             </div>

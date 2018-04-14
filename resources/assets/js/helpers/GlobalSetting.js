@@ -75,7 +75,7 @@ export class GlobalSetting {
         this.serverUpdater = new DelayedTask(updateDelay || 1000);
         this.loadThrottler = new DelayedTask(updateDelay || 1000);
 
-        this.pendingLoadArgs = null;  // arguments for skipped load because it was within loadDelay, will be used to trigger load with these args
+        this.pendingLoad = null;  // arguments for skipped load because it was within loadDelay, will be used to trigger load with these args
         this.sentUpdates = null;      // settings sent, but not yet received, these will overlay on current values
         this.sentUpdateFrameIds = null; // sent properties to settings map from which they were sent so that on reception we will only remove sentUpdate props if same property here matches 
         this.pendingUpdates = null;   // settings waiting to be sent that we will overlay on current and sent value
@@ -206,24 +206,29 @@ export class GlobalSetting {
     }
 
     load() {
+        if (isTraceEnabled(this.globalKey)) window.console.debug(`${this.globalKey}[load request]:`);
         if (!this.loadThrottler.isPending() && this.serverCanLoad(...arguments)) {
             this.loadThrottler.restart(() => {
-                if (this.pendingLoadArgs) {
-                    let loadArgs = this.pendingLoadArgs;
-                    this.pendingLoadArgs = null;
-                    this.load(...loadArgs);
+                if (this.pendingLoad) {
+                    if (isTraceEnabled(this.globalKey)) window.console.debug(`${this.globalKey}[load request]: delayed request running now`);
+                    let loadArgs = this.pendingLoad;
+                    this.pendingLoad = null;
+                    this.load();
                 }
             });
 
-            this.pendingLoadArgs = null;
+            this.pendingLoad = null;
             this.isLoading = true;
 
+            if (isTraceEnabled(this.globalKey)) window.console.debug(`${this.globalKey}[load request]: dispatching to store`);
             const action = this.reduxAction(this.getState());
             store.dispatch(action);
 
-            this.serverLoad(...arguments);
+            if (isTraceEnabled(this.globalKey)) window.console.debug(`${this.globalKey}[load request]: requesting from server`,...arguments);
+            this.serverLoad();
         } else {
-            this.pendingLoadArgs = [...arguments];
+            if (isTraceEnabled(this.globalKey)) window.console.debug(`${this.globalKey}[load request]: scheduled for later`);
+            this.pendingLoad = true;
         }
     }
 

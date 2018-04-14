@@ -12,7 +12,9 @@ let mix = require('laravel-mix');
  */
 
 mix.react('resources/assets/js/index.js', 'public/js')
-    .sass('resources/assets/sass/index.scss', 'public/css');
+    .sass('resources/assets/sass/index.scss', 'public/css')
+    .setResourceRoot('/vendor/laravel-translation-manager/')
+;
 
 if (!mix.inProduction()) {
     mix.webpackConfig({

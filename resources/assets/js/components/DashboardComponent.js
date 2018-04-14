@@ -150,8 +150,10 @@ class DashboardComponent extends BoxedStateComponent {
         const confirmationExtra = this.state.confirmationExtra || null;
         const invalidateGroup = $el.data('invalidate-group');
         const postUrl = $el.data('post-url');
-        let extraFieldsState = $el.data('extra-fields');
-        const extraFields = extraFieldsState ? this.state[extraFieldsState] || {} : {};
+        const extraFieldsState = $el.data('extra-fields');
+        const extraFieldsParams = $el.data('extra-params');
+        const extraFieldValue = extraFieldsState ? this.state_$.$_path(extraFieldsState) || {} : {};
+        const extraFields = isFunction(extraFieldValue) ? extraFieldValue(extraFieldsParams) : extraFieldValue;
 
         const doUpdate = (function () {
             let restoreText;

@@ -57,7 +57,7 @@ export class TranslationMismatches extends React.Component {
         } else if (!isLoaded) {
             body = (
                 <tr>
-                    <td colSpan='5' width='100%' className='text-center'><img src='../images/loading.gif'/></td>
+                    <td colSpan='5' width='100%' className='text-center'><div className='show-loading'/></td>
                 </tr>
             );
         } else if (!mismatches.length) {

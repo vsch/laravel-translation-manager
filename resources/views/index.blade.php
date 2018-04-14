@@ -475,7 +475,7 @@
                                 <div class="panel-body">
                                     <!-- Add Keys Form -->
                                     <div class="col-sm-12">
-                                        <?=  Form::open(['id' => 'form-addkeys', 'method' => 'POST', 'action' => [$controller . '@postAdd', $group]]) ?>
+                                        <?=  Form::open(['id' => 'form-addkeys', 'method' => 'POST', 'action' => [$controller . '@postAddSuffixedKeys', $group]]) ?>
                                         <div class="row">
                                             <div class="col-sm-6">
                                                 <label for="keys">@lang($package . '::messages.keys'):</label><?= ifEditTrans($package . '::messages.addkeys-placeholder') ?>

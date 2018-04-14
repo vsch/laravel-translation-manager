@@ -4,7 +4,7 @@ import { translate } from 'react-i18next';
 import { compose } from "redux";
 import TransXEditable from "./TransXEditable";
 import TransTableFilter from "./TransTableFilter";
-import { apiURL, GET_ZIP_GROUP_URL, POST_DELETE_GROUP_URL, POST_DELETE_TRANSLATION, POST_FIND_REFERENCES_URL, POST_IMPORT_GROUP_URL, POST_PUBLISH_GROUP_URL, POST_SHOW_SOURCE, POST_UNDELETE_TRANSLATION } from "../helpers/ApiRoutes";
+import { apiURL, POST_DELETE_TRANSLATION, POST_IMPORT_GROUP_URL, POST_PUBLISH_GROUP_URL, POST_UNDELETE_TRANSLATION, URL_DELETE_GROUP, URL_FIND_REFERENCES, URL_IMPORT_GROUP, URL_PUBLISH_GROUP, URL_SHOW_KEY_REFERENCES, URL_ZIP_TRANSLATIONS } from "../helpers/ApiRoutes";
 import axios from "axios";
 import appSettings, { appSettings_$ } from "../helpers/AppSettings";
 import appTranslations, { appTranslations_$ } from "../helpers/GlobalTranslations";
@@ -19,6 +19,10 @@ const PUBLISH_GROUP = 'confirmPublishGroup';
 const IMPORT_ALL_GROUPS = 'confirmImportAllGroups';
 const ADD_REFERENCES = 'confirmAddReferences';
 const PUBLISH_ALL_GROUPS = 'confirmPublishAllGroups';
+
+function getConnectionNameParam() {
+    return { connectionName: appSettings.getState().connectionName, };
+}
 
 class TranslationsTable extends DashboardComponent {
     constructor(props) {
@@ -36,6 +40,7 @@ class TranslationsTable extends DashboardComponent {
 
     getState() {
         const isAdminEnabled = appSettings_$.isAdminEnabled();
+        const group = appTranslations_$.group();
         return this.adjustState({
             error: null,
             isLoaded: appTranslations_$.isLoaded() && appSettings_$.isLoaded(),
@@ -50,18 +55,19 @@ class TranslationsTable extends DashboardComponent {
             userLocales: appSettings_$.userLocales(),
             groups: appSettings_$.groups(),
 
-            displayLocales: appTranslations_$.displayLocales() || appSettings_$.displayLocales(),
-            group: appTranslations_$.group() || appSettings_$.uiSettings.group(),
+            displayLocales: appTranslations_$.displayLocales(),
+            group: group,
             yandexKey: appTranslations_$.yandexKey(),
             translations: appTranslations_$.translations(),
             importReplace: 0,
+            getConnectionNameParam: getConnectionNameParam,
+            replaceFields: () => URL_IMPORT_GROUP(group, this.state.importReplace, appSettings.getState().connectionName).data,
         }, isAdminEnabled ? 'collapsePublishButtons' : null);
     }
 
     reload() {
-        const group = this.state.group;
         appTranslations.update({ isLoaded: false, });
-        appTranslations.load(group);
+        appTranslations.load();
     }
 
     deleteTransFlag(e, group, key, url, flag) {
@@ -76,13 +82,14 @@ class TranslationsTable extends DashboardComponent {
                 });
             });
     }
-    
+
     loadGroup(e) {
-        appTranslations.update({ group: e.target.value, });
+        appTranslations.changeGroup(e.target.value);
     }
 
     handleImportReplace(e) {
-        this.setState({ importReplace: e.target.value });
+        this.state_$.importReplace = e.target.value;
+        this.state_$.save();
     }
 
     isDoneLoading() {
@@ -103,7 +110,9 @@ class TranslationsTable extends DashboardComponent {
         } else if (!isLoaded) {
             headings = <th width="100%">&nbsp;</th>;
             body = <tr>
-                <td width='100%' className='text-center'><img src='/images/loading.gif'/></td>
+                <td width='100%' className='text-center'>
+                    <div className='show-loading'/>
+                </td>
             </tr>;
         } else if (!group) {
             if (!isAdminEnabled) {
@@ -310,7 +319,7 @@ class TranslationsTable extends DashboardComponent {
                 columns.push(
                     <td key={columns.length + $group + "." + $key + ":"} className={"key" + ($was_used ? ' used-key' : ' unused-key')}>{$key}
                         {$has_source && (
-                            <a style="float: right;" href={POST_SHOW_SOURCE.replace('{group}', $group).replace('{key}', $key) + apiURL()}
+                            <a style="float: right;" href={apiURL(absoluteUrlPrefix(), URL_SHOW_KEY_REFERENCES(group, $key).url)}
                                 className="show-source-refs" data-method="POST" data-remote="true" title={t("messages.show-source-refs")}>
                                 <span className={"fa" + ($is_auto_added ? 'fa-question-sign' : 'fa-info-sign')}/>
                             </a>
@@ -344,14 +353,16 @@ class TranslationsTable extends DashboardComponent {
             }
         }
 
-        const zipGroupURL = (group) => apiURL(GET_ZIP_GROUP_URL, (group || '*'));
-        const publishGroupURL = (group) => apiURL(POST_PUBLISH_GROUP_URL, (group || '*'));
-        const deleteGroupURL = (group) => apiURL(POST_DELETE_GROUP_URL, (group || '*'));
-        const importGroupURL = (group) => apiURL(POST_IMPORT_GROUP_URL, (group || '*'));
-        const findReferencesURL = () => apiURL(POST_FIND_REFERENCES_URL);
+        const connectionName = appSettings.getState().connectionName;
+
+        const zipGroupURL = (group) => URL_ZIP_TRANSLATIONS(group || '*', connectionName).url;
+        const publishGroupURL = (group) => URL_PUBLISH_GROUP(group || '*', connectionName).url;
+        const deleteGroupURL = (group) => URL_DELETE_GROUP(group, connectionName).url;
+        const importGroupURL = (group) => URL_IMPORT_GROUP(group || '*', 0, connectionName).url;
+        const findReferencesURL = () => URL_FIND_REFERENCES(connectionName).url;
+
         const publish = [];
         const buttons = [];
-        const replaceFields = JSON.stringify({ replace: this.state.importReplace, });
 
         if (isAdminEnabled) {
             if (showPublishButtons) {
@@ -371,14 +382,41 @@ class TranslationsTable extends DashboardComponent {
                             <div className="col col-sm-6">
                                 <div className="mx-auto input-group input-group-sm" onClick={(e) => e.stopPropagation()}>
                                     <div className='float-left'>
-                                        <button type="button" onClick={this.handleButtonClick} className="btn border-light btn-sm btn-warning ml-3" data-post-url={publishGroupURL()} data-invalidate-group='*' data-confirmation-key={PUBLISH_ALL_GROUPS} data-disable-with={t('messages.publishing')}>{t('messages.publish-all-groups')}</button>
-                                        <a role="button" className="btn border-light btn-sm btn-primary ml-1" href={zipGroupURL()}>{t('messages.zip-all')}</a>
+                                        <button type="button"
+                                            onClick={this.handleButtonClick}
+                                            className="btn border-light btn-sm btn-warning ml-3"
+                                            data-post-url={publishGroupURL()}
+                                            data-extra-fields={'getConnectionNameParam'}
+                                            data-invalidate-group='*'
+                                            data-confirmation-key={PUBLISH_ALL_GROUPS}
+                                            data-disable-with={t('messages.publishing')}
+                                        >{t('messages.publish-all-groups')}</button>
+                                        <a role="button"
+                                            className="btn border-light btn-sm btn-primary ml-1"
+                                            href={zipGroupURL()}
+                                        >{t('messages.zip-all')}</a>
                                     </div>
                                     <div className='mx-auto'>
-                                        <button type="button" onClick={this.handleButtonClick} className="btn border-light btn-sm btn-success ml-1" data-post-url={importGroupURL()} data-extra-fields={replaceFields} data-invalidate-group='*' data-confirmation-key={IMPORT_ALL_GROUPS} data-disable-with={t('messages.loading')}>{t('messages.import-groups')}</button>
+                                        <button type="button"
+                                            onClick={this.handleButtonClick}
+                                            className="btn border-light btn-sm btn-success ml-1"
+                                            data-post-url={importGroupURL()}
+                                            data-extra-fields={'replaceFields'}
+                                            data-invalidate-group='*'
+                                            data-confirmation-key={IMPORT_ALL_GROUPS}
+                                            data-disable-with={t('messages.loading')}
+                                        >{t('messages.import-groups')}</button>
                                     </div>
                                     <div className='float-right'>
-                                        <button type="button" onClick={this.handleButtonClick} className="btn border-light btn-sm btn-danger ml-1" data-post-url={findReferencesURL()} data-invalidate-group='*' data-confirmation-key={ADD_REFERENCES} data-disable-with={t('messages.searching')}>{t('messages.find-in-files')}</button>
+                                        <button type="button"
+                                            onClick={this.handleButtonClick}
+                                            className="btn border-light btn-sm btn-danger ml-1"
+                                            data-post-url={findReferencesURL()}
+                                            data-invalidate-group='*'
+                                            data-confirmation-key={ADD_REFERENCES}
+                                            data-extra-fields={'getConnectionNameParam'}
+                                            data-disable-with={t('messages.searching')}
+                                        >{t('messages.find-in-files')}</button>
                                     </div>
                                 </div>
                             </div>
@@ -390,14 +428,41 @@ class TranslationsTable extends DashboardComponent {
                     buttons.push(
                         <div key={buttons.length} className="mx-auto input-group input-group-sm" onClick={(e) => e.stopPropagation()}>
                             <div className='float-left'>
-                                <button type="button" onClick={this.handleButtonClick} className="btn border-light btn-sm btn-info ml-3" data-post-url={publishGroupURL(group)} data-invalidate-group={group} data-confirmation-key={PUBLISH_GROUP} data-disable-with={t('messages.publishing')}>{t('messages.publish-group')}</button>
-                                <a role="button" className="btn border-light btn-sm btn-primary ml-1" href={zipGroupURL(group)}>{t('messages.zip')}</a>
+                                <button type="button"
+                                    onClick={this.handleButtonClick}
+                                    className="btn border-light btn-sm btn-info ml-3"
+                                    data-post-url={publishGroupURL(group)}
+                                    data-invalidate-group={group}
+                                    data-confirmation-key={PUBLISH_GROUP}
+                                    data-extra-fields={'getConnectionNameParam'}
+                                    data-disable-with={t('messages.publishing')}
+                                >{t('messages.publish-group')}</button>
+                                <a role="button"
+                                    className="btn border-light btn-sm btn-primary ml-1"
+                                    href={zipGroupURL(group)}
+                                >{t('messages.zip')}</a>
                             </div>
                             <div className='mx-auto'>
-                                <button type="button" onClick={this.handleButtonClick} className="btn border-light btn-sm btn-success ml-1" data-post-url={importGroupURL(group)} data-extra-fields={replaceFields} data-invalidate-group={group} data-confirmation-key={IMPORT_GROUP} data-disable-with={t('messages.loading')}>{t('messages.import-group')}</button>
+                                <button type="button"
+                                    onClick={this.handleButtonClick}
+                                    className="btn border-light btn-sm btn-success ml-1"
+                                    data-post-url={importGroupURL(group)}
+                                    data-extra-fields={'replaceFields'}
+                                    data-invalidate-group={group}
+                                    data-confirmation-key={IMPORT_GROUP}
+                                    data-disable-with={t('messages.loading')}
+                                >{t('messages.import-group')}</button>
                             </div>
                             <div className='float-right'>
-                                <button type="button" onClick={this.handleButtonClick} className="btn border-light btn-sm btn-danger ml-1" data-post-url={deleteGroupURL(group)} data-reload-groups data-confirmation-key={DELETE_GROUP} data-disable-with={t('messages.deleting')}>{t('messages.delete')}</button>
+                                <button type="button"
+                                    onClick={this.handleButtonClick}
+                                    className="btn border-light btn-sm btn-danger ml-1"
+                                    data-post-url={deleteGroupURL(group)}
+                                    data-extra-fields={'getConnectionNameParam'}
+                                    data-reload-groups
+                                    data-confirmation-key={DELETE_GROUP}
+                                    data-disable-with={t('messages.deleting')}
+                                >{t('messages.delete')}</button>
                             </div>
                         </div>
                     );

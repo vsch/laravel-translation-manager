@@ -69,7 +69,7 @@ class YandexTranslationDashboard extends DashboardComponent {
             body = <div>Error: {error.message}</div>;
         } else if (!isLoaded) {
             body = <tr>
-                <div className='text-center mx-auto'><img src='../images/loading.gif'/></div>
+                <div className='text-center mx-auto'><div className='show-loading'/></div>
             </tr>;
         } else {
             body = (

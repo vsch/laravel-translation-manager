@@ -6,3 +6,4 @@ images/Bullets.psd
 images/EditPopup.psd
 config.codekit
 node_modules/
+*.map
