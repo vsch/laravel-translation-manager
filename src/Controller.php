@@ -3,6 +3,7 @@
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Redirect;
@@ -908,7 +909,7 @@ class Controller extends BaseController
      */
     public function getUI()
     {
-        $apiURL = url(action(ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this) . '@getIndex', []), [], !appDebug());
+        $apiURL = url(action(ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this) . '@getIndex', []), [], !Config::get('app.debug', false));
         $appURL = action(ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this) . '@getUI', ['all' => ''], false);
         $apiURL = substr($apiURL, 0, strlen($apiURL) - strlen("/index"));
 
