@@ -5,7 +5,6 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Response;
@@ -16,7 +15,6 @@ use Vsch\TranslationManager\Classes\TranslationLocales;
 use Vsch\TranslationManager\Events\TranslationsPublished;
 use Vsch\TranslationManager\Models\Translation;
 use Vsch\TranslationManager\Models\UserLocales;
-use Vsch\TranslationManager\Repositories\Interfaces\ITranslatorRepository;
 
 include_once(__DIR__ . '/Support/finediff.php');
 
@@ -48,12 +46,12 @@ class Controller extends BaseController
 
     private $localeData;
 
-    public function __construct(ITranslatorRepository $translatorRepository)
+    public function __construct()
     {
         $this->package = \Vsch\TranslationManager\ManagerServiceProvider::PACKAGE;
         $this->packagePrefix = $this->package . '::';
         $this->manager = App::make($this->package);
-        $this->translatorRepository = $translatorRepository;
+        $this->translatorRepository = $this->manager->getRepository();
 
         $this->connectionList = [];
         $this->connectionList[''] = 'default';
@@ -80,10 +78,7 @@ class Controller extends BaseController
     private function initialize()
     {
         $connectionName = Cookie::has($this->cookieName(self::COOKIE_CONNECTION_NAME)) ? Cookie::get($this->cookieName(self::COOKIE_CONNECTION_NAME)) : '';
-        if (!$this->changeConnectionName($connectionName)) {
-            // did not load the data since the connection was already set to default or same 
-            $this->loadPersistentData();
-        }
+        $this->changeConnectionName($connectionName);
     }
 
     public function getConnectionName()
@@ -110,42 +105,36 @@ class Controller extends BaseController
      * persistent data if it the connection is different from what was before
      *
      * @param $connection string    connection name to change to
-     *
-     * @return bool  true if connection changed and data reloaded
      */
     public function changeConnectionName($connection)
     {
-        if ($this->setConnectionName($connection)) {
+        if (!array_key_exists($connection, $this->connectionList)) $connection = '';
+
+        $resolvedConnection = $this->manager->getResolvedConnectionName($connection);
+        if ($resolvedConnection != $this->getConnectionName()) {
+            // changed
+            // save the new connection to be used as default for the user
             try {
+                $this->manager->setConnectionName($resolvedConnection);
                 $this->loadPersistentData();
-                return true;
+                Cookie::queue($this->cookieName(self::COOKIE_CONNECTION_NAME), $connection, 60 * 24 * 365 * 1);
             } catch (\Exception $e) {
-                // invalid database config
-                if ($this->setConnectionName('')) {
+                Cookie::queue($this->cookieName(self::COOKIE_CONNECTION_NAME), '', 60 * 24 * 365 * 1);
+
+                if (!$this->manager->isDefaultTranslationConnection($resolvedConnection)) {
+                    // reset to default connection
+                    $this->manager->setConnectionName('');
                     $this->loadPersistentData();
-                    return true;
+                } else {
+                    // invalid database config or no connection
                 }
             }
-        }
-        return false;
-    }
-
-    /**
-     * @param $connection  string connection name (null or empty for default)
-     * @return bool true if connection was changed from what it was before
-     */
-    public function setConnectionName($connection)
-    {
-        $connection = $this->manager->getResolvedConnectionName($connection);
-        if ($connection != $this->getConnectionName()) {
-            // changed
-            if (!array_key_exists($connection, $this->connectionList)) $connection = '';
-            // save the new connection to be used as default for the user
+        } else {
             Cookie::queue($this->cookieName(self::COOKIE_CONNECTION_NAME), $connection, 60 * 24 * 365 * 1);
-            $this->manager->setConnectionName($connection);
-            return true;
+            if (!$this->transLocales) {
+                $this->loadPersistentData();
+            }
         }
-        return false;
     }
 
     private function loadPersistentData()
@@ -155,11 +144,11 @@ class Controller extends BaseController
 
         // save them in case they changed
         $transLocales = $this->transLocales;
-        
+
         $transFilters = Cookie::get($this->cookieName(self::COOKIE_TRANS_FILTERS));
         if (is_array($transFilters)) {
             $this->transFilters = $transFilters;
-        } elseif (is_string($transFilters)) {
+        } else if (is_string($transFilters)) {
             $this->transFilters = json_decode($transFilters, true);
         } else {
             $this->transFilters = ['filter' => 'show-all', 'regex' => ''];
@@ -272,15 +261,6 @@ class Controller extends BaseController
 
     public function getIndex($group = null)
     {
-        try {
-            return $this->processIndex($group);
-        } catch (\Exception $e) {
-            // if have non default connection, reset it
-            if ($this->setConnectionName('')) {
-                // reload connection dependent data
-                $this->initialize();
-            }
-        }
         return $this->processIndex($group);
     }
 
@@ -317,7 +297,7 @@ class Controller extends BaseController
 
         $this->manager->cacheGroupTranslations($group, $this->transLocales->displayLocales, $translations);
 
-        $summary = $this->computeSummary();
+        $summary = $this->computeSummary($displayLocales);
 
         $mismatches = null;
         $mismatchEnabled = $this->manager->config('mismatch_enabled');
@@ -381,22 +361,23 @@ class Controller extends BaseController
         return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
     }
 
-    public function getInterfaceLocale()
+    public function getTranslationLocales()
     {
-        $locale = Request::get("l");
-        $translating = Request::get("t");
-        $primary = Request::get("p");
         $connection = Request::get("c");
-        $displayLocales = Request::get("d");
-        $display = implode(',', $displayLocales ?: []);
+        $this->changeConnectionName($connection);
+        $this->transLocales->currentLocale = Request::get("l");
+        $this->transLocales->primaryLocale = Request::get("p");
+        $this->transLocales->translatingLocale = Request::get("t");
+        $this->transLocales->displayLocales = Request::get("d");
+        $this->normalizeTranslationLocales();
 
-        App::setLocale($locale);
-        Cookie::queue($this->cookieName(self::COOKIE_LANG_LOCALE), $locale, 60 * 24 * 365 * 1);
-        Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $translating, 60 * 24 * 365 * 1);
-        Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $primary, 60 * 24 * 365 * 1);
-        Cookie::queue($this->cookieName(self::COOKIE_DISP_LOCALES), $display, 60 * 24 * 365 * 1);
+        $displayLocales = implode(',', $this->transLocales->displayLocales ?: []);
 
-        $this->setConnectionName($connection);
+        App::setLocale($this->transLocales->currentLocale);
+        Cookie::queue($this->cookieName(self::COOKIE_LANG_LOCALE), $this->transLocales->currentLocale, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $this->transLocales->primaryLocale, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $this->transLocales->translatingLocale, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_DISP_LOCALES), $displayLocales, 60 * 24 * 365 * 1);
 
         if (App::runningUnitTests()) {
             return Redirect::to('/');
@@ -538,9 +519,9 @@ class Controller extends BaseController
 
             if (!$group) {
                 $errors[] = trans($this->packagePrefix . 'messages.keyop-need-group');
-            } elseif (count($srckeys) !== count($dstkeys) && ($op === 'copy' || $op === 'move' || count($dstkeys))) {
+            } else if (count($srckeys) !== count($dstkeys) && ($op === 'copy' || $op === 'move' || count($dstkeys))) {
                 $errors[] = trans($this->packagePrefix . 'messages.keyop-count-mustmatch');
-            } elseif (!count($srckeys)) {
+            } else if (!count($srckeys)) {
                 $errors[] = trans($this->packagePrefix . 'messages.keyop-need-keys');
             } else {
                 if (!count($dstkeys)) {
@@ -610,9 +591,9 @@ class Controller extends BaseController
                                     $this->translatorRepository->updateGroupKeyStatusById($dstgrp, $dstkey, $row->id);
                                 }
                             }
-                        } elseif ($op === 'delete') {
+                        } else if ($op === 'delete') {
                             $this->translatorRepository->updateIsDeletedByIds($rowids);
-                        } elseif ($op === 'copy') {
+                        } else if ($op === 'copy') {
                             // TODO: split operation into update and insert so that conflicting keys get new values instead of being replaced
                             foreach ($rows as $row) {
                                 if ($this->isLocaleEnabled($row->locale)) {
@@ -729,6 +710,7 @@ class Controller extends BaseController
     public function postImport($group)
     {
         $replace = Request::get('replace', false);
+        // the group publish form has no select for replace, it is always false, react does have it
         $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : $replace)
             , $group === '*' ? null : [$group]);
         return Response::json(array('status' => 'ok', 'counter' => $counter));
@@ -834,7 +816,7 @@ class Controller extends BaseController
         Route::get('/', '\\Vsch\\TranslationManager\\Controller@getIndex');
         Route::get('connection', '\\Vsch\\TranslationManager\\Controller@getConnection');
         Route::get('index', '\\Vsch\\TranslationManager\\Controller@getIndex');
-        Route::get('interface_locale', '\\Vsch\\TranslationManager\\Controller@getInterfaceLocale');
+        Route::get('interface_locale', '\\Vsch\\TranslationManager\\Controller@getTranslationLocales');
         Route::get('keyop/{group}/{op?}', '\\Vsch\\TranslationManager\\Controller@getKeyop');
         Route::get('search', '\\Vsch\\TranslationManager\\Controller@getSearch');
         Route::get('toggle_in_place_edit', '\\Vsch\\TranslationManager\\Controller@getToggleInPlaceEdit');
@@ -930,17 +912,6 @@ class Controller extends BaseController
         $appURL = action(ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this) . '@getUI', ['all' => ''], false);
         $apiURL = substr($apiURL, 0, strlen($apiURL) - strlen("/index"));
 
-        // TODO: validate that this is still needed
-        try {
-            return View::make($this->packagePrefix . 'ui')
-                ->with("apiUrl", $apiURL)
-                ->with("appUrl", $appURL);
-        } catch (\Exception $e) {
-            // if have non default connection, reset it
-            if ($this->getConnectionName()) {
-                $this->setConnectionName('');
-            }
-        }
         return View::make($this->packagePrefix . 'ui')
             ->with("apiUrl", $apiURL)
             ->with("appUrl", $appURL);
@@ -948,7 +919,8 @@ class Controller extends BaseController
 
     public function apiSearch()
     {
-        $this->changeConnectionName(Request::get('connectionName'));
+        $connection = Request::get('connectionName');
+        $this->useConnection($connection);
         $displayLocales = Request::get('displayLocales', $this->transLocales->displayLocales);
         $searchText = Request::get('searchText');
 
@@ -968,7 +940,8 @@ class Controller extends BaseController
 
     public function apiMismatches()
     {
-        $this->changeConnectionName(Request::get('connectionName'));
+        $connection = Request::get('connectionName');
+        $this->useConnection($connection);
         $primaryLocale = Request::get('primaryLocale', $this->transLocales->primaryLocale);
         $translatingLocale = Request::get('translatingLocale', $this->transLocales->translatingLocale);
 
@@ -1044,7 +1017,8 @@ class Controller extends BaseController
         $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
 
         // this always comes from the default connection and does not affect the connection used by the UI
-        $this->setConnectionName('');
+        // we just set the connection on the manager, otherwise we will change the connection used by the UI
+        $this->manager->setConnectionName('');
 
         $translations = $this->manager->getTranslations('', $group, $locale, false);
 
@@ -1063,15 +1037,40 @@ class Controller extends BaseController
         return $jsonResponse;
     }
 
+    /**
+     * @param $connection
+     * @param $callback callable
+     */
+    public function useConnection($connection, $callback = null)
+    {
+        $normalize = false;
+        $resolvedConnection = $this->manager->getResolvedConnectionName($connection);
+        if ($resolvedConnection != $this->getConnectionName()) {
+            // changed
+            $this->manager->setConnectionName($connection);
+            $this->initTranslationLocales();
+            $normalize = true;
+        }
+
+        /** @var callable $callback */
+        if ($callback) {
+            $callback();
+            $normalize = true;
+        }
+
+        if ($normalize) {
+            $this->normalizeTranslationLocales();
+        }
+    }
+
     public function apiTranslationTable($group)
     {
-        $this->setConnectionName(Request::get('connectionName'));
-        $this->initTranslationLocales();
-
-        $this->transLocales->primaryLocale = Request::get('primaryLocale');
-        $this->transLocales->translatingLocale = Request::get('translatingLocale');
-        $this->transLocales->displayLocales = Request::get('displayLocales');
-        $this->normalizeTranslationLocales();
+        $connection = Request::get('connectionName');
+        $this->useConnection($connection, function () {
+            $this->transLocales->primaryLocale = Request::get('primaryLocale');
+            $this->transLocales->translatingLocale = Request::get('translatingLocale');
+            $this->transLocales->displayLocales = Request::get('displayLocales');
+        });
 
         // now we can use them
         $locales = $this->transLocales->locales;
@@ -1192,40 +1191,39 @@ class Controller extends BaseController
         if ($json->has("connectionName")) {
             $handled[] = "connectionName";
             $connection = $json->get("connectionName");
-            $this->setConnectionName($connection);
-
-            // re-initialize all translation locale data
-            $this->initialize();
+            $this->changeConnectionName($connection);
         }
 
         if ($json->has("currentLocale")) {
             $currentLocale = $json->get("currentLocale");
             $handled[] = "currentLocale";
-            Cookie::queue($this->cookieName(self::COOKIE_LANG_LOCALE), $currentLocale, 60 * 24 * 365 * 1);
-            Lang::setLocale($currentLocale);
             $this->transLocales->currentLocale = $currentLocale;
         }
 
         if ($json->has("translatingLocale")) {
             $handled[] = "translatingLocale";
             $translatingLocale = $json->get("translatingLocale");
-            Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $translatingLocale, 60 * 24 * 365 * 1);
             $this->transLocales->translatingLocale = $translatingLocale;
         }
 
         if ($json->has("primaryLocale")) {
             $handled[] = "primaryLocale";
             $primaryLocale = $json->get("primaryLocale");
-            Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $primaryLocale, 60 * 24 * 365 * 1);
             $this->transLocales->primaryLocale = $primaryLocale;
         }
 
         if ($json->has("displayLocales")) {
             $handled[] = "displayLocales";
             $displayLocales = array_values($json->get("displayLocales"));
-            Cookie::queue($this->cookieName(self::COOKIE_DISP_LOCALES), implode(',', $displayLocales), 60 * 24 * 365 * 1);
             $this->transLocales->displayLocales = $displayLocales;
         }
+
+        $this->normalizeTranslationLocales();
+        App::setLocale($this->transLocales->currentLocale);
+        Cookie::queue($this->cookieName(self::COOKIE_LANG_LOCALE), $this->transLocales->currentLocale, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $this->transLocales->primaryLocale, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $this->transLocales->translatingLocale, 60 * 24 * 365 * 1);
+        Cookie::queue($this->cookieName(self::COOKIE_DISP_LOCALES), implode(',', $this->transLocales->displayLocales), 60 * 24 * 365 * 1);
 
         if ($json->has("transFilters")) {
             $handled[] = "transFilters";
@@ -1263,8 +1261,8 @@ class Controller extends BaseController
         $handled = array_combine($handled, $handled);
 
         // save the rest as persisted settings, we don't do anything with them but return the react app
-        $this->loadAppUISettings(); 
-        
+        $this->loadAppUISettings();
+
         $hadWebUIState = false;
         foreach ($json as $key => $value) {
             if (!array_key_exists($key, $handled)) {
@@ -1294,19 +1292,17 @@ class Controller extends BaseController
         }
 
         // do all the init processing so the returned results are adjusted for display locales and the rest
-        $this->transLocales->normalize();
         return $this->getAppSettings();
     }
 
     public function apiSummary()
     {
-        $this->setConnectionName(Request::get('connectionName'));
-        $this->initTranslationLocales();
+        $connection = Request::get('connectionName');
+        $this->useConnection($connection, function () {
+            $this->transLocales->displayLocales = Request::get('displayLocales');
+        });
 
-        $this->transLocales->displayLocales = Request::get('displayLocales');
-        $this->normalizeTranslationLocales();
-
-        $summary = $this->computeSummary();
+        $summary = $this->computeSummary($this->transLocales->displayLocales);
         $data = [
             'connectionName' => $this->normalizedConnectionName(),
             'displayLocales' => $this->transLocales->displayLocales,
@@ -1318,11 +1314,10 @@ class Controller extends BaseController
 
     public function apiUserList()
     {
-        $this->setConnectionName(Request::get('connectionName'));
-        $this->initTranslationLocales();
-
-        $this->transLocales->displayLocales = Request::get('displayLocales');
-        $this->normalizeTranslationLocales();
+        $connection = Request::get('connectionName');
+        $this->useConnection($connection, function () {
+            $this->transLocales->displayLocales = Request::get('displayLocales');
+        });
 
         $summary = $this->computeUserList();
         $data = [
@@ -1340,9 +1335,8 @@ class Controller extends BaseController
 
         if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
-                $this->setConnectionName(Request::get('connectionName'));
-                $this->initTranslationLocales();
-                $this->normalizeTranslationLocales();
+                $connection = Request::get('connectionName');
+                $this->useConnection($connection);
 
                 $keys = explode("\n", trim(Request::get('keys')));
                 $suffixes = explode("\n", trim(Request::get('suffixes')));
@@ -1375,9 +1369,8 @@ class Controller extends BaseController
         $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
         if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
-                $this->setConnectionName(Request::get('connectionName'));
-                $this->initTranslationLocales();
-                $this->normalizeTranslationLocales();
+                $connection = Request::get('connectionName');
+                $this->useConnection($connection);
 
                 $keys = explode("\n", trim(Request::get('keys')));
                 $suffixes = explode("\n", trim(Request::get('suffixes')));
@@ -1410,7 +1403,7 @@ class Controller extends BaseController
             $userId = Request::get('userId');
             //Session::flash('_old_data', Request::except('keys'));
             $userLocalesModel = new UserLocales();
-            $userLocalesModel->setConnection($this->getConnectionName());
+            $this->useConnection(null);
             $userLocalesResult = $userLocalesModel->query()->where('user_id', $userId)->first();
             if ($userLocalesResult && $userLocalesResult->ui_settings) {
                 $userLocalesResult->ui_settings = null;
@@ -1430,11 +1423,10 @@ class Controller extends BaseController
                 } else {
                     $key = decodeKey($key);
                 }
-                
+
                 if (Request::has('connectionName')) {
-                    $this->setConnectionName(Request::get('connectionName'));
-                    $this->initTranslationLocales();
-                    $this->normalizeTranslationLocales();
+                    $connection = Request::get('connectionName');
+                    $this->useConnection($connection);
                 }
 
                 $results = '';
@@ -1462,9 +1454,8 @@ class Controller extends BaseController
     public function apiFindReferences()
     {
         if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
-            $this->setConnectionName(Request::get('connectionName'));
-            $this->initTranslationLocales();
-            $this->normalizeTranslationLocales();
+            $connection = Request::get('connectionName');
+            $this->useConnection($connection);
 
             $numFound = $this->manager->findTranslations();
 
@@ -1477,9 +1468,8 @@ class Controller extends BaseController
     {
         if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             if ($group && $group !== '*') {
-                $this->setConnectionName(Request::get('connectionName'));
-                $this->initTranslationLocales();
-                $this->normalizeTranslationLocales();
+                $connection = Request::get('connectionName');
+                $this->useConnection($connection);
 
                 $this->manager->truncateTranslations($group);
                 return Response::json(array('status' => 'ok', 'counter' => (int)0));
@@ -1493,9 +1483,8 @@ class Controller extends BaseController
     {
         if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             if ($group) {
-                $this->setConnectionName(Request::get('connectionName'));
-                $this->initTranslationLocales();
-                $this->normalizeTranslationLocales();
+                $connection = Request::get('connectionName');
+                $this->useConnection($connection);
 
                 $replace = Request::get('replace', false);
                 $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : $replace)
@@ -1511,9 +1500,8 @@ class Controller extends BaseController
     {
         if (Gate::allows(Manager::ABILITY_ADMIN_TRANSLATIONS)) {
             if ($group) {
-                $this->setConnectionName(Request::get('connectionName'));
-                $this->initTranslationLocales();
-                $this->normalizeTranslationLocales();
+                $connection = Request::get('connectionName');
+                $this->useConnection($connection);
 
                 $this->manager->exportTranslations($group);
                 $errors = $this->manager->errors();
@@ -1694,11 +1682,12 @@ class Controller extends BaseController
     }
 
     /**
+     * @param $displayLocales array
      * @return array
      */
-    private function computeSummary(): array
+    private function computeSummary($displayLocales): array
     {
-        $stats = $this->translatorRepository->stats($this->transLocales->displayLocales);
+        $stats = $this->translatorRepository->stats($displayLocales);
 
         // returned result set lists missing, changed, group, locale
         $summary = [];

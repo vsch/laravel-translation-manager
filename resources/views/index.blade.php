@@ -258,7 +258,7 @@
                     <div class="col-sm-12">
                         <div style="min-height: 10px"></div>
                         <form class="form-inline" id="form-interface-locale" method="GET"
-                                action="<?= action($controller . '@getInterfaceLocale') ?>">
+                                action="<?= action($controller . '@getTranslationLocales') ?>">
                             <input type="hidden" name="_token" value="<?php echo csrf_token(); ?>">
                             <div class="row">
                                 <div class=" col-sm-3">

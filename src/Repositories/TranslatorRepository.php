@@ -8,14 +8,12 @@ use Vsch\TranslationManager\Models\Translation;
 abstract class TranslatorRepository implements ITranslatorRepository
 {
     protected $translation;
-    protected $connection;
     protected $tableName;
     protected $tableRenameNeeded;
 
     public function __construct(Translation $translation)
     {
         $this->translation = $translation;
-        $this->connection = $translation->getConnection();
         $this->tableName = $this->getTranslationsTableName();
         $this->tableRenameNeeded = $this->tableName != 'ltm_translations';
     }
@@ -60,22 +58,6 @@ abstract class TranslatorRepository implements ITranslatorRepository
     }
 
     /**
-     * @param Translation $translation
-     */
-    public function setTranslation($translation)
-    {
-        $this->translation = $translation;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getConnection()
-    {
-        return $this->connection;
-    }
-
-    /**
      * Replace translation table name, used to allow queries with standard table name so that PhpStorm SQL completions and refactoring could be used.
      *
      * @param string $sql SQL query where to replace every occurrence of " ltm_translations " with the actual table name
@@ -90,12 +72,12 @@ abstract class TranslatorRepository implements ITranslatorRepository
 
     public function updateIsDeletedByIds($rowIds)
     {
-        $this->connection->update($this->adjustTranslationTable("UPDATE ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND id IN ($rowIds)"));
+        $this->translation->getConnection()->update($this->adjustTranslationTable("UPDATE ltm_translations SET is_deleted = 1 WHERE is_deleted = 0 AND id IN ($rowIds)"));
     }
 
     public function setNotUsedForAllTranslations()
     {
-        $this->connection->affectingStatement($this->adjustTranslationTable(<<<SQL
+        $this->translation->getConnection()->affectingStatement($this->adjustTranslationTable(<<<SQL
             UPDATE ltm_translations SET was_used = 0 WHERE was_used <> 0
 SQL
         ));
@@ -103,7 +85,7 @@ SQL
 
     public function updateStatusForTranslations($status, $updated_at, $translationIds)
     {
-        $this->connection->affectingStatement($this->adjustTranslationTable(<<<SQL
+        $this->translation->getConnection()->affectingStatement($this->adjustTranslationTable(<<<SQL
 UPDATE ltm_translations SET status = ?, is_deleted = 0, updated_at = ? WHERE id IN ($translationIds)
 SQL
         ), [$status, $updated_at]);
@@ -136,7 +118,7 @@ SQL
 
     public function deleteTranslationsForIds($translationIds)
     {
-        $this->connection->unprepared($this->adjustTranslationTable(<<<SQL
+        $this->translation->getConnection()->unprepared($this->adjustTranslationTable(<<<SQL
           DELETE FROM ltm_translations WHERE id IN ($translationIds)
 SQL
         ));
@@ -144,8 +126,7 @@ SQL
 
     public function updateValuesByStatus()
     {
-
-        $this->connection->affectingStatement($this->adjustTranslationTable(<<<SQL
+        $this->translation->getConnection()->affectingStatement($this->adjustTranslationTable(<<<SQL
 UPDATE ltm_translations SET saved_value = value, status = ? WHERE (saved_value <> value || status <> ?)
 SQL
         ), [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED]);

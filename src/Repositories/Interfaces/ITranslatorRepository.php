@@ -2,8 +2,24 @@
 
 namespace Vsch\TranslationManager\Repositories\Interfaces;
 
+use Vsch\TranslationManager\Models\Translation;
+
 interface ITranslatorRepository
 {
+    /**
+     * Return the translation used for database access.
+     * 
+     * All connection changes will be done on this instance
+     * Its connection MUST BE USED FOR ALL OPERATIONS
+     * 
+     * Otherwise alternate connections in the UI will not work properly
+     * DO NOT CACHE ITS CONNECTION except in local variable of a function for the 
+     * duration of the function.
+     * 
+     * @return Translation
+     */
+    public function getTranslation();
+
     public function updateIsDeletedByIds($rowId);
 
     public function setNotUsedForAllTranslations();

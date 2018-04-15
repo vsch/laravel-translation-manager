@@ -23,12 +23,6 @@ export class GlobalTranslations extends GlobalSetting {
             //knownMissingKeys: {}, // missing keys
         }, 2000);
 
-        this.connectionName = this.defaultSettings.connectionName;
-        this.displayLocales = this.defaultSettings.displayLocales;
-        this.group = null;
-        this.primaryLocale = null;
-        this.translatingLocale = null;
-        this.locales = null;
         this.knownMissingKeys = {};
         this.missingKeys = {};
         this.missingKeyTimer = null;
@@ -38,17 +32,17 @@ export class GlobalTranslations extends GlobalSetting {
         this.unsubscribe = appSettings.subscribeLoaded(() => {
             // start the load if group changed
             const group = appSettings_$.uiSettings.group();
+            const state = this.getState();
             if (!anyNullOrUndefined(group, appSettings_$.primaryLocale(), appSettings_$.translatingLocale())) {
-                if (anyNullOrUndefined(this.group, this.primaryLocale, this.translatingLocale)) {
+                if (anyNullOrUndefined(state.group, state.primaryLocale, state.translatingLocale)) {
                     // first load
                     this.load(group);
                 } else {
-                    if (this.primaryLocale !== appSettings_$.primaryLocale() ||
-                        this.translatingLocale !== appSettings_$.translatingLocale() ||
-                        this.group !== group ||
-                        !this.displayLocales ||
-                        this.connectionName !== appSettings_$.connectionName() ||
-                        this.displayLocales.join(',') !== appSettings_$.displayLocales.$_ifArray(Array.prototype.join, ',')) {
+                    if (state.primaryLocale !== appSettings_$.primaryLocale() ||
+                        state.translatingLocale !== appSettings_$.translatingLocale() ||
+                        state.group !== group ||
+                        state.connectionName !== appSettings_$.connectionName() ||
+                        !state.displayLocales || state.displayLocales.join(',') !== appSettings_$.displayLocales.$_ifArray(Array.prototype.join, ',')) {
 
                         this.staleData(appSettings_$.uiSettings.autoUpdateTranslationTable());
                     }
@@ -84,12 +78,6 @@ export class GlobalTranslations extends GlobalSetting {
         const api = URL_GET_TRANSLATION_TABLE(group, connectionName, primaryLocale, translatingLocale, displayLocales);
         axios.post(api.url, api.data)
             .then((result) => {
-                this.connectionName = result.data.connectionName;
-                this.displayLocales = result.data.displayLocales;
-                this.group = result.data.group;
-                this.locales = result.data.locales;
-                this.primaryLocale = result.data.primaryLocale;
-                this.translatingLocale = result.data.translatingLocale;
                 this.processServerUpdate(result.data);
             });
     }
@@ -107,7 +95,7 @@ export class GlobalTranslations extends GlobalSetting {
                     const affectedGroups = result.data.affectedGroups;
                     delete result.data.affectedGroups;
                     this.processServerUpdate(Object.assign({}, state, result.data), frameId);
-                    if (affectedGroups && affectedGroups.indexOf(this.group) !== -1) {
+                    if (affectedGroups && affectedGroups.indexOf(this.getState().group) !== -1) {
                         // invalidate this view
                         this.staleData(appSettings_$.uiSettings.autoUpdateTranslationTable());
                     }
@@ -121,17 +109,11 @@ export class GlobalTranslations extends GlobalSetting {
 
     update(translations) {
         const copy = Object.assign({}, translations);
-        delete copy['isLoaded'];
-        // delete copy['group'];
         let missingKeys = copy.missingKeys;
-
+        
+        delete copy['isLoaded'];
         delete copy.missingKeys;
         appSettings.update(copy);
-
-        translations = copy;
-        if (translations && translations.group && translations.group !== this.getState().group) {
-            this.load(translations.group);
-        }
 
         if (missingKeys) {
             // update on server
@@ -146,7 +128,9 @@ export class GlobalTranslations extends GlobalSetting {
      * @param transactionUpdater  function taking a locale and translation, returning a possibly changed copy of the translation for the locale or null if should delete the locale's translation
      */
     changeTranslations(group, keyFilter, transactionUpdater) {
-        if (group === appTranslations_$.group()) {
+        
+        if (group === this.getState().group) {
+            const appTranslations_$ = this.getBoxed();
             appTranslations_$.translations.forEachKey_$((key, translationEntry_$) => {
                 if (keyFilter(key)) {
                     // pass translations for the given key to consumer, one for every locale
@@ -156,8 +140,11 @@ export class GlobalTranslations extends GlobalSetting {
                 }
             });
 
-            if (appTranslations_$.$_modified) {
-                let action = appTranslations.reduxAction(appTranslations_$.$_modified);
+            const modified = appTranslations_$.$_modified;
+            appTranslations_$.cancel();
+            
+            if (modified) {
+                let action = appTranslations.reduxAction(modified);
                 store.dispatch(action);
             }
         }

@@ -94,6 +94,43 @@ class Manager
 
     public const JSON_GROUP = 'JSON';
 
+    public function __construct(Application $app, Filesystem $files, Dispatcher $dispatchesEvents, ITranslatorRepository $translatorRepository)
+    {
+        $this->app = $app;
+        $this->translatorRepository = $translatorRepository;
+
+        $this->package = ManagerServiceProvider::PACKAGE;
+        $this->config = $this->app['config'][$this->package];
+
+        $this->files = $files;
+        $this->dispathesEvents = $dispatchesEvents;
+        $this->translation = $translatorRepository->getTranslation();
+        $this->default_connection = $this->translation->getConnectionName();
+        $this->default_translation_connection = $this->config(self::DEFAULT_DB_CONNECTION_KEY, null);
+        if (!$this->default_translation_connection) {
+            $this->default_translation_connection = $this->default_connection;
+        } else {
+            $this->setConnectionName($this->default_translation_connection);
+        }
+
+        $this->preloadedGroupKeys = null;
+        $this->preloadedGroup = null;
+
+        $this->persistentPrefix = null;
+        $this->cache = null;
+        $this->usageCache = null;
+
+        $this->indatabase_publish = $this->getConnectionInDatabasePublish($this->default_translation_connection);
+
+        $this->groupList = null;
+        $this->augmentedGroupList = null;
+    }
+
+    public function getRepository()
+    {
+        return $this->translatorRepository;
+    }
+
     public function setConnectionName($connection = null)
     {
         if ($this->isDefaultTranslationConnection($connection)) {
@@ -112,7 +149,7 @@ class Manager
         if ($this->isDefaultTranslationConnection($connection)) {
             $connectionName = '';
         } else {
-            $connectionName = $this->translation->getConnectionName();
+            $connectionName = $connection;
         }
 
         return $connectionName;
@@ -121,9 +158,9 @@ class Manager
     public function getResolvedConnectionName($connection)
     {
         if ($this->isDefaultTranslationConnection($connection)) {
-            $connectionName = $this->default_translation_connection;
+            $connectionName = $this->default_translation_connection ?: '';
         } else {
-            $connectionName = $this->translation->getConnectionName();
+            $connectionName = $connection;
         }
 
         return $connectionName;
@@ -276,38 +313,6 @@ class Manager
         $this->preloadedGroupKeys = $translations;
         $this->preloadedGroup = $group;
         $this->preloadedGroupLocales = array_combine($locales, $locales);
-    }
-
-    public function __construct(Application $app, Filesystem $files, Dispatcher $dispatchesEvents, Translation $translation, ITranslatorRepository $translatorRepository)
-    {
-        $this->app = $app;
-        $this->translatorRepository = $translatorRepository;
-
-        $this->package = ManagerServiceProvider::PACKAGE;
-        $this->config = $this->app['config'][$this->package];
-
-        $this->files = $files;
-        $this->dispathesEvents = $dispatchesEvents;
-        $this->translation = $translation;
-        $this->default_connection = $translation->getConnectionName();
-        $this->default_translation_connection = $this->config(self::DEFAULT_DB_CONNECTION_KEY, null);
-        if (!$this->default_translation_connection) {
-            $this->default_translation_connection = $this->default_connection;
-        } else {
-            $this->setConnectionName($this->default_translation_connection);
-        }
-
-        $this->preloadedGroupKeys = null;
-        $this->preloadedGroup = null;
-
-        $this->persistentPrefix = null;
-        $this->cache = null;
-        $this->usageCache = null;
-
-        $this->indatabase_publish = $this->getConnectionInDatabasePublish($this->default_translation_connection);
-
-        $this->groupList = null;
-        $this->augmentedGroupList = null;
     }
 
     public function getPackagePublicPath()
@@ -695,6 +700,15 @@ class Manager
     {
         $connectionName = $this->getConnectionName();
         $dbTranslations = $this->translatorRepository->selectTranslationsByLocaleAndGroup($locale, $db_group);
+        $inDatabasePublishing = $this->inDatabasePublishing();
+
+        // we are either in-database publishing or writing the files but pretending that we are for a remote 
+        // connection which is really limited to do in-database publishing only
+        $inDatabasePublishing = $inDatabasePublishing === 1 || $inDatabasePublishing === 2 ? $inDatabasePublishing : 0;
+        
+        // isLocal in this case means we are importing files local to the server
+        // otherwise their values will not reflect what is local to the server
+        $isLocal = $this->isDefaultTranslationConnection($this->getConnectionName()) && $inDatabasePublishing != 2;
 
         $timeStamp = 'now()';
         $dbTransMap = [];
@@ -705,10 +719,15 @@ class Manager
         $values = [];
         $statusChangeOnly = [];
         foreach ($translations as $key => $value) {
+            if (!$value) {
+                // must have been manually modified file to empty string
+                continue;
+            }
             if (is_array($value)) {
                 if ($value) $this->errors[] = "translation value is an array: $db_group.$key locale $locale";
                 continue;
             }
+            
             $value = (string)$value;
 
             if (array_key_exists($key, $dbTransMap)) {
@@ -722,28 +741,39 @@ class Manager
                 ));
 
                 $translation->setConnection($connectionName);
-                $tmp = 0;
-            }
-
-            // Importing from the source, status is always saved. When it is changed by the user, then it is changed.
-            //$newStatus = ($translation->value === $value || !$translation->exists) ? Translation::STATUS_SAVED : Translation::STATUS_CHANGED;
-            // Only replace when empty, or explicitly told so
-            if ($replace || !$translation->value) {
-                $translation->value = $value;
             }
 
             $translation->is_deleted = 0;
             $translation->is_auto_added = 0;
-            $translation->saved_value = $value;
 
-            if ($translation->value === $translation->saved_value) {
-                $newStatus = (Translation::STATUS_SAVED);
-            } else {
-                $newStatus = (($translation->status === Translation::STATUS_SAVED ? Translation::STATUS_SAVED_CACHED : Translation::STATUS_CHANGED));
+            $status = (int)$translation->status;
+            
+            // replace if current translation has no value or we want to replace existing values
+            if ($replace || !$translation->value) {
+                $translation->value = $value;
             }
 
-            if ($newStatus !== (int)$translation->status) {
-                $translation->status = $newStatus;
+            $previousSaved = $translation->saved_value;
+            $translation->saved_value = $value;
+
+            if ($isLocal) {
+                $status = $translation->saved_value === $translation->value ? Translation::STATUS_SAVED : Translation::STATUS_CHANGED;
+            } else {
+                if ($translation->value === $translation->saved_value) {
+                    if ($value === $previousSaved) {
+                        // if it was saved then it is still reflecting the file, otherwise consider it cached.
+                        if ($status !== Translation::STATUS_SAVED) $status = Translation::STATUS_SAVED_CACHED; 
+                    } else {
+                        // the file and database are the same, but the database may no longer reflect the file
+                        $status = Translation::STATUS_SAVED_CACHED;
+                    }
+                } else {
+                    $status = Translation::STATUS_CHANGED;
+                }
+            }
+
+            if ($status !== (int)$translation->status) {
+                $translation->status = $status;
             }
 
             if (!$translation->exists) {
@@ -782,15 +812,7 @@ class Manager
                 $this->translatorRepository->deleteTranslationsForIds($translationIds);
             }
         } else {
-            // update their status
-            foreach ($dbTransMap as $translation) {
-                // mark it as saved cached or changed
-                if (((int)$translation->status) === Translation::STATUS_SAVED) {
-                    $translation->status = $replace ? Translation::STATUS_SAVED_CACHED : Translation::STATUS_CHANGED;
-                    $translation->saved_value = null;
-                }
-                $translation->save();
-            }
+            // these are no-ops, we don't delete
         }
 
         if ($values) {
@@ -799,7 +821,6 @@ class Manager
             } catch (\Exception $e) {
                 $tmp = 0;
             }
-            //$this->getConnection()->unprepared('UNLOCK TABLES');
         }
     }
 
@@ -871,7 +892,7 @@ class Manager
         }
         $jsonTranslations = $query->get([
             'key',
-            'value',
+            'saved_value',
         ]);
 
         $translations = [];
@@ -880,7 +901,7 @@ class Manager
             if ($translation) {
                 $translations[$tr->key] = $translation;
             } else {
-                $translations[$tr->key] = $tr->value;
+                $translations[$tr->key] = $tr->saved_value;
             }
         });
 
