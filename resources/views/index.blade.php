@@ -352,7 +352,7 @@
                                                         type="checkbox"
                                                         value="<?=$locale?>"
                                                 <?= ($locale === $primaryLocale || $locale === $translatingLocale || array_search($locale, $displayLocales) !== false) ? 'checked' : '' ?>
-                                                    <?= $locale === $primaryLocale ? ' disabled' : '' ?>><?= $locale ?>
+                                                    <?= $locale === $primaryLocale || $locale === $translatingLocale ? ' disabled' : '' ?>><?= $locale ?>
                                             </label>
                                         @endforeach
                                     </div>

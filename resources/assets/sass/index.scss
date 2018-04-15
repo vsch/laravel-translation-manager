@@ -498,3 +498,14 @@ ins {
   min-width: 25px;
 }
 
+.float-center-container {
+  float: left;
+  position: relative;
+  left: 50%;
+}
+
+.float-center-fixer {
+  float: left;
+  position: relative;
+  left: -50%;
+}

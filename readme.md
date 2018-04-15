@@ -1,14 +1,24 @@
 # Laravel 5 Translation Manager
 
+[![GitQ](https://gitq.com/badge.svg)](https://gitq.com/vsch/laravel-translation-manager)
+
 This package is used to comfortably manage, view, edit and translate Laravel language files with
 translation assistance through the Yandex Translation API. It augments the Laravel Translator
 system with a ton of practical functionality. [Features]
 
-:warning: Only MySQL and PostgreSQL Database connections are supported.
+:warning: Only **MySQL** and **PostgreSQL** Database connections are supported. Adding another
+database only requires additional repository interface implementations following the examples of
+[MysqlTranslatorRepository.php] or [PostgresTranslatorRepository.php].
 
-### New React App UI 
+#### :warning: **Version 2.6.10 has a new migration** 
 
-![React_UI](../../wiki/images/React_UI.png)
+When upgrading from earlier versions run:
+
+```bash
+$ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=public --force
+$ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=migrations
+$ php artisan migrate
+```
 
 **Detailed information is now in the [wiki].**
 
@@ -16,7 +26,9 @@ system with a ton of practical functionality. [Features]
 [Configuration][]  
 [Version Notes][]
 
-[![GitQ](https://gitq.com/badge.svg)](https://gitq.com/vsch/laravel-translation-manager)
+#### 2.6.10 Adds React App UI as an alternative to WebUI 
+
+![React_UI](../../wiki/images/React_UI.png)
 
 > * For Laravel 5.6 require: `"vsch/laravel-translation-manager": "~2.6"`
 >
@@ -136,4 +148,6 @@ specifically change that through the web UI, see [User Admin] or by populating t
 [Version Notes]: versioninfo.md
 [Web Interface: Source References]: ../../wiki/Web-Interface#source-references
 [wiki]: ../../wiki
+[MysqlTranslatorRepository.php]: https://github.com/vsch/laravel-translation-manager/blob/master/src/Repositories/MysqlTranslatorRepository.php
+[PostgresTranslatorRepository.php]: https://github.com/vsch/laravel-translation-manager/blob/master/src/Repositories/PostgresTranslatorRepository.php
 
