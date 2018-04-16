@@ -39,7 +39,7 @@ class SearchDashboard extends DashboardComponent {
             <Dashboard headerChildren={t('messages.search-translations')}
                 {...this.getDashboardProps()}
             >
-                <SearchTranslations/>
+                <SearchTranslations onLoad={SearchTranslations.takeFocus}/>
             </Dashboard>
         );
     }

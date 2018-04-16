@@ -509,3 +509,13 @@ ins {
   position: relative;
   left: -50%;
 }
+
+.text-attention {
+  color: $attention !important;
+  border-color: $attention !important;
+}
+
+.text-caution {
+  color: $caution !important;
+  border-color: $caution !important;
+}

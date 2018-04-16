@@ -5,6 +5,7 @@ import axios from "axios";
 import { URL_GET_TRANSLATION_TABLE, URL_POST_MISSING_KEYS } from "./ApiRoutes";
 import { anyNullOrUndefined } from "./helpers";
 import { _$ } from 'boxed-immutable';
+import appEvents from './AppEvents';
 
 export class GlobalTranslations extends GlobalSetting {
     constructor() {
@@ -21,7 +22,7 @@ export class GlobalTranslations extends GlobalSetting {
             // translations: {},
             missingKeys: UPDATE_SERVER,
             //knownMissingKeys: {}, // missing keys
-        }, 2000);
+        }, 500);
 
         this.knownMissingKeys = {};
         this.missingKeys = {};
@@ -32,9 +33,11 @@ export class GlobalTranslations extends GlobalSetting {
         this.unsubscribe = appSettings.subscribeLoaded(() => {
             // start the load if group changed
             const group = appSettings_$.uiSettings.group();
+            const groups = appSettings_$.groups.$_array;
             const state = this.getState();
-            if (!anyNullOrUndefined(group, appSettings_$.primaryLocale(), appSettings_$.translatingLocale())) {
-                if (anyNullOrUndefined(state.group, state.primaryLocale, state.translatingLocale)) {
+            const groupIndex = groups.indexOf(group);
+            if (!anyNullOrUndefined(appSettings_$.primaryLocale(), appSettings_$.translatingLocale()) && groups.length && group && groupIndex !== -1) {
+                if (!state.group || anyNullOrUndefined(state.primaryLocale, state.translatingLocale)) {
                     // first load
                     this.load(group);
                 } else {
@@ -42,21 +45,46 @@ export class GlobalTranslations extends GlobalSetting {
                         state.translatingLocale !== appSettings_$.translatingLocale() ||
                         state.group !== group ||
                         state.connectionName !== appSettings_$.connectionName() ||
-                        !state.displayLocales || state.displayLocales.join(',') !== appSettings_$.displayLocales.$_ifArray(Array.prototype.join, ',')) {
+                        !state.displayLocales || state.displayLocales.join(',') !== appSettings_$.displayLocales.$_array.join(',')) {
 
-                        this.staleData(appSettings_$.uiSettings.autoUpdateTranslationTable());
+                        this.staleData();
                     }
                 }
             } else {
-                if (appSettings_$.uiSettings() && !group && appSettings_$.groups[0]()) {
+                const firstGroup = appSettings_$.groups[0]();
+                if (appSettings_$.uiSettings() && (!group || groupIndex === -1) && firstGroup) {
                     // no data, take the first group.
-                    appSettings_$.uiSettings.group = appSettings_$.groups[0];
+                    
+                    appSettings_$.uiSettings.group = firstGroup;
                     appSettings_$.save();
+                    this.staleData();
                 }
             }
         });
 
+        appEvents.registerEvent('invalidate.groups');
+        appEvents.registerEvent('invalidate.group');
+        appEvents.registerEvent('invalidate.translations');
+
+        this.invalidateGroup = appEvents.subscribe('invalidate.group', () => {
+            this.staleData();
+            appEvents.fireEvent('invalidate.translations');
+        });
+
+        this.invalidateGroups = appEvents.subscribe('invalidate.groups', () => {
+            appSettings_$.isLoaded = false;
+            appSettings_$.uiSettings.group = null;
+            appSettings_$.groups = [];
+            appSettings_$.save();
+            appSettings.staleData();
+            appEvents.fireEvent('invalidate.translations');
+        });
+
         this.load();
+    }
+
+    canAutoRefresh() {
+        return appSettings_$.uiSettings.autoUpdateTranslationTable();
     }
 
     changeGroup(group) {
@@ -97,7 +125,7 @@ export class GlobalTranslations extends GlobalSetting {
                     this.processServerUpdate(Object.assign({}, state, result.data), frameId);
                     if (affectedGroups && affectedGroups.indexOf(this.getState().group) !== -1) {
                         // invalidate this view
-                        this.staleData(appSettings_$.uiSettings.autoUpdateTranslationTable());
+                        this.staleData();
                     }
                 });
         } else {
@@ -110,7 +138,7 @@ export class GlobalTranslations extends GlobalSetting {
     update(translations) {
         const copy = Object.assign({}, translations);
         let missingKeys = copy.missingKeys;
-        
+
         delete copy['isLoaded'];
         delete copy.missingKeys;
         appSettings.update(copy);
@@ -128,7 +156,7 @@ export class GlobalTranslations extends GlobalSetting {
      * @param transactionUpdater  function taking a locale and translation, returning a possibly changed copy of the translation for the locale or null if should delete the locale's translation
      */
     changeTranslations(group, keyFilter, transactionUpdater) {
-        
+
         if (group === this.getState().group) {
             const appTranslations_$ = this.getBoxed();
             appTranslations_$.translations.forEachKey_$((key, translationEntry_$) => {
@@ -142,10 +170,12 @@ export class GlobalTranslations extends GlobalSetting {
 
             const modified = appTranslations_$.$_modified;
             appTranslations_$.cancel();
-            
+
             if (modified) {
                 let action = appTranslations.reduxAction(modified);
                 store.dispatch(action);
+
+                appEvents.fireEvent('invalidate.translations', group);
             }
         }
     }

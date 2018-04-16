@@ -3,6 +3,7 @@ import appSettings, { appSettings_$ } from './AppSettings';
 import axios from "axios";
 import { URL_GET_MISMATCHES } from "./ApiRoutes";
 import { anyNullOrUndefined } from "./helpers";
+import appEvents from './AppEvents';
 
 export class GlobalMismatches extends GlobalSetting {
     constructor() {
@@ -28,7 +29,7 @@ export class GlobalMismatches extends GlobalSetting {
                     if (this.primaryLocale !== appSettings_$.primaryLocale()
                         || this.translatingLocale !== appSettings_$.translatingLocale()
                         || this.connectionName !== appSettings_$.connectionName()) {
-                        this.staleData(appSettings_$.uiSettings.autoUpdateViews());
+                        this.staleData();
                     }
                 }
             }

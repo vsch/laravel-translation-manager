@@ -477,7 +477,7 @@ $(document).ready(function () {
 
                 srcId = srcLoc + dstId.substr(dstLoc.length);
                 key = dstId.substr(dstLoc.length + 1);
-                elemRow = $(this).closest('tr#' + key.replace(/\./, '-')).first();
+                elemRow = $(this).closest('tr#' + key.replace(/\./g, '-')).first();
                 value = key.replace(regexnodash, ' ').toCapitalCase();
 
                 var xElem = $.fn.editableform.formElements(this);
@@ -597,10 +597,10 @@ $(document).ready(function () {
 
                 if (xElem.btnTranslate.length && dstElem.length && YANDEX_TRANSLATOR_KEY !== '') {
                     if (srcLoc !== '') {
-                        srcElem = elemRow.find('#' + srcId.replace(/\./, '-')).first();
+                        srcElem = elemRow.find('#' + srcId.replace(/\./g, '-')).first();
                         if (srcElem.length === 0) {
                             // could be search translations table
-                            srcElem = elemRow.parent().find('#' + srcId.replace(/\./, '-')).first();
+                            srcElem = elemRow.parent().find('#' + srcId.replace(/\./g, '-')).first();
                         }
                         if (srcElem.length) {
                             srcText = srcElem.text();

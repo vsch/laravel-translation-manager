@@ -1,5 +1,5 @@
 // from: https://stackoverflow.com/questions/1573053/javascript-function-to-convert-color-names-to-hex-codes
-import boxedImmutableImp, { box, util } from 'boxed-immutable';
+import boxedImmutableImp from 'boxed-immutable';
 
 function colourNameToHex(colour) {
     var colours = {
@@ -163,6 +163,8 @@ export function dashToCamelCase(text) {
     return camel;
 }
 
+const box = boxedImmutableImp.box;
+const util = boxedImmutableImp.util;
 
 export const extend = util.extend;
 export const forEachKey = util.forEachKey;
@@ -193,7 +195,7 @@ export const firstDefined = util.firstDefined;
 export const deleteItems = util.deleteItems;
 export const _$ = box;
 export const boxedImmutable = boxedImmutableImp;
-export const boxedUtil = boxedImmutable.util;
+export const boxedUtil = util;
 
 export function allNullOrUndefined() {
     let i = arguments.length;

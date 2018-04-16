@@ -5,6 +5,8 @@ import { translate } from 'react-i18next';
 import { compose } from "redux";
 import TransXEditable from "./TransXEditable";
 import appTranslations from "../helpers/GlobalTranslations";
+import appEvents from '../helpers/AppEvents';
+import globalMismatches from '../helpers/GlobalMismatches';
 
 export class TranslationMismatches extends React.Component {
     constructor(props) {
@@ -28,6 +30,16 @@ export class TranslationMismatches extends React.Component {
     //         mismatches: globalMismatches_$.mismatches(),
     //     });
     // }
+
+    componentDidMount() {
+        this.invalidateTranslations = appEvents.subscribe('invalidate.translations', (group) => {
+            globalMismatches.staleData();
+        });
+    }
+
+    componentWillUnmount() {
+        if (this.invalidateTranslations) this.invalidateTranslations();
+    }
 
     showGroup(e, group) {
         e.preventDefault();
@@ -57,7 +69,9 @@ export class TranslationMismatches extends React.Component {
         } else if (!isLoaded) {
             body = (
                 <tr>
-                    <td colSpan='5' width='100%' className='text-center'><div className='show-loading'/></td>
+                    <td colSpan='5' width='100%' className='text-center'>
+                        <div className='show-loading'/>
+                    </td>
                 </tr>
             );
         } else if (!mismatches.length) {
@@ -98,7 +112,7 @@ export class TranslationMismatches extends React.Component {
                         <td className="missing" dangerouslySetInnerHTML={{ __html: $mismatch.pr }}/>
                         <td className="group missing"><a href='#' onClick={(e) => this.showGroup(e, $mismatch.group)}>{$mismatch.group}</a></td>
                     </tr>
-                )
+                );
             });
 
         }

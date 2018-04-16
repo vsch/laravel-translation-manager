@@ -78,7 +78,7 @@ class TransXEditable extends React.Component {
                 data-url={url}
                 data-locale={$t.locale}
                 data-name={$t.locale + '|' + $t.key}
-                id={$t.locale + "-" + $t.key.replace('.', '-')}
+                id={$t.locale + "-" + $t.key}
                 data-inputclass="editable-input"
                 data-saved_value={$t.saved_value}
                 data-title={'[' + $t.locale + '] ' + $t.group + '.' + $t.key}
@@ -99,7 +99,7 @@ class TransXEditable extends React.Component {
                 data-url={url}
                 data-locale={locale}
                 data-name={locale + '|' + key}
-                id={locale + "-" + key.replace('.', '-')}
+                id={locale + "-" + key}
                 data-inputclass="editable-input"
                 data-saved_value={''}
                 data-title={'[' + locale + '] ' + group + '.' + key}

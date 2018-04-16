@@ -14,7 +14,15 @@ let mix = require('laravel-mix');
 mix.react('resources/assets/js/index.js', 'public/js')
     .sass('resources/assets/sass/index.scss', 'public/css')
     .setResourceRoot('/vendor/laravel-translation-manager/')
+    .setPublicPath('public/')
 ;
+
+/*
+// add the following lines to your webpack.mix.js to have LTM React files copied and added to the mix-manifest.json
+mix.combine(['vendor/laravel-translation-manager/public/js/index.js'], 'public/vendor/laravel-translation-manager/js/index.js')
+    .combine(['vendor/laravel-translation-manager/public/css/index.css'], 'public/vendor/laravel-translation-manager/css/index.css')
+;
+*/
 
 if (!mix.inProduction()) {
     mix.webpackConfig({

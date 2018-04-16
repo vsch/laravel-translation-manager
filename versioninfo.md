@@ -3,6 +3,13 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3.x for Laravel
 5.3, 2.4.x for Laravel 5.4, 2.5.x for Laravel 5.5 and 2.6.x for Laravel 5.6 compatibility.
 
+#### 2.6.16
+
+* [ ] Fix: add manifest instructions so react ui files are found by mix
+* [ ] Fix: use ltm translation files for React UI translations if not available in the database
+* Fix: modal to be easier to use.
+* Fix: translation mods did not always reflect changes in the translation table unless refreshed.
+
 #### 2.6.14
 
 * Fix: erroneous inclusion of appDebug() instead of using config `app.debug`.

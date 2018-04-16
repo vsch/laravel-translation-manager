@@ -4,12 +4,11 @@ import { translate } from 'react-i18next';
 import { compose } from "redux";
 import TransXEditable from "./TransXEditable";
 import TransTableFilter from "./TransTableFilter";
-import { apiURL, POST_DELETE_TRANSLATION, POST_IMPORT_GROUP_URL, POST_PUBLISH_GROUP_URL, POST_UNDELETE_TRANSLATION, URL_DELETE_GROUP, URL_FIND_REFERENCES, URL_IMPORT_GROUP, URL_PUBLISH_GROUP, URL_SHOW_KEY_REFERENCES, URL_ZIP_TRANSLATIONS } from "../helpers/ApiRoutes";
+import { apiURL, POST_DELETE_TRANSLATION, POST_UNDELETE_TRANSLATION, URL_DELETE_GROUP, URL_FIND_REFERENCES, URL_IMPORT_GROUP, URL_PUBLISH_GROUP, URL_SHOW_KEY_REFERENCES, URL_ZIP_TRANSLATIONS } from "../helpers/ApiRoutes";
 import axios from "axios";
 import appSettings, { appSettings_$ } from "../helpers/AppSettings";
 import appTranslations, { appTranslations_$ } from "../helpers/GlobalTranslations";
 import Dashboard from "./Dashboard";
-import ModalDialog from "./ModalDialog";
 import PropTypes from "prop-types";
 import DashboardComponent from "./DashboardComponent";
 
@@ -40,7 +39,7 @@ class TranslationsTable extends DashboardComponent {
 
     getState() {
         const isAdminEnabled = appSettings_$.isAdminEnabled();
-        const group = appTranslations_$.group();
+        const group = appSettings_$.uiSettings.group();
         return this.adjustState({
             error: null,
             isLoaded: appTranslations_$.isLoaded() && appSettings_$.isLoaded(),
@@ -54,12 +53,13 @@ class TranslationsTable extends DashboardComponent {
             collapsePublishButtons: appSettings_$.uiSettings.collapsePublishButtons(),
             userLocales: appSettings_$.userLocales(),
             groups: appSettings_$.groups(),
-
-            displayLocales: appTranslations_$.displayLocales(),
             group: group,
+
+            translationsGroup: appTranslations_$.group(),
+            displayLocales: appTranslations_$.displayLocales(),
             yandexKey: appTranslations_$.yandexKey(),
             translations: appTranslations_$.translations(),
-            importReplace: appSettings_$.uiSettings.importReplace() || 0,
+            importReplace: appSettings_$.uiSettings.importReplace() || '0',
             getConnectionNameParam: getConnectionNameParam,
             replaceFields: () => URL_IMPORT_GROUP(group, this.state.importReplace, appSettings.getState().connectionName).data,
         }, isAdminEnabled ? 'collapsePublishButtons' : null);
@@ -98,7 +98,7 @@ class TranslationsTable extends DashboardComponent {
 
     render() {
         const { t } = this.props;
-        const { error, isStaleData, isLoaded, isLoading, collapsePublishButtons, showPublishButtons, importReplace, isAdminEnabled, groups, group, translations, translatingLocale, primaryLocale, userLocales, displayLocales, showUsage, yandexKey } = this.state;
+        const { error, isStaleData, isLoaded, isLoading, collapsePublishButtons, translationsGroup, showPublishButtons, importReplace, isAdminEnabled, groups, group, translations, translatingLocale, primaryLocale, userLocales, displayLocales, showUsage, yandexKey } = this.state;
 
         if (this.noShow()) return null;
 
@@ -107,7 +107,7 @@ class TranslationsTable extends DashboardComponent {
         if (error) {
             headings = <th width="100%">&nbsp;</th>;
             body = <div>Error: {error.message}</div>;
-        } else if (!isLoaded) {
+        } else if (!isLoaded || group !== translationsGroup) {
             headings = <th width="100%">&nbsp;</th>;
             body = <tr>
                 <td width='100%' className='text-center'>
@@ -370,6 +370,7 @@ class TranslationsTable extends DashboardComponent {
 
         const publish = [];
         const buttons = [];
+        const replaceTextColor = importReplace == 0 ? 'text-white': importReplace == 1 ? 'text-attention' : 'text-caution';
 
         if (isAdminEnabled) {
             if (showPublishButtons) {
@@ -378,7 +379,7 @@ class TranslationsTable extends DashboardComponent {
                         <div key={publish.length} className='row'>
                             <div className="col col-sm-6">
                                 <div className="input-group input-group-sm mb-2" onClick={(e) => e.stopPropagation()}>
-                                    <select name="replace" className={"form-control text-white" + (!isStaleData || isLoading ? " bg-primary" : " bg-secondary")}
+                                    <select name="replace" className={`form-control ${replaceTextColor}` + (!isStaleData || isLoading ? " bg-primary" : " bg-secondary")}
                                         value={importReplace || '0'} onChange={this.handleImportReplace}>
                                         <option value="0">{t('messages.import-add')}</option>
                                         <option value="1">{t('messages.import-replace')}</option>
@@ -413,7 +414,7 @@ class TranslationsTable extends DashboardComponent {
                                                     className="mx-auto btn border-light btn-sm btn-success"
                                                     data-post-url={importGroupURL()}
                                                     data-extra-fields={'replaceFields'}
-                                                    data-invalidate-group='*'
+                                                    data-reload-groups
                                                     data-confirmation-key={IMPORT_ALL_GROUPS}
                                                     data-disable-with={t('messages.loading')}
                                                 >{t('messages.import-groups')}</button>
@@ -425,7 +426,7 @@ class TranslationsTable extends DashboardComponent {
                                             onClick={this.handleButtonClick}
                                             className="float-right btn border-light btn-sm btn-danger ml-1"
                                             data-post-url={findReferencesURL()}
-                                            data-invalidate-group='*'
+                                            data-reload-groups
                                             data-confirmation-key={ADD_REFERENCES}
                                             data-extra-fields={'getConnectionNameParam'}
                                             data-disable-with={t('messages.searching')}
@@ -438,8 +439,11 @@ class TranslationsTable extends DashboardComponent {
                 }
 
                 if (group) {
+                    const deleteGroupURL1 = deleteGroupURL(group);
+                    const importGroupURL1 = importGroupURL(group);
+                    const publishGroupURL1 = publishGroupURL(group);
                     buttons.push(
-                        <div key={publish.length} className='row'>
+                        <div key={'select group' + publish.length} className='row'>
                             <div className="col col-sm-6">
                                 <div className="input-group input-group-sm" onClick={(e) => e.stopPropagation()}>
                                     <select className={"form-control text-white" + (!isStaleData || isLoading ? " bg-primary" : " bg-secondary")}
@@ -456,7 +460,7 @@ class TranslationsTable extends DashboardComponent {
                                         <button type="button"
                                             onClick={this.handleButtonClick}
                                             className="btn border-light btn-sm btn-info ml-3"
-                                            data-post-url={publishGroupURL(group)}
+                                            data-post-url={publishGroupURL1}
                                             data-invalidate-group={group}
                                             data-confirmation-key={PUBLISH_GROUP}
                                             data-extra-fields={'getConnectionNameParam'}
@@ -473,7 +477,7 @@ class TranslationsTable extends DashboardComponent {
                                                 <button type="button"
                                                     onClick={this.handleButtonClick}
                                                     className="mx-auto btn border-light btn-sm btn-success"
-                                                    data-post-url={importGroupURL(group)}
+                                                    data-post-url={importGroupURL1}
                                                     data-extra-fields={'replaceFields'}
                                                     data-invalidate-group={group}
                                                     data-confirmation-key={IMPORT_GROUP}
@@ -487,7 +491,7 @@ class TranslationsTable extends DashboardComponent {
                                             <button type="button"
                                                 onClick={this.handleButtonClick}
                                                 className="btn border-light btn-sm btn-danger ml-1"
-                                                data-post-url={deleteGroupURL(group)}
+                                                data-post-url={deleteGroupURL1}
                                                 data-extra-fields={'getConnectionNameParam'}
                                                 data-reload-groups
                                                 data-confirmation-key={DELETE_GROUP}
@@ -530,10 +534,6 @@ class TranslationsTable extends DashboardComponent {
                         </table>
                     </div>
                 </div>
-
-                <ModalDialog {...this.state.modalProps} showModal={this.state.showModal}>
-                    {this.state.modalBody}
-                </ModalDialog>
             </Dashboard>
         );
     }

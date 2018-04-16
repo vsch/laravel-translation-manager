@@ -365,22 +365,35 @@ return array(
             'root' => '/vendor/{vendor}/{package}',
             'files' => 'resources/lang/{locale}/{group}',
         ],
+
+        // this will make LTM translation importable as wbn:vsch.laravel-translation-manager.messages
+//        'vendor' => [
+//            'include' => ['vsch/laravel-translation-manager'],
+//            'root' => '/vendor/{vendor}/{package}',
+//            'files' => 'resources/lang/{locale}/{group}',
+//        ],
+//
+//        'vsch/laravel-translation-manager' => [
+//            '__merge' => ['workbench', 'vendor',],
+//            'db_group' => 'wbn:{vendor}.{package}::{group}',
+//        ],
+    
         /*
-         * add packages that need special mapping to their language files because they don't use the standard Laravel
-         * layout for the version that you are using or just plain not Laravel layout. Add '__merge' key with names of
-         * sections where the package should be attempted to be merged.
-         *
-         * These will be merged with vendor or workbench type to get the rest of the config information.
-         * The sections will be checked in the order listed in the __merge entry. The first section whose include
-         * accepts the vendor/package used here, will be used. All the other sections, listed in __merge, will be ignored.
-         *
-         * Since vendor section requires opt-in, it is listed first, if this package is included then
-         * it will be a vendor type.
-         *
-         * NOTE: Regardless of whether the directory exists or not under vendor if the vendor section includes this
-         * package, then it will be expected to be in the vendor directory. If it is not then no language files will be
-         * loaded for it. Therefore only include in vendor section if it is not actually located in workbench.
-         */
+        * add packages that need special mapping to their language files because they don't use the standard Laravel
+        * layout for the version that you are using or just plain not Laravel layout. Add '__merge' key with names of
+        * sections where the package should be attempted to be merged.
+        *
+        * These will be merged with vendor or workbench type to get the rest of the config information.
+        * The sections will be checked in the order listed in the __merge entry. The first section whose include
+        * accepts the vendor/package used here, will be used. All the other sections, listed in __merge, will be ignored.
+        *
+        * Since vendor section requires opt-in, it is listed first, if this package is included then
+        * it will be a vendor type.
+        *
+        * NOTE: Regardless of whether the directory exists or not under vendor if the vendor section includes this
+        * package, then it will be expected to be in the vendor directory. If it is not then no language files will be
+        * loaded for it. Therefore only include in vendor section if it is not actually located in workbench.
+        */
         'caouecs/laravel-lang' => [
             '__merge' => ['vendor', 'workbench',],
             'files' => 'src/{locale}/{group}',

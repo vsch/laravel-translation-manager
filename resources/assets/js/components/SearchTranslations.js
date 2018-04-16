@@ -10,6 +10,8 @@ import appTranslations from "../helpers/GlobalTranslations";
 import BoxedStateComponent from "./BoxedStateComponent";
 import PropTypes from "prop-types";
 import { boxedImmutable } from "../helpers/helpers";
+import appEvents from '../helpers/AppEvents';
+import globalMismatches from '../helpers/GlobalMismatches';
 
 class SearchTranslations extends BoxedStateComponent {
     constructor(props) {
@@ -41,6 +43,38 @@ class SearchTranslations extends BoxedStateComponent {
             searchText: appSettings_$.uiSettings.searchText(),
             searchData: globalSearchData_$.searchData(),
         });
+    }
+
+    componentDidMount() {
+        BoxedStateComponent.prototype.componentDidMount.call(this);
+        if (this.props.onLoad) {
+            this.props.onLoad(this.input);
+        }
+        
+        this.invalidateTranslations = appEvents.subscribe('invalidate.translations', (group) => {
+            if (group) {
+                globalSearchData.staleData();
+            }
+        });
+    }
+
+    componentWillUnmount() {
+        BoxedStateComponent.prototype.componentWillUnmount.call(this);
+        if (this.invalidateTranslations) this.invalidateTranslations();
+    }
+    
+    static takeFocus(searchInput) {
+        if (searchInput) {
+            window.setTimeout(()=>{
+                searchInput.focus();
+                const value = searchInput.value;
+                if (value) {
+                    // this.searchInput.value = '';
+                    // this.searchInput.value = value;
+                    searchInput.setSelectionRange(0, value.length)
+                }
+            },100);
+        }
     }
 
     reload() {
@@ -76,10 +110,12 @@ class SearchTranslations extends BoxedStateComponent {
 
         let results;
         if (error) {
-            results = <h4>Error: {error.message}</h4>
+            results = <h4>Error: {error.message}</h4>;
         } else if (isLoading && !isLoaded) {
             results = (
-                <div className='text-center'><div className='show-loading'/></div>
+                <div className='text-center'>
+                    <div className='show-loading'/>
+                </div>
             );
         } else if (!searchData || !searchData.length) {
             results = searchText && !isStaleData ? <h4 className='text-center'>{t('messages.no-results')}</h4> : "";
@@ -101,11 +137,11 @@ class SearchTranslations extends BoxedStateComponent {
                         <td>{$t.locale}</td>
                         <td>{$isLocaleEnabled ? TransXEditable.transXEditLink($t.group, $t.key, $t.locale, $t, false) : $t.value}</td>
                     </tr>
-                )
+                );
             });
 
             results = (
-                <table key={1} className="table table-sm table-hover table-striped table-bordered table-translations">
+                <table key={1} className={"table table-sm table-hover table-striped table-bordered table-translations" + (this.state.isStaleData ? " stale-data" : "")}>
                     <thead className='thead-light'>
                     <tr key={"heading1"}>
                         <th colSpan="4">[{searchData.length}]: {/*{i18n.exists('messages.search-header-prefix') ? t('messages.search-header-prefix') : ''}*/}
@@ -134,7 +170,7 @@ class SearchTranslations extends BoxedStateComponent {
                         <div className="input-group-prepend">
                             <button type="button" className="btn btn-outline-primary" onClick={this.reload}>{t('messages.search')}</button>
                         </div>
-                        <input className="form-control form-control-sm border-primary" value={searchText || ''} onChange={this.searchTextChanged} onKeyPress={this.onKeyPress} type="search" placeholder={t('messages.search-text-placeholder')}/>
+                        <input ref={(input) => { this.input = input; }} className="form-control form-control-sm border-primary" value={searchText || ''} onChange={this.searchTextChanged} onKeyPress={this.onKeyPress} type="search" placeholder={t('messages.search-text-placeholder')}/>
                     </div>
                     {results}
                 </div>
@@ -145,6 +181,7 @@ class SearchTranslations extends BoxedStateComponent {
 
 SearchTranslations.propTypes = {
     onGroup: PropTypes.func,  // func to call when clicked on group
+    onLoad: PropTypes.func,  // func to call when component updated and has ref to input
 };
 
 export default compose(translate(), connect())(withRouter(SearchTranslations));

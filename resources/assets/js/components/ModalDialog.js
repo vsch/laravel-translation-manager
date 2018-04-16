@@ -4,58 +4,87 @@ import { connect } from "react-redux";
 import { translate } from 'react-i18next';
 import { compose } from "redux";
 import $ from "jquery";
-import languageSynchronizer from "../helpers/LanguageSynchronizer";
-import { isFunction } from "../helpers/helpers";
 import BoxedStateComponent from "./BoxedStateComponent";
+const boxedImmutable = require('boxed-immutable');
+
+const util = boxedImmutable.util;
 
 class ModalDialog extends BoxedStateComponent {
     constructor(props) {
         super(props);
 
         this.handleClose = this.handleClose.bind(this);
-        this.handleExtras = this.handleExtras.bind(this);
+        this.onHidden = this.onHidden.bind(this);
+        this.onHide = this.onHide.bind(this);
+        this.onShow = this.onShow.bind(this);
+        this.onShown = this.onShown.bind(this);
+        
+        this.isHidden = true;
+        this.isShown = false;
     }
 
     componentDidMount() {
         this.$el = $(this.el);
-        this.updateModal();
+        this.$el.on('hidden.bs.modal', this.onHidden);
+        this.$el.on('hide.bs.modal', this.onHide);
+        this.$el.on('show.bs.modal', this.onShow);
+        this.$el.on('shown.bs.modal', this.onShown);
     }
 
     componentWillUnmount() {
         this.$el.modal('dispose');
     }
+    
+    onHidden() {
+        this.isHidden = true;
+        util.isFunction(this.props.onHidden) && this.props.onHidden();
+    }
 
-    updateModal() {
-        if (this.props.showModal) {
-            this.$el.modal({
-                backdrop: this.props.backdrop === null || this.props.backdrop === undefined ? 'static' : !!this.props.backdrop,
-                show: this.props.showModal,
-            });
-        } else {
-            if (isFunction(this.props.onNotShown) && this.props.onNotShown()) {
-                this.$el.modal('hide');
-            }
-        }
+    onHide() {
+        util.isFunction(this.props.onHide) && this.props.onHide();
+    }
+
+    onShow() {
+        util.isFunction(this.props.onShow) && this.props.onShow();
+    }
+
+    onShown() {
+        this.isShown = true;
+        util.isFunction(this.props.onShown) && this.props.onShown();
     }
 
     componentDidUpdate() {
-        this.updateModal();
+        if (this.isShown && this.props.hideModal) { 
+            // requesting hide modal 
+            this.handleClose();
+        }
+        if (this.isHidden && this.props.showModal) { 
+            // requesting show modal 
+            this.isHidden = false;
+            this.$el.modal({
+                backdrop: this.props.backdrop === null || this.props.backdrop === undefined ? 'static' : !!this.props.backdrop,
+                keyboard: this.props.keyboard === null || this.props.keyboard === undefined ? true : !!this.props.keyboard,
+                focus: this.props.focus === null || this.props.focus === undefined ? true : !!this.props.focus,
+            });
+        }
     }
 
     handleClose(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        let onClose = this.props.onClose;
-        if (isFunction(onClose)) onClose(e, false);
-        this.$el.modal('hide');
-    }
-
-    handleExtras(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        let onExtras = this.props.onExtras;
-        if (onExtras && typeof onExtras === "function") onExtras(e);
-        this.$el.modal('hide');
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        const onClose = this.props.onClose;
+        
+        let canClose = true;
+        if (util.isFunction(onClose)) {
+            canClose = onClose(e, false);
+        }
+        
+        if (canClose === undefined || canClose) {
+            this.isShown = false;
+            this.$el.modal('hide');
+        }
     }
 
     render() {
@@ -81,16 +110,19 @@ class ModalDialog extends BoxedStateComponent {
 }
 
 ModalDialog.propTypes = {
+    onHidden: PropTypes.func,
+    onHide: PropTypes.func,
+    onShow: PropTypes.func,
+    onShown: PropTypes.func,
+    onClose: PropTypes.func,
+    
+    showModal: PropTypes.bool,
+    hideModal: PropTypes.bool,     // set to true when modal is shown to start hiding it
     modalTitle: PropTypes.string,
     modalType: PropTypes.string,
     modalDialogType: PropTypes.string,
-    showModal: PropTypes.bool,
-    onClose: PropTypes.func,
-    onExtras: PropTypes.func,
-    hookOldScripts: PropTypes.bool,
     backdrop: PropTypes.any,
     footer: PropTypes.node,
-    onNotShown: PropTypes.func,
 };
 
 export default compose(translate(), connect())(ModalDialog);

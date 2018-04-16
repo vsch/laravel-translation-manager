@@ -17,6 +17,8 @@ import { _$, isFunction } from "../helpers/helpers";
 import AppSettingsComponent from "./AppSettings";
 import TranslationSettings from "./TranslationSettings";
 import BoxedStateComponent from "./BoxedStateComponent";
+import ModalDialog from "./ModalDialog";
+import appModal from "../helpers/AppModal";
 
 const dashboardComponents = {
     summary: SummaryDashboard,
@@ -73,6 +75,10 @@ class App extends BoxedStateComponent {
             yandexKey: appSettings_$.yandexKey(),
             groups: appSettings_$.groups(),
             group: appTranslations_$.group(),
+            modalBody: appModal.getState().modalBody,
+            modalProps: appModal.getState().modalProps,
+            showModal: appModal.getState().showModal,
+            hideModal: appModal.getState().hideModal,
         };
         return state;
     }
@@ -293,6 +299,10 @@ class App extends BoxedStateComponent {
                     <Route path={"/search"} component={this.Search}/>
                     {yandexKey ? <Route path={"/yandex"} component={this.Yandex}/> : null}
                 </div>
+                
+                <ModalDialog {...this.state.modalProps} showModal={this.state.showModal} hideModal={this.state.hideModal}>
+                    {this.state.modalBody}
+                </ModalDialog>
             </div>
         );
     }

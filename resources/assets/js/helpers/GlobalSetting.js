@@ -2,6 +2,7 @@ import store, { registerGlobalSettingsHandler } from './CreateAppStore';
 import { informListeners, subscribeListener } from "./Subscriptions";
 import boxedImmutable from "boxed-immutable";
 import DelayedTask from "./DelayedTask";
+import { appSettings_$ } from './AppSettings';
 
 const _$ = boxedImmutable.box;
 const boxState = boxedImmutable.boxState;
@@ -26,7 +27,7 @@ let settingOptions = {
     globalKey: "",              // unique key to identify this global setting
     defaultSettings: {},        // defaults to load 
     updateSettingsType: {},     // settings with their load type flag: true: immediate false: throttle
-    updateDelay: 1000,          // delay before sending updates to server
+    updateDelay: 250,          // delay before sending updates to server
     reloadDeadTime: 1000,       // dead time after load request to server, no loads will happen before this
 };
 
@@ -86,7 +87,7 @@ export class GlobalSetting {
         this.isUpdating = false;    // set when waiting for server update to be completed
         this.isStaleData = true;    // reset when server data received and no sentUpdates waiting to be received
 
-        this.boxedState_$ = boxState(() => {
+        this.state_$ = boxState(() => {
             return this.getState()
         }, (modified, boxed) => {
             this.update(boxed.$_delta)
@@ -96,7 +97,7 @@ export class GlobalSetting {
         registerGlobalSettingsHandler(this);
 
         this.storeUnsubscribe = store.subscribe(() => {
-            this.boxedState_$.cancel();
+            this.state_$.cancel();
             this.fireSettingsChanged();
         });
 
@@ -155,7 +156,7 @@ export class GlobalSetting {
     }
 
     getBoxed() {
-        return this.boxedState_$;
+        return this.state_$;
     }
 
     setStateTransforms(transforms) {
@@ -171,7 +172,7 @@ export class GlobalSetting {
             setTransforms: Object.assign({}, transforms, stateTransform),
         };
 
-        this.boxedState_$.boxOptions(stateTransforms);
+        this.state_$.boxOptions(stateTransforms);
     }
 
     // override to customize action fields if needed for afterDispatch processing
@@ -232,9 +233,13 @@ export class GlobalSetting {
         }
     }
 
+    canAutoRefresh() {
+        return appSettings_$.uiSettings.autoUpdateViews();
+    }
+
     staleData(canLoad) {
         this.isStaleData = true;
-        if (canLoad) {
+        if (canLoad || (!util.isValid(canLoad) && this.canAutoRefresh())) {
             this.load();
         } else {
             const action = this.reduxAction(this.getState());
@@ -358,20 +363,22 @@ export class GlobalSetting {
 
             let isUpdating = false;
 
-            forEachKey(sentUpdates, (key, value) => {
-                if (value !== UNDEFINED) {
-                    if (sentUpdateFrameIds.hasOwnProperty(key)) {
-                        const sentUpdateFrameId = sentUpdateFrameIds[key];
-                        if (sentUpdateFrameId === serverUpdateFrameId) {
-                            // remove this one, it is the latest one
-                        } else {
-                            remainingUpdates[key] = value;
-                            remainingUpdateSource[key] = sentUpdateFrameId;
-                            isUpdating = true;
+            if (sentUpdates) {
+                forEachKey(sentUpdates, (key, value) => {
+                    if (value !== UNDEFINED) {
+                        if (sentUpdateFrameIds.hasOwnProperty(key)) {
+                            const sentUpdateFrameId = sentUpdateFrameIds[key];
+                            if (sentUpdateFrameId === serverUpdateFrameId) {
+                                // remove this one, it is the latest one
+                            } else {
+                                remainingUpdates[key] = value;
+                                remainingUpdateSource[key] = sentUpdateFrameId;
+                                isUpdating = true;
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
 
             this.sentUpdates = isUpdating ? remainingUpdates : null;
             this.sentUpdateFrameIds = isUpdating ? remainingUpdateSource : null;
@@ -393,6 +400,8 @@ export class GlobalSetting {
             this.isUpdating = !!(this.pendingUpdates || this.serverUpdates);
         }
 
+        // need to keep our store only update properties
+        util.extractProperties(this.getState(), this.storeProps, settings);
         action = this.reduxAction(settings, this.sentUpdates, this.pendingUpdates);
         store.dispatch(action);
 

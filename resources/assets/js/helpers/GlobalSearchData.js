@@ -4,6 +4,8 @@ import axios from "axios";
 import store from "./CreateAppStore";
 import { URL_GET_SEARCH } from "./ApiRoutes";
 import { isNullOrUndefined, noneNullOrUndefined } from "./helpers";
+import appEvents from './AppEvents';
+import globalMismatches from './GlobalMismatches';
 
 export class GlobalSearchData extends GlobalSetting {
     constructor() {
@@ -31,7 +33,7 @@ export class GlobalSearchData extends GlobalSetting {
         this.unsubscribe = appSettings.subscribe(() => {
             if (noneNullOrUndefined(appSettings_$.displayLocales(), appSettings_$.uiSettings.searchText())) {
                 if (!isNullOrUndefined(appSettings_$.primaryLocale())) {
-                    const displayLocales = appSettings_$.displayLocales.$_ifArray(Array.prototype.join, ',');
+                    const displayLocales = appSettings_$.displayLocales.$_array.join(',');
                     // const userLocales = appSettings_$.userLocales.$_ifArray(Array.prototype.join, ',');
                     const connectionNameDiff = this.connectionName !== appSettings_$.connectionName();
                     const searchText = (appSettings_$.uiSettings.searchText.$_value || '');
@@ -41,13 +43,11 @@ export class GlobalSearchData extends GlobalSetting {
                     if (searchText && (!this.displayLocales || !this.userLocales ||
                         connectionNameDiff ||
                         searchTextDiff ||
-                        displayLocaleDiff 
+                        displayLocaleDiff
                         // || userLocaleDiff
                     )) {
                         if (!this.isStaleData) {
-                            this.isStaleData = true;
-                            const action = this.reduxAction(this.getState());
-                            store.dispatch(action);
+                            this.staleData();
                         }
                     } else {
                         if (this.isStaleData) {
@@ -60,6 +60,9 @@ export class GlobalSearchData extends GlobalSetting {
             }
         });
 
+        this.invalidateTranslations = appEvents.subscribe('invalidate.translations', (group) => {
+            this.staleData();
+        });
         // this.load();
     }
 
@@ -68,6 +71,10 @@ export class GlobalSearchData extends GlobalSetting {
         // searchText = searchText || appSettings.getBoxed().uiSettings.searchText.valueOf();
         // return searchText;
         return true;
+    }
+
+    canAutoRefresh() {
+        return false;
     }
 
     // implement to request settings from server

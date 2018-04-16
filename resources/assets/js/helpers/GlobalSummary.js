@@ -2,6 +2,7 @@ import GlobalSetting from './GlobalSetting';
 import axios from "axios";
 import appSettings, { appSettings_$ } from "./AppSettings";
 import { apiURL, GET_SUMMARY_DATA, URL_GET_SUMMARY_DATA } from "./ApiRoutes";
+import appEvents from './AppEvents';
 
 export class GlobalSummary extends GlobalSetting {
     constructor() {
@@ -26,13 +27,25 @@ export class GlobalSummary extends GlobalSetting {
                 } else {
                     if (!this.displayLocales ||
                         this.connectionName !== appSettings_$.connectionName() ||
-                        this.displayLocales.join(',') !== appSettings_$.displayLocales.$_ifArray(Array.prototype.join, ',')) {
-                        this.staleData(appSettings_$.uiSettings.autoUpdateViews());
+                        this.displayLocales.join(',') !== appSettings_$.displayLocales.$_array.join(',')) {
+                        this.staleData();
                     }
                 }
             }
         });
 
+        this.invalidateTranslations = appEvents.subscribe('invalidate.translations', () => {
+            this.staleData();
+        });
+
+        this.invalidateGroup = appEvents.subscribe('invalidate.group', () => {
+            this.staleData();
+        });
+        
+        this.invalidateGroups = appEvents.subscribe('invalidate.groups', () => {
+            this.staleData();
+        });
+        
         this.load();
     }
 

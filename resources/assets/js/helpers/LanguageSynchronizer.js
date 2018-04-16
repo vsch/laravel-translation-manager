@@ -5,6 +5,7 @@ import jQuery from 'jquery';
 import { absoluteUrlPrefix, apiURL, POST_TRANS_FILTER } from "./ApiRoutes";
 import boxedImmutable from "boxed-immutable";
 import DelayedTask from "./DelayedTask";
+import appEvents from './AppEvents';
 
 // old script globals
 class LanguageSynchronizer {

@@ -35,10 +35,12 @@ class BoxedStateComponent extends React.Component {
             this.setStateFromSettings(this.getState());
         });
 
+        this.haveMounted = true;
         this.oldScriptHookerId = languageSynchronizer.hookOnComponentDidMount(this.oldScriptHookerId, this.usesOldScripts);
     }
 
     componentWillUnmount() {
+        this.haveMounted = false;
         this.subscriber.unsubscribe();
         this.oldScriptHookerId = languageSynchronizer.hookOnComponentWillUnmount(this.oldScriptHookerId, this.usesOldScripts);
     }
@@ -160,7 +162,7 @@ class BoxedStateComponent extends React.Component {
         this.pendingStateSettings = result;
 
         if (this.pendingStateSettings) {
-            this.settingsUpdater.restart(this.applyPendingSettings)
+            this.settingsUpdater.restart(this.applyPendingSettings);
         }
     }
 }

@@ -21,8 +21,8 @@ export class GlobalUserLocales extends GlobalSetting {
         this.unsubscribe = appSettings.subscribeLoaded(() => {
             if (appSettings_$.uiSettings() && appSettings_$.displayLocales[0]()) {
                 if (this.connectionName !== appSettings_$.connectionName() ||
-                    !this.displayLocales || this.displayLocales.join(',') !== appSettings_$.displayLocales.$_ifArray(Array.prototype.join, ',')) {
-                    this.staleData(appSettings_$.uiSettings.autoUpdateViews());
+                    !this.displayLocales || this.displayLocales.join(',') !== appSettings_$.displayLocales.$_array.join(',')) {
+                    this.staleData();
                 }
             }
         });

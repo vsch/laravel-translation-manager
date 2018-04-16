@@ -6,9 +6,9 @@ import Dashboard from "./Dashboard";
 import appSettings, { appSettings_$ } from "../helpers/AppSettings";
 import PropTypes from "prop-types";
 import DashboardComponent from "./DashboardComponent";
-import ModalDialog from "./ModalDialog";
-import { POST_ADD_SUFFIXED_KEYS, POST_DELETE_SUFFIXED_KEYS, URL_ADD_SUFFIXED_KEYS, URL_DELETE_SUFFIXED_KEYS } from "../helpers/ApiRoutes";
+import { URL_ADD_SUFFIXED_KEYS, URL_DELETE_SUFFIXED_KEYS } from "../helpers/ApiRoutes";
 import SearchTranslations from "./SearchTranslations";
+import appModal from '../helpers/AppModal';
 
 const ADD_SUFFIXED_KEYS = "confirmAddSuffixedKeys";
 const DELETE_SUFFIXED_KEYS = "confirmDeleteSuffixedKeys";
@@ -43,11 +43,9 @@ class KeyOperationsDashboard extends DashboardComponent {
             group: appSettings_$.uiSettings.group(),
             keys: appSettings_$.uiSettings.suffixedKeyOps.keys() || '',
             suffixes: appSettings_$.uiSettings.suffixedKeyOps.suffixes() || '',
-            showSearch: this.state.showSearch || false,
-            hideSearch: this.state.hideSearch || false,
         });
 
-        state.suffixedKeysExtraFields = URL_ADD_SUFFIXED_KEYS(state.group, state.keys,state.suffixes, appSettings.getState().connectionName).data;
+        state.suffixedKeysExtraFields = URL_ADD_SUFFIXED_KEYS(state.group, state.keys, state.suffixes, appSettings.getState().connectionName).data;
 
         state.confirmationExtra = null;
         const keysList = state.keys.trim().split('\n').filter(item => !!item.trim());
@@ -146,42 +144,34 @@ class KeyOperationsDashboard extends DashboardComponent {
         if (this.inButtonOp) return;
 
         const onClose = function onClose(e, ok) {
-            console.log("Modal closed", ok);
-            this.state_$.showModal = false;
-            this.state_$.save();
+            console.debug("Search closed", ok);
             this.inButtonOp = false;
         }.bind(this);
 
         const onGroup = function onGroup(e, group) {
-            console.log("Modal closed by group", group);
-            this.state_$.showModal = false;
-            this.state_$.hideSearch = true;
-            this.state_$.save();
+            console.debug("Search closed by group", group);
+            appModal.hideModal();
             this.inButtonOp = false;
         }.bind(this);
 
-        this.state_$.showModal = true;
-        this.state_$.modalProps = {
-            modalTitle: this.props.t('messages.search-translations'),
-            modalType: '',
-            modalDialogType: 'modal-dialog modal-lg',
+        appModal.showModal({
             onClose: onClose,
-            onNotShown: () => {
-                if (this.state.hideSearch) {
-                    this.state_$.hideSearch = false;
-                    this.state_$.save();
-                    return true;
-                }
+            onShown: () => {
+                SearchTranslations.takeFocus(this.searchInput);
             },
-            footer: null,
-        };
-        this.state_$.modalBody = (
-            <div style={{ background: "solid #fff" }}>
-                <SearchTranslations onGroup={onGroup}/>
-            </div>
-        );
-
-        this.state_$.save();
+            modalProps: {
+                modalTitle: this.props.t('messages.search-translations'),
+                modalType: '',
+                modalDialogType: 'modal-dialog modal-lg',
+                footer: null,
+                backdrop: true,
+            },
+            modalBody: (
+                <div style={{ background: "solid #fff" }}>
+                    <SearchTranslations onLoad={(input) => {this.searchInput = input; }} onGroup={onGroup}/>
+                </div>
+            ),
+        });
     }
 
     render() {
@@ -266,10 +256,6 @@ class KeyOperationsDashboard extends DashboardComponent {
                 {...this.getDashboardProps()}
             >
                 {body}
-
-                <ModalDialog {...this.state.modalProps} showModal={this.state.showModal}>
-                    {this.state.modalBody}
-                </ModalDialog>
             </Dashboard>
         );
     }

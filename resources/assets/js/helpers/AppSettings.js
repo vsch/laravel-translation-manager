@@ -1,7 +1,8 @@
-import GlobalSetting, { UPDATE_IMMEDIATE, UPDATE_SERVER, UPDATE_THROTTLED } from './GlobalSetting';
+import GlobalSetting, { UPDATE_IMMEDIATE, UPDATE_SERVER, UPDATE_STORE, UPDATE_THROTTLED } from './GlobalSetting';
 import axios from "axios";
 import { URL_GET_APP_SETTINGS, URL_POST_APP_SETTINGS } from "./ApiRoutes";
 import boxedImmutable from "boxed-immutable";
+import appEvents from './AppEvents';
 
 const util = boxedImmutable.util;
 const _$ = boxedImmutable.box;
@@ -302,12 +303,12 @@ export class AppSettings extends GlobalSetting {
             this.load();
         }, 100);
     }
-
+    
     // implement to test if can request settings from server
     serverCanLoad() {
         return true;
     }
-
+    
     adjustServerData(result, isLoad) {
         let data = result.data;
         

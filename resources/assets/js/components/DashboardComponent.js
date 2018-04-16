@@ -1,13 +1,14 @@
 import React from "react";
 import PropTypes from 'prop-types';
-import { boxedImmutable, firstDefined, isFunction, isString } from "../helpers/helpers";
-import appSettings, { appSettingChecks, appSettingForcedChecks, appSettings_$, dashboardConfig } from "../helpers/AppSettings";
+import { firstDefined, isFunction, isString } from "../helpers/helpers";
+import { appSettingChecks, appSettingForcedChecks, appSettings_$, dashboardConfig } from "../helpers/AppSettings";
 import BoxedStateComponent from "./BoxedStateComponent";
 import ConfirmationButtons from "./ConfirmationButtons";
 import $ from "jquery";
-import appTranslations, { appTranslations_$ } from "../helpers/GlobalTranslations";
+import appTranslations from "../helpers/GlobalTranslations";
 import axios from "axios/index";
-import languageSynchronizer from "../helpers/LanguageSynchronizer";
+import appModal from '../helpers/AppModal';
+import appEvents from '../helpers/AppEvents';
 
 class DashboardComponent extends BoxedStateComponent {
     constructor(props, dashboardName, usesOldScripts) {
@@ -73,13 +74,6 @@ class DashboardComponent extends BoxedStateComponent {
         //     console.debug("Dashboard State, collapseState", state.onCollapse, state);
         // }
 
-        // modal state information
-        state = boxedImmutable.util.mergeDefaultProperties(state, {
-            showModal: false,
-            modalProps: this.state.modalProps || {},
-            modalBody: null,
-        }, 1, true);
-
         // let state be adjusted for pending updates
         return BoxedStateComponent.prototype.adjustState.call(this, state);
     }
@@ -115,15 +109,15 @@ class DashboardComponent extends BoxedStateComponent {
         this.state_$.isCollapsed = newState;
         this.state_$.save();
 
-        this.handleToggle(this.state.dashboardProps.onCollapse, newState)
+        this.handleToggle(this.state.dashboardProps.onCollapse, newState);
     }
 
     handleHide(e) {
-        this.handleToggle(this.state.dashboardProps.onHide, false)
+        this.handleToggle(this.state.dashboardProps.onHide, false);
     }
 
     handleExtras(e) {
-        this.handleToggle(this.state.dashboardProps.onExtras, !this.state.isAltExtras)
+        this.handleToggle(this.state.dashboardProps.onExtras, !this.state.isAltExtras);
     }
 
     reload() {
@@ -173,17 +167,15 @@ class DashboardComponent extends BoxedStateComponent {
 
                     if (invalidateGroup) {
                         if (this.state.group === invalidateGroup) {
-                            appTranslations.staleData(appSettings_$.uiSettings.autoUpdateTranslationTable());
+                            appEvents.fireEvent('invalidate.group');
                         }
                     }
+
                     if (reloadGroups) {
                         // group deleted
-                        appSettings_$.uiSettings.group = null;
-                        appSettings_$.save();
-                        appTranslations_$.group = null;
-                        appTranslations_$.save();
-                        appSettings.load();
+                        appEvents.fireEvent('invalidate.groups');
                     }
+
                     console.log("Operation complete", postUrl, result.data);
                 })
                 .catch(() => {
@@ -238,10 +230,10 @@ class DashboardComponent extends BoxedStateComponent {
             const okBtnClass = `btn ${btnSize} ${okBtnType}`;
             const cancelBtnClass = `btn ${btnSize} ${cancelBtnType}`;
 
-            const onClose = function onClose(e, ok) {
+            const onButtonClose = function onClose(e, ok) {
                 console.log("Modal closed", ok);
-                this.state_$.showModal = false;
-                this.state_$.save();
+                appModal.hideModal();
+                
                 if (ok) {
                     doUpdate();
                 } else {
@@ -249,30 +241,34 @@ class DashboardComponent extends BoxedStateComponent {
                 }
             }.bind(this);
 
-            this.state_$.showModal = true;
-            this.state_$.modalProps = {
-                modalTitle: t('messages.' + confirmationDashCase + "-title"),
-                modalType: '',
-                onClose: onClose,
-                footer: (
-                    <ConfirmationButtons
-                        onNeverShow={forcedConfirmationCheck === undefined ? confirmationKey : null}
-                        okText={t('messages.' + confirmationDashCase.substring("confirm-".length))}
-                        okButtonType={okBtnClass}
-                        neverShowButtonType={okBtnClass}
-                        cancelButtonType={cancelBtnClass}
-                        onClose={onClose}
-                    />
-                ),
-            };
-            this.state_$.modalBody = (
-                <div>
-                    <p>{t('messages.' + confirmationDashCase + "-message")}</p>
-                    {confirmationExtra}
-                </div>
-            );
+            const onDialogClose = function onClose(e) {
+                console.log("Modal closed");
+                this.inButtonOp = false;
+            }.bind(this);
 
-            this.state_$.save();
+            appModal.showModal({
+                onClose: onDialogClose,
+                modalProps: {
+                    modalTitle: t('messages.' + confirmationDashCase + "-title"),
+                    modalType: '',
+                    footer: (
+                        <ConfirmationButtons
+                            onNeverShow={forcedConfirmationCheck === undefined ? confirmationKey : null}
+                            okText={t('messages.' + confirmationDashCase.substring("confirm-".length))}
+                            okButtonType={okBtnClass}
+                            neverShowButtonType={okBtnClass}
+                            cancelButtonType={cancelBtnClass}
+                            onClose={onButtonClose}
+                        />
+                    ),
+                },
+                modalBody: (
+                    <div>
+                        <p>{t('messages.' + confirmationDashCase + "-message")}</p>
+                        {confirmationExtra}
+                    </div>
+                ),
+            });
         } else {
             doUpdate();
         }

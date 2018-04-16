@@ -10,7 +10,6 @@ import Dashboard from "./Dashboard";
 import PropTypes from "prop-types";
 import { absoluteUrlPrefix, apiURL, POST_USER_LOCALES, URL_CLEAR_USER_UI_SETTINGS } from "../helpers/ApiRoutes";
 import DashboardComponent from "./DashboardComponent";
-import ModalDialog from "./ModalDialog";
 
 const CLEAR_USER_UI_SETTINGS = "confirmClearUserUiSettings";
 
@@ -165,10 +164,6 @@ class UserManagementDashboard extends DashboardComponent {
                     {body}
                     </tbody>
                 </table>
-
-                <ModalDialog {...this.state.modalProps} showModal={this.state.showModal}>
-                    {this.state.modalBody}
-                </ModalDialog>
             </Dashboard>
         );
     }
