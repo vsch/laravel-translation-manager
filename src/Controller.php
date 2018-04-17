@@ -909,11 +909,12 @@ class Controller extends BaseController
      */
     public function getUI()
     {
-        $apiURL = url(action(ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this) . '@getIndex', []), [], !Config::get('app.debug', false));
+        $webURL = url(action(ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this) . '@getIndex', []), [], !Config::get('app.debug', false));
         $appURL = action(ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this) . '@getUI', ['all' => ''], false);
-        $apiURL = substr($apiURL, 0, strlen($apiURL) - strlen("/index"));
+        $apiURL = substr($webURL, 0, strlen($webURL) - strlen("/index"));
 
         return View::make($this->packagePrefix . 'ui')
+            ->with("webUrl", $webURL)
             ->with("apiUrl", $apiURL)
             ->with("appUrl", $appURL);
     }
@@ -1017,23 +1018,34 @@ class Controller extends BaseController
         // return the translations for the given group as JSON result
         $pretty = Request::has('pretty-json') ? JSON_PRETTY_PRINT : 0;
 
-        // this always comes from the default connection and does not affect the connection used by the UI
-        // we just set the connection on the manager, otherwise we will change the connection used by the UI
-        $this->manager->setConnectionName('');
-
-        $translations = $this->manager->getTranslations('', $group, $locale, false);
-
         $parts = explode('::', $group, 2);
         if (count($parts) > 1) {
             $namespace = $parts[0];
-            $translationGroup = $parts[1];
+            $group = $parts[1];
         } else {
-            $translationGroup = "messages";
+            $namespace = '';
         }
 
+        /* @var $translator \Vsch\TranslationManager\Translator */
+        $translator = App::make('translator');
+        $namespaceGroup = ($namespace ? $namespace . '::' : '') . $group;
+
+        $fileTranslations = $translator->getTranslations($namespace, $group, $locale);
+
+        $translations = $fileTranslations;
+        // convert to possible augmented group name
+        $augmentedGroup = $this->manager->getAugmentedGroup($namespace, $group);
+        $translations = $this->manager->cachedTranslations('', $augmentedGroup, $locale, $fileTranslations);
+
+//        // this always comes from the default connection and does not affect the connection used by the UI
+//        // we just set the connection on the manager, otherwise we will change the connection used by the UI
+//        $this->manager->setConnectionName('');
+//
+//        $translations = $this->manager->getTranslations('', $group, $locale, false);
+
         $jsonResponse = Response::json(array(
-            'connectionName' => $this->normalizedConnectionName(),
-            $translationGroup => $translations,
+            'connectionName' => '',
+            $group => $translations,
         ), 200, [], JSON_UNESCAPED_SLASHES | $pretty);
         return $jsonResponse;
     }

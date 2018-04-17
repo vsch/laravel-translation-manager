@@ -510,6 +510,11 @@ ins {
   left: -50%;
 }
 
+.text-safe {
+  color: $safe !important;
+  border-color: $input-border-color !important;
+}
+
 .text-attention {
   color: $attention !important;
   border-color: $attention !important;

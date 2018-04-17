@@ -24,6 +24,10 @@ class ModalDialog extends BoxedStateComponent {
     }
 
     componentDidMount() {
+        this.attachModal();
+    }
+    
+    attachModal() {
         this.$el = $(this.el);
         this.$el.on('hidden.bs.modal', this.onHidden);
         this.$el.on('hide.bs.modal', this.onHide);
@@ -32,10 +36,15 @@ class ModalDialog extends BoxedStateComponent {
     }
 
     componentWillUnmount() {
+        this.detachModal();
+    }
+
+    detachModal() {
         this.$el.modal('dispose');
     }
-    
+
     onHidden() {
+        this.detachModal();
         this.isHidden = true;
         util.isFunction(this.props.onHidden) && this.props.onHidden();
     }
@@ -60,12 +69,16 @@ class ModalDialog extends BoxedStateComponent {
         }
         if (this.isHidden && this.props.showModal) { 
             // requesting show modal 
+            this.detachModal();
+            this.attachModal();
+            
             this.isHidden = false;
-            this.$el.modal({
-                backdrop: this.props.backdrop === null || this.props.backdrop === undefined ? 'static' : !!this.props.backdrop,
+            const option = {
+                backdrop: this.props.backdrop === null || this.props.backdrop === undefined || this.props.backdrop === 'static' ? 'static' : this.props.backdrop,
                 keyboard: this.props.keyboard === null || this.props.keyboard === undefined ? true : !!this.props.keyboard,
                 focus: this.props.focus === null || this.props.focus === undefined ? true : !!this.props.focus,
-            });
+            };
+            this.$el.modal(option);
         }
     }
 

@@ -78,6 +78,7 @@ class Manager
     protected $default_indatabase_publish;
     protected $groupList;
     protected $augmentedGroupList;
+    protected $augmentedGroupReverseList;
     protected $preloadedGroupKeys;
     protected $preloadedGroup;
     protected $preloadedGroupLocales;
@@ -141,7 +142,7 @@ class Manager
         $this->translation->setConnection($connection);
         $this->indatabase_publish = $this->getConnectionInDatabasePublish($connection);
 
-        $this->clearCache();
+        $this->resetCache();
     }
 
     public function getNormalizedConnectionName($connection)
@@ -327,8 +328,11 @@ class Manager
 
     public function afterRoute($request, $response)
     {
-        $this->saveCache();
-        $this->saveUsageCache();
+        // only save cache if it is default connection
+        if ($this->isDefaultTranslationConnection($this->getConnectionName())) {
+            $this->saveCache();
+            $this->saveUsageCache();
+        }
     }
 
     public function getGroupList()
@@ -348,6 +352,21 @@ class Manager
         return $this->groupList;
     }
 
+    public function getAugmentedGroup($namespace, $group)
+    {
+        $augmentedGroup = $group;
+
+        if ($namespace && $namespace != '*') {
+            $augmentedGroup = "$namespace::$group";
+            if (array_key_exists($augmentedGroup, $this->getGroupAugmentedList())) {
+                $augmentedGroup = $this->augmentedGroupList[$augmentedGroup];
+            } else {
+                $augmentedGroup = $group;
+            }
+        }
+        return $augmentedGroup;
+    }
+
     public function getGroupAugmentedList()
     {
         if ($this->augmentedGroupList === null) {
@@ -355,6 +374,7 @@ class Manager
             // remove the vnd:{vendor}. and add to augmented, map it to original name
             $groupList = $this->getGroupList();
             $this->augmentedGroupList = [];
+            $this->augmentedGroupReverseList = [];
 
             foreach ($groupList as $group) {
                 if (starts_with($group, ["vnd:", "wbn:"])) {
@@ -365,11 +385,18 @@ class Manager
                         if (!array_key_exists($parts[1], $groupList)) {
                             $this->augmentedGroupList[$parts[1]] = $group;
                         }
+                        $this->augmentedGroupReverseList[$group] = $parts[1];
                     }
                 }
             }
         }
         return $this->augmentedGroupList;
+    }
+
+    public function getGroupAugmentedReverseList()
+    {
+        $this->getGroupAugmentedList();
+        return $this->augmentedGroupReverseList;
     }
 
     public function config($key = null, $default = null)
@@ -401,7 +428,9 @@ class Manager
             } else {
                 $this->persistentPrefix = '';
             }
-        } else if ($this->cacheTransKey == null) {
+        }
+
+        if ($this->cacheTransKey == null) {
             $this->cacheTransKey = $this->persistentPrefix ? $this->persistentPrefix . 'translations' : '';
         }
         return $this->persistentPrefix;
@@ -419,8 +448,12 @@ class Manager
     public function cache()
     {
         if ($this->cache === null) {
-            $this->cache = $this->cachePrefix() !== '' && $this->indatabase_publish != 0 && Cache::has($this->cacheTransKey) ? Cache::get($this->cacheTransKey) : [];
-            $this->cacheIsDirty = $this->persistentPrefix !== '' && !Cache::has($this->cacheTransKey);
+            if ($this->isDefaultTranslationConnection($this->getConnectionName())) {
+                $this->cache = $this->cachePrefix() !== '' && $this->indatabase_publish != 0 && Cache::has($this->cacheTransKey) ? Cache::get($this->cacheTransKey) : [];
+                $this->cacheIsDirty = $this->persistentPrefix !== '' && !Cache::has($this->cacheTransKey);
+            } else {
+                $this->cache = [];   // only default connections use cache
+            }
         }
         return $this->cache;
     }
@@ -428,32 +461,40 @@ class Manager
     public function usageCache()
     {
         if ($this->usageCache === null) {
-            $this->usageCache = $this->usageCachePrefix() !== '' && Cache::has($this->usageCacheTransKey) ? Cache::get($this->usageCacheTransKey) : [];
-            $this->usageCacheIsDirty = $this->persistentPrefix !== '' && !Cache::has($this->usageCacheTransKey);
+            if ($this->isDefaultTranslationConnection($this->getConnectionName())) {
+                $this->usageCache = $this->usageCachePrefix() !== '' && Cache::has($this->usageCacheTransKey) ? Cache::get($this->usageCacheTransKey) : [];
+                $this->usageCacheIsDirty = $this->persistentPrefix !== '' && !Cache::has($this->usageCacheTransKey);
+            } else {
+                $this->usageCache = [];
+            }
         }
         return $this->usageCache;
     }
 
     public function saveCache()
     {
-        if ($this->persistentPrefix && $this->cacheIsDirty) {
-            Cache::put($this->cacheTransKey, $this->cache, 60 * 24 * 365);
-            $this->cacheIsDirty = false;
+        if ($this->isDefaultTranslationConnection($this->getConnectionName())) {
+            if ($this->persistentPrefix && $this->cacheIsDirty) {
+                Cache::put($this->cacheTransKey, $this->cache, 60 * 24 * 365);
+                $this->cacheIsDirty = false;
+            }
         }
     }
 
     public function saveUsageCache()
     {
-        if ($this->persistentPrefix && $this->usageCacheIsDirty) {
-            // we never save it in the cache, it is only in database use, otherwise every page it will save the full cache to the database
-            // instead of only the accessed keys
-            //Cache::put($this->usageCacheTransKey, $this->usageCache, 60 * 24 * 365);
-            Cache::put($this->usageCacheTransKey, [], 60 * 24 * 365);
-            $this->usageCacheIsDirty = false;
+        if ($this->isDefaultTranslationConnection($this->getConnectionName())) {
+            if ($this->persistentPrefix && $this->usageCacheIsDirty) {
+                // we never save it in the cache, it is only in database use, otherwise every page it will save the full cache to the database
+                // instead of only the accessed keys
+                //Cache::put($this->usageCacheTransKey, $this->usageCache, 60 * 24 * 365);
+                Cache::put($this->usageCacheTransKey, [], 60 * 24 * 365);
+                $this->usageCacheIsDirty = false;
 
-            // now update the keys in the database
-            foreach ($this->usageCache as $group => $keys) {
-                $this->translatorRepository->updateUsedTranslationsForGroup($keys, $group);
+                // now update the keys in the database
+                foreach ($this->usageCache as $group => $keys) {
+                    $this->translatorRepository->updateUsedTranslationsForGroup($keys, $group);
+                }
             }
         }
     }
@@ -472,6 +513,16 @@ class Manager
                     $this->cacheIsDirty = !!$this->persistentPrefix;
                 }
             }
+        }
+    }
+
+    public function resetCache()
+    {
+        if ($this->isDefaultTranslationConnection($this->getConnectionName())) {
+            $this->cache = null; // default means we need to use the cache
+        } else {
+            $this->cache = [];
+            $this->cacheIsDirty = false;
         }
     }
 
@@ -560,6 +611,35 @@ class Manager
         $cacheKey = $this->cacheKey($transKey, $locale);
         $value = $group && array_key_exists($group, $this->cache()) && array_key_exists($cacheKey, $this->cache[$group]) ? $this->cache[$group][$cacheKey] : null;
         return $value;
+    }
+
+    /**
+     * @param $namespace
+     * @param $group
+     * @param $locale
+     * @param $translations array|null  translations to override with cached translations
+     *
+     * @return array   of key=>translation of cached translations for the locale
+     */
+    public function cachedTranslations($namespace, $group, $locale, $translations = null)
+    {
+        $group = self::fixGroup($group);
+        $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
+        $translations = $translations ?: [];
+
+        $values = $group && array_key_exists($group, $this->cache()) ? $this->cache[$group] : null;
+        if ($values) {
+            $localePrefix = "$locale:";
+            $prefixLen = strlen($localePrefix);
+            foreach ($values as $key => $translation) {
+                if (str_starts_with($key, $localePrefix)) {
+                    $transKey = substr($key, $prefixLen);
+                    $translations[$transKey] = $translation;
+                }
+            }
+        }
+
+        return $translations;
     }
 
     public function cacheUsageInfo($namespace, $group, $transKey, $value, $locale)
@@ -705,7 +785,7 @@ class Manager
         // we are either in-database publishing or writing the files but pretending that we are for a remote 
         // connection which is really limited to do in-database publishing only
         $inDatabasePublishing = $inDatabasePublishing === 1 || $inDatabasePublishing === 2 ? $inDatabasePublishing : 0;
-        
+
         // isLocal in this case means we are importing files local to the server
         // otherwise their values will not reflect what is local to the server
         $isLocal = $this->isDefaultTranslationConnection($this->getConnectionName()) && $inDatabasePublishing != 2;
@@ -727,7 +807,7 @@ class Manager
                 if ($value) $this->errors[] = "translation value is an array: $db_group.$key locale $locale";
                 continue;
             }
-            
+
             $value = (string)$value;
 
             if (array_key_exists($key, $dbTransMap)) {
@@ -747,7 +827,7 @@ class Manager
             $translation->is_auto_added = 0;
 
             $status = (int)$translation->status;
-            
+
             // replace if current translation has no value or we want to replace existing values
             if ($replace || !$translation->value) {
                 $translation->value = $value;
@@ -762,7 +842,7 @@ class Manager
                 if ($translation->value === $translation->saved_value) {
                     if ($value === $previousSaved) {
                         // if it was saved then it is still reflecting the file, otherwise consider it cached.
-                        if ($status !== Translation::STATUS_SAVED) $status = Translation::STATUS_SAVED_CACHED; 
+                        if ($status !== Translation::STATUS_SAVED) $status = Translation::STATUS_SAVED_CACHED;
                     } else {
                         // the file and database are the same, but the database may no longer reflect the file
                         $status = Translation::STATUS_SAVED_CACHED;

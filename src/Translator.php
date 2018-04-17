@@ -137,6 +137,13 @@ class Translator extends LaravelTranslator
         $this->locale = $locale;
     }
 
+    public function getTranslations($namespace, $group, $locale)
+    {
+        $this->load($namespace, $group, $locale);
+
+        return $this->loaded[$namespace][$group][$locale];
+    }
+
     /**
      * Get the fallback locale being used.
      *
@@ -410,9 +417,10 @@ class Translator extends LaravelTranslator
         if ($useDB === null) $useDB = $this->useDB;
 
         if ($useDB && $useDB !== 2) {
-            $result = $this->manager->cachedTranslation($namespace, $group, $item, $locale ?: $this->locale());
+            $augmentedGroup = $this->manager->getAugmentedGroup($namespace,$group);
+            $result = $this->manager->cachedTranslation('', $augmentedGroup, $item, $locale ?: $this->locale());
             if ($result) {
-                $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
+                $this->notifyUsingGroupItem('', $augmentedGroup, $item, $locale);
                 return $this->processResult($result, $replace);
             }
         }
@@ -662,7 +670,8 @@ HTML;
     {
         if (!$this->suspendUsageLogging) {
             if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
-                $this->manager->usingKey($namespace, $group, $item, $locale, $this->isUseLottery());
+                $augmentedGroup = $this->manager->getAugmentedGroup($namespace,$group);
+                $this->manager->usingKey('', $augmentedGroup, $item, $locale, $this->isUseLottery());
             }
         }
     }

@@ -24,9 +24,6 @@ class DashboardComponent extends BoxedStateComponent {
         this.handleCollapse = this.handleCollapse.bind(this);
         this.handleHide = this.handleHide.bind(this);
         this.handleExtras = this.handleExtras.bind(this);
-        this.handleButtonClick = this.handleButtonClick.bind(this);
-
-        this.inButtonOp = false;
 
         this.state = {};
         this.onReload = this.reload;

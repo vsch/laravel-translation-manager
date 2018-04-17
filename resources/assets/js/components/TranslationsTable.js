@@ -11,11 +11,16 @@ import appTranslations, { appTranslations_$ } from "../helpers/GlobalTranslation
 import Dashboard from "./Dashboard";
 import PropTypes from "prop-types";
 import DashboardComponent from "./DashboardComponent";
+import UrlButton from "./UrlButton";
 
 const DELETE_GROUP = 'confirmDeleteGroup';
 const IMPORT_GROUP = 'confirmImportGroup';
+const IMPORT_GROUP_REPLACE = 'confirmImportGroupReplace';
+const IMPORT_GROUP_DELETE = 'confirmImportGroupDelete';
 const PUBLISH_GROUP = 'confirmPublishGroup';
 const IMPORT_ALL_GROUPS = 'confirmImportAllGroups';
+const IMPORT_ALL_GROUPS_REPLACE = 'confirmImportAllGroupsReplace';
+const IMPORT_ALL_GROUPS_DELETE = 'confirmImportAllGroupsDelete';
 const ADD_REFERENCES = 'confirmAddReferences';
 const PUBLISH_ALL_GROUPS = 'confirmPublishAllGroups';
 
@@ -60,8 +65,6 @@ class TranslationsTable extends DashboardComponent {
             yandexKey: appTranslations_$.yandexKey(),
             translations: appTranslations_$.translations(),
             importReplace: appSettings_$.uiSettings.importReplace() || '0',
-            getConnectionNameParam: getConnectionNameParam,
-            replaceFields: () => URL_IMPORT_GROUP(group, this.state.importReplace, appSettings.getState().connectionName).data,
         }, isAdminEnabled ? 'collapsePublishButtons' : null);
     }
 
@@ -107,13 +110,21 @@ class TranslationsTable extends DashboardComponent {
         if (error) {
             headings = <th width="100%">&nbsp;</th>;
             body = <div>Error: {error.message}</div>;
-        } else if (!isLoaded || group !== translationsGroup) {
+        } else if (!isLoaded || !group || group !== translationsGroup) {
             headings = <th width="100%">&nbsp;</th>;
-            body = <tr>
-                <td width='100%' className='text-center'>
-                    <div className='show-loading'/>
-                </td>
-            </tr>;
+            body = group ? (
+                <tr>
+                    <td width='100%' className='text-center'>
+                        <div className='show-loading'/>
+                    </td>
+                </tr>
+            ) : (
+                <tr>
+                    <td width='100%' className='text-center'>
+                        <div>{t('messages.choose-group-text')}</div>
+                    </td>
+                </tr>
+            );
         } else if (!group) {
             if (!isAdminEnabled) {
                 return;
@@ -362,15 +373,19 @@ class TranslationsTable extends DashboardComponent {
 
         const connectionName = appSettings.getState().connectionName;
 
-        const zipGroupURL = (group) => URL_ZIP_TRANSLATIONS(group || '*', connectionName).url;
-        const publishGroupURL = (group) => URL_PUBLISH_GROUP(group || '*', connectionName).url;
-        const deleteGroupURL = (group) => URL_DELETE_GROUP(group, connectionName).url;
-        const importGroupURL = (group) => URL_IMPORT_GROUP(group || '*', 0, connectionName).url;
-        const findReferencesURL = () => URL_FIND_REFERENCES(connectionName).url;
+        const zipGroupURL = (group) => URL_ZIP_TRANSLATIONS(group || '*', connectionName);
+        const publishGroupURL = (group) => URL_PUBLISH_GROUP(group || '*', connectionName);
+        const deleteGroupURL = (group) => URL_DELETE_GROUP(group, connectionName);
+        const importGroupURL = (group) => URL_IMPORT_GROUP(group || '*', importReplace, connectionName);
+        const findReferencesURL = () => URL_FIND_REFERENCES(connectionName);
 
         const publish = [];
         const buttons = [];
-        const replaceTextColor = importReplace == 0 ? 'text-white': importReplace == 1 ? 'text-attention' : 'text-caution';
+        const replaceTextColor = importReplace == 0 ? 'text-safe' : importReplace == 1 ? 'text-attention' : 'text-caution';
+        const importButtonType = importReplace == 0 ? 'border-light btn-success' : importReplace == 1 ? 'border-light btn-info' : 'border-light btn-warning';
+        const importAllConfirm = importReplace == 0 ? IMPORT_ALL_GROUPS : importReplace == 1 ? IMPORT_ALL_GROUPS_REPLACE : IMPORT_ALL_GROUPS_DELETE;
+        const importGroupConfirm = importReplace == 0 ? IMPORT_GROUP : importReplace == 1 ? IMPORT_GROUP_REPLACE : IMPORT_GROUP_DELETE;
+        const groupReplaceOption = importReplace == 0 ? '' : importReplace == 1 ? '-replace' : '-delete';
 
         if (isAdminEnabled) {
             if (showPublishButtons) {
@@ -391,113 +406,41 @@ class TranslationsTable extends DashboardComponent {
                                 <div className="row">
                                     <div className='col col-sm-5'>
                                         <div className="input-group input-group-sm" onClick={(e) => e.stopPropagation()}>
-                                            <button type="button"
-                                                onClick={this.handleButtonClick}
+                                            <UrlButton
                                                 className="btn border-light btn-sm btn-warning ml-3"
-                                                data-post-url={publishGroupURL()}
-                                                data-extra-fields={'getConnectionNameParam'}
-                                                data-invalidate-group='*'
-                                                data-confirmation-key={PUBLISH_ALL_GROUPS}
-                                                data-disable-with={t('messages.publishing')}
-                                            >{t('messages.publish-all-groups')}</button>
-                                            <a role="button"
+                                                dataUrl={publishGroupURL()}
+                                                invalidateGroup='*'
+                                                confirmationKey={PUBLISH_ALL_GROUPS}
+                                                disableWith={t('messages.publishing')}
+                                            >{t('messages.publish-all-groups')}</UrlButton>
+                                            <UrlButton
                                                 className="btn border-light btn-sm btn-primary ml-1"
-                                                href={zipGroupURL()}
-                                            >{t('messages.zip-all')}</a>
+                                                plainLink
+                                                dataUrl={zipGroupURL()}
+                                            >{t('messages.zip-all')}</UrlButton>
                                         </div>
                                     </div>
                                     <div className='col col-sm-3'>
                                         <div className="row justify-content-md-center">
                                             <div className="col-md-auto">
-                                                <button type="button"
-                                                    onClick={this.handleButtonClick}
-                                                    className="mx-auto btn border-light btn-sm btn-success"
-                                                    data-post-url={importGroupURL()}
-                                                    data-extra-fields={'replaceFields'}
-                                                    data-reload-groups
-                                                    data-confirmation-key={IMPORT_ALL_GROUPS}
-                                                    data-disable-with={t('messages.loading')}
-                                                >{t('messages.import-groups')}</button>
+                                                <UrlButton
+                                                    className={"mx-auto btn btn-sm " + importButtonType}
+                                                    dataUrl={importGroupURL()}
+                                                    reloadGroups
+                                                    confirmationKey={importAllConfirm}
+                                                    disableWith={t('messages.loading')}
+                                                >{t(`messages.import-all-groups${groupReplaceOption}`)}</UrlButton>
                                             </div>
                                         </div>
                                     </div>
                                     <div className='col col-sm-4'>
-                                        <button type="button"
-                                            onClick={this.handleButtonClick}
+                                        <UrlButton
                                             className="float-right btn border-light btn-sm btn-danger ml-1"
-                                            data-post-url={findReferencesURL()}
-                                            data-reload-groups
-                                            data-confirmation-key={ADD_REFERENCES}
-                                            data-extra-fields={'getConnectionNameParam'}
-                                            data-disable-with={t('messages.searching')}
-                                        >{t('messages.find-in-files')}</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                }
-
-                if (group) {
-                    const deleteGroupURL1 = deleteGroupURL(group);
-                    const importGroupURL1 = importGroupURL(group);
-                    const publishGroupURL1 = publishGroupURL(group);
-                    buttons.push(
-                        <div key={'select group' + publish.length} className='row'>
-                            <div className="col col-sm-6">
-                                <div className="input-group input-group-sm" onClick={(e) => e.stopPropagation()}>
-                                    <select className={"form-control text-white" + (!isStaleData || isLoading ? " bg-primary" : " bg-secondary")}
-                                        value={group || ''} onChange={this.loadGroup}>
-                                        {groups.map(item => (
-                                            <option key={item} value={item}>{item}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="col col-sm-6">
-                                <div className="row">
-                                    <div className='col col-sm-5'>
-                                        <button type="button"
-                                            onClick={this.handleButtonClick}
-                                            className="btn border-light btn-sm btn-info ml-3"
-                                            data-post-url={publishGroupURL1}
-                                            data-invalidate-group={group}
-                                            data-confirmation-key={PUBLISH_GROUP}
-                                            data-extra-fields={'getConnectionNameParam'}
-                                            data-disable-with={t('messages.publishing')}
-                                        >{t('messages.publish-group')}</button>
-                                        <a role="button"
-                                            className="btn border-light btn-sm btn-primary ml-1"
-                                            href={zipGroupURL(group)}
-                                        >{t('messages.zip')}</a>
-                                    </div>
-                                    <div className='col col-sm-3'>
-                                        <div className="row justify-content-md-center">
-                                            <div className="col-md-auto">
-                                                <button type="button"
-                                                    onClick={this.handleButtonClick}
-                                                    className="mx-auto btn border-light btn-sm btn-success"
-                                                    data-post-url={importGroupURL1}
-                                                    data-extra-fields={'replaceFields'}
-                                                    data-invalidate-group={group}
-                                                    data-confirmation-key={IMPORT_GROUP}
-                                                    data-disable-with={t('messages.loading')}
-                                                >{t('messages.import-group')}</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className='col col-sm-4'>
-                                        <div className='float-right'>
-                                            <button type="button"
-                                                onClick={this.handleButtonClick}
-                                                className="btn border-light btn-sm btn-danger ml-1"
-                                                data-post-url={deleteGroupURL1}
-                                                data-extra-fields={'getConnectionNameParam'}
-                                                data-reload-groups
-                                                data-confirmation-key={DELETE_GROUP}
-                                                data-disable-with={t('messages.deleting')}
-                                            >{t('messages.delete')}</button>
-                                        </div>
+                                            dataUrl={findReferencesURL()}
+                                            reloadGroups
+                                            confirmationKey={ADD_REFERENCES}
+                                            disableWith={t('messages.searching')}
+                                        >{t('messages.find-in-files')}</UrlButton>
                                     </div>
                                 </div>
                             </div>
@@ -507,6 +450,65 @@ class TranslationsTable extends DashboardComponent {
             }
         }
 
+        buttons.push(
+            <div key={'select group' + publish.length} className='row'>
+                <div className="col col-sm-6">
+                    <div className="input-group input-group-sm" onClick={(e) => e.stopPropagation()}>
+                        <select className={"form-control text-white" + (!isStaleData || isLoading ? " bg-primary" : " bg-secondary")}
+                            value={group || ''} onChange={this.loadGroup}>
+                            <option key="" value="">{t('messages.choose-group')}</option>
+                            {groups.map(item => (
+                                <option key={item} value={item}>{item}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+                <div className="col col-sm-6">
+                    {!!group && isAdminEnabled &&
+                    <div className="row">
+                        <div className='col col-sm-5'>
+                            <UrlButton
+                                className="btn border-light btn-sm btn-info ml-3"
+                                dataUrl={publishGroupURL(group)}
+                                invalidateGroup={group}
+                                confirmationKey={PUBLISH_GROUP}
+                                disableWith={t('messages.publishing')}
+                            >{t('messages.publish-group')}</UrlButton>
+                            <UrlButton 
+                                className="btn border-light btn-sm btn-primary ml-1"
+                                plainLink
+                                dataUrl={zipGroupURL(group)}
+                            >{t('messages.zip')}</UrlButton>
+                        </div>
+                        <div className='col col-sm-3'>
+                            <div className="row justify-content-md-center">
+                                <div className="col-md-auto">
+                                    <UrlButton
+                                        className={"mx-auto btn btn-sm " + importButtonType}
+                                        dataUrl={importGroupURL(group)}
+                                        invalidateGroup={group}
+                                        confirmationKey={importGroupConfirm}
+                                        disableWith={t('messages.loading')}
+                                    >{t(`messages.import-group${groupReplaceOption}`)}</UrlButton>
+                                </div>
+                            </div>
+                        </div>
+                        <div className='col col-sm-4'>
+                            <div className='float-right'>
+                                <UrlButton
+                                    className="btn border-light btn-sm btn-danger ml-1"
+                                    dataUrl={deleteGroupURL(group)}
+                                    reloadGroups
+                                    confirmationKey={DELETE_GROUP}
+                                    disableWith={t('messages.deleting')}
+                                >{t('messages.delete')}</UrlButton>
+                            </div>
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+        );
         return (
             <Dashboard headerChildren=
                 {

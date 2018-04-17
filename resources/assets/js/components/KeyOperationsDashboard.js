@@ -3,12 +3,13 @@ import { connect } from "react-redux";
 import { translate } from 'react-i18next';
 import { compose } from "redux";
 import Dashboard from "./Dashboard";
-import appSettings, { appSettings_$ } from "../helpers/AppSettings";
+import { appSettings_$ } from "../helpers/AppSettings";
 import PropTypes from "prop-types";
 import DashboardComponent from "./DashboardComponent";
 import { URL_ADD_SUFFIXED_KEYS, URL_DELETE_SUFFIXED_KEYS } from "../helpers/ApiRoutes";
 import SearchTranslations from "./SearchTranslations";
 import appModal from '../helpers/AppModal';
+import UrlButton from "./UrlButton";
 
 const ADD_SUFFIXED_KEYS = "confirmAddSuffixedKeys";
 const DELETE_SUFFIXED_KEYS = "confirmDeleteSuffixedKeys";
@@ -44,64 +45,6 @@ class KeyOperationsDashboard extends DashboardComponent {
             keys: appSettings_$.uiSettings.suffixedKeyOps.keys() || '',
             suffixes: appSettings_$.uiSettings.suffixedKeyOps.suffixes() || '',
         });
-
-        state.suffixedKeysExtraFields = URL_ADD_SUFFIXED_KEYS(state.group, state.keys, state.suffixes, appSettings.getState().connectionName).data;
-
-        state.confirmationExtra = null;
-        const keysList = state.keys.trim().split('\n').filter(item => !!item.trim());
-        const suffixesList = state.suffixes.trim().split('\n').filter(item => !!item.trim());
-        let body;
-
-        const k = keysList.length;
-        if (k > 0) {
-            let columns = k > 4 ? 3 : k === 4 ? 2 : k === 3 ? 3 : k === 2 ? 2 : 1;
-            let columnType = 'col col-sm-' + (12 / columns);
-
-            const keys = [];
-            keysList.forEach(key => {
-                const suffixedKeys = [];
-                suffixesList.forEach(suffix => {
-                    suffixedKeys.push(key + suffix);
-                });
-                keys.push(suffixedKeys);
-            });
-
-            let kI = 0;
-            let sI = 0;
-            body = [];
-            while (kI < keys.length) {
-                const cols = [];
-                for (let column = 0; column < columns; column++) {
-                    let i = kI + column;
-                    if (i < keys.length) {
-                        const key = keys[i];
-
-                        cols.push(
-                            <div key={kI + '.' + sI + '.' + i} className={columnType}>
-                                {key[sI]}
-                            </div>
-                        );
-                    }
-                }
-
-                body.push(
-                    <div key={body.length} className='row'>
-                        {cols}
-                    </div>
-                );
-
-                sI++;
-                if (sI >= suffixesList.length) {
-                    sI = 0;
-                    kI += columns;
-                    if (kI < keys.length) {
-                        body.push(<hr key={body.length}/>);
-                    }
-                }
-            }
-            state.confirmationExtra = body;
-        }
-
         return state;
     }
 
@@ -141,17 +84,17 @@ class KeyOperationsDashboard extends DashboardComponent {
     searchDialog(e) {
         e.preventDefault();
         e.stopPropagation();
-        if (this.inButtonOp) return;
+        if (appModal.inButtonOp) return;
 
         const onClose = function onClose(e, ok) {
             console.debug("Search closed", ok);
-            this.inButtonOp = false;
+            appModal.inButtonOp = false;
         }.bind(this);
 
         const onGroup = function onGroup(e, group) {
             console.debug("Search closed by group", group);
             appModal.hideModal();
-            this.inButtonOp = false;
+            appModal.inButtonOp = false;
         }.bind(this);
 
         appModal.showModal({
@@ -174,9 +117,70 @@ class KeyOperationsDashboard extends DashboardComponent {
         });
     }
 
+    getConfirmationExtra() {
+        const state = this.state;
+        const keysList = state.keys.trim().split('\n').filter(item => !!item.trim());
+        const suffixesList = state.suffixes.trim().split('\n').filter(item => !!item.trim());
+        let body;
+
+        const k = keysList.length;
+        if (k > 0) {
+            let columns = k > 4 ? 3 : k === 4 ? 2 : k === 3 ? 3 : k === 2 ? 2 : 1;
+            let columnType = 'col col-sm-' + (12 / columns);
+
+            const keys = [];
+            keysList.forEach(key => {
+                const suffixedKeys = [];
+                if (suffixesList.length === 0) { 
+                    suffixedKeys.push(key);
+                } else {
+                    suffixesList.forEach(suffix => {
+                        suffixedKeys.push(key + suffix);
+                    });
+                }
+                keys.push(suffixedKeys);
+            });
+
+            let kI = 0;
+            let sI = 0;
+            body = [];
+            while (kI < keys.length) {
+                const cols = [];
+                for (let column = 0; column < columns; column++) {
+                    let i = kI + column;
+                    if (i < keys.length) {
+                        const key = keys[i];
+
+                        cols.push(
+                            <div key={kI + '.' + sI + '.' + i} className={columnType}>
+                                {key[sI]}
+                            </div>,
+                        );
+                    }
+                }
+
+                body.push(
+                    <div key={body.length} className='row'>
+                        {cols}
+                    </div>,
+                );
+
+                sI++;
+                if (sI >= suffixesList.length) {
+                    sI = 0;
+                    kI += columns;
+                    if (kI < keys.length) {
+                        body.push(<hr key={body.length}/>);
+                    }
+                }
+            }
+            return body;
+        }
+    }
+
     render() {
         const { t } = this.props;
-        const { error, isLoaded, group, keys, suffixes, } = this.state;
+        const { error, isLoaded, group, keys, suffixes } = this.state;
         const disabled = !group;
 
         if (this.noShow()) return null;
@@ -196,6 +200,9 @@ class KeyOperationsDashboard extends DashboardComponent {
 
             const keysDisabled = (!keys.trim() ? "disabled " : "");
             const suffixesDisabled = (!suffixes.trim() ? "disabled " : "");
+
+            const confirmationExtra = this.getConfirmationExtra();
+
             body = (
                 <div>
                     <div className="row">
@@ -205,26 +212,38 @@ class KeyOperationsDashboard extends DashboardComponent {
                             <div style={{ minHeight: "10px" }}/>
                             <div className="row">
                                 <div className="col-sm-8">
-                                    <button type="button"
+                                    <UrlButton
                                         className={keysDisabled + " btn btn-sm btn-primary mr-2"}
-                                        onClick={keysDisabled ? null : this.handleButtonClick}
-                                        data-post-url={postAddSuffixedKeys.url}
-                                        data-confirmation-key={ADD_SUFFIXED_KEYS}
-                                        data-extra-fields='suffixedKeysExtraFields'
-                                        data-invalidate-group={group}
-                                        data-disable-with={t('messages.busy-processing')}>{t('messages.addkeys')}</button>
+                                        disabled={!!keysDisabled}
+                                        dataUrl={postAddSuffixedKeys}
+                                        confirmationKey={ADD_SUFFIXED_KEYS}
+                                        invalidateGroup={group}
+                                        disableWith={t('messages.busy-processing')}
+                                        confirmationBody={(defaultBody) =>
+                                            <div>
+                                                <p>{defaultBody}</p>
+                                                {confirmationExtra}
+                                            </div>
+                                        }
+                                    >{t('messages.addkeys')}</UrlButton>
                                     <button type="button" className={keysDisabled + "btn btn-sm btn-outline-secondary"} onClick={keysDisabled ? null : this.clearKeys}>{t('messages.clearkeys')}</button>
                                 </div>
                                 <div className="col-sm-4">
                                     <span style={{ float: "right", display: "inline" }}>
-                                        <button type="button"
+                                        <UrlButton
                                             className={keysDisabled + "btn btn-sm btn-danger"}
-                                            onClick={keysDisabled ? null : this.handleButtonClick}
-                                            data-post-url={postDeleteSuffixedKeys.url}
-                                            data-confirmation-key={DELETE_SUFFIXED_KEYS}
-                                            data-extra-fields='suffixedKeysExtraFields'
-                                            data-invalidate-group={group}
-                                            data-disable-with={t('messages.busy-processing')}>{t('messages.deletekeys')}</button>
+                                            disabled={!!keysDisabled}
+                                            dataUrl={postDeleteSuffixedKeys}
+                                            confirmationKey={DELETE_SUFFIXED_KEYS}
+                                            invalidateGroup={group}
+                                            disableWith={t('messages.busy-processing')}
+                                            confirmationBody={(defaultBody) =>
+                                                <div>
+                                                    <p>{defaultBody}</p>
+                                                    {confirmationExtra}
+                                                </div>
+                                            }
+                                        >{t('messages.deletekeys')}</UrlButton>
                                     </span>
                                 </div>
                             </div>

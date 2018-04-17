@@ -1,5 +1,6 @@
 import GlobalSetting, { UPDATE_STORE } from './GlobalSetting';
 import boxedImmutable from "boxed-immutable";
+import { isUndefined } from './helpers';
 
 const util = boxedImmutable.util;
 const _$ = boxedImmutable.box;
@@ -61,13 +62,15 @@ export class AppModal extends GlobalSetting {
         this._onModalHide = this._onModalHide.bind(this);
         this._onModalHidden = this._onModalHidden.bind(this);
         this._onModalClose = this._onModalClose.bind(this);
+        
+        this.inButtonOp = false;
     }
 
     // implement to test if can request settings from server
     serverCanLoad() {
         return false;
     }
-
+    
     _onModalShow() {
         this.modalState = MODAL_SHOWING;
         const callback = this.onShow;
@@ -172,6 +175,7 @@ export class AppModal extends GlobalSetting {
     }
 
     showModal(options) {
+        const state = this.getState();
         switch (this.modalState) {
             case MODAL_HIDDEN:
                 this.modalState = MODAL_SHOWING;

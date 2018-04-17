@@ -51,11 +51,11 @@ export class GlobalTranslations extends GlobalSetting {
                     }
                 }
             } else {
-                const firstGroup = appSettings_$.groups[0]();
-                if (appSettings_$.uiSettings() && (!group || groupIndex === -1) && firstGroup) {
+                // const firstGroup = appSettings_$.groups[0]();
+                if (appSettings_$.uiSettings() && (group && groupIndex === -1)) {
                     // no data, take the first group.
                     
-                    appSettings_$.uiSettings.group = firstGroup;
+                    appSettings_$.uiSettings.group = '';
                     appSettings_$.save();
                     this.staleData();
                 }
@@ -156,8 +156,7 @@ export class GlobalTranslations extends GlobalSetting {
      * @param transactionUpdater  function taking a locale and translation, returning a possibly changed copy of the translation for the locale or null if should delete the locale's translation
      */
     changeTranslations(group, keyFilter, transactionUpdater) {
-
-        if (group === this.getState().group) {
+        if (group && group === this.getState().group) {
             const appTranslations_$ = this.getBoxed();
             appTranslations_$.translations.forEachKey_$((key, translationEntry_$) => {
                 if (keyFilter(key)) {

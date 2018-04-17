@@ -10,12 +10,9 @@ import Dashboard from "./Dashboard";
 import PropTypes from "prop-types";
 import { absoluteUrlPrefix, apiURL, POST_USER_LOCALES, URL_CLEAR_USER_UI_SETTINGS } from "../helpers/ApiRoutes";
 import DashboardComponent from "./DashboardComponent";
+import UrlButton from "./UrlButton";
 
 const CLEAR_USER_UI_SETTINGS = "confirmClearUserUiSettings";
-
-function getClearUIParams(userId) {
-    return URL_CLEAR_USER_UI_SETTINGS(userId, appSettings.getState().connectionName).data;
-}
 
 class UserManagementDashboard extends DashboardComponent {
     constructor(props) {
@@ -33,7 +30,6 @@ class UserManagementDashboard extends DashboardComponent {
             isStaleData: globalUserLocales_$.isStaleData() || appSettings_$.isStaleData(),
             displayLocales: appSettings_$.displayLocales(),
             userLocaleList: globalUserLocales_$.userLocaleList(),
-            getClearUIParams: getClearUIParams,
         });
     }
 
@@ -132,14 +128,13 @@ class UserManagementDashboard extends DashboardComponent {
                             </XEditable>
                         </td>
                         <td>
-                            <button type="button"
+                            <UrlButton 
                                 className={deleteDisabled + "btn btn-sm btn-outline-primary"}
-                                onClick={this.handleButtonClick}
-                                data-post-url={postClearUserSettingsUrl.url}
-                                data-extra-fields='getClearUIParams'
-                                data-extra-params={$user.id}
-                                data-confirmation-key={CLEAR_USER_UI_SETTINGS}
-                                data-disable-with={t('messages.busy-processing')}>{t('messages.delete-uisettings')}</button>
+                                disabled={!!deleteDisabled}
+                                dataUrl={postClearUserSettingsUrl}
+                                confirmationKey={CLEAR_USER_UI_SETTINGS}
+                                disableWith={t('messages.busy-processing')}
+                            >{t('messages.delete-uisettings')}</UrlButton>
                         </td>
                     </tr>
                 )

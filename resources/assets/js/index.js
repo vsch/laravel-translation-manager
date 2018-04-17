@@ -51,7 +51,10 @@ if (url) {
     console.error('app-url meta data not found');
 }
 
+let webUrl = document.head.querySelector('meta[name="web-url"]');
+
 $.fn.OldScriptHooks.APP_URL = '';//url.content;
+$.fn.OldScriptHooks.WEB_URL = webUrl;//url.content;
 $.fn.OldScriptHooks.BASE_URL = basename;//url.content;
 
 //ReactDOM.render(<App />, document.getElementById('root'));

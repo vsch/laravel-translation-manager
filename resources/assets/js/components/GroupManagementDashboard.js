@@ -32,7 +32,6 @@ class GroupManagementDashboard extends DashboardComponent {
 
         this.handleNameChange = this.handleNameChange.bind(this);
         this.handleNameReset = this.handleNameReset.bind(this);
-        this.handleButtonClick = this.handleButtonClick.bind(this);
         this.handleSelectionChange = this.handleSelectionChange.bind(this);
     }
 
@@ -68,12 +67,6 @@ class GroupManagementDashboard extends DashboardComponent {
         state_$.groupEdits[groupName].newName = newName;
         state_$.groupEdits[groupName].selected = newName !== '' && newName !== groupName;
         state_$.save();
-    }
-
-    handleButtonClick(e) {
-        if (this.inButtonOp) return;
-
-        // this.inButtonOp = true;
     }
 
     handleSelectionChange(e) {
