@@ -40,13 +40,13 @@ class UrlButton extends React.Component {
 
         const $el = $(e.target);
 
-        const urlData = util.isObject(normalizedUrlData) ? normalizedUrlData : { url: normalizedUrlData };
+        const normalizedUrlData = normalizeProp(this.props.dataUrl);
+        const dataUrl = util.isObject(normalizedUrlData) ? normalizedUrlData : { url: normalizedUrlData };
         const reloadGroups = this.props.reloadGroups;
         const disableWith = this.props.disableWith;
         const confirmationKey = this.props.confirmationKey;
         const confirmationBody = this.props.confirmationBody || null;
         const invalidateGroup = this.props.invalidateGroup;
-        const normalizedUrlData = normalizeProp(this.props.dataUrl);
         const onConfirmed = this.props.onConfirmed;
 
         const doUpdate = (util.isFunction(onConfirmed) ? function () {
@@ -64,7 +64,7 @@ class UrlButton extends React.Component {
 
             // $el.attr('disabled', true);
             $el.addClass('busy');
-            (urlData.type && urlData.type.toLowerCase() === 'get' ? axios.get : axios.post)(urlData.url, urlData.data)
+            (dataUrl.type && dataUrl.type.toLowerCase() === 'get' ? axios.get : axios.post)(dataUrl.url, dataUrl.data)
                 .then(result => {
                     if (restoreText) $el.text(restoreText);
                     $el.removeAttr('disabled');
@@ -84,7 +84,7 @@ class UrlButton extends React.Component {
                         appEvents.fireEvent('invalidate.groups');
                     }
 
-                    console.log("Operation complete", urlData, result.data);
+                    console.log("Operation complete", dataUrl, result.data);
                 })
                 .catch(() => {
                     if (restoreText) $el.text(restoreText);
