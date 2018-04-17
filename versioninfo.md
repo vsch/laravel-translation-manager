@@ -5,8 +5,8 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
 
 #### 2.6.16
 
-* [ ] Fix: add instructions for react manifest mods react ui files are found by mix
-* [ ] Fix: add instructions for config options for react ui: disable ui, disable link
+* Add: instructions for react manifest mods react ui files are found by mix
+* Add: instructions for config options for react ui: disable ui, disable link
 * Fix: use ltm translation files for React UI translations if not available in the database
 * Fix: cached translations not being used if namespace was not '' or '*' 
 * Fix: modal to be easier to use.

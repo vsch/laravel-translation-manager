@@ -26,7 +26,7 @@ $ php artisan migrate
 [Configuration][]  
 [Version Notes][]
 
-#### 2.6.10 Adds React App UI as an alternative to WebUI 
+#### 2.6.16 Adds React App UI as an alternative to WebUI 
 
 ![React_UI](../../wiki/images/React_UI.png)
 
