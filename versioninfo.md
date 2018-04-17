@@ -3,6 +3,11 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3.x for Laravel
 5.3, 2.4.x for Laravel 5.4, 2.5.x for Laravel 5.5 and 2.6.x for Laravel 5.6 compatibility.
 
+#### 2.6.22
+
+* Fix: when configured for in database publish, delete import would only replace import
+  import.
+
 #### 2.6.20
 
 * Fix: moved line caused all buttons to have undefined urls. I blame it on the cat.

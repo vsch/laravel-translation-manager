@@ -1500,8 +1500,7 @@ class Controller extends BaseController
                 $this->useConnection($connection);
 
                 $replace = Request::get('replace', false);
-                $counter = $this->manager->importTranslations($group === '*' ? $replace : ($this->manager->inDatabasePublishing() == 1 ? 0 : $replace)
-                    , $group === '*' ? null : [$group]);
+                $counter = $this->manager->importTranslations($replace, $group === '*' ? null : [$group]);
                 return Response::json(array('status' => 'ok', 'counter' => $counter));
             }
             return Response::json(array('status' => 'ok', 'error' => 'missing group', 'counter' => (int)0));
