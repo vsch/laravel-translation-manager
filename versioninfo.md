@@ -3,6 +3,11 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3.x for Laravel
 5.3, 2.4.x for Laravel 5.4, 2.5.x for Laravel 5.5 and 2.6.x for Laravel 5.6 compatibility.
 
+#### 2.6.18
+
+* Fix: server exception on new ltm session and switching translating locale before setting
+  display locales.
+
 #### 2.6.16
 
 * Add: instructions for react manifest mods react ui files are found by mix

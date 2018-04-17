@@ -80,6 +80,7 @@ class TranslationLocales
         }
 
         // now need to create displayLocales
+        if (!$displayLocales || count($displayLocales) === 0) $displayLocales = [$primaryLocale, $translatingLocale]; 
         $displayLocales = array_intersect($displayLocales, $locales);
 
         // add primary, translating to list
