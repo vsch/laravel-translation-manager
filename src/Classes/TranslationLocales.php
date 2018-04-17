@@ -44,7 +44,6 @@ class TranslationLocales
         $primaryLocale = $this->primaryLocale;
         $translatingLocale = $this->translatingLocale;
         $displayLocales = $this->displayLocales;
-        $userLocales = $this->userLocales ?: $allLocales;
 
         // get all locales in the translation table
         // limit the locale list to what is in the config
@@ -62,6 +61,8 @@ class TranslationLocales
         // trim to show locales and add additional locales
         $allShowLocales = $configShowLocales ? array_intersect($allLocales, $configShowLocales) : $allLocales;
         $locales = array_unique(array_merge($allShowLocales, $addConfigLocales));
+        
+        $userLocales = $this->userLocales ?: $locales;
         $userLocales = array_values(array_unique(array_intersect($userLocales, $locales)));
 
         // now make sure primary, translating and current locale are part of the $locale list

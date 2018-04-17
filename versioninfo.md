@@ -7,6 +7,10 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
 
 * Fix: when configured for in database publish, delete import would only replace import
   import.
+* Fix: locale working set would not include added locales if they were not part of any
+  translations in the database
+* Fix: ReferenceError when a missing translation entry appeared in non-editable locale 
+* Fix: show source information
 
 #### 2.6.20
 

@@ -23,7 +23,7 @@ class TransXEditable extends React.Component {
 
     componentDidUpdate() {
         let text = this.$el.editable('getValue', true);
-        let propText = this.props.children.trim();
+        let propText = this.props.children ? this.props.children.trim() : '';
 
         if (text !== propText) {
             // if updating table from empty to non-empty, need to 

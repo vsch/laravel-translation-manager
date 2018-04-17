@@ -296,7 +296,7 @@ class Controller extends BaseController
             $translations[$translation->key][$translation->locale] = $translation;
         }
 
-        $this->manager->cacheGroupTranslations($group, $this->transLocales->displayLocales, $translations);
+        $this->manager->cacheGroupTranslations($group, $this->transLocales->displayLocales, array_keys($translations));
 
         $summary = $this->computeSummary($displayLocales);
 
@@ -1103,10 +1103,10 @@ class Controller extends BaseController
                 $t->value = $t->key;
             }
             $t = $translator->getTranslationForEditLink($t, true, $t->group . '.' . $t->key, $t->locale, null, $t->group);
-            $translations[$t->key][$t->locale] = $t;
+            $translations[$t->key][$t->locale] = $t->getAttributes();
         }
 
-        $this->manager->cacheGroupTranslations($group, $this->transLocales->displayLocales, $translations);
+        $this->manager->cacheGroupTranslations($group, $this->transLocales->displayLocales, array_keys($translations));
 
         $data = [
             'connectionName' => $this->normalizedConnectionName(),

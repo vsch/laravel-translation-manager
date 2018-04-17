@@ -131,7 +131,7 @@ ModalDialog.propTypes = {
     
     showModal: PropTypes.bool,
     hideModal: PropTypes.bool,     // set to true when modal is shown to start hiding it
-    modalTitle: PropTypes.string,
+    modalTitle: PropTypes.any,
     modalType: PropTypes.string,
     modalDialogType: PropTypes.string,
     backdrop: PropTypes.any,

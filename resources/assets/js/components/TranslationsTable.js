@@ -4,7 +4,7 @@ import { translate } from 'react-i18next';
 import { compose } from "redux";
 import TransXEditable from "./TransXEditable";
 import TransTableFilter from "./TransTableFilter";
-import { apiURL, POST_DELETE_TRANSLATION, POST_UNDELETE_TRANSLATION, URL_DELETE_GROUP, URL_FIND_REFERENCES, URL_IMPORT_GROUP, URL_PUBLISH_GROUP, URL_SHOW_KEY_REFERENCES, URL_ZIP_TRANSLATIONS } from "../helpers/ApiRoutes";
+import { absoluteUrlPrefix, apiURL, POST_DELETE_TRANSLATION, POST_UNDELETE_TRANSLATION, URL_DELETE_GROUP, URL_FIND_REFERENCES, URL_IMPORT_GROUP, URL_PUBLISH_GROUP, URL_SHOW_KEY_REFERENCES, URL_ZIP_TRANSLATIONS } from "../helpers/ApiRoutes";
 import axios from "axios";
 import appSettings, { appSettings_$ } from "../helpers/AppSettings";
 import appTranslations, { appTranslations_$ } from "../helpers/GlobalTranslations";
@@ -12,6 +12,7 @@ import Dashboard from "./Dashboard";
 import PropTypes from "prop-types";
 import DashboardComponent from "./DashboardComponent";
 import UrlButton from "./UrlButton";
+import appModal from '../helpers/AppModal';
 
 const DELETE_GROUP = 'confirmDeleteGroup';
 const IMPORT_GROUP = 'confirmImportGroup';
@@ -323,8 +324,9 @@ class TranslationsTable extends DashboardComponent {
                     }
                 }
 
-                for (let $locale in $locales) {
-                    if (!$locales.hasOwnProperty($locale)) continue;
+                for (let i in $locales) {
+                    if (!$locales.hasOwnProperty(i)) continue;
+                    let $locale = $locales[i];
 
                     $t = $translation.hasOwnProperty($locale) ? $translation[$locale] : null;
                     if ($t != null && $t.has_source) {
@@ -337,10 +339,25 @@ class TranslationsTable extends DashboardComponent {
                 columns.push(
                     <td key={columns.length + $group + "." + $key + ":"} className={"key" + ($was_used ? ' used-key' : ' unused-key')}>{$key}
                         {$has_source && (
-                            <a style="float: right;" href={apiURL(absoluteUrlPrefix(), URL_SHOW_KEY_REFERENCES(group, $key).url)}
-                                className="show-source-refs" data-method="POST" data-remote="true" title={t("messages.show-source-refs")}>
-                                <span className={"fa" + ($is_auto_added ? 'fa-question-sign' : 'fa-info-sign')}/>
-                            </a>
+                            <UrlButton asLink
+                                dataUrl={URL_SHOW_KEY_REFERENCES(group, $key, connectionName)}
+                                className="float-right" 
+                                title={t("messages.show-source-refs")}
+                                onSuccess={(result)=>{
+                                    const keyName = result.data.key_name;
+                                    const modalTitle = <span>{t('messages.source-refs-header')}<code> '{keyName}'</code></span>;
+                                    const sources = result.data.result.join('\n');
+                                    const modal = {
+                                        modalProps: {
+                                            modalTitle: modalTitle,
+                                            modalType: 'modal',
+                                            backdrop: true,
+                                        },
+                                        modalBody: <pre>{sources}</pre>,
+                                    };
+                                    appModal.showModal(modal);
+                                }}
+                            ><span className={"fa " + ($is_auto_added ? 'fa-question-circle' : 'fa-info-circle')}/></UrlButton>
                         )}
                     </td>,
                 );
@@ -357,7 +374,7 @@ class TranslationsTable extends DashboardComponent {
                             ($locale !== primaryLocale ? 'auto-translatable-' + $locale : 'auto-fillable') +
                             ($has_changed[$locale] ? ' has-unpublished-translation' : '') +
                             ($has_changes_cached[$locale] ? ' has-cached-translation' : '')}>
-                            {$isLocaleEnabled ? TransXEditable.transXEditLink($group, $key, $locale, !$t ? null : $t, true) : $t.value}
+                            {$isLocaleEnabled ? TransXEditable.transXEditLink($group, $key, $locale, !$t ? null : $t, true) : $t ? $t.value : ''}
                         </td>,
                     );
                 }
@@ -444,7 +461,7 @@ class TranslationsTable extends DashboardComponent {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </div>,
                     );
                 }
             }
@@ -474,7 +491,7 @@ class TranslationsTable extends DashboardComponent {
                                 confirmationKey={PUBLISH_GROUP}
                                 disableWith={t('messages.publishing')}
                             >{t('messages.publish-group')}</UrlButton>
-                            <UrlButton 
+                            <UrlButton
                                 className="btn border-light btn-sm btn-primary ml-1"
                                 plainLink
                                 dataUrl={zipGroupURL(group)}
@@ -507,7 +524,7 @@ class TranslationsTable extends DashboardComponent {
                     </div>
                     }
                 </div>
-            </div>
+            </div>,
         );
         return (
             <Dashboard headerChildren=

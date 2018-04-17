@@ -128,15 +128,13 @@ export class AppModal extends GlobalSetting {
     }
 
     _showModal(options) {
-        this.onChainOptions = null;
-        
         this.onShow = options.onShow;         
         this.onShown = options.onShown;       
-        this.onHide = options.onHide || this.onHide; 
-        this.onClose = options.onClose || this.onClose;
+        this.onHide = options.onHide; 
+        this.onClose = options.onClose;
         this.onHidden = options.onHidden; 
 
-        const props = Object.assign({}, options.modalProps, {
+        const props = Object.assign({ modalTitle: 'Missing Modal Title'}, options.modalProps, {
             onHide: this._onModalHide,
             onHidden: this._onModalHidden,
             onShow: this._onModalShow,
@@ -146,7 +144,7 @@ export class AppModal extends GlobalSetting {
 
         this.update({
             showModal: true,
-            modalBody: options.modalBody,
+            modalBody: options.modalBody || 'Missing Modal Body',
             modalProps: props,
         });
     }

@@ -48,6 +48,8 @@ class UrlButton extends React.Component {
         const confirmationBody = this.props.confirmationBody || null;
         const invalidateGroup = this.props.invalidateGroup;
         const onConfirmed = this.props.onConfirmed;
+        const onSuccess = this.props.onSuccess;
+        const onFailure = this.props.onFailure;
 
         const doUpdate = (util.isFunction(onConfirmed) ? function () {
             try {
@@ -84,15 +86,22 @@ class UrlButton extends React.Component {
                         appEvents.fireEvent('invalidate.groups');
                     }
 
+                    if (onSuccess) {
+                        onSuccess(result);
+                    }
+
                     console.log("Operation complete", dataUrl, result.data);
                 })
-                .catch(() => {
+                .catch((e) => {
                     if (restoreText) $el.text(restoreText);
                     $el.removeAttr('disabled');
                     $el.removeClass('busy');
                     appModal.inButtonOp = false;
 
                     // TODO: post error message
+                    if (onFailure) { 
+                        onFailure(e);
+                    }
                 })
             ;
         }).bind(this);
@@ -189,11 +198,20 @@ class UrlButton extends React.Component {
         const { t } = this.props;
 
         return !this.props.plainLink ? (
+            !this.props.asLink ? (
             <button ref={el => this.el = el}
                 type={this.props.type || "button"}
                 onClick={this.handleClick}
                 className={this.props.className}
             >{this.props.children}</button>
+            ):(
+                <a ref={el => this.el = el}
+                    href='#'
+                    title={this.props.title || ''}
+                    onClick={this.handleClick}
+                    className={this.props.className}
+                >{this.props.children}</a>
+            )
         ) : (
             <a
                 role='button'
@@ -207,9 +225,12 @@ class UrlButton extends React.Component {
 
 UrlButton.propTypes = {
     plainLink: PropTypes.bool,
+    asLink: PropTypes.bool,
     disable: PropTypes.any,
     dataUrl: PropTypes.any,
     onConfirmed: PropTypes.func,
+    onSuccess: PropTypes.func,
+    onFailure: PropTypes.func,
     reloadGroups: PropTypes.any,
     invalidateGroup: PropTypes.any,
     confirmationKey: PropTypes.any,

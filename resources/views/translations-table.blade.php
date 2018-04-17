@@ -164,6 +164,12 @@
         <?php if (!array_key_exists($locale, $useDisplayLocales)) continue; ?>
         <?php $t = isset($translation[$locale]) ? $translation[$locale] : null ?>
         <td class="<?= $locale !== $primaryLocale ? 'auto-translatable-' . $locale : ($locale === $primaryLocale ? 'auto-fillable' : '') ?><?= ($has_changed[$locale] ? ' has-unpublished-translation' : '') . ($has_changes_cached[$locale] ? ' has-cached-translation' : '') ?>">
+            <?php
+            if (!($t instanceof stdClass))
+            {
+                xdebug_break();
+            }
+            ?>
             <?=
             $isLocaleEnabled ? $translator->inPlaceEditLink(!$t ? $t : ($t->value == '' ? null : $t), true, "$group.$key", $locale, null, $group) : $t->value
             ?>
