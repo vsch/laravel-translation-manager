@@ -36,6 +36,19 @@ class TranslationLocales
         natsort($arr);
         return $arr;
     }
+    
+    private static function firstOf($arg) {
+        if ($arg) {
+            $json = '';
+            foreach ($arg as $key => $value) {
+                if ($value !== 'json') {
+                    return $value;
+                }
+            }
+            return $json;
+        }
+        return '';
+    }
 
     public function normalize() {
         $appLocale = $this->appLocale;
@@ -77,7 +90,8 @@ class TranslationLocales
 
         if (!$translatingLocale) {
             $userTranslatableLocales = self::nat_sort(array_diff($userLocales, array($primaryLocale)));
-            $translatingLocale = $userTranslatableLocales ? $userTranslatableLocales[0] : $primaryLocale;
+            $firstLocale = self::firstOf($userTranslatableLocales);
+            $translatingLocale = $firstLocale  ?: $primaryLocale;
         }
 
         // now need to create displayLocales

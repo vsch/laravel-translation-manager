@@ -7,6 +7,11 @@ import { anyNullOrUndefined } from "./helpers";
 import { _$ } from 'boxed-immutable';
 import appEvents from './AppEvents';
 
+
+export function filterDisplayLocale(group, locale) {
+    return group ==='JSON' || locale !== 'json'; 
+}
+
 export class GlobalTranslations extends GlobalSetting {
     constructor() {
         super("globalTranslations", {
@@ -41,11 +46,12 @@ export class GlobalTranslations extends GlobalSetting {
                     // first load
                     this.load(group);
                 } else {
-                    if (state.primaryLocale !== appSettings_$.primaryLocale() ||
-                        state.translatingLocale !== appSettings_$.translatingLocale() ||
+                    const appState = appSettings.getState();
+                    if (state.primaryLocale !== appState.primaryLocale ||
+                        state.translatingLocale !== appState.translatingLocale ||
                         state.group !== group ||
-                        state.connectionName !== appSettings_$.connectionName() ||
-                        !state.displayLocales || state.displayLocales.join(',') !== appSettings_$.displayLocales.$_array.join(',')) {
+                        state.connectionName !== appState.connectionName ||
+                        !state.displayLocales || state.displayLocales.filter(locale => filterDisplayLocale(group, locale)).join(',') !== appSettings_$.displayLocales.$_array.filter(locale => filterDisplayLocale(group, locale)).join(',')) {
 
                         this.staleData();
                     }
@@ -54,7 +60,7 @@ export class GlobalTranslations extends GlobalSetting {
                 // const firstGroup = appSettings_$.groups[0]();
                 if (appSettings_$.uiSettings() && (group && groupIndex === -1)) {
                     // no data, take the first group.
-                    
+
                     appSettings_$.uiSettings.group = '';
                     appSettings_$.save();
                     this.staleData();
