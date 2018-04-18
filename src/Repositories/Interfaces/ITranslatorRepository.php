@@ -48,7 +48,7 @@ interface ITranslatorRepository
     
     public function deleteTranslationByGroupLocale($group, $locale);
 
-    public function updatePublishTranslations($group = null, $locale = null);
+    public function updatePublishTranslations($newStatus, $group = null, $locale = null);
 
     public function searchByRequest($q, $displayWhere, $limit);
 

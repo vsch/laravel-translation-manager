@@ -71,6 +71,7 @@ class Controller extends BaseController
 
         // cookies are not available yet (they are but appear to be encrypted). They will be by the time middleware is called 
         $this->middleware(function ($request, $next) {
+            $this->manager->setWebUI(); // no need to clear
             $this->initialize();
             return $next($request);
         });
@@ -85,6 +86,15 @@ class Controller extends BaseController
     public function getConnectionName()
     {
         return $this->manager->getConnectionName();
+    }
+
+    /**
+     * @param $t
+     * @return bool
+     */
+    public function isJsonKeyLocale($t): bool
+    {
+        return $t->group === Manager::JSON_GROUP && $t->locale === 'json';
     }
 
     protected function getConnection()
@@ -201,6 +211,9 @@ class Controller extends BaseController
         }
 
         $transLocales->normalize();
+        
+        // needed to properly resolve JSON default keys when they are based on the primary locale
+        $this->manager->setPrimaryLocale($transLocales->primaryLocale);
     }
 
     public function cookieName($cookie)
@@ -289,9 +302,26 @@ class Controller extends BaseController
 
         $numTranslations = count($allTranslations);
         $translations = array();
-        foreach ($allTranslations as $t) {
-            $this->adjustJsonLocaleTranslation($t);
-            $translations[$t->key][$t->locale] = $t;
+        if ($group !== Manager::JSON_GROUP) {
+            foreach ($allTranslations as $t) {
+                $translations[$t->key][$t->locale] = $t;
+            }
+        } else {
+            $jsonKeyMap = [];
+            foreach ($allTranslations as $t) {
+                if (!$this->isJsonKeyLocale($t)) {
+                    $translations[$t->key][$t->locale] = $t;
+                } else {
+                    $jsonKeyMap[] = $t;
+                }
+            }
+
+            $isFromPrimary = $this->manager->isNewJsonKeyFromPrimaryLocale();
+            foreach ($jsonKeyMap as $t) {
+                $primaryValue = $isFromPrimary ? $this->getPrimaryValue($translations, $t->key, $primaryLocale) : null;
+                $this->adjustJsonLocaleTranslation($t, $primaryValue);
+                $translations[$t->key][$t->locale] = $t;
+            }
         }
 
         $this->manager->cacheGroupTranslations($group, $this->transLocales->displayLocales, array_keys($translations));
@@ -443,6 +473,7 @@ class Controller extends BaseController
                 if (count($group) > 1) $namespace = array_shift($group);
                 $group = $group[0];
 
+                $this->manager->setWebUI(true); // we want these to create json keys
                 foreach ($keys as $key) {
                     $key = trim($key);
                     if ($group && $key) {
@@ -455,6 +486,7 @@ class Controller extends BaseController
                         }
                     }
                 }
+                $this->manager->setWebUI(false); // we no more key creation for json
             }
         }
         //Session::flash('_old_data', Request::except('keys'));
@@ -998,9 +1030,9 @@ class Controller extends BaseController
             list($namespace, $group, $item) = $translator->parseKey($key);
             if ($item && $group) {
                 if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY))) {
-                    $t = $this->manager->missingKey($namespace, $group, $item, null, false, true);
+                     $t = $this->manager->missingKey($namespace, $group, $item, null, false, true);
                     if (!$t->exists) {
-                        $affectedGroups[] = $namespace ? "$namespace::$group" : $group;
+                         $affectedGroups[] = $t->group;
                         $t->save();
                     }
                 }
@@ -1104,10 +1136,30 @@ class Controller extends BaseController
         /* @var $translator \Vsch\TranslationManager\Translator */
         $translator = App::make('translator');
 
-        foreach ($allTranslations as $t) {
-            $this->adjustJsonLocaleTranslation($t);
-            $t = $translator->getTranslationForEditLink($t, true, $t->group . '.' . $t->key, $t->locale, null, $t->group);
-            $translations[$t->key][$t->locale] = $t->getAttributes();
+        if ($group !== Manager::JSON_GROUP) {
+            foreach ($allTranslations as $t) {
+                $t = $translator->getTranslationForEditLink($t, true, $t->group . '.' . $t->key, $t->locale, null, $t->group);
+                $translations[$t->key][$t->locale] = $t->getAttributes();
+            }
+        } else {
+            $jsonKeyMap = [];
+            foreach ($allTranslations as $t) {
+                if (!$this->isJsonKeyLocale($t)) {
+                    $t = $translator->getTranslationForEditLink($t, true, $t->group . '.' . $t->key, $t->locale, null, $t->group);
+                    $translations[$t->key][$t->locale] = $t->getAttributes();
+                } else {
+                    $jsonKeyMap[] = $t;
+                }
+            }
+
+            $isFromPrimary = $this->manager->isNewJsonKeyFromPrimaryLocale();
+            $primaryLocale = $this->transLocales->primaryLocale;
+            foreach ($jsonKeyMap as $t) {
+                $primaryValue = $isFromPrimary ? $this->getPrimaryValue($translations, $t->key, $primaryLocale) : null;
+                $this->adjustJsonLocaleTranslation($t, $primaryValue);
+                $t = $translator->getTranslationForEditLink($t, true, $t->group . '.' . $t->key, $t->locale, null, $t->group);
+                $translations[$t->key][$t->locale] = $t;
+            }
         }
 
         $this->manager->cacheGroupTranslations($group, $this->transLocales->displayLocales, array_keys($translations));
@@ -1362,6 +1414,7 @@ class Controller extends BaseController
                 if (count($group) > 1) $namespace = array_shift($group);
                 $group = $group[0];
 
+                $this->manager->setWebUI(true); // we want these to create json keys
                 foreach ($keys as $key) {
                     $key = trim($key);
                     if ($group && $key) {
@@ -1374,6 +1427,7 @@ class Controller extends BaseController
                         }
                     }
                 }
+                $this->manager->setWebUI(false); // we want these to create json keys
                 return Response::json(array('status' => 'ok'), 200, [], JSON_UNESCAPED_SLASHES | $pretty);
             }
             return Response::json(array('status' => 'error', 'error' => 'group excluded'), 403, [], JSON_UNESCAPED_SLASHES | $pretty);
@@ -1871,15 +1925,16 @@ class Controller extends BaseController
     {
         if (trim($searchText) === '') $translations = [];
         else {
-            $displayWhere = $displayLocales ? " AND locale IN ('" . implode("','", $displayLocales) . "')" : '';
+            $displayWhere = $displayLocales ? " AND locale IN ('" . implode("','", $displayLocales) . "') AND locale <> 'json'" : " AND locale <> 'json'";
 
             if (strpos($searchText, '%') === false) $searchText = "%$searchText%";
 
             // need to fill-in missing locale's that match the key
             $translations = $this->translatorRepository->searchByRequest($searchText, $displayWhere, 500);
-            foreach ($translations as $t) {
-                $this->adjustJsonLocaleTranslation($t);
-            }
+            // search should not adjust this but exclude it
+            //            foreach ($translations as $t) {
+            //                $this->adjustJsonLocaleTranslation($t);
+            //            }
         }
         return $translations;
     }
@@ -1887,11 +1942,13 @@ class Controller extends BaseController
     /**
      * @param $t
      */
-    private function adjustJsonLocaleTranslation($t): void
+    public function adjustJsonLocaleTranslation($t, $primaryValue = null): void
     {
-        if ($t->group === Manager::JSON_GROUP && $t->locale === 'json') {
+        if ($this->isJsonKeyLocale($t)) {
             if ($t->value === '' || $t->value === null) {
-                if ($t->saved_value === '' || $t->saved_value === null) {
+                if ($primaryValue && $this->manager->isNewJsonKeyFromPrimaryLocale()) {
+                    $t->value = $primaryValue;
+                } else if ($t->saved_value === '' || $t->saved_value === null) {
                     $t->value = $t->key;
                 } else {
                     $t->value = $t->saved_value;
@@ -1900,4 +1957,20 @@ class Controller extends BaseController
         }
     }
 
+    /**
+     * @param $translations
+     * @param $key
+     * @param $locale
+     * @return string|null
+     */
+    private function getPrimaryValue($translations, $key, $locale)
+    {
+        if (array_key_exists($key, $translations)) {
+            $locales = $translations[$key];
+            if (array_key_exists($locale, $locales)) {
+                return $locales[$locale]->value;
+            }
+        }
+        return null;
+    }
 }

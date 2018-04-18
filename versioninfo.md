@@ -9,7 +9,23 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
 * Fix: zipping translations used to inadvertently publish the translations
 * Fix: JSON export now fills in any empty json -> ltm mapping keys (the translation values of
   the `json` locale) with the key value. If the translation was not imported and not changed by
-  the user then the default value is the is the LTM key.
+  the user then the default value depends on the setting: `new-json-keys-primary-locale`. see
+  below.
+* Add: config options for customizing JSON translation key generation:
+
+      /**
+       * Set to true to have newly created JSON group entries get primary locale translation string as their key
+       * false for having new keys default on export to ltm key. true by default
+       *
+       * @type boolean
+       */
+      'new-json-keys-primary-locale' => true,
+      /**
+       * What character to use for separating words in json generated keys. Only first char is used.
+       *
+       * @type string 
+       */
+      'new-json-keys-separator' => '-',
 
 #### 2.6.24
 
@@ -17,16 +33,15 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
   updates which are persisted on the server cause translation table to be reloaded.
 * Fix: un-initialized session failing on compute display locales
 
-#### 2.6.22
+#### 2.6.22     
 
-* Fix: when configured for in database publish, delete import would only replace import
-  import.
+* Fix: when configured for in database publish, delete import would only replace import import.
 * Fix: locale working set would not include added locales if they were not part of any
   translations in the database
-* Fix: ReferenceError when a missing translation entry appeared in non-editable locale 
+* Fix: ReferenceError when a missing translation entry appeared in non-editable locale
 * Fix: show source information
 
-#### 2.6.20
+#### 2.6.20          
 
 * Fix: moved line caused all buttons to have undefined urls. I blame it on the cat.
 
@@ -40,9 +55,10 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
 * Add: instructions for react manifest mods react ui files are found by mix
 * Add: instructions for config options for react ui: disable ui, disable link
 * Fix: use ltm translation files for React UI translations if not available in the database
-* Fix: cached translations not being used if namespace was not '' or '*' 
+* Fix: cached translations not being used if namespace was not '' or '*'
 * Fix: modal to be easier to use.
-* Fix: translation mods did not always reflect changes in the translation table unless refreshed.
+* Fix: translation mods did not always reflect changes in the translation table unless
+  refreshed.
 
 #### 2.6.14
 
@@ -54,7 +70,7 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
   of connection was used then some used default connection while others the right connection.
 
   The standard for ALL connections is the Translation instance from TranslatorRepository and
-  used by the Manager. One instance used for queries and setting/getting the connection name. 
+  used by the Manager. One instance used for queries and setting/getting the connection name.
 
 #### 2.6.10
 
@@ -66,7 +82,7 @@ $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceP
 $ php artisan migrate
 ```
 
-and 
+and
 
 * Add: React UI for LTM
 * Add: `ui_settings` to `ltm_user_locales` table to store the user's react ui app settings for

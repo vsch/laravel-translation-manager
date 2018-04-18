@@ -33,7 +33,7 @@
         <?php foreach($locales as $locale): ?>
         <?php $isLocaleEnabled = str_contains($userLocalesString, ',' . $locale . ','); ?>
         <?php if (!array_key_exists($locale, $useDisplayLocales)) continue; ?>
-        <?php if ($col < 3): ?>
+        <?php $jsonAdjustedLocale = $locale === 'json' ? app('translator')->get($package . '::messages.json-key') : $locale;if ($col < 3): ?>
         <?php if ($col === 0): ?>
         <th width="<?=$mainWidth?>%"><?= $locale ?>&nbsp;
             <?= ifEditTrans($package . '::messages.auto-fill-disabled') ?>
@@ -43,7 +43,8 @@
                     href="#"><?= noEditTrans($package . '::messages.auto-fill') ?></a>
         </th>
         <?php elseif (isset($yandex_key) && $yandex_key): ?>
-        <th width="<?=$mainWidth?>%"><?= $locale ?>&nbsp;
+        <th width="<?=$mainWidth?>%"><?= $jsonAdjustedLocale; ?>&nbsp;
+            <?php if ($locale !== 'json') : ?>
             <?= ifEditTrans($package . '::messages.auto-translate-disabled') ?>
             <?= ifEditTrans($package . '::messages.auto-translate') ?>
             <a class="btn btn-xs btn-primary auto-translate" role="button" data-trans="<?=$col?>" data-locale="<?=$locale?>" <?= $isLocaleEnabled ? '' : 'disabled' ?>
@@ -54,11 +55,13 @@
             data-disable-with="<?=noEditTrans($package . '::messages.auto-prop-case-disabled')?>"
                     href="#">Ab Ab <i class="glyphicon glyphicon-share-alt"></i> Ab ab
             </a>
+            <?php endif ?>
         </th>
         <?php else: ?>
-        <th width="<?=$mainWidth?>%"><?= $locale ?></th><?php endif;?>
+        <th width="<?=$mainWidth?>%"><?= $jsonAdjustedLocale; ?></th><?php endif;?>
         <?php else: ?>
-        <th><?= $locale ?>
+        <th><?= $jsonAdjustedLocale; ?>
+                <?php if ($locale !== 'json') : ?>
             <?= ifEditTrans($package . '::messages.auto-translate-disabled') ?>
             <?= ifEditTrans($package . '::messages.auto-translate') ?>
             <a class="btn btn-xs btn-primary auto-translate" role="button" data-trans="<?=$col?>" data-locale="<?=$locale?>"
@@ -69,6 +72,7 @@
                     data-disable-with="<?=noEditTrans($package . '::messages.auto-prop-case-disabled')?>"
                     href="#">Ab Ab <i class="glyphicon glyphicon-share-alt"></i> Ab ab
             </a>
+            <?php endif ?>
         </th>
         <?php endif;
         $col++; ?>
@@ -155,7 +159,7 @@
         <td class="key<?= $was_used ? ' used-key' : ' unused-key' ?>"><?= $key ?><?php
             if ($has_source) {
             ?><a style="float: right;" href="<?= action($controller . '@postShowSource', [$group, encodeKey($key)]) ?>"
-                    class="show-source-refs" data-method="POST" data-remote="true" title="@lang($package . '::messages.show-source-refs')">
+                    class="show-source-refs" data-method="POST" data-remote="true" title="<?php echo app('translator')->getFromJson($package . '::messages.show-source-refs'); ?>">
                 <span class="glyphicon <?= $is_auto_added ? 'glyphicon-question-sign' : 'glyphicon-info-sign' ?>"></span>
             </a><?php
             } ?></td>
@@ -164,12 +168,6 @@
         <?php if (!array_key_exists($locale, $useDisplayLocales)) continue; ?>
         <?php $t = isset($translation[$locale]) ? $translation[$locale] : null ?>
         <td class="<?= $locale !== $primaryLocale ? 'auto-translatable-' . $locale : ($locale === $primaryLocale ? 'auto-fillable' : '') ?><?= ($has_changed[$locale] ? ' has-unpublished-translation' : '') . ($has_changes_cached[$locale] ? ' has-cached-translation' : '') ?>">
-            <?php
-            if (!($t instanceof stdClass))
-            {
-                xdebug_break();
-            }
-            ?>
             <?=
             $isLocaleEnabled ? $translator->inPlaceEditLink(!$t ? $t : ($t->value == '' ? null : $t), true, "$group.$key", $locale, null, $group) : $t->value
             ?>

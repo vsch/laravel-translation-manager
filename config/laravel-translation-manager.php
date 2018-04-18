@@ -42,11 +42,17 @@ return array(
     'disable-react-ui-link' => false,
     /**
      * Set to true to have newly created JSON group entries get primary locale translation string as their key
-     * false for having new keys default on export to ltm key. false by default
+     * false for having new keys default on export to ltm key. true by default
      *
      * @type boolean
      */
     'new-json-keys-primary-locale' => true,
+    /**
+     * What character to use for separating words in json generated keys. Only first char is used.
+     *
+     * @type string 
+     */
+    'new-json-keys-separator' => '-',
     /**
      * Specify locales that you want to show in the web interface, if empty or not provided then all locales in the database
      * will be shown

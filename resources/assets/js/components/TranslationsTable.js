@@ -191,6 +191,7 @@ class TranslationsTable extends DashboardComponent {
             let iMax = $locales.length;
             for (let i = 0; i < iMax; i++) {
                 const $locale = $locales[i];
+                const $jsonAdjustedLocale = $locale === 'json' ? t('messages.json-key') : $locale;
 
                 let $isLocaleEnabled = $userLocales.indexOf(',' + $locale + ',') > -1;
                 if (!$displayLocales.indexOf($locale) < 0) continue;
@@ -220,7 +221,7 @@ class TranslationsTable extends DashboardComponent {
                         );
                     } else {
                         headings.push(
-                            <th key={headings.length} width={$mainWidth + "%"}>{$locale}</th>,
+                            <th key={headings.length} width={$mainWidth + "%"}>{$jsonAdjustedLocale}</th>,
                         );
                     }
                 } else if (yandexKey && $isLocaleEnabled && $locale !== 'json') {
@@ -237,7 +238,7 @@ class TranslationsTable extends DashboardComponent {
                     );
                 } else {
                     headings.push(
-                        <th key={headings.length}>{$locale}</th>,
+                        <th key={headings.length}>{$jsonAdjustedLocale}</th>,
                     );
                 }
                 $col++;
@@ -351,6 +352,7 @@ class TranslationsTable extends DashboardComponent {
                                         modalProps: {
                                             modalTitle: modalTitle,
                                             modalType: 'modal',
+                                            modalDialogType:  'modal-dialog modal-lg modal-dialog-centered',
                                             backdrop: true,
                                         },
                                         modalBody: <pre>{sources}</pre>,

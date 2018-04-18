@@ -98,25 +98,25 @@ SQL
         $this->translation->getConnection()->affectingStatement($this->adjustTranslationTable('DELETE FROM ltm_translations WHERE "group" = ? AND locale = ?'), [$group, $locale]);
     }
 
-    public function updatePublishTranslations($group = null, $locale = null)
+    public function updatePublishTranslations($newStatus, $group = null, $locale = null)
     {
         if ($group) {
             if ($locale) {
                 $this->translation->getConnection()->affectingStatement($this->adjustTranslationTable(<<<SQL
-UPDATE ltm_translations SET saved_value = "value", status = ?, is_auto_added = 0 WHERE (saved_value <> "value" || status <> ?) AND "group" = ? AND locale = ?
+UPDATE ltm_translations SET saved_value = "value", status = ?, is_auto_added = 0 WHERE (ifnull(saved_value,'') <> ifnull("value",'') || (status <> ? and status <> ?)) AND "group" = ? AND locale = ?
 SQL
-                ), [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED, $group, $locale]);
+                ), [$newStatus, $newStatus, Translation::STATUS_SAVED, $group, $locale]);
             } else {
                 $this->translation->getConnection()->affectingStatement($this->adjustTranslationTable(<<<SQL
-UPDATE ltm_translations SET saved_value = "value", status = ?, is_auto_added = 0 WHERE (saved_value <> "value" || status <> ?) AND "group" = ?
+UPDATE ltm_translations SET saved_value = "value", status = ?, is_auto_added = 0 WHERE (ifnull(saved_value,'') <> ifnull("value",'') || (status <> ? and status <> ?)) AND "group" = ?
 SQL
-                ), [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED, $group]);
+                ), [$newStatus, $newStatus, Translation::STATUS_SAVED, $group]);
             }
         } else {
             $this->translation->getConnection()->affectingStatement($this->adjustTranslationTable(<<<SQL
-UPDATE ltm_translations SET saved_value = "value", status = ?, is_auto_added = 0 WHERE (saved_value <> "value" || status <> ?)
+UPDATE ltm_translations SET saved_value = "value", status = ?, is_auto_added = 0 WHERE (ifnull(saved_value,'') <> ifnull("value",'') || (status <> ? and status <> ?))
 SQL
-            ), [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED]);
+            ), [$newStatus, $newStatus, Translation::STATUS_SAVED]);
         }
     }
 

@@ -123,6 +123,7 @@ TEXT
     'import-replace'                            => 'Remplacer les traductions existantes',
     'in-place-edit'                             => 'Au lieu de modifier',
     'interface-locale'                          => 'Interface',
+    'json-key'                                  => 'Json clé de traduction',
     'key'                                       => 'Clé',
     'keyop-count-mustmatch'                     => 'Nombre de touches de source et de destination doit correspondre à',
     'keyop-header'                              => 'Principaux résultats de l\'opération',
