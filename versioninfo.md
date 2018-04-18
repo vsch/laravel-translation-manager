@@ -5,6 +5,7 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
 
 #### 2.6.26
 
+* Add: PR merge from @vesper8 for customizing regex for reference search through the config. 
 * Fix: clean out old recursive publish group code
 * Fix: zipping translations used to inadvertently publish the translations
 * Fix: JSON export now fills in any empty json -> ltm mapping keys (the translation values of
