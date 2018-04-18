@@ -123,12 +123,4 @@ SQL
 SQL
         ));
     }
-
-    public function updateValuesByStatus()
-    {
-        $this->translation->getConnection()->affectingStatement($this->adjustTranslationTable(<<<SQL
-UPDATE ltm_translations SET saved_value = value, status = ? WHERE (saved_value <> value || status <> ?)
-SQL
-        ), [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED]);
-    }
 }

@@ -3,6 +3,14 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3.x for Laravel
 5.3, 2.4.x for Laravel 5.4, 2.5.x for Laravel 5.5 and 2.6.x for Laravel 5.6 compatibility.
 
+#### 2.6.26
+
+* Fix: clean out old recursive publish group code
+* Fix: zipping translations used to inadvertently publish the translations
+* Fix: JSON export now fills in any empty json -> ltm mapping keys (the translation values of
+  the `json` locale) with the key value. If the translation was not imported and not changed by
+  the user then the default value is the is the LTM key.
+
 #### 2.6.24
 
 * Fix: if `json` locale is part of the work set and current group is not JSON then any ui

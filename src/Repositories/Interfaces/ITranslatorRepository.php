@@ -30,8 +30,6 @@ interface ITranslatorRepository
 
     public function deleteTranslationsForIds($translationIds);
 
-    public function updateValuesByStatus();
-
     public function updateUsedTranslationsForGroup($keys, $group);
 
     public function updateIsDeletedByGroupAndKey($group, $key, $value);
@@ -50,7 +48,7 @@ interface ITranslatorRepository
     
     public function deleteTranslationByGroupLocale($group, $locale);
 
-    public function updateValueInGroup($group);
+    public function updatePublishTranslations($group = null, $locale = null);
 
     public function searchByRequest($q, $displayWhere, $limit);
 

@@ -176,7 +176,7 @@ class Controller extends BaseController
         $transLocales->displayLocales = $displayLocales;
 
         // this messes up React UI because TransFilters overwrites it before appSettings get a chance to save
-//        App::setLocale($transLocales->currentLocale);
+        //        App::setLocale($transLocales->currentLocale);
         $this->transLocales = $transLocales;
     }
 
@@ -289,11 +289,9 @@ class Controller extends BaseController
 
         $numTranslations = count($allTranslations);
         $translations = array();
-        foreach ($allTranslations as $translation) {
-            if ($translation->group === Manager::JSON_GROUP && $translation->locale === 'json' && ($translation->value === '' || $translation->value === null)) {
-                $translation->value = $translation->key;
-            }
-            $translations[$translation->key][$translation->locale] = $translation;
+        foreach ($allTranslations as $t) {
+            $this->adjustJsonLocaleTranslation($t);
+            $translations[$t->key][$t->locale] = $t;
         }
 
         $this->manager->cacheGroupTranslations($group, $this->transLocales->displayLocales, array_keys($translations));
@@ -735,7 +733,11 @@ class Controller extends BaseController
      */
     public function getPublish($group)
     {
-        $this->manager->exportTranslations($group);
+        if ($group && $group != '*') {
+            $this->manager->exportTranslations($group);
+        } else {
+            $this->manager->exportAllTranslations();
+        }
         $errors = $this->manager->errors();
 
         event(new TranslationsPublished($group, $errors));
@@ -745,7 +747,11 @@ class Controller extends BaseController
     public function postPublish($group)
     {
         if ($group) {
-            $this->manager->exportTranslations($group);
+            if ($group != '*') {
+                $this->manager->exportTranslations($group);
+            } else {
+                $this->manager->exportAllTranslations();
+            }
             $errors = $this->manager->errors();
 
             event(new TranslationsPublished($group, $errors));
@@ -1037,11 +1043,11 @@ class Controller extends BaseController
         $augmentedGroup = $this->manager->getAugmentedGroup($namespace, $group);
         $translations = $this->manager->cachedTranslations('', $augmentedGroup, $locale, $fileTranslations);
 
-//        // this always comes from the default connection and does not affect the connection used by the UI
-//        // we just set the connection on the manager, otherwise we will change the connection used by the UI
-//        $this->manager->setConnectionName('');
-//
-//        $translations = $this->manager->getTranslations('', $group, $locale, false);
+        //        // this always comes from the default connection and does not affect the connection used by the UI
+        //        // we just set the connection on the manager, otherwise we will change the connection used by the UI
+        //        $this->manager->setConnectionName('');
+        //
+        //        $translations = $this->manager->getTranslations('', $group, $locale, false);
 
         $jsonResponse = Response::json(array(
             'connectionName' => '',
@@ -1099,9 +1105,7 @@ class Controller extends BaseController
         $translator = App::make('translator');
 
         foreach ($allTranslations as $t) {
-            if ($t->group === Manager::JSON_GROUP && $t->locale === 'json' && ($t->value === '' || $t->value === null)) {
-                $t->value = $t->key;
-            }
+            $this->adjustJsonLocaleTranslation($t);
             $t = $translator->getTranslationForEditLink($t, true, $t->group . '.' . $t->key, $t->locale, null, $t->group);
             $translations[$t->key][$t->locale] = $t->getAttributes();
         }
@@ -1515,7 +1519,11 @@ class Controller extends BaseController
                 $connection = Request::get('connectionName');
                 $this->useConnection($connection);
 
-                $this->manager->exportTranslations($group);
+                if ($group != '*') {
+                    $this->manager->exportTranslations($group);
+                } else {
+                    $this->manager->exportAllTranslations();
+                }
                 $errors = $this->manager->errors();
 
                 event(new TranslationsPublished($group, $errors));
@@ -1740,7 +1748,7 @@ class Controller extends BaseController
      */
     private function computeMismatches($primaryLocale, $translatingLocale): array
     {
-// get mismatches
+        // get mismatches
         $mismatches = $this->translatorRepository->findMismatches($this->transLocales->displayLocales, $primaryLocale, $translatingLocale);
 
         $key = '';
@@ -1870,12 +1878,26 @@ class Controller extends BaseController
             // need to fill-in missing locale's that match the key
             $translations = $this->translatorRepository->searchByRequest($searchText, $displayWhere, 500);
             foreach ($translations as $t) {
-                if ($t->group === Manager::JSON_GROUP && $t->locale === 'json' && $t->value === null || $t->value === '') {
-                    $t->value = $t->key;
-                }
+                $this->adjustJsonLocaleTranslation($t);
             }
         }
         return $translations;
+    }
+
+    /**
+     * @param $t
+     */
+    private function adjustJsonLocaleTranslation($t): void
+    {
+        if ($t->group === Manager::JSON_GROUP && $t->locale === 'json') {
+            if ($t->value === '' || $t->value === null) {
+                if ($t->saved_value === '' || $t->saved_value === null) {
+                    $t->value = $t->key;
+                } else {
+                    $t->value = $t->saved_value;
+                }
+            }
+        }
     }
 
 }

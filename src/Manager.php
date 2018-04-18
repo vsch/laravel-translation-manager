@@ -6,7 +6,6 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Query\Expression;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
@@ -248,7 +247,7 @@ class Manager
      */
     public function inDatabasePublishing()
     {
-        return $this->zipExporting ? 3 : $this->indatabase_publish;
+        return $this->zipExporting ? 3 : (int)$this->indatabase_publish;
     }
 
     /**
@@ -345,7 +344,7 @@ class Manager
             if ($excludedGroups) {
                 $groups = $groups->whereNotIn('group', $excludedGroups);
             }
-//            $groups = $groups->where('group','<>', self::JSON_GROUP);
+            //            $groups = $groups->where('group','<>', self::JSON_GROUP);
 
             $this->groupList = ManagerServiceProvider::getLists($groups->pluck('group', 'group'));
         }
@@ -711,8 +710,9 @@ class Manager
                     // here need to map a local group to wbn: or vnd: package if the local file does not already exist so that
                     // new keys will be added to the appropriate package
                     $augmentedGroupList = $this->getGroupAugmentedList();
+                    $augmentedGroup = $group;
                     if (array_key_exists($group, $augmentedGroupList)) {
-                        $group = $augmentedGroupList[$group];
+                        $augmentedGroup = $augmentedGroupList[$group];
                     }
 
                     $locale = $locale ?: $this->app['config']['app.locale'];
@@ -720,15 +720,35 @@ class Manager
                     if ($findOrNew) {
                         $translation = $this->firstOrNewTranslation(array(
                             'locale' => $locale,
-                            'group' => $group,
+                            'group' => $augmentedGroup,
                             'key' => $key,
                         ));
                     } else {
                         $translation = $this->firstOrCreateTranslation(array(
                             'locale' => $locale,
-                            'group' => $group,
+                            'group' => $augmentedGroup,
                             'key' => $key,
                         ));
+                    }
+
+                    if ($group === 'JSON' && $locale !== 'json') {
+                        // we create a key if one does not exist since we know what the json key's value should be
+                        $this->loadLtmJsonKeys(false);
+
+                        if (!array_key_exists($key, $this->jsonLtmKeys)) {
+                            $ltmKey = $this->generateLtmKey($this->jsonLtmKeys, $key);
+
+                            $jsonTranslation = $this->firstOrCreateTranslation(array(
+                                'locale' => $locale,
+                                'group' => $augmentedGroup,
+                                'key' => $ltmKey,
+                                'value' => $key,
+                                'status' => Translation::STATUS_CHANGED,
+                            ));
+
+                            $this->ltmJsonKeys[$ltmKey] = $key;
+                            $this->jsonLtmKeys[$key] = $ltmKey;
+                        }
                     }
 
                     /* @var $translation \Vsch\TranslationManager\Models\Translation */
@@ -836,7 +856,7 @@ class Manager
             $previousSaved = $translation->saved_value;
             $translation->saved_value = $value;
 
-            if ($isLocal) {
+            if ($isLocal || $locale === 'json') {
                 $status = $translation->saved_value === $translation->value ? Translation::STATUS_SAVED : Translation::STATUS_CHANGED;
             } else {
                 if ($translation->value === $translation->saved_value) {
@@ -904,10 +924,15 @@ class Manager
         }
     }
 
-    private static function generateLtmKey($jsonKeys, $jsonKey, $maxJsonKey)
+    private function generateLtmKey($jsonLtmKeys, $jsonKey, $maxJsonKey = null)
     {
         // replace all symbols and spaces with _, remove duplicate _ and use that if it does not already exist
         // if it exists we append _# until we get a unique key
+        if (!$maxJsonKey) {
+            $maxJsonKey = $this->config('json_dbkey_length', 32);
+            if ($maxJsonKey > 120) $maxJsonKey = 120;
+        }
+
         $ltmKey = mb_strtolower($jsonKey);
         $iMax = strlen($ltmKey);
         $newKey = "";
@@ -932,31 +957,66 @@ class Manager
         $ltmKey = $newKey;
         $suffix = "";
         $count = 0;
-        while (array_key_exists($ltmKey . $suffix, $jsonKeys)) {
+        while (array_key_exists($ltmKey . $suffix, $jsonLtmKeys)) {
             $suffix = "_" . ++$count;
         }
 
         return $ltmKey . $suffix;
     }
 
-    private function loadLtmJsonKeys()
+    private function loadLtmJsonKeys($loadAllKeys = false, $ignoreDeleted = false)
     {
         if (!isset($this->ltmJsonKeys)) {
-            // may need to create new jsonKeys from default locale values for any that are missing from json locale of JSON group
-            $jsonTranslations = $this->translation->query()->where('group', '=', self::JSON_GROUP)->where('locale', '=', 'json')->get([
-                'key',
-                'value',
-            ]);
+            $jsonTranslations = $this->translation->query()
+                ->where('group', '=', self::JSON_GROUP)
+                ->where('locale', '=', 'json');
+
+            if ($ignoreDeleted) {
+                $jsonTranslations = $jsonTranslations
+                    ->where('is_deleted', 0);
+            }
+
+            $jsonTranslations = $jsonTranslations
+                ->get([
+                    'key',
+                    'saved_value',
+                ]);
 
             $this->ltmJsonKeys = [];
             $this->jsonLtmKeys = [];
             $jsonTranslations->each(function ($tr) {
-                if ($tr->value === null || $tr->value === '') {
-                    $tr->value = $tr->key;
+                if ($tr->save_value === null || $tr->saved_value === '') {
+                    $value = $tr->key;
+                } else {
+                    $value = $tr->saved_value;
                 }
-                $this->ltmJsonKeys[$tr->key] = $tr->value;
-                $this->jsonLtmKeys[$tr->value] = $tr->key;
+                $this->ltmJsonKeys[$tr->key] = $value;
+                $this->jsonLtmKeys[$value] = $tr->key;
             });
+
+            if ($loadAllKeys) {
+                $allKeys = $this->translation->query()
+                    ->where('group', '=', self::JSON_GROUP);
+
+                if ($ignoreDeleted) {
+                    $allKeys = $allKeys
+                        ->where('is_deleted', 0);
+                }
+
+                $allKeys = $allKeys
+                    ->groupBy(['key'])
+                    ->get([
+                        'key',
+                    ]);
+
+                $allKeys->each(function ($tr) {
+                    $key = $tr->key;
+                    if (!array_key_exists($key, $this->ltmJsonKeys)) {
+                        $this->ltmJsonKeys[$key] = $key;
+                        $this->jsonLtmKeys[$key] = $key;
+                    }
+                });
+            }
         }
     }
 
@@ -966,10 +1026,14 @@ class Manager
         $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
 
         // may need to create new jsonKeys from default locale values for any that are missing from json locale of JSON group
-        $query = $this->translation->query()->where('group', '=', $group)->where('locale', '=', $locale);
+        $query = $this->translation->query()
+            ->where('group', '=', $group)
+            ->where('locale', '=', $locale);
+
         if (!$includeMissing) {
             $query = $query->where('value', '<>', '');
         }
+
         $jsonTranslations = $query->get([
             'key',
             'saved_value',
@@ -1014,10 +1078,6 @@ class Manager
 
         // generate JSON to LTM keys here and put them in the JSON group as json locale
         $jsonFiles = [];
-        $maxJsonKey = $this->config('json_dbkey_length', 32);
-        if ($maxJsonKey > 120) $maxJsonKey = 120;
-
-        $this->loadLtmJsonKeys();
 
         foreach ($langFiles as $langFile => $vars) {
             $locale = $vars['{locale}'];
@@ -1034,6 +1094,12 @@ class Manager
         $jsonTranslations = []; // locale => [ ltmKey => jsonTranslation ]
         $ltmJsonKeys = [];
         if ($jsonFiles) {
+            $maxJsonKey = $this->config('json_dbkey_length', 32);
+            if ($maxJsonKey > 120) $maxJsonKey = 120;
+
+            // get only existing keys, any missing mapping may come from the imported files
+            $this->loadLtmJsonKeys();
+
             foreach ($jsonFiles as $langFile => $json) {
                 // create unique keys based on json keys
                 $vars = $langFiles[$langFile];
@@ -1057,11 +1123,10 @@ class Manager
                 // save it, if we need it
                 $jsonTranslations[$locale] = $translations;
             }
-        }
 
-        // need to update database JSON group json locale with key map of ltmKey to jsonKey for exporting, but
-        // only those that were imported so as not to overwrite the not yet published keys
-        $this->importTranslationFile('json', self::JSON_GROUP, $ltmJsonKeys, true);
+            // need to update database JSON group json locale with key map of ltmKey to jsonKey for exporting, use the same replace level
+            $this->importTranslationFile('json', self::JSON_GROUP, $ltmJsonKeys, $replace);
+        }
 
         if ($groups !== null) {
             // now we can filter to the list of given groups or
@@ -1097,6 +1162,8 @@ class Manager
 
     public function findTranslations($path = null)
     {
+        // functions is a replacement variable in $pattern
+        /** @noinspection PhpUnusedLocalVariableInspection */
         $functions = config('laravel-translation-manager.find.functions');
         $pattern = implode('', config('laravel-translation-manager.find.pattern'));
 
@@ -1223,221 +1290,203 @@ class Manager
         return $this->errors;
     }
 
-    public function exportTranslations($group, $recursing = 0)
+    /**
+     * @param $group
+     * @param $translations
+     */
+    private function cacheTranslationGroup($group, $translations): void
     {
-        // TODO: clean up this recursion crap
-        // this can come from the command line
-        if (!$recursing) {
-            $this->clearErrors();
-            $group = self::fixGroup($group);
-        }
-
-        if ($group && $group !== '*') {
-            $this->translatorRepository->deleteTranslationWhereIsDeleted();
-        } else if (!$recursing) {
-            $this->translatorRepository->deleteTranslationWhereIsDeleted($group);
-        }
-
-        $primaryLocale = $this->config("primary_locale", 'en');
-
-        if (($group === self::JSON_GROUP || !$group || $group == '*') && !isset($this->ltmJsonKeys)) {
-            // may need to create new jsonKeys from default locale values for any that are missing from json locale of JSON group
-            $this->loadLtmJsonKeys();
-
-            // need to map all keys to primary locale translation
-            $rawTranslations = $this->translation->where('group', self::JSON_GROUP)->whereNotNull('value')->orderby('key')->get();
-
-            $newKeys = [];
-            $fallBackTranslations = [];
-            foreach ($rawTranslations as $translation) {
-                $locale = $translation->locale;
-                if ($locale !== 'json') {
-                    $key = $translation->key;
-                    $value = $translation->saved_value;
-                    if (!array_key_exists($key, $this->ltmJsonKeys)) {
-                        // new key create an ltm key for it, and update database after all were exported 
-                        if (!array_key_exists($key, $newKeys)) {
-                            $newKeys[] = $key;
-                            if ($locale === $primaryLocale || !array_key_exists($key, $fallBackTranslations)) {
-                                $fallBackTranslations[$key] = mb_strtolower($value);
-                            }
-                        }
-                    }
-                }
+        $this->clearCache($group);
+        $this->clearUsageCache(false, $group);
+        $translations->each(function ($tr) {
+            if ($tr->group === 'JSON' && $tr->locale === 'json') {
+                // we have to cache the reverse, we need jsonKey to ltmKey for this one
+                $this->cacheTranslation('', $tr->group, $tr->saved_value, $tr->key, $tr->locale);
+            } else {
+                $this->cacheTranslation('', $tr->group, $tr->key, $tr->saved_value, $tr->locale);
             }
+        });
+    }
 
-            if ($newKeys) {
-                // set all primary locale keys that are missing to the key itself
-                // assign the json key based on fallback translation value 
-                foreach ($newKeys as $key) {
-                    if (!array_key_exists($key, $fallBackTranslations)) {
-                        $fallBackTranslations[$key] = $key;
-                    }
-                    $value = $fallBackTranslations[$key];
-                    $this->ltmJsonKeys[$key] = $value;
-                    $this->jsonLtmKeys[$value] = $key;
-                }
-
-                // save these mappings to the database as new so that they will be cached if we are not saving to a file
-                $this->importTranslationFile('json', self::JSON_GROUP, $this->ltmJsonKeys, false); // these will be marked as new
-            }
-        }
+    public function exportTranslations($group, $fromAllTranslations = false)
+    {
+        assert($group && $group !== '*', "exportTranslations only exports one group at a time, given" . $group);
+        if (in_array($group, $this->config(self::EXCLUDE_GROUPS_KEY))) return;
 
         $inDatabasePublishing = $this->inDatabasePublishing();
-        if ($inDatabasePublishing < 3 && $inDatabasePublishing && ($inDatabasePublishing < 2 || !$recursing)) {
-            if ($group && $group !== '*') {
-                $this->translatorRepository->updateValueInGroup($group);
 
-                $translations = $this->translation->query()->where('status', '<>', Translation::STATUS_SAVED)->where('group', '=', $group)->get([
-                    'group',
-                    'key',
-                    'locale',
-                    'saved_value',
-                ]);
-            } else {
-                $this->translatorRepository->updateValuesByStatus();
+        if (!$fromAllTranslations) {
+            $this->clearErrors();
+            $group = self::fixGroup($group);
 
-                $translations = $this->translation->query()->where('status', '<>', Translation::STATUS_SAVED)->get([
-                    'group',
-                    'key',
-                    'locale',
-                    'saved_value',
-                ]);
+            if ($inDatabasePublishing !== 3) {
+                $this->clearCache($group);
+                $this->clearUsageCache(false, $group);
+                $this->translatorRepository->deleteTranslationWhereIsDeleted($group);
             }
-
-            /* @var $translations Collection */
-            $this->clearCache($group);
-            $this->clearUsageCache(false, $group);
-            $translations->each(function ($tr) {
-                if ($tr->group === 'JSON' && $tr->locale === 'json') {
-                    // we have to cache the reverse, we need jsonKey to ltmKey for this one
-                    $this->cacheTranslation('', $tr->group, $tr->saved_value, $tr->key, $tr->locale);
-                } else {
-                    $this->cacheTranslation('', $tr->group, $tr->key, $tr->saved_value, $tr->locale);
-                }
-            });
         }
 
-        if (!$inDatabasePublishing || $inDatabasePublishing == 2 || $inDatabasePublishing == 3) {
-            if (!in_array($group, $this->config(self::EXCLUDE_GROUPS_KEY))) {
-                if ($group == '*') {
-                    $this->exportAllTranslations(1);
-                    return;
-                }
+        if ($group === self::JSON_GROUP) {
+            // save all the user changed keys first
+            if (!$fromAllTranslations && $inDatabasePublishing != 3) {
+                $this->translatorRepository->updatePublishTranslations($group, 'json');
+            }
+            unset($this->ltmJsonKeys);
 
-                if ($inDatabasePublishing != 3) {
-                    $this->clearCache($group);
-                    $this->clearUsageCache(false, $group);
-                }
+            if ($this->config('new-json-keys-primary-locale', true)) {
+                // for new JSON keys make primary locale's translation the key for export
 
-                $rawTranslations = $this->translation->where('group', $group)->whereNotNull('value')->orderby('key')->get();
-                $tree = $this->makeTree($rawTranslations);
-                $lostDotTranslations = $this->getLostDotTranslation($rawTranslations, $tree);
-                if ($lostDotTranslations) {
-                    $errorText = "Incorrect use of dot convention for translation keys (value will be overwritten with an array of child values):";
+                // load fresh with ones which were imported or published after user change 
+                $this->loadLtmJsonKeys(false, $inDatabasePublishing == 3);
 
-                    foreach ($lostDotTranslations as $group => $groupKeys) {
-                        $keys = $groupKeys;
-                        $errorText .= "<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>$group::</strong>";
+                $primaryLocale = $this->config("primary_locale", 'en');
+                $this->setDefaultJsonKeyToPrimaryLocale($primaryLocale);
+            } else {
+                // load fresh with ones which were imported or published after user change 
+                // anything which is not set will be the ltm key
+                $this->loadLtmJsonKeys(true, $inDatabasePublishing == 3);
+            }
 
-                        foreach ($keys as $key => $value) {
-                            $errorText .= "<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$key";
-                        }
+            // save these mappings to the database replacing old values, these are now the standard
+            if ($inDatabasePublishing != 3) {
+                $this->importTranslationFile('json', self::JSON_GROUP, $this->ltmJsonKeys, 2);
+            }
+        }
+
+        if (!$fromAllTranslations && ($inDatabasePublishing === 1 || $inDatabasePublishing === 2)) {
+            // locked down file system or remote access to one
+            $this->translatorRepository->updatePublishTranslations($group);
+
+            $translations = $this->translation->query()
+                ->where('status', '<>', Translation::STATUS_SAVED)->where('group', '=', $group)->get([
+                    'group',
+                    'key',
+                    'locale',
+                    'saved_value',
+                ]);
+            /* @var $translations Collection */
+            $this->cacheTranslationGroup($group, $translations);
+        }
+
+        if ($inDatabasePublishing != 1) {
+            // not locked down, or remote to locked down or zipping
+            // at this point if published then no deleted translations, if zipping we ignore them
+            $rawTranslations = $this->translation->query()
+                ->where('group', $group)
+                ->whereNotNull('value');
+
+            if ($inDatabasePublishing == 3) {
+                $rawTranslations = $rawTranslations->where('is_deleted', 0);
+            }
+
+            $rawTranslations = $rawTranslations
+                ->orderby('key')
+                ->get();
+
+            $tree = $this->makeTree($rawTranslations);
+            $lostDotTranslations = $this->getLostDotTranslation($rawTranslations, $tree);
+            if ($lostDotTranslations) {
+                $errorText = "Incorrect use of dot convention for translation keys (value will be overwritten with an array of child values):";
+
+                foreach ($lostDotTranslations as $group => $groupKeys) {
+                    $keys = $groupKeys;
+                    $errorText .= "<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>$group::</strong>";
+
+                    foreach ($keys as $key => $value) {
+                        $errorText .= "<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$key";
                     }
-                    $this->errors[] = $errorText;
                 }
-                $configRewriter = new TranslationFileRewriter();
-                $exportOptions = array_key_exists('export_format', $this->config()) ? TranslationFileRewriter::optionFlags($this->config('export_format')) : null;
+                $this->errors[] = $errorText;
+            }
+            $configRewriter = new TranslationFileRewriter();
+            $exportOptions = array_key_exists('export_format', $this->config()) ? TranslationFileRewriter::optionFlags($this->config('export_format')) : null;
 
-                $base_path = $this->app->basePath();
-                $pathTemplateResolver = new PathTemplateResolver($this->files, $base_path, $this->config('language_dirs'), '5');
-                $zipRoot = $base_path . $this->config('zip_root', mb_substr($this->app->langPath(), 0, -4));
+            $base_path = $this->app->basePath();
+            $pathTemplateResolver = new PathTemplateResolver($this->files, $base_path, $this->config('language_dirs'), '5');
+            $zipRoot = $base_path . $this->config('zip_root', mb_substr($this->app->langPath(), 0, -4));
 
-                if (mb_substr($zipRoot, -1) === '/') {
-                    $zipRoot = substr($zipRoot, 0, -1);
-                }
+            if (mb_substr($zipRoot, -1) === '/') {
+                $zipRoot = substr($zipRoot, 0, -1);
+            }
 
-                if ($group === self::JSON_GROUP) {
-                    // make sure primary locale has a translation for all the keys since its keys are used during import and for translation keys in the app
-                    foreach ($this->ltmJsonKeys as $ltmKey => $jsonKey) {
-                        // if the primary locale does not have a translation for this key, then add it as the key so future imports will have a fixed key to work with
-                        if (!isset($tree[$primaryLocale][self::JSON_GROUP][$ltmKey])) {
-                            $tree[$primaryLocale][self::JSON_GROUP][$ltmKey] = $jsonKey;
-                        }
-                    }
-                }
+            foreach ($tree as $locale => $groups) {
+                if (isset($groups[$group])) {
+                    $translations = $groups[$group];
 
-                foreach ($tree as $locale => $groups) {
-                    if (isset($groups[$group])) {
-                        $translations = $groups[$group];
+                    // use the new path mapping
+                    $computedPath = $pathTemplateResolver->groupFilePath($group, $locale);
+                    $path = $base_path . $computedPath;
 
-                        // use the new path mapping
-                        $computedPath = $pathTemplateResolver->groupFilePath($group, $locale);
-                        $path = $base_path . $computedPath;
-
-                        if ($computedPath) {
-                            if ($group === self::JSON_GROUP) {
-                                if ($locale !== 'json') {
-                                    // we need translation mapping keys
-                                    $jsonTranslations = [];
-                                    foreach ($translations as $key => $value) {
-                                        $jsonTranslations[$this->ltmJsonKeys[$key]] = $value;
-                                    }
-
-                                    $output = json_encode($jsonTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-                                } else {
-                                    // save jsonKey => ltmKey in the json.json file
-                                    $output = json_encode($this->jsonLtmKeys, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+                    if ($computedPath) {
+                        if ($group === self::JSON_GROUP) {
+                            if ($locale !== 'json') {
+                                // we need translation mapping keys
+                                $jsonTranslations = [];
+                                foreach ($translations as $key => $value) {
+                                    $jsonTranslations[$this->ltmJsonKeys[$key]] = $value;
                                 }
-                            } else {
-                                $configRewriter->parseSource($this->files->exists($path) && $this->files->isFile($path) ? $this->files->get($path) : '');
-                                $output = $configRewriter->formatForExport($translations, $exportOptions);
-                            }
 
-                            if ($this->zipExporting) {
-                                $pathPrefix = mb_substr($path, 0, mb_strlen($zipRoot));
-                                $filePathName = ($pathPrefix === $zipRoot) ? mb_substr($path, mb_strlen($zipRoot)) : $path;
-                                //$this->makeDirPath($filePathName);
-                                $this->zipExporting->addFromString($filePathName, $output);
+                                $output = json_encode($jsonTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
                             } else {
-                                try {
-                                    $this->makeDirPath($path);
-                                    if (($result = $this->files->put($path, $output)) === false) {
-                                        $this->errors[] = "Failed to write to $path";
-                                    };
-                                } catch (Exception $e) {
-                                    $this->errors[] = $e->getMessage();
-                                }
+                                // save jsonKey => ltmKey in the json.json file
+                                $output = json_encode($this->jsonLtmKeys, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+                            }
+                        } else {
+                            $configRewriter->parseSource($this->files->exists($path) && $this->files->isFile($path) ? $this->files->get($path) : '');
+                            $output = $configRewriter->formatForExport($translations, $exportOptions);
+                        }
+
+                        if ($this->zipExporting) {
+                            $pathPrefix = mb_substr($path, 0, mb_strlen($zipRoot));
+                            $filePathName = ($pathPrefix === $zipRoot) ? mb_substr($path, mb_strlen($zipRoot)) : $path;
+                            //$this->makeDirPath($filePathName);
+                            $this->zipExporting->addFromString($filePathName, $output);
+                        } else {
+                            try {
+                                $this->makeDirPath($path);
+                                if (($result = $this->files->put($path, $output)) === false) {
+                                    $this->errors[] = "Failed to write to $path";
+                                };
+                            } catch (Exception $e) {
+                                $this->errors[] = $e->getMessage();
                             }
                         }
-                    }
-                }
-
-                if (!$inDatabasePublishing) {
-                    $this->translation->where('group', $group)->update(array(
-                        'status' => Translation::STATUS_SAVED,
-                        'is_auto_added' => 0,
-                        'saved_value' => (new Expression('value')),
-                    ));
-
-                    if ($group === self::JSON_GROUP) {
-                        // save the ltm keys in the database 
-                        // now we can save all the json keys
-                        $this->importTranslationFile('json', self::JSON_GROUP, $this->ltmJsonKeys, true);
                     }
                 }
             }
         }
     }
 
-    public function exportAllTranslations($recursing = 0)
+    public function exportAllTranslations()
     {
         $groups = $this->translatorRepository->findFilledGroups();
-        $this->clearCache();
-        $this->clearUsageCache(false);
+
+        $inDatabasePublishing = $this->inDatabasePublishing();
+
+        if ($inDatabasePublishing != 3) {
+            // not zipping, remove deleted items
+            $this->clearCache();
+            $this->clearUsageCache(false);
+            $this->translatorRepository->deleteTranslationWhereIsDeleted();
+        }
+
+        if ($inDatabasePublishing === 1 || $inDatabasePublishing === 2) {
+            // locked down file system or remote access to one
+            $this->translatorRepository->updatePublishTranslations();
+
+            $translations = $this->translation->query()->where('status', '<>', Translation::STATUS_SAVED)->get([
+                'group',
+                'key',
+                'locale',
+                'saved_value',
+            ]);
+
+            /* @var $translations Collection */
+            $this->cacheTranslationGroup(null, $translations);
+        }
 
         foreach ($groups as $group) {
-            $this->exportTranslations($group->group, $recursing);
+            $this->exportTranslations($group->group);
         }
     }
 
@@ -1448,20 +1497,20 @@ class Manager
         $this->zipExporting->open($zip_name, ZipArchive::OVERWRITE);
 
         if (!is_array($groups)) {
-            if ($groups === '*') {
+            if (!$groups || $groups === '*') {
                 $groups = $this->translatorRepository->findFilledGroups();
                 foreach ($groups as $group) {
                     // Stuff with content
-                    $this->exportTranslations($group->group, 0);
+                    $this->exportTranslations($group->group);
                 }
             } else {
                 // Stuff with content
-                $this->exportTranslations($groups, 0);
+                $this->exportTranslations($groups);
             }
         } else {
             foreach ($groups as $group) {
                 // Stuff with content
-                $this->exportTranslations($group, 0);
+                $this->exportTranslations($group);
             }
         }
 
@@ -1473,13 +1522,13 @@ class Manager
 
     public function cleanTranslations()
     {
-        $this->translation->whereNull('value')->delete();
+        $this->translation->query()->whereNull('value')->delete();
     }
 
     public function truncateTranslations($group = null)
     {
         if ($group === '*' || $group === null) {
-            $this->translation->truncate();
+            $this->translation->query()->truncate();
         } else {
             $this->translatorRepository->deleteTranslationByGroup($group);
         }
@@ -1512,6 +1561,54 @@ class Manager
         }
 
         return $nonArrays;
+    }
+
+    /**
+     * @param $primaryLocale
+     * @return void
+     */
+    private function setDefaultJsonKeyToPrimaryLocale($primaryLocale): void
+    {
+        // may need to create new jsonKeys from default locale values for any that are missing from json locale of JSON group
+        // need to map all keys to primary locale translation
+        $rawTranslations = $this->translation->query()
+            ->where('group', self::JSON_GROUP)
+            ->where('locale', '<>', 'json')
+            ->whereNotNull('value')
+            ->orderby('key')
+            ->get();
+
+        $newKeys = [];
+        $fallBackTranslations = [];
+        foreach ($rawTranslations as $translation) {
+            $locale = $translation->locale;
+            if ($locale !== 'json') {
+                $key = $translation->key;
+                $value = $translation->saved_value;
+                if (!array_key_exists($key, $this->ltmJsonKeys)) {
+                    // new key create an ltm key for it, and update database after all were exported 
+                    if (!array_key_exists($key, $newKeys)) {
+                        $newKeys[] = $key;
+                        if ($locale === $primaryLocale || !array_key_exists($key, $fallBackTranslations)) {
+                            $fallBackTranslations[$key] = mb_strtolower($value);
+                        }
+                    }
+                }
+            }
+        }
+
+        if ($newKeys) {
+            // set all primary locale keys that are missing to the key itself
+            // assign the json key based on fallback translation value 
+            foreach ($newKeys as $key) {
+                if (!array_key_exists($key, $fallBackTranslations) || $fallBackTranslations[$key] === null || $fallBackTranslations[$key] === '') {
+                    $fallBackTranslations[$key] = $key;
+                }
+                $value = $fallBackTranslations[$key];
+                $this->ltmJsonKeys[$key] = $value;
+                $this->jsonLtmKeys[$value] = $key;
+            }
+        }
     }
 
 }

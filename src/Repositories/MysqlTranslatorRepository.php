@@ -99,12 +99,26 @@ SQL
         $this->translation->getConnection()->affectingStatement($this->adjustTranslationTable("DELETE FROM ltm_translations WHERE `group` = ? AND locale = ?"), [$group, $locale]);
     }
 
-    public function updateValueInGroup($group)
+    public function updatePublishTranslations($group = null, $locale = null)
     {
-        $this->translation->getConnection()->affectingStatement($this->adjustTranslationTable(<<<SQL
-UPDATE ltm_translations SET saved_value = value, status = ? WHERE (saved_value <> value || status <> ?) AND `group` = ?
+        if ($group) {
+            if ($locale) {
+                $this->translation->getConnection()->affectingStatement($this->adjustTranslationTable(<<<SQL
+UPDATE ltm_translations SET saved_value = value, status = ?, is_auto_added = 0 WHERE (saved_value <> value || status <> ?) AND `group` = ? AND locale = ?
 SQL
-        ), [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED, $group]);
+                ), [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED, $group, $locale]);
+            } else {
+                $this->translation->getConnection()->affectingStatement($this->adjustTranslationTable(<<<SQL
+UPDATE ltm_translations SET saved_value = value, status = ?, is_auto_added = 0 WHERE (saved_value <> value || status <> ?) AND `group` = ?
+SQL
+                ), [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED, $group]);
+            }
+        } else {
+            $this->translation->getConnection()->affectingStatement($this->adjustTranslationTable(<<<SQL
+UPDATE ltm_translations SET saved_value = value, status = ?, is_auto_added = 0 WHERE (saved_value <> value || status <> ?)
+SQL
+            ), [Translation::STATUS_SAVED_CACHED, Translation::STATUS_SAVED]);
+        }
     }
 
     public function searchByRequest($q, $displayWhere, $limit)
@@ -274,7 +288,7 @@ SQL
                     mb_substr($dstkey, 1),
                 ]);
             }
-        } elseif ((substr($src, -1, 1) === '*')) {
+        } else if ((substr($src, -1, 1) === '*')) {
             if ($dst === null) {
                 $rows = $this->translation->getConnection()->select($this->adjustTranslationTable($sql = <<<SQL
 SELECT DISTINCT `group`, `key`, locale, id, NULL dst, NULL dstgrp FROM $ltm_translations t1

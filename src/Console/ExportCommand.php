@@ -49,7 +49,11 @@ class ExportCommand extends Command
     {
         $group = $this->argument('group');
 
-        $this->manager->exportTranslations($group);
+        if ($group && $group != '*') {
+            $this->manager->exportTranslations($group);
+        } else {
+            $this->manager->exportAllTranslations();
+        }
 
         $errors = $this->manager->errors();
         event(new TranslationsPublished($group, $errors));
