@@ -8,12 +8,12 @@ const _$ = boxedImmutable.box;
 const boxState = boxedImmutable.boxState;
 const util = boxedImmutable.util;
 const isArray = util.isArray;
-const forEachKey = util.forEachKey;
-const deleteItems = util.deleteItems;
+const eachKey = util.eachKey;
+const copyFiltered = util.copyFiltered;
+const copyFilteredNot = util.copyFilteredNot;
 const isFunction = util.isFunction;
 const isObject = util.isObject;
 const UNDEFINED = util.UNDEFINED;
-const extractProperties = util.extractProperties;
 
 const NON_UPDATE_FIELDS = [
     'isLoaded',
@@ -113,9 +113,10 @@ export class GlobalSetting {
         this.serverProps = [];      // these update server with delay, used to update store, ignored when received from a server update, only used in server load
         this.storeProps = [];       // these don't update server but update store
 
-        this.updateSettingsType = deleteItems(updateSettingsType, NON_UPDATE_FIELDS);
+        this.updateSettingsType = {};
+        copyFilteredNot.call(this.updateSettingsType, updateSettingsType, NON_UPDATE_FIELDS);
 
-        forEachKey(this.updateSettingsType, (key, keyValue) => {
+        eachKey.call(this.updateSettingsType, (keyValue, key) => {
             switch (keyValue) {
                 case true:
                 case UPDATE_IMMEDIATE:
@@ -257,10 +258,10 @@ export class GlobalSetting {
     throttledUpdate(settingsUpdate) {
         if (isTraceEnabled(this.globalKey)) window.console.debug(`${this.globalKey}[next: ${this.serverUpdateFrameId + 1}]: throttled update request:`, settingsUpdate);
 
-        let immediateValues = extractProperties(settingsUpdate, this.immediateProps);
-        let pendingValues = extractProperties(settingsUpdate, this.throttledProps, this.pendingUpdates);
-        let serverValues = extractProperties(settingsUpdate, this.serverProps, this.serverUpdates);
-        let storeValues = extractProperties(settingsUpdate, this.storeProps);
+        let immediateValues = copyFiltered.call(undefined,settingsUpdate, this.immediateProps);
+        let pendingValues = copyFiltered.call(undefined,settingsUpdate, this.throttledProps, this.pendingUpdates);
+        let serverValues = copyFiltered.call(undefined,settingsUpdate, this.serverProps, this.serverUpdates);
+        let storeValues = copyFiltered.call(undefined,settingsUpdate, this.storeProps);
 
         if (storeValues && serverValues) {
             // need to combine them
@@ -330,7 +331,7 @@ export class GlobalSetting {
         if (!this.sentUpdateFrameIds) this.sentUpdateFrameIds = {};
         const sentUpdateFrameId = ++this.serverUpdateFrameId;
 
-        forEachKey(settingsUpdate, (key, value) => {
+        eachKey.call(settingsUpdate, (value, key) => {
             if (this.sentUpdates.hasOwnProperty(key)) {
                 this.sentUpdateFrameIds[key] = sentUpdateFrameId;
             }
@@ -351,7 +352,7 @@ export class GlobalSetting {
 
         if (serverUpdateFrameId) {
             // overwrite received data which is server update only, ignored on reception with current data 
-            util.extractProperties(this.getState(), this.serverProps, settings);
+            util.copyFiltered.call(settings, this.getState(), this.serverProps);
 
             // set new state with already sent but not yet received settings and pending settings
             // remove received settings from sentUpdates and return
@@ -364,7 +365,7 @@ export class GlobalSetting {
             let isUpdating = false;
 
             if (sentUpdates) {
-                forEachKey(sentUpdates, (key, value) => {
+                eachKey.call(sentUpdates, (value, key) => {
                     if (value !== UNDEFINED) {
                         if (sentUpdateFrameIds.hasOwnProperty(key)) {
                             const sentUpdateFrameId = sentUpdateFrameIds[key];
@@ -401,7 +402,7 @@ export class GlobalSetting {
         }
 
         // need to keep our store only update properties
-        util.extractProperties(this.getState(), this.storeProps, settings);
+        util.copyFiltered.call(settings, this.getState(), this.storeProps);
         action = this.reduxAction(settings, this.sentUpdates, this.pendingUpdates);
         store.dispatch(action);
 

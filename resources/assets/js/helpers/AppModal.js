@@ -5,7 +5,7 @@ import { isUndefined } from './helpers';
 const util = boxedImmutable.util;
 const _$ = boxedImmutable.box;
 const isArray = util.isArray;
-const forEachKey = util.forEachKey;
+const eachKey = util.eachKey;
 const isFunction = util.isFunction;
 const isObject = util.isObject;
 const UNDEFINED = util.UNDEFINED;

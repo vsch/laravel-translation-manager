@@ -861,7 +861,7 @@ class Controller extends BaseController
         Route::get('toggle_in_place_edit', '\\Vsch\\TranslationManager\\Controller@getToggleInPlaceEdit');
         Route::get('translation', '\\Vsch\\TranslationManager\\Controller@getTranslation');
         Route::get('usage_info', '\\Vsch\\TranslationManager\\Controller@getUsageInfo');
-        Route::get('view', '\\Vsch\\TranslationManager\\Controller@getView');
+        Route::get('view/{group?}', '\\Vsch\\TranslationManager\\Controller@getView');
         Route::get('trans_filters', '\\Vsch\\TranslationManager\\Controller@getTransFilters');
         Route::post('find', '\\Vsch\\TranslationManager\\Controller@postFind');
         Route::post('yandex_key', '\\Vsch\\TranslationManager\\Controller@postYandexKey');

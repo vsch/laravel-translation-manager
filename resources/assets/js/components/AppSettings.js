@@ -5,7 +5,7 @@ import { compose } from "redux";
 import Dashboard from "./Dashboard";
 import appSettings, { appSettingChecks, appSettingForcedChecks, appSettings_$ } from "../helpers/AppSettings";
 import $ from "jquery";
-import { boxedImmutable, forEachKey } from "../helpers/helpers";
+import { boxedImmutable, eachKey } from "../helpers/helpers";
 import DashboardComponent from "./DashboardComponent";
 import { GLOBAL_SETTINGS_TRACE } from "../helpers/GlobalSetting";
 
@@ -15,7 +15,7 @@ class AppSettings extends DashboardComponent {
 
         this.state = this.getState();
 
-        forEachKey(GLOBAL_SETTINGS_TRACE, (key, value) => {
+        eachKey.call(GLOBAL_SETTINGS_TRACE, (value, key) => {
             this.state["trace-" + key] = GLOBAL_SETTINGS_TRACE[key];
         });
 
@@ -36,11 +36,11 @@ class AppSettings extends DashboardComponent {
             defaultSuffixes: appSettings_$.uiSettings.defaultSuffixes() || '',
         });
 
-        forEachKey(GLOBAL_SETTINGS_TRACE, (key, value) => {
+        eachKey.call(GLOBAL_SETTINGS_TRACE, (value, key) => {
             state["trace-" + key] = !!this.state["trace-" + key];
         });
 
-        forEachKey(appSettingChecks, (key, value) => {
+        eachKey.call(appSettingChecks, (value, key) => {
             if (appSettingForcedChecks.hasOwnProperty(key)) {
                 state[key] = appSettingForcedChecks[key];
             } else {
@@ -62,7 +62,7 @@ class AppSettings extends DashboardComponent {
     saveSettings() {
         appSettings_$.uiSettings._$(_$ => {
             _$.xDebugSession = this.state.xDebugSession;
-            forEachKey(appSettingChecks, (key, value) => {
+            eachKey.call(appSettingChecks, (value, key) => {
                 if (appSettingForcedChecks.hasOwnProperty(key)) {
                     _$[key] = appSettingForcedChecks[key];
                 } else {
@@ -74,7 +74,7 @@ class AppSettings extends DashboardComponent {
         appSettings_$.save();
 
         // save trace values, they are not persisted
-        forEachKey(GLOBAL_SETTINGS_TRACE, (key, value) => {
+        eachKey.call(GLOBAL_SETTINGS_TRACE, (value, key) => {
             GLOBAL_SETTINGS_TRACE[key] = !!this.state["trace-" + key];
         });
     }
@@ -179,8 +179,8 @@ class AppSettings extends DashboardComponent {
                             </div>
                             <div className="col-sm-10">
                                 <div className="input-group-sm">
-                                    {boxedImmutable.util.mapEachKey(GLOBAL_SETTINGS_TRACE, (globalKey, value, index) => (
-                                        <label key={index + ':' + globalKey}>
+                                    {boxedImmutable.util.map.call(GLOBAL_SETTINGS_TRACE, (value, globalKey) => (
+                                        <label key={globalKey}>
                                             <input
                                                 className='display-locale'
                                                 name={globalKey} type="checkbox" value={globalKey}

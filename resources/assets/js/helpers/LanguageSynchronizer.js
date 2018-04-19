@@ -68,7 +68,7 @@ class LanguageSynchronizer {
                 appSettings_$.cancel();
             }
 
-            params.uiSettings = boxedImmutable.util.mergeDefaultProperties(params.uiSettings, appSettings.getState().uiSettings, 99);
+            params.uiSettings = boxedImmutable.util.mergeDefaults.call(params.uiSettings, appSettings.getState().uiSettings, 99);
         }
         appSettings.update(params);
     }
@@ -96,7 +96,7 @@ class LanguageSynchronizer {
         if (this.oldScriptHookers[hookerId]) {
             delete this.oldScriptHookers[hookerId];
 
-            if (!boxedImmutable.util.hasOwnProperties(this.oldScriptHookers)) {
+            if (!boxedImmutable.util.hasOwnProperties.call(this.oldScriptHookers)) {
                 this.scriptHooker.cancel();
                 $.fn.OldScriptHooks.UNHOOK_TRANSLATION_PAGE_EVENTS && $.fn.OldScriptHooks.UNHOOK_TRANSLATION_PAGE_EVENTS();
             } else {

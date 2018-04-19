@@ -7,7 +7,7 @@ import appEvents from './AppEvents';
 const util = boxedImmutable.util;
 const _$ = boxedImmutable.box;
 const isArray = util.isArray;
-const forEachKey = util.forEachKey;
+const eachKey = util.eachKey;
 const isFunction = util.isFunction;
 const isObject = util.isObject;
 const UNDEFINED = util.UNDEFINED;
@@ -240,7 +240,7 @@ export class AppSettings extends GlobalSetting {
         });
 
         // include default settings for dashboardShow, collapse
-        forEachKey(dashboardConfig.dashboards, (dashboardName, dashboard) => {
+        eachKey.call(dashboardConfig.dashboards, (dashboard, dashboardName) => {
             dashboard.dashboardName = dashboardName;
 
             const showState = util.firstDefined(dashboard.defaultShow, false);
@@ -254,7 +254,7 @@ export class AppSettings extends GlobalSetting {
             defaults_$.uiSettings[dashboard.collapseState] = collapseState;
 
             // include default settings for dashboardShow, collapse route specific
-            forEachKey(dashboardConfig.routeDashboards, (route, routeConfig) => {
+            eachKey.call(dashboardConfig.routeDashboards, (routeConfig, route) => {
                 const explicitlyIncluded = routeConfig.includeDashboards && routeConfig.includeDashboards.indexOf(dashboardName) !== -1;
                 const implicitlyIncluded = !routeConfig.includeDashboards || explicitlyIncluded;
                 const explicitlyExcluded = routeConfig.excludeDashboards && routeConfig.excludeDashboards.indexOf(dashboardName) !== -1;
@@ -281,13 +281,13 @@ export class AppSettings extends GlobalSetting {
         });
 
         // need to sort the dashboards in the arrays in order of their index
-        forEachKey(dashboardConfig.routeDashboards, (route, routeConfig) => {
+        eachKey.call(dashboardConfig.routeDashboards, (routeConfig, route) => {
             if (routeConfig.dashboards) {
                 routeConfig.dashboards.sort((a, b) => a.index - b.index);
             }
         });
 
-        forEachKey(appSettingChecks, (key) => {
+        eachKey.call(appSettingChecks, (value,key) => {
             if (appSettingForcedChecks.hasOwnProperty(key)) {
                 const setTo = appSettingForcedChecks[key];
                 transforms_$.uiSettings[key] = setTo ? _$.transform.toAlwaysTrue : _$.transform.toAlwaysFalse;
@@ -328,7 +328,7 @@ export class AppSettings extends GlobalSetting {
             data.uiSettings = uiSettings;
 
             // merge all the default uiSettings the server may not have
-            data = util.mergeDefaultProperties(result.data, { uiSettings: appSettings.getState().uiSettings }, 99, true);
+            data = util.mergeDefaults.call(result.data, { uiSettings: appSettings.getState().uiSettings });
         }
 
         data && delete data.appSettings;
