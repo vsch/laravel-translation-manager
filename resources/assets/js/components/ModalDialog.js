@@ -104,10 +104,10 @@ class ModalDialog extends BoxedStateComponent {
         const { t } = this.props;
 
         return (
-            <div ref={el => this.el = el} className={this.props.modalType || "modal fade"} tabIndex="-1" role="dialog" aria-labelledby="modalTitle" aria-hidden="true">
-                <div className={this.props.modalDialogType || "modal-dialog modal-dialog-centered"} role="document">
+            <div ref={el => this.el = el} className={(this.props.modalType || "modal fade")} tabIndex="-1" role="dialog" aria-labelledby="modalTitle" aria-hidden="true">
+                <div className={(this.props.modalDialogType || "modal-dialog modal-dialog-centered")} role="document">
                     <div className="modal-content">
-                        <div className="modal-header">
+                        <div className={"modal-header " + this.props.headerType}>
                             <h5 className="modal-title" id="modalTitle">{this.props.modalTitle || 'Missing Title'}</h5>
                             <button type='button' className="close" onClick={this.handleClose}><span aria-hidden="true">&times;</span></button>
                         </div>
@@ -134,6 +134,7 @@ ModalDialog.propTypes = {
     modalTitle: PropTypes.any,
     modalType: PropTypes.string,
     modalDialogType: PropTypes.string,
+    headerType: PropTypes.string,
     backdrop: PropTypes.any,
     footer: PropTypes.node,
 };

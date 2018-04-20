@@ -141,7 +141,7 @@ class App extends BoxedStateComponent {
     }
 
     loadGroup(group) {
-        appTranslations.update({ group: group });
+        appTranslations.changeGroup(group);
     }
 
     Home({ match }) {

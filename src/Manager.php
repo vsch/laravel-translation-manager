@@ -1289,8 +1289,11 @@ class Manager
 
             // create references
             $paths = '';
+            $basePath = $this->app->basePath();
+            $basePathLen = strlen($basePath);
             foreach ($filePathsAndLocation as $filePath => $locations) {
-                $paths .= $filePath . ':' . implode(',', $locations) . "\n";
+                $relativePath = substr($filePath, $basePathLen);
+                $paths .= $relativePath . ':' . implode(',', $locations) . "\n";
             }
 
             if (!$translation->exists) {

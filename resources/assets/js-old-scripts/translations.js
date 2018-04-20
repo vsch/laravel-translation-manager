@@ -27,6 +27,7 @@
 
 (function ($) {
     'use strict';
+    const countRegEx = /:count\s+/;
 
     function swapInClass(elem, toAdd, toRemove) {
         'use strict';
@@ -86,7 +87,7 @@
                 404: 'You have reached the daily limit for the volume of translated text (including calls of the detect method).',
                 413: 'The text size exceeds the maximum.',
                 422: 'The text could not be translated.',
-                501: 'The specified translation direction is not supported.'
+                501: 'The specified translation direction is not supported.',
             };
         var jqxhr = $.ajax({
             dataType: "json",
@@ -97,7 +98,7 @@
                 text: fromText,
             },
             xhrFields: {
-                withCredentials: false
+                withCredentials: false,
             },
             success: function (json) {
                 if (json.code === ERR_OK) {
@@ -106,7 +107,7 @@
                 else {
                     window.console.log("Yandex API: " + json.code + ': ' + errCodes[json.code] + "\n");
                 }
-            }
+            },
         });
 
         // var jqxhr = $.getJSON("https://translate.yandex.net/api/v1.5/tr.json/translate", {
@@ -119,9 +120,8 @@
         //             onTranslate(json.text.join("\n"));
         //         }
         //         else {
-        //             window.console.log("Yandex API: " + json.code + ': ' + errCodes[json.code] + "\n");
-        //         }
-        //     });
+        //             window.console.log("Yandex API: " + json.code + ': ' +
+        // errCodes[json.code] + "\n"); } });
 
         jqxhr.done(function () {
         });
@@ -159,18 +159,31 @@
     $.fn.OldScriptHooks.xtranslateService = translateYandex;
     $.fn.OldScriptHooks.xtranslateText = function (translator, srcLoc, srcText, dstLoc, processText) {
         var pos, single, plural, havePlural, src = srcText;
+        var hadSingleCount = false;
+        var hadPluralCount = false;
 
         if ((pos = srcText.indexOf('|')) !== -1) {
             // have pluralization
             single = srcText.substr(0, pos);
             plural = srcText.substr(pos + 1);
+
+            if (single.match(countRegEx)) { 
+                single = single.replace(countRegEx,'');
+                hadSingleCount = true;
+            }
+            if (plural.match(countRegEx)) { 
+                plural = plural.replace(countRegEx,'');
+                hadPluralCount = true;
+            }
             src = 'one ' + single + '\ntwo ' + plural + '\nfive ' + plural;
             havePlural = true;
         }
 
-        // convert all occurences of :parameter to {{#}} where # is the parameter number and store the parameter at index #
-        // that way they won't be mangled by translation and we can restore them back on return.
-        var lastPos = 0, params = [], haveParams, matches, regexParam = /\:([a-zA-Z0-9_-]*)(?=[^a-zA-Z0-9_-]|$)/g,
+        // convert all occurrences of :parameter to {{#}} where # is the parameter number and
+        // store the parameter at index # that way they won't be mangled by translation and we
+        // can restore them back on return. However, :count is removed so it does not affect plurals
+        var lastPos = 0, params = [], haveParams, matches,
+            regexParam = /\:([a-zA-Z0-9_-]*)(?=[^a-zA-Z0-9_-]|$)/g,
             result = '', paramIndex = 0;
 
         while ((matches = regexParam.exec(src)) !== null) {
@@ -209,14 +222,16 @@
                 pluralForms = text.split('\n', 3);
                 single = extractPluralForm(pluralForms, 0);
                 plural = extractPluralForm(pluralForms, 1);
+                var singlePrefix = hadSingleCount ? ':count ':'';
+                var pluralPrefix = hadPluralCount ? ':count ':'';
 
                 if (dstLoc === 'ru') {
                     plural2 = extractPluralForm(pluralForms, 2);
-                    text = single + '|' + plural + '|' + plural2;
+                    text = singlePrefix + single + '|' + pluralPrefix + plural + '|' + pluralPrefix + plural2;
                 }
                 else {
                     // TODO: have to handle other plural forms for complex locales
-                    text = single + '|' + plural;
+                    text = singlePrefix + single + '|' + pluralPrefix + plural;
                 }
             }
             processText(text, trans);
@@ -230,13 +245,14 @@
             options.headers = {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
             };
-            //window.console.log('Injected CSRF: ' + $('meta[name="csrf-token"]').attr('content'));
+            //window.console.log('Injected CSRF: ' +
+            // $('meta[name="csrf-token"]').attr('content'));
         }
     });
 
     $.ajaxSetup({
         xhrFields: {
-            withCredentials: true
+            withCredentials: true,
         },
         type: 'POST',
     });
@@ -251,7 +267,7 @@
                     $.fn.OldScriptHooks.YANDEX_TRANSLATOR_KEY = json.yandex_key;
                 }
             },
-            encode: true
+            encode: true,
         });
     }
 
@@ -314,7 +330,8 @@
         var title_cancel_changes = $.fn.OldScriptHooks.TITLE_CANCEL_CHANGES || "Cancel changes";
         var title_translate = $.fn.OldScriptHooks.TITLE_TRANSLATE || "Translate";
         var title_convert_key = $.fn.OldScriptHooks.TITLE_CONVERT_KEY || "Convert translation key to text";
-        var title_generate_plurals = $.fn.OldScriptHooks.TITLE_GENERATE_PLURALS || "Generate plural forms";
+        // var title_generate_plurals = $.fn.OldScriptHooks.TITLE_GENERATE_PLURALS || "Generate plural forms";
+        var title_generate_plurals = $.fn.OldScriptHooks.TITLE_GENERATE_PLURALS || "Generate plural forms with :count";
         var title_clean_html_markdown = $.fn.OldScriptHooks.TITLE_CLEAN_HTML_MARKDOWN || "Clean HTML markdown";
         var title_capitalize = $.fn.OldScriptHooks.TITLE_CAPITALIZE || "Capitalize text";
         var title_lowercase = $.fn.OldScriptHooks.TITLE_LOWERCASE || "Lowercase text";
@@ -330,6 +347,7 @@
             '&nbsp;&nbsp;<button id="x-translate" type="button" title="' + title_translate + '" class="editable-translate btn btn-sm btn-warning hidden"><i class="fa fa-share"/></button>' +
             '<button id="x-nodash" type="button" title="' + title_convert_key + '" class="editable-translate btn btn-sm btn-warning hidden">❉ <i class="fa fa-share"/> Ab</button>' +
             '&nbsp;&nbsp;<button id="x-plurals" type="button" title="' + title_generate_plurals + '" class="editable-translate btn btn-sm btn-warning hidden">|</i></button>' +
+            '<button id="x-plurals-count" type="button" title="' + title_generate_plurals + '" class="editable-translate btn btn-sm btn-warning hidden">|:</i></button>' +
             '<button id="x-clean-markdown" type="button" title="' + title_clean_html_markdown + '" class="editable-translate btn btn-sm btn-warning hidden"><i class="fa fa-flash"/></button>' +
             '&nbsp;&nbsp;<button id="x-capitalize" type="button" title="' + title_capitalize + '" class="editable-translate btn btn-sm btn-info">ab <i class="fa fa-share"/> Ab</button>' +
             '<button id="x-lowercase" type="button" title="' + title_lowercase + '" class="editable-translate btn btn-sm btn-info">AB <i class="fa fa-share"/> ab</button>' +
@@ -371,13 +389,14 @@
                 btnCapitalize: divElem.find('#x-capitalize').first(),
                 btnLowercase: divElem.find('#x-lowercase').first(),
                 btnPlurals: divElem.find('#x-plurals').first(),
+                btnPluralsCount: divElem.find('#x-plurals-count').first(),
                 btnPropCap: divElem.find('#x-propcap').first(),
                 btnNoDash: divElem.find('#x-nodash').first(),
                 btnCopy: divElem.find('#x-copy').first(),
                 btnPaste: divElem.find('#x-paste').first(),
                 btnResetOpen: divElem.find('#x-reset-open').first(),
                 btnResetSaved: divElem.find('#x-reset-saved').first(),
-                btnCleanMarkdown: divElem.find('#x-clean-markdown').first()
+                btnCleanMarkdown: divElem.find('#x-clean-markdown').first(),
             };
         }
         return null;
@@ -443,7 +462,10 @@
         // here this is the XEditable
         var $this = this;
         var locale = $this.data('locale');
+        var url = $this.attr('data-url');
         var key, dstId = $this.attr('id'), value;
+        var pos = url.lastIndexOf('/');
+        var group = url.substr(pos + 1);
 
         key = dstId.substr(locale.length + 1);
         value = $this.editable('getValue', true);
@@ -453,7 +475,7 @@
         //     $this.removeClass('status-0').addClass('status-1');
         //     // $this.closest('tr').addClass('has-changed-translation');
         // }
-        $.fn.OldScriptHooks.GLOBAL_TRANSLATION_CHANGED(key, locale, value, (status) => {
+        $.fn.OldScriptHooks.GLOBAL_TRANSLATION_CHANGED(group, key, locale, value, (status) => {
             var remove = status ? 0 : 1;
             var add = 1 - remove;
             $this.removeClass('status-' + remove).addClass('status-' + add);
@@ -583,9 +605,9 @@
                     if (xElem.btnCleanMarkdown.length) {
                         xElem.btnCleanMarkdown.removeClass('hidden');
                         xElem.btnCleanMarkdown.on('click', xedit(dstElem, function (params) {
-                                // clean up wrapped lines which are not markdown hard breaks or blank lines
-                                // TODO: clean up this shit-ball. Check by lines not characters
-                                // split into lines and step through
+                                // clean up wrapped lines which are not markdown hard breaks or
+                                // blank lines TODO: clean up this shit-ball. Check by lines
+                                // not characters split into lines and step through
                                 var text = this;
                                 var lines = text.split('\n');
                                 var iMax = lines.length;
@@ -618,7 +640,8 @@
                                             if (fixedText.length > 0) {
                                                 var lastChar = fixedText.charAt(fixedText.length - 1);
                                                 if (lastChar !== '\n' && lastChar !== ' ' && line.charAt(0) !== ' ') {
-                                                    // add a space, we will splice to previous line
+                                                    // add a space, we will splice to previous
+                                                    // line
                                                     fixedText += ' ';
                                                 }
                                             }
@@ -629,53 +652,92 @@
                                     lastWasBlank = isBlankLine;
                                 }
                                 return fixedText;
-                            }
+                            },
                         ));
                     }
 
-                    // // this is needed to prevent doubling funky stuff happening with markdown text and blank lines
-                    // dstElem.off('paste');
-                    // dstElem.on('paste', function (e) {
-                    //     var pastedText = undefined;
-                    //     if (window.clipboardData && window.clipboardData.getData) { // IE
-                    //         pastedText = window.clipboardData.getData('Text');
-                    //     } else {
-                    //         if (e.originalEvent.clipboardData && e.originalEvent.clipboardData.getData) {
-                    //             pastedText = e.originalEvent.clipboardData.getData('text/plain');
-                    //         }
-                    //     }
-                    //
-                    //     dstElem[0].value = pastedText;
-                    //     return false; // Prevent the default handler from running.
-                    // });
+                    // // this is needed to prevent doubling funky stuff happening with
+                    // markdown text and blank lines dstElem.off('paste'); dstElem.on('paste',
+                    // function (e) { var pastedText = undefined; if (window.clipboardData &&
+                    // window.clipboardData.getData) { // IE pastedText =
+                    // window.clipboardData.getData('Text'); } else { if
+                    // (e.originalEvent.clipboardData && e.originalEvent.clipboardData.getData)
+                    // { pastedText = e.originalEvent.clipboardData.getData('text/plain'); } } 
+                    // dstElem[0].value = pastedText; return false; // Prevent the default
+                    // handler from running. });
                 } else {
                     // not markdown
-                    if (xElem.btnPlurals.length) {
+                    // if (xElem.btnPlurals.length) {
+                    //     if (dstLoc === PRIMARY_LOCALE || YANDEX_TRANSLATOR_KEY !== '') {
+                    //         xElem.btnPlurals.removeClass('hidden');
+                    //         xElem.btnPlurals.on('click', xfull(dstElem, function () {
+                    //             var val = this;
+                    //             if (val.indexOf('|') === -1) {
+                    //                 switch (dstLoc) {
+                    //                     case 'ru' :
+                    //                         val = this + '|' + this + '|' + this;
+                    //                         break;
+                    //
+                    //                     case 'en' :
+                    //                         if (PRIMARY_LOCALE === 'en') {
+                    //                             val = value.singularize() + '|' + value.pluralize();
+                    //                         }
+                    //                         else {
+                    //                             val = val.singularize() + '|' + val.pluralize();
+                    //                         }
+                    //                         break;
+                    //
+                    //                     // TODO: add locale tests and code to create plural forms
+                    //                     default:
+                    //                         val = this + '|' + this;
+                    //                         break;
+                    //                 }
+                    //                 return val.toLocaleLowerCase();
+                    //             }
+                    //             return val;
+                    //         }));
+                    //     }
+                    // }
+                    if (xElem.btnPluralsCount.length) {
                         if (dstLoc === PRIMARY_LOCALE || YANDEX_TRANSLATOR_KEY !== '') {
-                            xElem.btnPlurals.removeClass('hidden');
-                            xElem.btnPlurals.on('click', xfull(dstElem, function () {
+                            xElem.btnPluralsCount.removeClass('hidden');
+                            xElem.btnPluralsCount.on('click', xfull(dstElem, function () {
                                 var val = this;
+                                
                                 if (val.indexOf('|') === -1) {
                                     switch (dstLoc) {
                                         case 'ru' :
-                                            val = this + '|' + this + '|' + this;
+                                            val = this + '|' + ':count ' + this + '|' + ':count ' + this;
                                             break;
 
                                         case 'en' :
                                             if (PRIMARY_LOCALE === 'en') {
-                                                val = value.singularize() + '|' + value.pluralize();
+                                                val = value.singularize() + '|' + ':count ' + value.pluralize();
                                             }
                                             else {
-                                                val = val.singularize() + '|' + val.pluralize();
+                                                val = val.singularize() + '|' + ':count ' + val.pluralize();
                                             }
                                             break;
 
                                         // TODO: add locale tests and code to create plural forms
                                         default:
-                                            val = this + '|' + this;
+                                            val = this + '|' + ':count ' + this;
                                             break;
                                     }
                                     return val.toLocaleLowerCase();
+                                } else {
+                                    // see if all have count
+                                    var parts = val.split('|');
+                                    if (!parts.some((part)=>part.match(countRegEx))) {
+                                        // add to all except first
+                                        val = parts.map(part => part.replace(countRegEx, '')).join('|:count ');
+                                    } else if (parts.every((part)=>part.match(countRegEx))) {
+                                        // remove from all
+                                        val = parts.map(part => part.replace(countRegEx, '')).join('|'); 
+                                    } else {
+                                        // add to all
+                                        val = ':count ' + parts.map(part => part.replace(countRegEx, '')).join('|:count '); 
+                                    }
                                 }
                                 return val;
                             }));

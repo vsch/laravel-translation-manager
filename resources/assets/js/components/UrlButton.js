@@ -5,7 +5,11 @@ import { translate } from 'react-i18next';
 import { compose } from "redux";
 import $ from "jquery";
 import axios from "axios";
-import { appSettingChecks, appSettingForcedChecks, appSettings_$ } from '../helpers/AppSettings';
+import {
+    appSettingChecks,
+    appSettingForcedChecks,
+    appSettings_$,
+} from '../helpers/AppSettings';
 import appEvents from '../helpers/AppEvents';
 import appModal from '../helpers/AppModal';
 import ConfirmationButtons from "./ConfirmationButtons";
@@ -31,7 +35,24 @@ class UrlButton extends React.Component {
         this.handleClick = this.handleClick.bind(this);
     }
 
+    static messageModal(modalTitle, modalBody, props) {
+        const onButtonClose = function onClose(e, ok) {
+            console.log("Modal closed", ok);
+            appModal.hideModal();
+        }.bind(this);
+
+        const modal = {
+            onClose: null,
+            modalProps: Object.assign({}, props, {
+                modalTitle: modalTitle,
+            }),
+            modalBody: modalBody,
+        };
+        appModal.showModal(modal);
+    }
+
     handleClick(e) {
+        const { t } = this.props;
         e.preventDefault();
         e.stopPropagation();
 
@@ -75,19 +96,43 @@ class UrlButton extends React.Component {
 
                     appModal.inButtonOp = false;
 
-                    if (invalidateGroup) {
-                        if (appSettings_$.uiSettings.group() === normalizeProp(invalidateGroup)) {
+                    if (result.data.status === 'ok') {
+                        if (invalidateGroup) {
+                            appEvents.fireEvent('invalidate.translations', normalizeProp(invalidateGroup));
                             appEvents.fireEvent('invalidate.group');
                         }
-                    }
 
-                    if (normalizeProp(reloadGroups)) {
-                        // group deleted
-                        appEvents.fireEvent('invalidate.groups');
-                    }
+                        if (normalizeProp(reloadGroups)) {
+                            // group deleted
+                            appEvents.fireEvent('invalidate.groups');
+                        }
 
-                    if (onSuccess) {
-                        onSuccess(result);
+                        if (onSuccess) {
+                            window.setTimeout(() => {
+                                onSuccess(result);
+                            }, 100);
+                        }
+                    } else {
+                        // must be an error
+                        if (onFailure) {
+                            window.setTimeout(() => {
+                                onFailure(null, result);
+                            }, 100);
+                        } else {
+                            const errors = util.isArray(result.data.error) ?
+                                <ul>{result.data.error.map((message, index) =>
+                                    <li key={index}
+                                        dangerouslySetInnerHTML={{ __html: message }}/>,
+                                )}</ul> : <p>{result.data.error}</p>;
+                            UrlButton.messageModal(t('messages.server-error-title'), (
+                                <div>
+                                    <p>{t('messages.server-error-response')}</p>
+                                    {errors}
+                                </div>
+                            ), {
+                                headerType: 'bg-danger text-white',
+                            });
+                        }
                     }
 
                     console.log("Operation complete", dataUrl, result.data);
@@ -98,10 +143,20 @@ class UrlButton extends React.Component {
                     $el.removeClass('busy');
                     appModal.inButtonOp = false;
 
-                    // TODO: post error message
-                    if (onFailure) { 
-                        onFailure(e);
-                    }
+                    window.setTimeout(() => {
+                        if (onFailure) {
+                            onFailure(e);
+                        } else {
+                            UrlButton.messageModal(t('messages.server-error-title'), (
+                                <div>
+                                    <p>{t('messages.server-error-message')}</p>
+                                    {e.message}
+                                </div>
+                            ), {
+                                headerType: 'bg-danger text-white',
+                            });
+                        }
+                    }, 100);
                 })
             ;
         }).bind(this);
@@ -109,7 +164,6 @@ class UrlButton extends React.Component {
         if (confirmationKey) {
             const normalizedConfirmationKey = normalizeProp(confirmationKey);
             if (appSettings_$.uiSettings[normalizedConfirmationKey]()) {
-                const { t } = this.props;
 
                 const confirmationDashCase = normalizedConfirmationKey ? appSettingChecks[normalizedConfirmationKey] : null;
                 const forcedConfirmationCheck = normalizedConfirmationKey ? appSettingForcedChecks[normalizedConfirmationKey] : null;
@@ -182,7 +236,8 @@ class UrlButton extends React.Component {
                         ),
                     },
                     modalBody:
-                        confirmationBody ? <div>{normalizeProp(confirmationBody, t('messages.' + confirmationDashCase + "-message"))}</div>
+                        confirmationBody ?
+                            <div>{normalizeProp(confirmationBody, t('messages.' + confirmationDashCase + "-message"))}</div>
                             : <p>{t('messages.' + confirmationDashCase + "-message")}</p>,
                 };
                 appModal.showModal(modal);
@@ -199,12 +254,12 @@ class UrlButton extends React.Component {
 
         return !this.props.plainLink ? (
             !this.props.asLink ? (
-            <button ref={el => this.el = el}
-                type={this.props.type || "button"}
-                onClick={this.handleClick}
-                className={this.props.className}
-            >{this.props.children}</button>
-            ):(
+                <button ref={el => this.el = el}
+                    type={this.props.type || "button"}
+                    onClick={this.handleClick}
+                    className={this.props.className}
+                >{this.props.children}</button>
+            ) : (
                 <a ref={el => this.el = el}
                     href='#'
                     title={this.props.title || ''}

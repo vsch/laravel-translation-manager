@@ -56,6 +56,7 @@ export class TranslationMismatches extends React.Component {
             tr_value: stat.hasOwnProperty('tr_value') ? stat.tr_value : null,
             pr: stat.hasOwnProperty('pr') ? stat.pr : null,
             pr_value: stat.hasOwnProperty('pr_value') ? stat.pr_value : null,
+            status: stat.hasOwnProperty('status') ? stat.status : null,
         };
     }
 
@@ -102,12 +103,13 @@ export class TranslationMismatches extends React.Component {
                 $link = url + '/' + $mismatch.group + '#' + $mismatch.key;
                 $mismatch.value = $mismatch.tr_value;
                 $mismatch.locale = $locale;
-                $mismatch.status = $locale;
 
                 return (
-                    <tr key={index} className={$borderTop}>
+                    <tr key={index + '.' + $mismatch.group + '.' + $mismatch.key} className={$borderTop}>
                         <td className="missing">{$keyText}</td>
-                        <td>{$isLocaleEnabled ? TransXEditable.transXEditLink($mismatch.group, $mismatch.key, $mismatch.locale, $mismatch, false) : $mismatch.value}</td>
+                        <td className={
+                            ($mismatch.status == '1' ? ' has-unpublished-translation' : '') +
+                            ($mismatch.status == '2' ? ' has-cached-translation' : '')}>{$isLocaleEnabled ? TransXEditable.transXEditLink($mismatch.group, $mismatch.key, $mismatch.locale, $mismatch, false) : $mismatch.value}</td>
                         <td className="missing" dangerouslySetInnerHTML={{ __html: $mismatch.tr }}/>
                         <td className="missing" dangerouslySetInnerHTML={{ __html: $mismatch.pr }}/>
                         <td className="group missing"><a href='#' onClick={(e) => this.showGroup(e, $mismatch.group)}>{$mismatch.group}</a></td>
@@ -118,7 +120,7 @@ export class TranslationMismatches extends React.Component {
         }
 
         return (
-            <table className="table table-sm table-hover table-striped table-bordered translation-stats">
+            <table className="table table-sm table-hover table-striped table-bordered translation-stats table-translations">
                 <thead className='thead-light'>
                 <tr>
                     <th width='20%' className="key">{t('messages.key')}</th>

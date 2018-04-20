@@ -73,23 +73,27 @@ class LanguageSynchronizer {
         appSettings.update(params);
     }
 
-    globalTranslationChanged(key, locale, value, callback) {
+    globalTranslationChanged(group, key, locale, value, callback) {
         const tmp = 0;
-        const group = appTranslations.getState().group;
         let result = 0;
-        
-        appTranslations.changeTranslations(group, (transKey) => {
-            return transKey === key
-        }, (transLocale, trans_$) => {
-            if (locale === transLocale) { 
-                // our value
-                value = value === "" ? null : value;
-                trans_$.value = value;
-                var savedValue = trans_$.saved_value();
-                result = trans_$.status = value === savedValue ? 0 : 1;
-                callback(result);
-            }
-        });
+
+        if (group === appTranslations.getState().group) {
+            appTranslations.changeTranslations(group, (transKey) => {
+                return transKey === key;
+            }, (transLocale, trans_$) => {
+                if (locale === transLocale) {
+                    // our value
+                    value = value === "" ? null : value;
+                    trans_$.value = value;
+                    let savedValue = trans_$.saved_value();
+                    result = trans_$.status = value === savedValue ? 0 : 1;
+                    callback(result);
+                }
+            });
+        } else {
+            callback(1);
+            appEvents.fireEvent('invalidate.translations', group);
+        }
     }
 
     unhookOldScripts(hookerId) {
@@ -117,14 +121,14 @@ class LanguageSynchronizer {
     }
 
     hookOldScriptsRaw(hookerId, type) {
-        
-        this.scriptHooker.restart(()=>{
+
+        this.scriptHooker.restart(() => {
             jQuery.fn.OldScriptHooks.GLOBAL_SETTINGS_CHANGED = this.globalSettingsChanged;
             jQuery.fn.OldScriptHooks.GLOBAL_TRANSLATION_CHANGED = this.globalTranslationChanged;
             window.console.debug(`${type}: hooking old scripts for ${hookerId}`);
             this.hookScripts();
         });
-        
+
         // if (!this.scriptHooker.isPending()) {
         //     // run right away and start timeout for next one not to run
         //     this.hookScripts();
@@ -187,6 +191,7 @@ class LanguageSynchronizer {
             vars.TITLE_TRANSLATE = i18n.t('messages.title-translate');
             vars.TITLE_CONVERT_KEY = i18n.t('messages.title-convert-key');
             vars.TITLE_GENERATE_PLURALS = i18n.t('messages.title-generate-plurals');
+            // vars.TITLE_GENERATE_PLURALS_COUNT = i18n.t('messages.title-generate-plurals-count');
             vars.TITLE_CLEAN_HTML_MARKDOWN = i18n.t('messages.title-clean-html-markdown');
             vars.TITLE_CAPITALIZE = i18n.t('messages.title-capitalize');
             vars.TITLE_LOWERCASE = i18n.t('messages.title-lowercase');

@@ -159,7 +159,9 @@ export class GlobalTranslations extends GlobalSetting {
      * Consumer: callback for each translation
      * @param group to modify
      * @param keyFilter filter function returning true if the key is of interest
-     * @param transactionUpdater  function taking a locale and translation, returning a possibly changed copy of the translation for the locale or null if should delete the locale's translation
+     * @param transactionUpdater  function taking a locale and translation, returning a
+     *     possibly changed copy of the translation for the locale or null if should delete the
+     *     locale's translation
      */
     changeTranslations(group, keyFilter, transactionUpdater) {
         if (group && group === this.getState().group) {

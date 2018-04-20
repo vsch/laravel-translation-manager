@@ -163,9 +163,7 @@ class DashboardComponent extends BoxedStateComponent {
                     this.inButtonOp = false;
 
                     if (invalidateGroup) {
-                        if (this.state.group === invalidateGroup) {
-                            appEvents.fireEvent('invalidate.group');
-                        }
+                        appEvents.fireEvent('invalidate.translations', this.state.group);
                     }
 
                     if (reloadGroups) {

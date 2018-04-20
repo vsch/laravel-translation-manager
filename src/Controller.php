@@ -211,7 +211,7 @@ class Controller extends BaseController
         }
 
         $transLocales->normalize();
-        
+
         // needed to properly resolve JSON default keys when they are based on the primary locale
         $this->manager->setPrimaryLocale($transLocales->primaryLocale);
     }
@@ -714,7 +714,7 @@ class Controller extends BaseController
             $this->manager->truncateTranslations($group);
             return Response::json(array('status' => 'ok', 'counter' => (int)0));
         }
-        return Response::json(array('status' => 'ok', 'error' => 'missing group', 'counter' => (int)0));
+        return $this->respondMissingGroup();
     }
 
     public function postShowSource($group, $key)
@@ -789,7 +789,7 @@ class Controller extends BaseController
             event(new TranslationsPublished($group, $errors));
             return Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
         }
-        return Response::json(array('status' => 'ok', 'error' => 'missing group', 'counter' => (int)0));
+        return $this->respondMissingGroup();
     }
 
     public function getZippedTranslations($group = null)
@@ -995,6 +995,7 @@ class Controller extends BaseController
                 'pr_value' => $mismatch->en_value,
                 'tr' => $mismatch->ru,
                 'tr_value' => $mismatch->ru_value,
+                'status' => $mismatch->status,
             ];
         }
 
@@ -1030,9 +1031,9 @@ class Controller extends BaseController
             list($namespace, $group, $item) = $translator->parseKey($key);
             if ($item && $group) {
                 if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY))) {
-                     $t = $this->manager->missingKey($namespace, $group, $item, null, false, true);
+                    $t = $this->manager->missingKey($namespace, $group, $item, null, false, true);
                     if (!$t->exists) {
-                         $affectedGroups[] = $t->group;
+                        $affectedGroups[] = $t->group;
                         $t->save();
                     }
                 }
@@ -1430,9 +1431,9 @@ class Controller extends BaseController
                 $this->manager->setWebUI(false); // we want these to create json keys
                 return Response::json(array('status' => 'ok'), 200, [], JSON_UNESCAPED_SLASHES | $pretty);
             }
-            return Response::json(array('status' => 'error', 'error' => 'group excluded'), 403, [], JSON_UNESCAPED_SLASHES | $pretty);
+            return $this->respondGroupExcluded($pretty);
         }
-        return Response::json(array('status' => 'error', 'error' => 'no admin rights'), 401, [], JSON_UNESCAPED_SLASHES | $pretty);
+        return $this->respondNotAdmin($pretty);
     }
 
     public function apiDeleteSuffixedKeys($group)
@@ -1463,9 +1464,9 @@ class Controller extends BaseController
                 }
                 return Response::json(array('status' => 'ok'), 200, [], JSON_UNESCAPED_SLASHES | $pretty);
             }
-            return Response::json(array('status' => 'error', 'error' => 'group excluded'), 403, [], JSON_UNESCAPED_SLASHES | $pretty);
+            return $this->respondGroupExcluded($pretty);
         }
-        return Response::json(array('status' => 'error', 'error' => 'no admin rights'), 401, [], JSON_UNESCAPED_SLASHES | $pretty);
+        return $this->respondNotAdmin($pretty);
     }
 
     public function postClearUISettings()
@@ -1482,7 +1483,7 @@ class Controller extends BaseController
             }
             return Response::json(array('status' => 'ok'), 200, [], JSON_UNESCAPED_SLASHES);
         }
-        return Response::json(array('status' => 'error', 'error' => 'not admin'), 200, [], JSON_UNESCAPED_SLASHES);
+        return $this->respondNotAdmin(false);
     }
 
     public function apiKeyReferences($group, $key)
@@ -1517,9 +1518,9 @@ class Controller extends BaseController
                 sort($refs);
                 return array('status' => 'ok', 'result' => $refs, 'key_name' => "$group.$key");
             }
-            return Response::json(array('status' => 'error', 'error' => 'request is missing a key parameter'), 400, [], JSON_UNESCAPED_SLASHES);
+            return $this->respondMissingKeyParam();
         }
-        return Response::json(array('status' => 'error', 'error' => 'not admin'), 402, [], JSON_UNESCAPED_SLASHES);
+        return $this->respondNotAdmin(false);
     }
 
     public function apiFindReferences()
@@ -1532,7 +1533,7 @@ class Controller extends BaseController
 
             return Response::json(array('status' => 'ok', 'counter' => (int)$numFound));
         }
-        return Response::json(array('status' => 'error', 'error' => 'not admin'), 200, [], JSON_UNESCAPED_SLASHES);
+        return $this->respondNotAdmin(false);
     }
 
     public function apiDeleteGroup($group)
@@ -1545,9 +1546,9 @@ class Controller extends BaseController
                 $this->manager->truncateTranslations($group);
                 return Response::json(array('status' => 'ok', 'counter' => (int)0));
             }
-            return Response::json(array('status' => 'ok', 'error' => 'missing group', 'counter' => (int)0));
+            return $this->respondMissingGroup();
         }
-        return Response::json(array('status' => 'error', 'error' => 'not admin'), 200, [], JSON_UNESCAPED_SLASHES);
+        return $this->respondNotAdmin(false);
     }
 
     public function apiImportGroup($group)
@@ -1561,9 +1562,9 @@ class Controller extends BaseController
                 $counter = $this->manager->importTranslations($replace, $group === '*' ? null : [$group]);
                 return Response::json(array('status' => 'ok', 'counter' => $counter));
             }
-            return Response::json(array('status' => 'ok', 'error' => 'missing group', 'counter' => (int)0));
+            return Response::json(array('status' => 'error', 'error' => 'missing group', 'counter' => (int)0));
         }
-        return Response::json(array('status' => 'error', 'error' => 'not admin'), 200, [], JSON_UNESCAPED_SLASHES);
+        return $this->respondNotAdmin(false);
     }
 
     public function apiPublishGroup($group)
@@ -1581,11 +1582,11 @@ class Controller extends BaseController
                 $errors = $this->manager->errors();
 
                 event(new TranslationsPublished($group, $errors));
-                return Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
+                return Response::json(array('status' => $errors ? 'error' : 'ok', 'error' => $errors));
             }
-            return Response::json(array('status' => 'ok', 'error' => 'missing group', 'counter' => (int)0));
+            return $this->respondMissingGroup();
         }
-        return Response::json(array('status' => 'error', 'error' => 'not admin'), 200, [], JSON_UNESCAPED_SLASHES);
+        return $this->respondNotAdmin(false);
     }
 
     public function apiZippedTranslations($group = null)
@@ -1616,7 +1617,7 @@ class Controller extends BaseController
             unlink($file);
             //\Log::info("sending file, zlib.compression current setting " . ini_get('zlib.output_compression'));
         }
-        abort(403, 'Only Administrators can perform this action.');
+        return $this->respondNotAdmin(false);
     }
 
     public function apiTransFilters()
@@ -1708,9 +1709,11 @@ class Controller extends BaseController
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
                 //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
                 $result = $this->translatorRepository->updateIsDeletedByGroupAndKey($group, $key, 1);
+                return Response::json(array('status' => 'ok'));
             }
+            return Response::json(array('status' => 'error', 'error' => 'missing group', 'counter' => (int)0));
         }
-        return array('status' => 'ok');
+        return $this->respondNotAdmin(false);
     }
 
     public function postUndelete($group, $key)
@@ -1720,9 +1723,11 @@ class Controller extends BaseController
             if (!in_array($group, $this->manager->config(Manager::EXCLUDE_GROUPS_KEY)) && $this->manager->config('admin_enabled')) {
                 //$this->getTranslation()->where('group', $group)->where('key', $key)->delete();
                 $result = $this->translatorRepository->updateIsDeletedByGroupAndKey($group, $key, 0);
+                return Response::json(array('status' => 'ok'));
             }
+            return Response::json(array('status' => 'error', 'error' => 'missing group', 'counter' => (int)0));
         }
-        return array('status' => 'ok');
+        return $this->respondNotAdmin(false);
     }
 
     public function postYandexKey()
@@ -1752,7 +1757,7 @@ class Controller extends BaseController
         $userLocales->locales = implode(",", $values);
         $userLocales->save();
         $errors = "";
-        return Response::json(array('status' => $errors ? 'errors' : 'ok', 'errors' => $errors));
+        return Response::json(array('status' => $errors ? 'error' : 'ok', 'error' => $errors));
     }
 
     /**
@@ -1972,5 +1977,29 @@ class Controller extends BaseController
             }
         }
         return null;
+    }
+
+    private function respondNotAdmin($pretty)
+    {
+        abort(403, trans($this->package . '::messages.error-no-admin-rights'));
+        //        return Response::json(array('status' => 'error', 'error' => 'no admin rights'), 401, [], JSON_UNESCAPED_SLASHES | $pretty);
+    }
+
+    private function respondMissingKeyParam()
+    {
+        abort(400, trans($this->package . '::messages.error-no-key-param'));
+        //        return Response::json(array('status' => 'error', 'error' => 'request is missing a key parameter'), 400, [], JSON_UNESCAPED_SLASHES);
+    }
+
+    private function respondMissingGroup()
+    {
+        abort(400, trans($this->package . '::messages.error-no-group-param'));
+        //        return Response::json(array('status' => 'ok', 'error' => 'missing group', 'counter' => (int)0));
+    }
+
+    private function respondGroupExcluded($pretty)
+    {
+        abort(400, trans($this->package . '::messages.error-group-excluded'));
+        //        return Response::json(array('status' => 'error', 'error' => 'group excluded'), 403, [], JSON_UNESCAPED_SLASHES | $pretty);
     }
 }

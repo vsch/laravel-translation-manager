@@ -3,10 +3,22 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3.x for Laravel
 5.3, 2.4.x for Laravel 5.4, 2.5.x for Laravel 5.5 and 2.6.x for Laravel 5.6 compatibility.
 
-#### Next 2.6.28
+#### 2.6.28
 
 * Fix: view route missing optional group param, caused incorrect URL for group links in search,
   overview and mismatched translations
+* Fix: editing translation in mismatches or search would update the current translations
+  regardless of group. The server data was correct only react UI would show incorrect changes
+  until translations table was refreshed from the server.
+* Fix: use status in translation mismatches to highlight entry same as in translation table.
+* Fix: remove base path prefix from translation reference paths.
+* Fix: plural translations handling in pop-up, now removes the `:count ` from individual parts
+  before sending for translation. Prefixes results with `:count ` if it was present in the
+  original. This prevents Yandex translate from getting confused and results in better plural
+  forms, especially for Russian which has 3.
+* Change: Now `|:` generates plural forms with `:count ` prefix and toggles the prefix once
+  the plurals are generated. Toggles in the pattern: plurals only prefixed, all prefixed,
+  none-prefixed.
 
 #### 2.6.26
 
