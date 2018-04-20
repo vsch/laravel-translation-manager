@@ -3,11 +3,17 @@ import { connect } from "react-redux";
 import { translate } from 'react-i18next';
 import { compose } from "redux";
 import Dashboard from "./Dashboard";
-import appSettings, { appSettingChecks, appSettingForcedChecks, appSettings_$ } from "../helpers/AppSettings";
+import appSettings, {
+    appSettingChecks,
+    appSettingForcedChecks,
+    appSettings_$,
+} from "../helpers/AppSettings";
 import $ from "jquery";
-import { boxedImmutable, eachProp } from "../helpers/helpers";
+import boxedImmutable from "boxed-immutable";
 import DashboardComponent from "./DashboardComponent";
 import { GLOBAL_SETTINGS_TRACE } from "../helpers/GlobalSetting";
+
+const $_ = boxedImmutable.boxOut;
 
 class AppSettings extends DashboardComponent {
     constructor(props) {
@@ -15,7 +21,7 @@ class AppSettings extends DashboardComponent {
 
         this.state = this.getState();
 
-        eachProp.call(GLOBAL_SETTINGS_TRACE, (value, key) => {
+        $_(GLOBAL_SETTINGS_TRACE).eachProp((value, key) => {
             this.state["trace-" + key] = GLOBAL_SETTINGS_TRACE[key];
         });
 
@@ -36,11 +42,11 @@ class AppSettings extends DashboardComponent {
             defaultSuffixes: appSettings_$.uiSettings.defaultSuffixes() || '',
         });
 
-        eachProp.call(GLOBAL_SETTINGS_TRACE, (value, key) => {
+        $_(GLOBAL_SETTINGS_TRACE).eachProp((value, key) => {
             state["trace-" + key] = !!this.state["trace-" + key];
         });
 
-        eachProp.call(appSettingChecks, (value, key) => {
+        $_(appSettingChecks).eachProp((value, key) => {
             if (appSettingForcedChecks.hasOwnProperty(key)) {
                 state[key] = appSettingForcedChecks[key];
             } else {
@@ -62,7 +68,7 @@ class AppSettings extends DashboardComponent {
     saveSettings() {
         appSettings_$.uiSettings._$(_$ => {
             _$.xDebugSession = this.state.xDebugSession;
-            eachProp.call(appSettingChecks, (value, key) => {
+            $_(appSettingChecks).eachProp((value, key) => {
                 if (appSettingForcedChecks.hasOwnProperty(key)) {
                     _$[key] = appSettingForcedChecks[key];
                 } else {
@@ -74,7 +80,7 @@ class AppSettings extends DashboardComponent {
         appSettings_$.save();
 
         // save trace values, they are not persisted
-        eachProp.call(GLOBAL_SETTINGS_TRACE, (value, key) => {
+        $_(GLOBAL_SETTINGS_TRACE).eachProp((value, key) => {
             GLOBAL_SETTINGS_TRACE[key] = !!this.state["trace-" + key];
         });
     }
@@ -110,15 +116,16 @@ class AppSettings extends DashboardComponent {
         if (this.noShow()) return null;
 
         const state_$ = this.state_$;
-        const buttons = Object.keys(appSettingChecks).filter(key => !appSettingForcedChecks.hasOwnProperty(key)).map((key, index) => {
-            if (!appSettingForcedChecks.hasOwnProperty(key)) {
-                const dashCase = appSettingChecks[key];
-                let checkedState = !!state_$[key]();
-                return <label key={index}>
-                    <input type="checkbox" name={dashCase} data-state-key={key} checked={checkedState} onChange={this.handleStateChange}/>
-                    {t('messages.' + dashCase)}
-                </label>
-            }
+        const buttons = Object.keys(appSettingChecks)/*.filter(key => !appSettingForcedChecks.hasOwnProperty(key))*/.map((key, index) => {
+            const disabled = !!appSettingForcedChecks[key];
+            const dashCase = appSettingChecks[key];
+            let checkedState = !!state_$[key]();
+            return <label key={index}>
+                <input type="checkbox" disabled={disabled} name={dashCase}
+                    data-state-key={key}
+                    checked={checkedState} onChange={this.handleStateChange}/>
+                {t('messages.' + dashCase)}
+            </label>;
         });
 
         const rows = [];
@@ -133,7 +140,8 @@ class AppSettings extends DashboardComponent {
                         </div>
                         :
                         <div className="col-sm-3">
-                            <button type="button" className='btn btn-sm btn-primary' onClick={this.saveSettings}>
+                            <button type="button" className='btn btn-sm btn-primary'
+                                onClick={this.saveSettings}>
                                 {t("messages.save-settings")}
                             </button>
                         </div>
@@ -144,7 +152,7 @@ class AppSettings extends DashboardComponent {
                     <div className=" col-sm-5">
                         {secondButton}
                     </div>
-                </div>
+                </div>,
             );
         }
 
@@ -163,9 +171,14 @@ class AppSettings extends DashboardComponent {
                             </div>
                             <div className="col-sm-4">
                                 <div className="input-group input-group-sm">
-                                    <input className="form-control form-control-sm" value={xDebugSession || ''} onChange={this.xDebugSessionChanged} type="text" placeholder={t('messages.xdebug-session')}/>
+                                    <input className="form-control form-control-sm"
+                                        value={xDebugSession || ''}
+                                        onChange={this.xDebugSessionChanged} type="text"
+                                        placeholder={t('messages.xdebug-session')}/>
                                     <div className="input-group-append">
-                                        <button type="button" className="btn btn-outline-secondary" onClick={this.xDebugSessionClear}>&times;</button>
+                                        <button type="button"
+                                            className="btn btn-outline-secondary"
+                                            onClick={this.xDebugSessionClear}>&times;</button>
                                     </div>
                                 </div>
                             </div>
@@ -179,11 +192,12 @@ class AppSettings extends DashboardComponent {
                             </div>
                             <div className="col-sm-10">
                                 <div className="input-group-sm">
-                                    {boxedImmutable.util.map.call(GLOBAL_SETTINGS_TRACE, (value, globalKey) => (
+                                    {$_(GLOBAL_SETTINGS_TRACE).mapProps((value, globalKey) => (
                                         <label key={globalKey}>
                                             <input
                                                 className='display-locale'
-                                                name={globalKey} type="checkbox" value={globalKey}
+                                                name={globalKey} type="checkbox"
+                                                value={globalKey}
                                                 checked={!!this.state["trace-" + globalKey]}
                                                 disabled={false}
                                                 onChange={this.handleTraceChange}
@@ -213,7 +227,10 @@ class AppSettings extends DashboardComponent {
                         </div>
                     </div>
                     <div className='col col-sm-9'>
-                        <textarea value={this.state.defaultSuffixes} className="form-control" rows="6" style={{ resize: "vertical" }} placeholder={t('messages.default-suffixes-placeholder')} onChange={this.handleSuffixesChange}/>
+                        <textarea value={this.state.defaultSuffixes} className="form-control"
+                            rows="6" style={{ resize: "vertical" }}
+                            placeholder={t('messages.default-suffixes-placeholder')}
+                            onChange={this.handleSuffixesChange}/>
                     </div>
                 </div>
                 <hr/>
@@ -226,10 +243,10 @@ class AppSettings extends DashboardComponent {
 // AppSettings.propTypes = {
 //     routeSettings: PropTypes.string, // settings prefix for show/collapse
 //     showDashboard: PropTypes.bool,   // passed to dashboard, ignored cause of auto config
-//     noHide: PropTypes.bool,         // passed to dashboard, disabled close button on dashboard when set
-// };
+//     noHide: PropTypes.bool,         // passed to dashboard, disabled close button on
+// dashboard when set };
 
 export default compose(
     translate(),
-    connect()
+    connect(),
 )(AppSettings);

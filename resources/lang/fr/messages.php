@@ -34,6 +34,7 @@ return [
     'confirm-add-suffixed-keys'                 => 'Confirmation d\'ajout de suffixe clés',
     'confirm-add-suffixed-keys-message'         => 'Les touches et le suffixe de combinaisons seront ajoutés à ce groupe:',
     'confirm-add-suffixed-keys-title'           => 'Confirmer l\'ajout des clés',
+    'confirm-clear-user-ui-settings'            => 'Confirmer clair de l\'utilisateur paramètres de l\'interface utilisateur',
     'confirm-clear-user-ui-settings-message'    => 'La réinitialisation des paramètres de l\'interface utilisateur a pour effet de rétablir les options par défaut.',
     'confirm-clear-user-ui-settings-title'      => 'Confirmer la Réinitialisation de l\'Utilisateur Paramètres de l\'INTERFACE utilisateur',
     'confirm-delete'                            => <<<'TEXT'
@@ -53,6 +54,7 @@ TEXT
     'confirm-delete-group'                      => 'Confirmer La Suppression Du Groupe',
     'confirm-delete-group-message'              => 'Suppression d\'un groupe va supprimer toutes les clés de traduction pour tous les paramètres régionaux du groupe à partir de la base de données. Si vous avez des traductions inédites ils seront perdus. Si vous publiez le groupe après la suppression, puis la langue de fichier seront également supprimés.',
     'confirm-delete-group-title'                => 'Confirmer la suppression du groupe de',
+    'confirm-delete-suffixed-keys'              => 'Confirmer la suppression suffixé clés',
     'confirm-delete-suffixed-keys-message'      => 'La suppression des clés de la base de données permettra également de supprimer tous les fichiers de traduction pour le groupe lorsque le groupe est publié.',
     'confirm-delete-suffixed-keys-title'        => 'Confirmer la suppression des clés',
     'confirm-find'                              => 'Êtes-vous sûr que vous voulez analyser votre dossier app? Tous trouvé les clés de traduction seront ajoutés à la base de données.',

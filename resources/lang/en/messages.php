@@ -34,6 +34,7 @@ return [
     'confirm-add-suffixed-keys'                 => 'Confirm Add Suffixed Keys',
     'confirm-add-suffixed-keys-message'         => 'The key and suffix combinations will be added to this group:',
     'confirm-add-suffixed-keys-title'           => 'Confirm Adding Keys',
+    'confirm-clear-user-ui-settings'            => 'Confirm Clear User UI Settings',
     'confirm-clear-user-ui-settings-message'    => 'Resetting UI settings has the effect of reverting user\'s persisted LTM UI options to defaults.',
     'confirm-clear-user-ui-settings-title'      => 'Confirm Resetting User UI Settings',
     'confirm-delete'                            => <<<'TEXT'
@@ -53,6 +54,7 @@ TEXT
     'confirm-delete-group'                      => 'Confirm Delete Group',
     'confirm-delete-group-message'              => 'Deleting a group will delete all translation keys for all locales of the group from the database. If you have any unpublished translations they will be lost. When you later publish all groups, then the language files for all deleted groups will also be deleted.',
     'confirm-delete-group-title'                => 'Confirm Delete Group Operation',
+    'confirm-delete-suffixed-keys'              => 'Confirm Delete Suffixed Keys',
     'confirm-delete-suffixed-keys-message'      => 'Deleting keys from the database will also delete them from all translation files for the group when the group is published.',
     'confirm-delete-suffixed-keys-title'        => 'Confirm Deleting Keys',
     'confirm-find'                              => 'Are you sure you want to scan your app and views folders? All found translation keys will be added to the database and source references will be updated.',
