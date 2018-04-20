@@ -7,9 +7,9 @@ import appEvents from './AppEvents';
 const util = boxedImmutable.util;
 const _$ = boxedImmutable.box;
 const isArray = util.isArray;
-const eachKey = util.eachKey;
+const eachProp = util.eachProp;
 const isFunction = util.isFunction;
-const isObject = util.isObject;
+const isObject = util.isObjectLike;
 const UNDEFINED = util.UNDEFINED;
 
 export const appSettingChecks = {
@@ -240,7 +240,7 @@ export class AppSettings extends GlobalSetting {
         });
 
         // include default settings for dashboardShow, collapse
-        eachKey.call(dashboardConfig.dashboards, (dashboard, dashboardName) => {
+        eachProp.call(dashboardConfig.dashboards, (dashboard, dashboardName) => {
             dashboard.dashboardName = dashboardName;
 
             const showState = util.firstDefined(dashboard.defaultShow, false);
@@ -254,7 +254,7 @@ export class AppSettings extends GlobalSetting {
             defaults_$.uiSettings[dashboard.collapseState] = collapseState;
 
             // include default settings for dashboardShow, collapse route specific
-            eachKey.call(dashboardConfig.routeDashboards, (routeConfig, route) => {
+            eachProp.call(dashboardConfig.routeDashboards, (routeConfig, route) => {
                 const explicitlyIncluded = routeConfig.includeDashboards && routeConfig.includeDashboards.indexOf(dashboardName) !== -1;
                 const implicitlyIncluded = !routeConfig.includeDashboards || explicitlyIncluded;
                 const explicitlyExcluded = routeConfig.excludeDashboards && routeConfig.excludeDashboards.indexOf(dashboardName) !== -1;
@@ -281,13 +281,13 @@ export class AppSettings extends GlobalSetting {
         });
 
         // need to sort the dashboards in the arrays in order of their index
-        eachKey.call(dashboardConfig.routeDashboards, (routeConfig, route) => {
+        eachProp.call(dashboardConfig.routeDashboards, (routeConfig, route) => {
             if (routeConfig.dashboards) {
                 routeConfig.dashboards.sort((a, b) => a.index - b.index);
             }
         });
 
-        eachKey.call(appSettingChecks, (value,key) => {
+        eachProp.call(appSettingChecks, (value,key) => {
             if (appSettingForcedChecks.hasOwnProperty(key)) {
                 const setTo = appSettingForcedChecks[key];
                 transforms_$.uiSettings[key] = setTo ? _$.transform.toAlwaysTrue : _$.transform.toAlwaysFalse;

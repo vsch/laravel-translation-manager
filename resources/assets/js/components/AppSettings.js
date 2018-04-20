@@ -5,7 +5,7 @@ import { compose } from "redux";
 import Dashboard from "./Dashboard";
 import appSettings, { appSettingChecks, appSettingForcedChecks, appSettings_$ } from "../helpers/AppSettings";
 import $ from "jquery";
-import { boxedImmutable, eachKey } from "../helpers/helpers";
+import { boxedImmutable, eachProp } from "../helpers/helpers";
 import DashboardComponent from "./DashboardComponent";
 import { GLOBAL_SETTINGS_TRACE } from "../helpers/GlobalSetting";
 
@@ -15,7 +15,7 @@ class AppSettings extends DashboardComponent {
 
         this.state = this.getState();
 
-        eachKey.call(GLOBAL_SETTINGS_TRACE, (value, key) => {
+        eachProp.call(GLOBAL_SETTINGS_TRACE, (value, key) => {
             this.state["trace-" + key] = GLOBAL_SETTINGS_TRACE[key];
         });
 
@@ -36,11 +36,11 @@ class AppSettings extends DashboardComponent {
             defaultSuffixes: appSettings_$.uiSettings.defaultSuffixes() || '',
         });
 
-        eachKey.call(GLOBAL_SETTINGS_TRACE, (value, key) => {
+        eachProp.call(GLOBAL_SETTINGS_TRACE, (value, key) => {
             state["trace-" + key] = !!this.state["trace-" + key];
         });
 
-        eachKey.call(appSettingChecks, (value, key) => {
+        eachProp.call(appSettingChecks, (value, key) => {
             if (appSettingForcedChecks.hasOwnProperty(key)) {
                 state[key] = appSettingForcedChecks[key];
             } else {
@@ -62,7 +62,7 @@ class AppSettings extends DashboardComponent {
     saveSettings() {
         appSettings_$.uiSettings._$(_$ => {
             _$.xDebugSession = this.state.xDebugSession;
-            eachKey.call(appSettingChecks, (value, key) => {
+            eachProp.call(appSettingChecks, (value, key) => {
                 if (appSettingForcedChecks.hasOwnProperty(key)) {
                     _$[key] = appSettingForcedChecks[key];
                 } else {
@@ -74,7 +74,7 @@ class AppSettings extends DashboardComponent {
         appSettings_$.save();
 
         // save trace values, they are not persisted
-        eachKey.call(GLOBAL_SETTINGS_TRACE, (value, key) => {
+        eachProp.call(GLOBAL_SETTINGS_TRACE, (value, key) => {
             GLOBAL_SETTINGS_TRACE[key] = !!this.state["trace-" + key];
         });
     }

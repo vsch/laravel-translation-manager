@@ -5,9 +5,9 @@ import { isUndefined } from './helpers';
 const util = boxedImmutable.util;
 const _$ = boxedImmutable.box;
 const isArray = util.isArray;
-const eachKey = util.eachKey;
+const eachProp = util.eachProp;
 const isFunction = util.isFunction;
-const isObject = util.isObject;
+const isObject = util.isObjectLike;
 const UNDEFINED = util.UNDEFINED;
 
 const MODAL_HIDDEN = 0;

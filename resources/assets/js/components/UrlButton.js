@@ -41,7 +41,7 @@ class UrlButton extends React.Component {
         const $el = $(e.target);
 
         const normalizedUrlData = normalizeProp(this.props.dataUrl);
-        const dataUrl = util.isObject(normalizedUrlData) ? normalizedUrlData : { url: normalizedUrlData };
+        const dataUrl = util.isObjectLike(normalizedUrlData) ? normalizedUrlData : { url: normalizedUrlData };
         const reloadGroups = this.props.reloadGroups;
         const disableWith = this.props.disableWith;
         const confirmationKey = this.props.confirmationKey;

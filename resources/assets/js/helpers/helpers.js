@@ -167,12 +167,12 @@ const box = boxedImmutableImp.box;
 const util = boxedImmutableImp.util;
 
 export const extend = util.extend;
-export const eachKey = util.eachKey;
+export const eachProp = util.eachProp;
 export const hasOwnProperty = util.hasOwnProperty;
 export const hasOwnProperties = util.hasOwnProperties;
 export const isString = util.isString;
 export const isArray = util.isArray;
-export const isObject = util.isObject;
+export const isObject = util.isObjectLike;
 export const isFunction = util.isFunction;
 export const isNumeric = util.isNumeric;
 export const isNumericInteger = util.isNumericInteger;

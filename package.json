@@ -16,7 +16,7 @@
         "babel-polyfill": "^6.26.0",
         "babel-preset-react": "^6.24.1",
         "bootstrap": "^4.1.0",
-        "boxed-immutable": "^0.4",
+        "boxed-immutable": "^0.5",
         "cross-env": "^5.1",
         "exports-loader": "^0.6.4",
         "history": "^4.7.2",

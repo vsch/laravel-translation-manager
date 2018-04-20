@@ -8,11 +8,11 @@ const _$ = boxedImmutable.box;
 const boxState = boxedImmutable.boxState;
 const util = boxedImmutable.util;
 const isArray = util.isArray;
-const eachKey = util.eachKey;
+const eachProp = util.eachProp;
 const copyFiltered = util.copyFiltered;
 const copyFilteredNot = util.copyFilteredNot;
 const isFunction = util.isFunction;
-const isObject = util.isObject;
+const isObject = util.isObjectLike;
 const UNDEFINED = util.UNDEFINED;
 
 const NON_UPDATE_FIELDS = [
@@ -116,7 +116,7 @@ export class GlobalSetting {
         this.updateSettingsType = {};
         copyFilteredNot.call(this.updateSettingsType, updateSettingsType, NON_UPDATE_FIELDS);
 
-        eachKey.call(this.updateSettingsType, (keyValue, key) => {
+        eachProp.call(this.updateSettingsType, (keyValue, key) => {
             switch (keyValue) {
                 case true:
                 case UPDATE_IMMEDIATE:
@@ -331,7 +331,7 @@ export class GlobalSetting {
         if (!this.sentUpdateFrameIds) this.sentUpdateFrameIds = {};
         const sentUpdateFrameId = ++this.serverUpdateFrameId;
 
-        eachKey.call(settingsUpdate, (value, key) => {
+        eachProp.call(settingsUpdate, (value, key) => {
             if (this.sentUpdates.hasOwnProperty(key)) {
                 this.sentUpdateFrameIds[key] = sentUpdateFrameId;
             }
@@ -365,7 +365,7 @@ export class GlobalSetting {
             let isUpdating = false;
 
             if (sentUpdates) {
-                eachKey.call(sentUpdates, (value, key) => {
+                eachProp.call(sentUpdates, (value, key) => {
                     if (value !== UNDEFINED) {
                         if (sentUpdateFrameIds.hasOwnProperty(key)) {
                             const sentUpdateFrameId = sentUpdateFrameIds[key];
