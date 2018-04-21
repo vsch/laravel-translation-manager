@@ -7,6 +7,8 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
 
 * Fix: unpublished mode shows groups not in LTM database as undefined. 
 * Fix: unpublished mode showing translations marked deleted instead of as undefined
+* Fix: add missing keys to the cache to not thrash the database on every access to their
+  translations
 
 #### 2.6.28
 

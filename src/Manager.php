@@ -276,10 +276,11 @@ class Manager
             && array_key_exists('locale', $attributes) && array_key_exists('key', $attributes)
             && array_key_exists($attributes['locale'], $this->preloadedGroupLocales)
         ) {
+            $checkDB = false;
+            
             if (array_key_exists($attributes['key'], $this->preloadedGroupKeys)
                 && array_key_exists($attributes['locale'], $this->preloadedGroupKeys[$attributes['key']])
             ) {
-                $checkDB = false;
                 $translation = $this->preloadedGroupKeys[$attributes['key']][$attributes['locale']];
             }
         }
@@ -298,6 +299,9 @@ class Manager
             $translation = new Translation();
             $translation->fill($attributes);
             $translation->setConnection($this->getConnectionName());
+
+            // put it in the cache as empty so we don't hit the database every time
+            $this->cacheTranslation('', $translation->group, $translation->key, null, $translation->locale);
         }
 
         return $translation;
@@ -308,6 +312,9 @@ class Manager
         $translation = $this->firstOrNewTranslation($attributes);
         if (!$translation->exists) {
             $translation->save();
+
+            // put it in the cache as empty so we don't hit the database every time
+            $this->cacheTranslation('', $translation->group, $translation->key, null, $translation->locale);
         }
 
         return $translation;
