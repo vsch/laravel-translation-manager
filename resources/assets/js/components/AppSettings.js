@@ -3,11 +3,7 @@ import { connect } from "react-redux";
 import { translate } from 'react-i18next';
 import { compose } from "redux";
 import Dashboard from "./Dashboard";
-import appSettings, {
-    appSettingChecks,
-    appSettingForcedChecks,
-    appSettings_$,
-} from "../helpers/AppSettings";
+import appSettings, { appSettingChecks, appSettingForcedChecks, appSettings_$ } from "../helpers/AppSettings";
 import $ from "jquery";
 import boxedImmutable from "boxed-immutable";
 import DashboardComponent from "./DashboardComponent";
@@ -40,6 +36,7 @@ class AppSettings extends DashboardComponent {
             isAdminEnabled: appSettings_$.isAdminEnabled(),
             xDebugSession: appSettings_$.uiSettings.xDebugSession(),
             defaultSuffixes: appSettings_$.uiSettings.defaultSuffixes() || '',
+            showUnpublishedSite: appSettings_$.showUnpublishedSite() || false,
         });
 
         $_(GLOBAL_SETTINGS_TRACE).eachProp((value, key) => {
@@ -77,6 +74,8 @@ class AppSettings extends DashboardComponent {
             });
             _$.defaultSuffixes = this.state.defaultSuffixes;
         });
+
+        appSettings_$.showUnpublishedSite = this.state.showUnpublishedSite;
         appSettings_$.save();
 
         // save trace values, they are not persisted
@@ -111,7 +110,7 @@ class AppSettings extends DashboardComponent {
 
     render() {
         const { t } = this.props;
-        const { isAdminEnabled, xDebugSession } = this.state;
+        const { isAdminEnabled, xDebugSession, showUnpublishedSite } = this.state;
 
         if (this.noShow()) return null;
 
@@ -133,26 +132,42 @@ class AppSettings extends DashboardComponent {
         for (let i = 0; i < iMax; i += 2) {
             const firstButton = buttons[i];
             const secondButton = buttons[i + 1];
-            rows.push(
-                <div key={i + 'row'} className="row">
-                    {i ?
+            rows.push(i ?
+                (
+                    <div key={i + 'row'} className="row">
                         <div className=" col-sm-3">
                         </div>
-                        :
+                        <div className=" col-sm-4">
+                            {firstButton}
+                        </div>
+                        <div className=" col-sm-5">
+                            {secondButton}
+                        </div>
+                    </div>
+                ) : (
+                    <div key={i + 'row'} className="row">
                         <div className="col-sm-3">
                             <button type="button" className='btn btn-sm btn-primary'
                                 onClick={this.saveSettings}>
                                 {t("messages.save-settings")}
                             </button>
                         </div>
-                    }
-                    <div className=" col-sm-4">
-                        {firstButton}
+                        <div className=" col-sm-3">
+                            <label>
+                                <input type="checkbox"
+                                    data-state-key='showUnpublishedSite'
+                                    checked={showUnpublishedSite} onChange={this.handleStateChange}/>
+                                {t('messages.show-unpublished-site')}
+                            </label>
+                        </div>
+                        <div className=" col-sm-3">
+                            {firstButton}
+                        </div>
+                        <div className=" col-sm-3">
+                            {secondButton}
+                        </div>
                     </div>
-                    <div className=" col-sm-5">
-                        {secondButton}
-                    </div>
-                </div>,
+                ),
             );
         }
 

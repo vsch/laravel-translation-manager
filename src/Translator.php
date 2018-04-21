@@ -30,6 +30,7 @@ class Translator extends LaravelTranslator
     protected $packagePrefix;
     protected $cookiePrefix;
     protected $useCookies;
+    protected $cookiesLoaded;
 
     // Storage used for used translation keys
     protected $usedKeys = array();
@@ -113,11 +114,15 @@ class Translator extends LaravelTranslator
      */
     public function getLocale()
     {
-        if ($this->useCookies) {
-            $locale = Cookie::get($this->cookiePrefix . 'lang_locale', parent::getLocale());
-            if ($locale != parent::getLocale()) {
-                parent::setLocale($locale);
-            }
+        if (!$this->cookiesLoaded) {
+            $key = $this->cookiePrefix . 'lang_locale';
+            $queuedCookieLocale = \Cookie::queued($key, null);
+            $locale = getSupportedLocale($queuedCookieLocale != null ? $queuedCookieLocale->getValue() : \Cookie::get($key, ''));
+            parent::setLocale($locale);
+            
+            // load unpublished translation flag at the same time
+            $this->getShowUnpublished();
+            $this->cookiesLoaded = true;
         }
         return parent::getLocale();
     }
@@ -134,7 +139,39 @@ class Translator extends LaravelTranslator
         if ($this->useCookies) {
             Cookie::queue($this->cookiePrefix . 'lang_locale', $locale);
         }
-        $this->locale = $locale;
+        parent::setLocale($locale);
+    }
+
+    /**
+     * Get the default showUnpublished being used.
+     *
+     * @return string
+     */
+    public function getShowUnpublished()
+    {
+        if (!$this->cookiesLoaded) {
+            $key = $this->cookiePrefix . 'show_unpublished';
+            $queuedCookie = \Cookie::queued($key, null);
+            $showUnpublished = $queuedCookie != null ? $queuedCookie->getValue() : \Cookie::get($key, false);
+            $this->useDB = $showUnpublished ? 2 : 1;
+            $this->cookiesLoaded = true;
+        }
+        return $this->useDB === 2;
+    }
+
+    /**
+     * Set the default showUnpublished.
+     *
+     * @param  string $showUnpublished
+     *
+     * @return void
+     */
+    public function setShowUnpublished($showUnpublished)
+    {
+        if ($this->useCookies) {
+            Cookie::queue($this->cookiePrefix . 'show_unpublished', $showUnpublished);
+        }
+        $this->useDB = $showUnpublished ? 2 : 1;
     }
 
     public function getTranslations($namespace, $group, $locale)
@@ -417,7 +454,7 @@ class Translator extends LaravelTranslator
         if ($useDB === null) $useDB = $this->useDB;
 
         if ($useDB && $useDB !== 2) {
-            $augmentedGroup = $this->manager->getAugmentedGroup($namespace,$group);
+            $augmentedGroup = $this->manager->getAugmentedGroup($namespace, $group);
             $result = $this->manager->cachedTranslation('', $augmentedGroup, $item, $locale ?: $this->locale());
             if ($result) {
                 $this->notifyUsingGroupItem('', $augmentedGroup, $item, $locale);
@@ -657,6 +694,7 @@ HTML;
         $this->packagePrefix = $this->package . '::';
         $this->cookiePrefix = $this->manager->config('persistent_prefix', $this->packagePrefix);
         $this->useCookies = $this->manager->config('use_cookies', true);
+        $this->cookiesLoaded = !$this->useCookies;
     }
 
     protected function notifyMissingGroupItem($namespace, $group, $item, $locale = null)
@@ -670,7 +708,7 @@ HTML;
     {
         if (!$this->suspendUsageLogging) {
             if ($this->manager && $group && $item && !$this->manager->excludedPageEditGroup($group)) {
-                $augmentedGroup = $this->manager->getAugmentedGroup($namespace,$group);
+                $augmentedGroup = $this->manager->getAugmentedGroup($namespace, $group);
                 $this->manager->usingKey('', $augmentedGroup, $item, $locale, $this->isUseLottery());
             }
         }

@@ -5,6 +5,10 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
 
 #### 2.6.28
 
+* Add: #101, is there a way to preview the changes before publishing, added button to WebUI to
+  toggle and cookie setting to show site with unpublished translations. Also added
+  `Translator::getShowUnpublished()` and `Translator::setShowUnpublished($showUnpublished)` to
+  get/set mode and cookie if `useCookies` is enabled.
 * Fix: view route missing optional group param, caused incorrect URL for group links in search,
   overview and mismatched translations
 * Fix: editing translation in mismatches or search would update the current translations

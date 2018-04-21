@@ -343,6 +343,16 @@
                                                     class="btn btn-sm btn-default"><?= noEditTrans($package . '::messages.check-none')?></button>
                                         </div>
                                     </div>
+                                    <div class="row">
+                                        <div class=" col-sm-12">
+                                            <div style="min-height: 10px"></div>
+                                            <?= ifEditTrans($package . '::messages.show-published-site') ?>
+                                            <?= ifEditTrans($package . '::messages.show-unpublished-site') ?>
+                                            <a class="btn btn-xs btn-default" role="button" id="show-unpublished-site" href="<?= action($controller . '@getToggleShowUnpublished') ?>">
+                                                <?= noEditTrans($package . ($show_unpublished ? '::messages.show-published-site' : '::messages.show-unpublished-site')) ?>
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class=" col-sm-8">
                                     <div class="input-group-sm">

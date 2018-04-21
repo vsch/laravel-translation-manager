@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Response;
@@ -28,6 +29,7 @@ class Controller extends BaseController
     const COOKIE_SHOW_USAGE = 'show-usage';
     const COOKIE_CONNECTION_NAME = 'connection-name';
     const COOKIE_TRANS_FILTERS = 'trans-filters';
+    const COOKIE_SHOW_UNPUBLISHED = 'show-unpublished';
 
     /** @var \Vsch\TranslationManager\Manager */
     protected $manager;
@@ -152,6 +154,7 @@ class Controller extends BaseController
     {
         $this->initTranslationLocales();
         $this->normalizeTranslationLocales();
+        App::setLocale($this->transLocales->currentLocale);
 
         // save them in case they changed
         $transLocales = $this->transLocales;
@@ -177,7 +180,6 @@ class Controller extends BaseController
         $displayLocales = Cookie::get($this->cookieName(self::COOKIE_DISP_LOCALES));
         $displayLocales = $displayLocales ? array_unique(explode(',', $displayLocales)) : [];
 
-        $appLocale = App::getLocale();
         $transLocales = new TranslationLocales($this->manager);
         $transLocales->appLocale = $appLocale;
         $transLocales->currentLocale = $currentLocale;
@@ -350,11 +352,14 @@ class Controller extends BaseController
         $disableReactUI = $this->manager->config(Manager::DISABLE_REACT_UI, false);
         $disableReactUILink = $this->manager->config(Manager::DISABLE_REACT_UI_LINK, false);
 
+        $translator = App::make('translator');
+
         $view = View::make($this->packagePrefix . 'index')
             ->with('disableUiLink', $disableReactUI || $disableReactUILink)
             ->with('controller', ManagerServiceProvider::CONTROLLER_PREFIX . get_class($this))
             ->with('package', $this->package)
             ->with('public_prefix', ManagerServiceProvider::PUBLIC_PREFIX)
+            ->with('show_unpublished', $translator->getShowUnpublished())
             ->with('translations', $translations)
             ->with('yandex_key', !!$this->manager->config('yandex_translator_key'))
             ->with('locales', $locales)
@@ -390,6 +395,15 @@ class Controller extends BaseController
         return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
     }
 
+    public function getToggleShowUnpublished()
+    {
+        /* @var $translator Translator */
+        $translator = App::make('translator');
+        $translator->setShowUnpublished(!$translator->getShowUnpublished());
+        if (App::runningUnitTests()) return Redirect::to('/');
+        return !is_null(Request::header('referer')) ? Redirect::back() : Redirect::to('/');
+    }
+
     public function getTranslationLocales()
     {
         $connection = Request::get("c");
@@ -402,7 +416,7 @@ class Controller extends BaseController
 
         $displayLocales = implode(',', $this->transLocales->displayLocales ?: []);
 
-        App::setLocale($this->transLocales->currentLocale);
+        Lang::setLocale($this->transLocales->currentLocale);
         Cookie::queue($this->cookieName(self::COOKIE_LANG_LOCALE), $this->transLocales->currentLocale, 60 * 24 * 365 * 1);
         Cookie::queue($this->cookieName(self::COOKIE_PRIM_LOCALE), $this->transLocales->primaryLocale, 60 * 24 * 365 * 1);
         Cookie::queue($this->cookieName(self::COOKIE_TRANS_LOCALE), $this->transLocales->translatingLocale, 60 * 24 * 365 * 1);
@@ -859,6 +873,7 @@ class Controller extends BaseController
         Route::get('keyop/{group}/{op?}', '\\Vsch\\TranslationManager\\Controller@getKeyop');
         Route::get('search', '\\Vsch\\TranslationManager\\Controller@getSearch');
         Route::get('toggle_in_place_edit', '\\Vsch\\TranslationManager\\Controller@getToggleInPlaceEdit');
+        Route::get('toggle_show_unpublished', '\\Vsch\\TranslationManager\\Controller@getToggleShowUnpublished');
         Route::get('translation', '\\Vsch\\TranslationManager\\Controller@getTranslation');
         Route::get('usage_info', '\\Vsch\\TranslationManager\\Controller@getUsageInfo');
         Route::get('view/{group?}', '\\Vsch\\TranslationManager\\Controller@getView');
@@ -1069,18 +1084,17 @@ class Controller extends BaseController
         $translator = App::make('translator');
         $namespaceGroup = ($namespace ? $namespace . '::' : '') . $group;
 
-        $fileTranslations = $translator->getTranslations($namespace, $group, $locale);
-
-        $translations = $fileTranslations;
-        // convert to possible augmented group name
         $augmentedGroup = $this->manager->getAugmentedGroup($namespace, $group);
-        $translations = $this->manager->cachedTranslations('', $augmentedGroup, $locale, $fileTranslations);
-
-        //        // this always comes from the default connection and does not affect the connection used by the UI
-        //        // we just set the connection on the manager, otherwise we will change the connection used by the UI
-        //        $this->manager->setConnectionName('');
-        //
-        //        $translations = $this->manager->getTranslations('', $group, $locale, false);
+        
+        if ($translator->getShowUnpublished()) {
+            // this always comes from the default connection and does not affect the connection used by the UI
+            // we just set the connection on the manager, otherwise we will change the connection used by the UI
+            $this->manager->setConnectionName('');
+            $translations = $this->manager->getTranslations('', $augmentedGroup, $locale, false, true);
+        } else {
+            $fileTranslations = $translator->getTranslations($namespace, $group, $locale);
+            $translations = $this->manager->cachedTranslations('', $augmentedGroup, $locale, $fileTranslations);
+        }
 
         $jsonResponse = Response::json(array(
             'connectionName' => '',
@@ -1232,6 +1246,7 @@ class Controller extends BaseController
             'locales' => $locales,
             'userLocales' => $userLocales,
             'userLocalesEnabled' => $userLocalesEnabled,
+            'showUnpublishedSite' => App::make('translator')->getShowUnpublished(),
             'displayLocales' => $displayLocales,
             'groups' => array_values($this->manager->getGroupList()),
         );
@@ -1274,6 +1289,12 @@ class Controller extends BaseController
             $handled[] = "translatingLocale";
             $translatingLocale = $json->get("translatingLocale");
             $this->transLocales->translatingLocale = $translatingLocale;
+        }
+
+        if ($json->has("showUnpublishedSite")) {
+            $handled[] = "showUnpublishedSite";
+            $showUnpublishedSite = $json->get("showUnpublishedSite");
+            App::make('translator')->setShowUnpublished($showUnpublishedSite);
         }
 
         if ($json->has("primaryLocale")) {

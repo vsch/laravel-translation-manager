@@ -96,6 +96,7 @@ class Manager
 
     private $package;
     private $translatorRepository;
+    private $translator;
 
     public const JSON_GROUP = 'JSON';
 
@@ -275,11 +276,11 @@ class Manager
             && array_key_exists('locale', $attributes) && array_key_exists('key', $attributes)
             && array_key_exists($attributes['locale'], $this->preloadedGroupLocales)
         ) {
-            $checkDB = false;
 
             if (array_key_exists($attributes['key'], $this->preloadedGroupKeys)
                 && array_key_exists($attributes['locale'], $this->preloadedGroupKeys[$attributes['key']])
             ) {
+                $checkDB = false;
                 $translation = $this->preloadedGroupKeys[$attributes['key']][$attributes['locale']];
             }
         }
@@ -738,7 +739,7 @@ class Manager
                         $augmentedGroup = $augmentedGroupList[$group];
                     }
 
-                    $locale = $locale ?: $this->app['config']['app.locale'];
+                    $locale = $locale ?: ($this->translator ?: ($this->translator = $this->app->make('translator')))->getLocale();
 
                     if ($findOrNew) {
                         $translation = $this->firstOrNewTranslation(array(
@@ -827,7 +828,7 @@ class Manager
                 }
 
                 if ($lottery == 1) {
-                    $locale = $locale ?: $this->app['config']['app.locale'];
+                    $locale = $locale ?: ($this->translator ?: ($this->translator = $this->app->make('translator')))->getLocale();
                     $this->cacheUsageInfo('', $group, $key, 1, $locale);
                 }
             }
@@ -1099,7 +1100,7 @@ class Manager
     }
 
     public
-    function getTranslations($namespace, $group, $locale, $includeMissing = true)
+    function getTranslations($namespace, $group, $locale, $includeMissing = true, $useUnpublished = false)
     {
         $group = self::fixGroup($group);
         $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
@@ -1113,20 +1114,27 @@ class Manager
             $query = $query->where('value', '<>', '');
         }
 
-        $jsonTranslations = $query->get([
-            'key',
-            'saved_value',
-        ]);
-
         $translations = [];
-        $jsonTranslations->each(function ($tr) use ($namespace, $group, $locale, &$translations) {
-            $translation = $this->cachedTranslation($namespace, $group, $tr->key, $locale);
-            if ($translation) {
-                $translations[$tr->key] = $translation;
-            } else {
+        
+        if ($useUnpublished) {
+            $jsonTranslations = $query->get([
+                'key',
+                'value',
+            ]);
+
+            $jsonTranslations->each(function ($tr) use ($namespace, $group, $locale, &$translations) {
+                $translations[$tr->key] = $tr->value;
+            });
+        } else {
+            $jsonTranslations = $query->get([
+                'key',
+                'saved_value',
+            ]);
+
+            $jsonTranslations->each(function ($tr) use ($namespace, $group, $locale, &$translations) {
                 $translations[$tr->key] = $tr->saved_value;
-            }
-        });
+            });
+        }
 
         return $translations;
     }

@@ -55,9 +55,9 @@ class ModalDialog extends React.Component {
 
         return (
             <div className="modal-footer">
-                {onNeverShow && <button type='button' className={this.props.neverShowButtonType || 'btn btn-warning'} onClick={this.handleNeverShow}>{neverShowText ? neverShowText : t('messages.modal-button-never-show')}</button>}
-                <button type="button" className={this.props.cancelButtonType || 'btn btn-secondary'} onClick={this.handleClose}>{cancelText ? cancelText : t('messages.modal-button-close')}</button>
-                <button type="button" className={this.props.okButtonType || 'btn btn-primary'} onClick={this.handleOk}>{okText ? okText : t('messages.modal-button-ok')}</button>
+                {onNeverShow && <button type='button' className={this.props.neverShowButtonType || 'btn btn-sm btn-warning'} onClick={this.handleNeverShow}>{neverShowText ? neverShowText : t('messages.modal-button-never-show')}</button>}
+                {!this.props.hideCancel && <button type="button" className={this.props.cancelButtonType || 'btn btn-sm btn-outline-secondary'} onClick={this.handleClose}>{cancelText ? cancelText : t('messages.modal-button-close')}</button>}
+                <button type="button" className={this.props.okButtonType || 'btn btn-sm btn-secondary'} onClick={this.handleOk}>{okText ? okText : t('messages.modal-button-ok')}</button>
             </div>
         );
     }
@@ -65,10 +65,10 @@ class ModalDialog extends React.Component {
 
 ModalDialog.propTypes = {
     onNeverShow: PropTypes.any,
+    hideCancel: PropTypes.bool,
     onClose: PropTypes.any,
     neverShowText: PropTypes.string,
     neverShowButtonType: PropTypes.string,
-    cancelButtonType: PropTypes.string,
     okText: PropTypes.string,
     okButtonType: PropTypes.string,
     cancelText: PropTypes.string,

@@ -195,6 +195,7 @@ export class AppSettings extends GlobalSetting {
             displayLocales: ['en'],
             groups: [],
             yandexKey: '',
+            showUnpublishedSite: false,
             uiSettings: {
                 yandexText: { "@@": '', }, // placeholder so Php does not convert empty object to empty array
                 group: null,
@@ -222,6 +223,7 @@ export class AppSettings extends GlobalSetting {
             primaryLocale: UPDATE_THROTTLED,
             translatingLocale: UPDATE_THROTTLED,
             displayLocales: UPDATE_THROTTLED,
+            showUnpublishedSite: UPDATE_THROTTLED,
             uiSettings: UPDATE_SERVER, // throttled but update server response ignored
         };
 
@@ -233,6 +235,7 @@ export class AppSettings extends GlobalSetting {
             usageInfoEnabled: _$.transform.toBoolean,
             mismatchEnabled: _$.transform.toBoolean,
             userLocalesEnabled: _$.transform.toBoolean,
+            showUnpublishedSite: _$.transform.toBoolean,
             uiSettings: {
                 showPublishButtons: _$.transform.toBoolean,
                 collapsePublishButtons: _$.transform.toBoolean,

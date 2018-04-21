@@ -449,7 +449,7 @@ class TranslationsTable extends DashboardComponent {
                                                     confirmationKey={importAllConfirm}
                                                     disableWith={t('messages.loading')}
                                                     onSuccess={(result)=>{
-                                                        UrlButton.messageModal(
+                                                        appModal.messageBox(
                                                             <div dangerouslySetInnerHTML={{__html: t('messages.api-import-groups-done-title'), }}/>,
                                                             <div dangerouslySetInnerHTML={{__html: t('messages.api-import-groups-done-message').replace(':count', result.data.counter)}}/>
                                                         );
@@ -466,7 +466,7 @@ class TranslationsTable extends DashboardComponent {
                                             confirmationKey={ADD_REFERENCES}
                                             disableWith={t('messages.searching')}
                                             onSuccess={(result)=>{
-                                                UrlButton.messageModal(
+                                                appModal.messageBox(
                                                     <div dangerouslySetInnerHTML={{__html: t('messages.api-add-references-done-title'), }}/>,
                                                     <div dangerouslySetInnerHTML={{__html: t('messages.api-add-references-done-message').replace(':count', result.data.counter)}}/>
                                                 );
@@ -521,7 +521,7 @@ class TranslationsTable extends DashboardComponent {
                                         confirmationKey={importGroupConfirm}
                                         disableWith={t('messages.loading')}
                                         onSuccess={(result)=>{
-                                            UrlButton.messageModal(
+                                            appModal.messageBox(
                                                 <div dangerouslySetInnerHTML={{__html: t('messages.api-import-group-done-title').replace(':group', group), }}/>,
                                                 <div dangerouslySetInnerHTML={{__html: t('messages.api-import-group-done-message').replace(':group', group).replace(':count', result.data.counter)}}/>
                                             );
