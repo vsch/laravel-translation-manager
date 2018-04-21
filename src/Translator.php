@@ -145,7 +145,7 @@ class Translator extends LaravelTranslator
     /**
      * Get the default showUnpublished being used.
      *
-     * @return string
+     * @return boolean
      */
     public function getShowUnpublished()
     {
@@ -157,6 +157,16 @@ class Translator extends LaravelTranslator
             $this->cookiesLoaded = true;
         }
         return $this->useDB === 2;
+    }
+
+    /**
+     * Get the default showUnpublished being used.
+     *
+     * @return boolean
+     */
+    public function getShowCached()
+    {
+        return $this->useDB === 1;
     }
 
     /**

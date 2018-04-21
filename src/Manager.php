@@ -276,7 +276,6 @@ class Manager
             && array_key_exists('locale', $attributes) && array_key_exists('key', $attributes)
             && array_key_exists($attributes['locale'], $this->preloadedGroupLocales)
         ) {
-
             if (array_key_exists($attributes['key'], $this->preloadedGroupKeys)
                 && array_key_exists($attributes['locale'], $this->preloadedGroupKeys[$attributes['key']])
             ) {
@@ -1100,7 +1099,7 @@ class Manager
     }
 
     public
-    function getTranslations($namespace, $group, $locale, $includeMissing = true, $useUnpublished = false)
+    function getTranslations($namespace, $group, $locale, $includeMissing = true, $useUnpublished = false, $mergeTranslations = null)
     {
         $group = self::fixGroup($group);
         $group = $namespace && $namespace !== '*' ? $namespace . '::' . $group : $group;
@@ -1111,19 +1110,34 @@ class Manager
             ->where('locale', '=', $locale);
 
         if (!$includeMissing) {
-            $query = $query->where('value', '<>', '');
+            if ($useUnpublished) {
+                $query = $query->whereNotNull('value');
+            } else {
+                $query = $query->whereNotNull('saved_value');
+            }
         }
 
-        $translations = [];
-        
+        $translations = $mergeTranslations ?: [];
+
         if ($useUnpublished) {
             $jsonTranslations = $query->get([
                 'key',
                 'value',
+                'is_deleted',
             ]);
 
-            $jsonTranslations->each(function ($tr) use ($namespace, $group, $locale, &$translations) {
-                $translations[$tr->key] = $tr->value;
+            $jsonTranslations->each(function ($tr) use ($namespace, $group, $locale, &$translations, $includeMissing) {
+                if ($tr->is_deleted) {
+                    if ($includeMissing) {
+                        $translations[$tr->key] = null;
+                    } else {
+                        if (array_key_exists($tr->key, $translations)) {
+                            unset($translations[$tr->key]);
+                        }
+                    }
+                } else {
+                    $translations[$tr->key] = $tr->value;
+                }
             });
         } else {
             $jsonTranslations = $query->get([

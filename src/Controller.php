@@ -1083,17 +1083,19 @@ class Controller extends BaseController
         /* @var $translator \Vsch\TranslationManager\Translator */
         $translator = App::make('translator');
         $namespaceGroup = ($namespace ? $namespace . '::' : '') . $group;
-
         $augmentedGroup = $this->manager->getAugmentedGroup($namespace, $group);
-        
+
+        $fileTranslations = $translator->getTranslations($namespace, $group, $locale);
+
         if ($translator->getShowUnpublished()) {
             // this always comes from the default connection and does not affect the connection used by the UI
             // we just set the connection on the manager, otherwise we will change the connection used by the UI
             $this->manager->setConnectionName('');
-            $translations = $this->manager->getTranslations('', $augmentedGroup, $locale, false, true);
-        } else {
-            $fileTranslations = $translator->getTranslations($namespace, $group, $locale);
+            $translations = $this->manager->getTranslations('', $augmentedGroup, $locale, false, true, $fileTranslations);
+        } else if ($translator->getShowCached()) {
             $translations = $this->manager->cachedTranslations('', $augmentedGroup, $locale, $fileTranslations);
+        } else {
+            $translations = $fileTranslations;
         }
 
         $jsonResponse = Response::json(array(
