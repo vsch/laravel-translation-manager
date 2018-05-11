@@ -7,6 +7,37 @@
  */
 use Vsch\TranslationManager\Translator;
 
+if (!function_exists('getSupportedLocale')) {
+    /**
+     * @param $lang
+     *
+     * @return mixed
+     *
+     */
+    function getSupportedLocale($lang)
+    {
+        $supported = false;
+        $firstLocale = null;
+
+        $supportedLocales = \Config::get('app.supported_locales', [\Config::get('app.locale', 'en')]);
+
+        foreach ($supportedLocales as $locale) {
+            if (!$firstLocale) $firstLocale = $locale;
+
+            if ($lang === $locale) {
+                $supported = true;
+                break;
+            }
+        }
+
+        if (!$supported) {
+            $lang = $firstLocale ?: 'en';
+        }
+
+        return $lang;
+    }
+}
+
 if (!function_exists('mapTrans')) {
     /**
      * @param       $string
