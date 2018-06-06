@@ -3,6 +3,10 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3.x for Laravel
 5.3, 2.4.x for Laravel 5.4, 2.5.x for Laravel 5.5 and 2.6.x for Laravel 5.6 compatibility.
 
+#### 2.6.34
+
+* Fix: #121, improve Dutch translation, thanks to [@sebsel](https://github.com/sebsel)
+
 #### 2.6.32
 
 * Fix: #119, Call to undefined function Vsch\TranslationManager\getSupportedLocale(). 
@@ -285,7 +289,7 @@ and
 
 * Fix: #72, $locales array elements need to be filtered before passing to view
 
-#### 2.4.4``
+#### 2.4.4
 
 * Change: merge RU and UK locale translations thanks to
   [Alex Mokrenko](https://github.com/al0mie)
