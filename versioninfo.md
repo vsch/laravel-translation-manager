@@ -160,6 +160,12 @@ and
 
 * Fix: update for Laravel 5.6, merged PR from **[aiankile](https://github.com/aiankile)**
 
+#### 2.5.8
+
+* Fix: #122, Fix Error with PHP 7.2, thanks to [@Octet83](https://github.com/Octet83)
+* Fix: #121, improve Dutch translation, thanks to [@sebsel](https://github.com/sebsel)
+* Fix: #120, count(): Parameter must be an array or an object that implements Countable
+
 #### 2.5.6
 
 * Add: JSON translation file handling
