@@ -4,6 +4,12 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
 Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility and 2.5.x for Laravel 5.5
 compatibility.
 
+#### 2.5.8
+
+* Fix: #122, Fix Error with PHP 7.2, thanks to [@Octet83](https://github.com/Octet83)
+* Fix: #121, improve Dutch translation, thanks to [@sebsel](https://github.com/sebsel)
+* Fix: #120, count(): Parameter must be an array or an object that implements Countable
+
 #### 2.5.6
 
 * Add: JSON translation file handling
