@@ -159,7 +159,7 @@ xtranslateText = function (translator, srcLoc, srcText, dstLoc, processText) {
         havePlural = true;
     }
 
-    // convert all occurences of :parameter to {{#}} where # is the parameter number and store the parameter at index #
+    // convert all occurrences of :parameter to {{#}} where # is the parameter number and store the parameter at index #
     // that way they won't be mangled by translation and we can restore them back on return.
     var lastPos = 0, params = [], haveParams, matches, regexParam = /\:([a-zA-Z0-9_-]*)(?=[^a-zA-Z0-9_-]|$)/g,
         result = '', paramIndex = 0;

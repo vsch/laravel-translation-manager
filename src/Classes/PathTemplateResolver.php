@@ -17,6 +17,7 @@ class PathTemplateResolver
 
     /** @var  string - base path for the project */
     protected $base_path;
+    protected $normalized_base_path;
 
     // used during loading of language file list
     protected $lang_files;
@@ -28,52 +29,52 @@ class PathTemplateResolver
     protected $group_sep;
 
     protected static $defaults = array(
-        'lang'      => [
+        'lang' => [
             'db_group' => '{group}',
-            'root'     => '',
-            'json'     => [
+            'root' => '',
+            'json' => [
                 '*' => '/resources/lang/{locale}.json',
             ],
-            'files'    => [
+            'files' => [
                 '4' => '/app/lang/{locale}/{group}',
                 '*' => '/resources/lang/{locale}/{group}',
             ],
-            'vars'     => [
-                '{vendor}'  => '',
+            'vars' => [
+                '{vendor}' => '',
                 '{package}' => '',
             ],
         ],
-        'packages'  => [
+        'packages' => [
             'db_group' => '{package}::{group}',
-            'include'  => '*',
-            'root'     => '',
-            'files'    => [
+            'include' => '*',
+            'root' => '',
+            'files' => [
                 '4' => '/app/lang/packages/{locale}/{package}/{group}',
                 '*' => '/resources/lang/vendor/{package}/{locale}/{group}',
             ],
-            'vars'     => [
+            'vars' => [
                 '{vendor}' => '',
             ],
         ],
         'workbench' => [
             'db_group' => 'wbn:{vendor}.{package}::{group}',
-            'include'  => '*/*',
-            'root'     => '/workbench/{vendor}/{package}',
-            'files'    => [
+            'include' => '*/*',
+            'root' => '/workbench/{vendor}/{package}',
+            'files' => [
                 '4' => 'src/lang/{locale}/{group}',
                 '*' => 'resources/lang/{locale}/{group}',
             ],
-            'vars'     => [],
+            'vars' => [],
         ],
-        'vendor'    => [
+        'vendor' => [
             'db_group' => 'vnd:{vendor}.{package}::{group}',
-            'include'  => [],
-            'root'     => '/vendor/{vendor}/{package}',
-            'files'    => [
+            'include' => [],
+            'root' => '/vendor/{vendor}/{package}',
+            'files' => [
                 '4' => 'src/lang/{locale}/{group}',
                 '*' => 'resources/lang/{locale}/{group}',
             ],
-            'vars'     => [],
+            'vars' => [],
         ],
         //// these will be merged with vendor or workbench type and create their own types named by the package
         //// the first section whose include is satisfied will be used, the other ignored. Since vendor section requires
@@ -108,6 +109,8 @@ class PathTemplateResolver
         $this->version = $version;
         $this->group_sep = ".";
 
+        $this->normalized_base_path = str_replace("\\", "/", $base_path);
+
         // provide default mappings if needed. and normalize the config
         static::normalizeConfig($config, $version);
 
@@ -137,9 +140,9 @@ class PathTemplateResolver
                         }
                     }
                 }
-            } elseif (array_key_exists('__merge', $value)) {
+            } else if (array_key_exists('__merge', $value)) {
                 $toMerge[] = $key;
-            } elseif ($key[0] === '_' && $key[1] === '_') {
+            } else if ($key[0] === '_' && $key[1] === '_') {
                 // just handle the includes sub-key
                 if (!array_key_exists('include', $value)) {
                     $value['include'] = [];
@@ -190,7 +193,6 @@ class PathTemplateResolver
     public static function normalizeInclude($value)
     {
         if (array_key_exists('include', $value)) {
-
             if (!is_array($value['include'])) $value['include'] = $value['include'] ? array($value['include']) : [];
 
             $includeNormalize = [];
@@ -198,7 +200,7 @@ class PathTemplateResolver
                 // this type has vendor
                 $includeNormalize['|^/|'] = '*/';
                 $includeNormalize['|/$|'] = '/*';
-            } elseif (!array_key_exists('{package}', $value['vars']) || $value['vars']['{package}'] !== null) {
+            } else if (!array_key_exists('{package}', $value['vars']) || $value['vars']['{package}'] !== null) {
                 // this type has package only
                 $includeNormalize['|^/$|'] = '*';
             }
@@ -223,7 +225,7 @@ class PathTemplateResolver
                 if (!is_array($value[$setting]) && !array_key_exists($value[$setting], $values)) {
                     $values[$value[$setting]] = $value + ['section' => $key];
                 }
-            } elseif ($setting === 'path' && !is_array($value)) {
+            } else if ($setting === 'path' && !is_array($value)) {
                 if (!array_key_exists($value, $values)) {
                     $values[$value] = ['section' => $key, 'path' => $value];
                 }
@@ -331,7 +333,7 @@ class PathTemplateResolver
             if (!$matchPackage) {
                 // vendor must be known at this point and partials allowed
                 if (($vendor === '*' || $vendor === $vars_vendor)) return true;
-            } elseif (!$matchVendor) {
+            } else if (!$matchVendor) {
                 // package must be known at this point and partials allowed
                 if ($package === '*' || $package === $vars_package) return true;
             } else {
@@ -348,8 +350,10 @@ class PathTemplateResolver
         $prefix = str_replace("\\", "/", $prefix);
 
         for (; ;) {
-            if (array_key_exists($prefix, $this->processed_dirs) || ($prefix != '/' && (!file_exists($prefix) || !is_dir($prefix)))) {
-                // already handled this one or it does not exist
+            if (array_key_exists($prefix, $this->processed_dirs)
+                || (($prefix != $this->normalized_base_path && !str_starts_with($this->normalized_base_path . '/', $prefix . '/'))
+                    && (!file_exists($prefix) || !is_dir($prefix)))) {
+                // already handled this one or it does not exist and not under base dir
                 return;
             }
 
@@ -472,7 +476,7 @@ class PathTemplateResolver
             // call groupFilePath, not this static method
             return null;
         }
-        
+
         $db_group = $config['db_group'];
         $path = $config['path'];
         if ($vars = static::extractTemplateVars($db_group, $group)) {
