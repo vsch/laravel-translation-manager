@@ -165,6 +165,10 @@ and
 
 * Fix: update for Laravel 5.6, merged PR from **[aiankile](https://github.com/aiankile)**
 
+#### 2.5.10
+
+* Fix: #129, open_basedir restriction in effect
+
 #### 2.5.8
 
 * Fix: #122, Fix Error with PHP 7.2, thanks to [@Octet83](https://github.com/Octet83)
@@ -193,13 +197,15 @@ and
 
 * Fix: #98, indatabase_publish not working as intended
 
+#### 2.4.38
+
+* Fix: #129, open_basedir restriction in effect
+
 #### 2.4.36
 
-* [ ] Fix: #106, Working with arrays
-
-* [ ] Fix: #91, Cookies generating wrong locales
-
-* [ ] Add: preview mode for editors/admins, fix for #101, Is there a way to preview the changes
+* Fix: #106, Working with arrays
+* Fix: #91, Cookies generating wrong locales
+* Add: preview mode for editors/admins, fix for #101, Is there a way to preview the changes
       before publishing
 
 #### 2.4.34
@@ -328,7 +334,11 @@ and
 
 * Fix: #60, 5.4 compatibility
 
-#### 2.3.7
+#### 2.3.10
+
+* Fix: #129, open_basedir restriction in effect
+
+#### 2.3.8
 
 * Fix: #63, Setting PDO Fetch mode to FETCH_CLASS, this now is supported if `setFetchMode`
   method is available on `connection` instance.
