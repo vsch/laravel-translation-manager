@@ -26,6 +26,7 @@ class PathTemplateResolver
     protected $config_path;
     protected $version;
     protected $group_sep;
+    protected $normalized_base_path;
 
     protected static $defaults = array(
         'lang'      => [
@@ -107,6 +108,8 @@ class PathTemplateResolver
         $this->base_path = $base_path;
         $this->version = $version;
         $this->group_sep = ".";
+
+        $this->normalized_base_path = str_replace("\\", "/", $base_path);
 
         // provide default mappings if needed. and normalize the config
         static::normalizeConfig($config, $version);
@@ -348,8 +351,10 @@ class PathTemplateResolver
         $prefix = str_replace("\\", "/", $prefix);
 
         for (; ;) {
-            if (array_key_exists($prefix, $this->processed_dirs) || ($prefix != '/' && (!file_exists($prefix) || !is_dir($prefix)))) {
-                // already handled this one or it does not exist
+            if (array_key_exists($prefix, $this->processed_dirs)
+                || (($prefix != $this->normalized_base_path && !str_starts_with($this->normalized_base_path . '/', $prefix . '/'))
+                    && (!file_exists($prefix) || !is_dir($prefix)))) {
+                // already handled this one or it does not exist and not under base dir
                 return;
             }
 
