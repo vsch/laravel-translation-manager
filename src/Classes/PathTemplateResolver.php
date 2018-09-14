@@ -353,7 +353,7 @@ class PathTemplateResolver
         for (; ;) {
             if (array_key_exists($prefix, $this->processed_dirs)
                 || (($prefix != $this->normalized_base_path && !str_starts_with($this->normalized_base_path . '/', $prefix . '/'))
-                    && (!file_exists($prefix) || !is_dir($prefix)))) {
+                    && (!file_exists($this->normalized_base_path) || !is_dir($this->normalized_base_path)))) {
                 // already handled this one or it does not exist and not under base dir
                 return;
             }
