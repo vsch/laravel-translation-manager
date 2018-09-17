@@ -3,6 +3,11 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3.x for Laravel
 5.3 compatibility.
 
+#### 2.3.12
+
+* Fix: logic error for previous fix, #129, open_basedir restriction in effect, now only scan
+  directories which are base_dir or under base_dir
+
 #### 2.3.10
 
 * Fix: #129, open_basedir restriction in effect
