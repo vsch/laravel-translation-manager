@@ -350,9 +350,9 @@ class PathTemplateResolver
         $prefix = str_replace("\\", "/", $prefix);
 
         for (; ;) {
-            if (array_key_exists($prefix, $this->processed_dirs)
-                || (($prefix != $this->normalized_base_path && !str_starts_with($this->normalized_base_path . '/', $prefix . '/'))
-                    && (!file_exists($prefix) || !is_dir($prefix)))) {
+            $isUnderBaseDir = $prefix == $this->normalized_base_path || starts_with($prefix . '/', $this->normalized_base_path . '/');
+            
+            if (array_key_exists($prefix, $this->processed_dirs) || ($isUnderBaseDir && (!file_exists($prefix) || !is_dir($prefix)))) {
                 // already handled this one or it does not exist and not under base dir
                 return;
             }
@@ -365,6 +365,8 @@ class PathTemplateResolver
             if (count($path_parts) > 1) {
                 $part = array_shift($path_parts);
                 if (mb_substr($part, 0, 1) === '{' && mb_substr($part, -1, 1) === '}') {
+                    if (!$isUnderBaseDir) break;
+                    
                     $this->processed_dirs[$prefix] = $path_parts;
 
                     $dirs = $this->files->directories($prefix);
@@ -387,8 +389,9 @@ class PathTemplateResolver
                     $prefix = appendPath($prefix, $part);
                 }
             } else {
-                // we can scan for language files here and in subdirectories, we have no more dirs parts to
-                // search
+                // we can scan for language files here and in subdirectories, we have no more dirs parts to search
+                if (!$isUnderBaseDir) break;
+                
                 if ($path_parts[0] === '{group}') {
                     $this->processed_dirs[$prefix] = $path_parts;
 
@@ -402,6 +405,7 @@ class PathTemplateResolver
                     }
                 }
 
+                
                 $files = $this->files->files($prefix);
                 $files = array_filter($files, function ($file) {
                     $ext = pathinfo($file, PATHINFO_EXTENSION);
@@ -409,12 +413,6 @@ class PathTemplateResolver
                 });
 
                 // now we add all these files to the list as keys with the resolved db_group as the value
-                //if (!array_key_exists('db_group', $this->config_paths[$this->config_path]))
-                //{
-                //    $tmp = 0;
-                //    break;
-                //}
-                //else
                 $db_group = static::expandVars($this->config_paths[$this->config_path]['db_group'], $this->path_vars);
 
                 foreach ($files as $file) {
