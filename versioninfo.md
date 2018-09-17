@@ -207,6 +207,11 @@ and
 
 * Fix: #98, indatabase_publish not working as intended
 
+#### 2.4.40
+
+* Fix: logic error for previous fix, #129, open_basedir restriction in effect, now only scan
+  directories which are base_dir or under base_dir
+
 #### 2.4.38
 
 * Fix: #129, open_basedir restriction in effect
@@ -223,10 +228,6 @@ and
 * Fix: LoaderInterface to FileLoader
 
 #### 2.4.32
-
-* Fix: #98, indatabase_publish not working as intended
-
-#### 2.3.8
 
 * Fix: #98, indatabase_publish not working as intended
 
@@ -343,6 +344,11 @@ and
 #### 2.4.0
 
 * Fix: #60, 5.4 compatibility
+
+#### 2.3.12
+
+* Fix: logic error for previous fix, #129, open_basedir restriction in effect, now only scan
+  directories which are base_dir or under base_dir
 
 #### 2.3.10
 
