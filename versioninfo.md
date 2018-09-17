@@ -170,6 +170,11 @@ and
 
 * Fix: update for Laravel 5.6, merged PR from **[aiankile](https://github.com/aiankile)**
 
+#### 2.5.12
+
+* Fix: logic error for previous fix, #129, open_basedir restriction in effect, now only scan
+  directories which are base_dir or under base_dir
+
 #### 2.5.10
 
 * Fix: #129, open_basedir restriction in effect
