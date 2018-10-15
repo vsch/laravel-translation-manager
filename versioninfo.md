@@ -3,6 +3,11 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3.x for Laravel
 5.3, 2.4.x for Laravel 5.4, 2.5.x for Laravel 5.5 and 2.6.x for Laravel 5.6 compatibility.
 
+#### 2.6.40
+
+* Fix: #133, 0 imported (something with paths), remove windows drive letter prefix
+* Fix: #131, Prefix db (table not found), wrong table names used in repository SQL.
+
 #### 2.6.38
 
 * Fix: logic error for previous fix, #129, open_basedir restriction in effect, now only scan
