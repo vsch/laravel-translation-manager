@@ -34,6 +34,8 @@ class Translator extends LaravelTranslator
 
     // Storage used for used translation keys
     protected $usedKeys = array();
+    
+    protected $customPostProcessor = null;
 
     /**
      * Translator constructor.
@@ -339,9 +341,30 @@ class Translator extends LaravelTranslator
     protected function processResult($line, $replace)
     {
         if (is_string($line)) {
-            return $this->makeReplacements($line, $replace);
+            if ($this->customPostProcessor) {
+                $replaced = $this->makeReplacements($line, $replace);
+                return call_user_func($this->customPostProcessor, $replaced);
+            } else {
+                return $this->makeReplacements($line, $replace);
+            } 
         }
         return $line;
+    }
+
+    /**
+     * @return null
+     */
+    public function getCustomPostProcessor()
+    {
+        return $this->customPostProcessor;
+    }
+
+    /**
+     * @param callable $customPostProcessor custom translation processor taking a string argument
+     */
+    public function setCustomPostProcessor($customPostProcessor): void
+    {
+        $this->customPostProcessor = $customPostProcessor;
     }
 
     /**
@@ -426,6 +449,7 @@ class Translator extends LaravelTranslator
             $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
         } else {
             $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
+            return $this->processResult($result, $replace);
         }
         return $result;
     }
@@ -515,6 +539,7 @@ class Translator extends LaravelTranslator
             $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
         } else {
             $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
+            return $this->processResult($result, $replace);
         }
         return $result;
     }

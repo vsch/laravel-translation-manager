@@ -3,6 +3,24 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3.x for Laravel
 5.3, 2.4.x for Laravel 5.4, 2.5.x for Laravel 5.5 and 2.6.x for Laravel 5.6 compatibility.
 
+#### 2.6.42
+
+* Fix: #128, How to work with URLS?, added `setCustomPostProcessor()` to translator taking a
+  callable with string argument and returning a string. Used to replace custom variables in all
+  translations. Must be set before translator is used for rendering, like in web.php when
+  setting up routes.
+
+  For example:
+  
+  ```php
+  Lang::setCustomPostProcessor(function ($translation) {
+      return str_replace(':app_name', config('app.name'), $translation);
+  });
+  ```
+  
+  Will change `:app_name` to the application name dynamically. Should be used to eliminate the
+  need to have function calls in translations by changing function calls to parameter arguments.
+
 #### 2.6.40
 
 * Fix: #133, 0 imported (something with paths), remove windows drive letter prefix
