@@ -1,6 +1,7 @@
 <?php namespace Vsch\TranslationManager;
 
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
@@ -423,7 +424,7 @@ class Controller extends BaseController
             if ($userListProvider !== null && is_a($userListProvider, "Closure")) {
                 $userList = null;
                 $haveUsers = $userListProvider(\Auth::user(), $this->manager->getUserListConnection($connection_name), $userList);
-                if ($haveUsers && is_array($userList)) {
+                if ($haveUsers && (is_array($userList) || $userList instanceof Collection)) {
                     /* @var $connection_name string */
                     /* @var $query  \Illuminate\Database\Eloquent\Builder */
                     $userLocalesModel = new UserLocales();
