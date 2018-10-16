@@ -193,6 +193,10 @@ and
 
 * Fix: update for Laravel 5.6, merged PR from **[aiankile](https://github.com/aiankile)**
 
+#### 2.5.14
+
+* Fix: merge PR #132 from **[mgralikowski](https://github.com/mgralikowski)**
+
 #### 2.5.12
 
 * Fix: logic error for previous fix, #129, open_basedir restriction in effect, now only scan
