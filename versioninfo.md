@@ -4,9 +4,14 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
 Laravel 5.3 compatibility, 2.4.x for Laravel 5.4 compatibility and 2.5.x for Laravel 5.5
 compatibility.
 
+#### 2.5.16
+
+* Fix: hard coded `ltm_translations` used in repository queries instead of table name (with
+  prefix). 
+
 #### 2.5.14
 
-* Fix: merged #132
+* Fix: merged PR #132 from **[mgralikowski](https://github.com/mgralikowski)**
 
 #### 2.5.12
 
