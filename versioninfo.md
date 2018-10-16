@@ -3,6 +3,10 @@
 The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3.x for Laravel
 5.3, 2.4.x for Laravel 5.4, 2.5.x for Laravel 5.5 and 2.6.x for Laravel 5.6 compatibility.
 
+#### 2.6.44
+
+* Fix: missed hard coded `ltm_translations` in `PostgresTranslatorRepository`
+
 #### 2.6.42
 
 * Fix: #128, How to work with URLS?, added `setCustomPostProcessor()` to translator taking a
@@ -192,6 +196,11 @@ and
 #### 2.6.0
 
 * Fix: update for Laravel 5.6, merged PR from **[aiankile](https://github.com/aiankile)**
+
+#### 2.5.16
+
+* Fix: hard coded `ltm_translations` used in repository queries instead of table name (with
+  prefix). 
 
 #### 2.5.14
 

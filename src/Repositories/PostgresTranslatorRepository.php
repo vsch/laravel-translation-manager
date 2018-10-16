@@ -215,7 +215,7 @@ FROM
                 FROM $ltm_translations lt WHERE 1=1 $displayWhere GROUP BY "group", locale
           UNION ALL
           SELECT DISTINCT 0, 0, 0, 0, "group", locale FROM (SELECT DISTINCT locale FROM $ltm_translations WHERE 1=1 $displayWhere) lc
-              CROSS JOIN (SELECT DISTINCT "group" FROM ltm_translations) lg) a
+              CROSS JOIN (SELECT DISTINCT "group" FROM $ltm_translations) lg) a
      GROUP BY "group", locale) lcs
     JOIN (SELECT count(DISTINCT "key") total_keys, "group" FROM $ltm_translations WHERE 1=1 $displayWhere GROUP BY "group") mx
         ON lcs."group" = mx."group"
