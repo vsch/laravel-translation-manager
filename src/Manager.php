@@ -289,7 +289,9 @@ class Manager
             $query = $this->translation->on($this->getConnectionName());
 
             foreach ($attributes as $attribute => $value) {
-                $query = $query->where($attribute, $value);
+                if ($attribute === 'locale' || $attribute === 'group' || $attribute === 'key') {
+                    $query = $query->where($attribute, $value);
+                }
             }
 
             $translation = $query->first();
