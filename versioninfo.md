@@ -201,6 +201,10 @@ and
 
 * Fix: update for Laravel 5.6, merged PR from **[aiankile](https://github.com/aiankile)**
 
+#### 2.5.18
+
+* Fix: #138, translations:find -> Integrity constraint violation: 1062 Duplicate entry
+
 #### 2.5.16
 
 * Fix: hard coded `ltm_translations` used in repository queries instead of table name (with
