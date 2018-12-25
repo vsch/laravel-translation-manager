@@ -251,6 +251,11 @@ and
 
 * Fix: #98, indatabase_publish not working as intended
 
+#### 2.4.42
+
+* Fix: merge PR #141, Update TranslationFileRewriter.php by
+  [@bsormagec](https://github.com/bsormagec)
+
 #### 2.4.40
 
 * Fix: logic error for previous fix, #129, open_basedir restriction in effect, now only scan
