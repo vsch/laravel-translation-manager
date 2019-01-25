@@ -398,6 +398,11 @@ and
 
 * Fix: #60, 5.4 compatibility
 
+#### 2.3.14
+
+* Fix: #144, PHP7 tempnam issue still releated in tag 2.3.12
+* Fix: #133, 0 imported (something with paths), remove windows drive letter prefix
+
 #### 2.3.12
 
 * Fix: logic error for previous fix, #129, open_basedir restriction in effect, now only scan
