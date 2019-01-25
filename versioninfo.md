@@ -171,7 +171,7 @@ and
 * Fix: creating new keys in the JSON group caused the `json` locale keys to stay empty instead
   of defaulting to key name.
 
-#### Next: 2.6.6
+#### 2.6.8
 
 * Fix: Pass x-edit popup title translations to JS
 
@@ -200,6 +200,11 @@ and
 #### 2.6.0
 
 * Fix: update for Laravel 5.6, merged PR from **[aiankile](https://github.com/aiankile)**
+
+#### 2.5.20
+
+* Fix: #133, 0 imported (something with paths), remove windows drive letter prefix
+* Fix: #131, Prefix db (table not found), wrong table names used in repository SQL.
 
 #### 2.5.18
 
