@@ -204,7 +204,6 @@ and
 #### 2.5.20
 
 * Fix: #133, 0 imported (something with paths), remove windows drive letter prefix
-* Fix: #131, Prefix db (table not found), wrong table names used in repository SQL.
 
 #### 2.5.18
 
