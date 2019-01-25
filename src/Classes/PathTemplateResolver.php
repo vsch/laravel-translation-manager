@@ -111,6 +111,11 @@ class PathTemplateResolver
 
         $this->normalized_base_path = str_replace("\\", "/", $base_path);
 
+        if (preg_match("/^[a-zA-Z]:/", $this->normalized_base_path)) {
+            // remove drive prefix
+            $this->normalized_base_path = substr($this->normalized_base_path, 2);
+        }
+
         // provide default mappings if needed. and normalize the config
         static::normalizeConfig($config, $version);
 
@@ -352,7 +357,7 @@ class PathTemplateResolver
 
         for (; ;) {
             $isUnderBaseDir = $prefix == $this->normalized_base_path || starts_with($prefix . '/', $this->normalized_base_path . '/');
-            
+
             if (array_key_exists($prefix, $this->processed_dirs) || ($isUnderBaseDir && (!file_exists($prefix) || !is_dir($prefix)))) {
                 // already handled this one or it does not exist and not under base dir
                 return;
@@ -367,7 +372,7 @@ class PathTemplateResolver
                 $part = array_shift($path_parts);
                 if (mb_substr($part, 0, 1) === '{' && mb_substr($part, -1, 1) === '}') {
                     if (!$isUnderBaseDir) break;
-                    
+
                     $this->processed_dirs[$prefix] = $path_parts;
 
                     $dirs = $this->files->directories($prefix);
@@ -392,7 +397,7 @@ class PathTemplateResolver
             } else {
                 // we can scan for language files here and in subdirectories, we have no more dirs parts to search
                 if (!$isUnderBaseDir) break;
-                
+
                 if ($path_parts[0] === '{group}') {
                     $this->processed_dirs[$prefix] = $path_parts;
 
