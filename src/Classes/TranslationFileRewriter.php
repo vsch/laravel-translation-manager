@@ -119,7 +119,7 @@ class TranslationFileRewriter
             }
         }
 
-        return count($chars) === 1 ? $counts[0] : $counts;
+        return !is_array($chars) || count($chars) === 1 ? $counts[0] : $counts;
     }
 
     public static
@@ -133,7 +133,7 @@ class TranslationFileRewriter
             $counts[$pos]++;
         }
 
-        return count($chars) === 1 ? $counts[0] : $counts;
+        return !is_array($chars) || count($chars) === 1 ? $counts[0] : $counts;
     }
 
     /**

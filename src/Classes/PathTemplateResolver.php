@@ -109,6 +109,11 @@ class PathTemplateResolver
 
         $this->normalized_base_path = str_replace("\\", "/", $base_path);
 
+        if (preg_match("/^[a-zA-Z]:/", $this->normalized_base_path)) {
+            // remove drive prefix
+            $this->normalized_base_path = substr($this->normalized_base_path, 2);
+        }
+
         // provide default mappings if needed. and normalize the config
         static::normalizeConfig($config, $version);
 
