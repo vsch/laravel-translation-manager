@@ -1,7 +1,18 @@
 ### Version Notes
 
-The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3.x for Laravel
-5.3, 2.4.x for Laravel 5.4, 2.5.x for Laravel 5.5 and 2.6.x for Laravel 5.6 compatibility.
+Version compatibility map:
+* 1.x.x versions are for Laravel 4.2,
+* 2.1.x versions are for Laravel 5.1+,
+* 2.3.x for Laravel 5.3,
+* 2.4.x for Laravel 5.4,
+* 2.5.x for Laravel 5.5
+* 2.6.x for Laravel 5.6
+* 6.x.x for Laravel 6.x
+
+#### 6.0.0
+
+* Fix: merge #147, PR: Add support for Laravel 6 thanks to
+  [joaorbrandao](https://github.com/joaorbrandao)
 
 #### 2.6.46
 
@@ -19,13 +30,13 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
   setting up routes.
 
   For example:
-  
+
   ```php
   Lang::setCustomPostProcessor(function ($translation) {
       return str_replace(':app_name', config('app.name'), $translation);
   });
   ```
-  
+
   Will change `:app_name` to the application name dynamically. Should be used to eliminate the
   need to have function calls in translations by changing function calls to parameter arguments.
 
@@ -50,11 +61,11 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
 
 #### 2.6.32
 
-* Fix: #119, Call to undefined function Vsch\TranslationManager\getSupportedLocale(). 
+* Fix: #119, Call to undefined function Vsch\TranslationManager\getSupportedLocale().
 
 #### 2.6.30
 
-* Fix: unpublished mode shows groups not in LTM database as undefined. 
+* Fix: unpublished mode shows groups not in LTM database as undefined.
 * Fix: unpublished mode showing translations marked deleted instead of as undefined
 * Fix: add missing keys to the cache to not thrash the database on every access to their
   translations
@@ -76,13 +87,13 @@ The 1.x.x versions are for Laravel 4.2, 2.1.x versions are for Laravel 5.1+, 2.3
   before sending for translation. Prefixes results with `:count ` if it was present in the
   original. This prevents Yandex translate from getting confused and results in better plural
   forms, especially for Russian which has 3.
-* Change: Now `|:` generates plural forms with `:count ` prefix and toggles the prefix once
-  the plurals are generated. Toggles in the pattern: plurals only prefixed, all prefixed,
+* Change: Now `|:` generates plural forms with `:count ` prefix and toggles the prefix once the
+  plurals are generated. Toggles in the pattern: plurals only prefixed, all prefixed,
   none-prefixed.
 
 #### 2.6.26
 
-* Add: PR merge from @vesper8 for customizing regex for reference search through the config. 
+* Add: PR merge from @vesper8 for customizing regex for reference search through the config.
 * Fix: clean out old recursive publish group code
 * Fix: zipping translations used to inadvertently publish the translations
 * Fix: JSON export now fills in any empty json -> ltm mapping keys (the translation values of
@@ -212,7 +223,7 @@ and
 #### 2.5.16
 
 * Fix: hard coded `ltm_translations` used in repository queries instead of table name (with
-  prefix). 
+  prefix).
 
 #### 2.5.14
 
@@ -274,7 +285,7 @@ and
 * Fix: #106, Working with arrays
 * Fix: #91, Cookies generating wrong locales
 * Add: preview mode for editors/admins, fix for #101, Is there a way to preview the changes
-      before publishing
+  before publishing
 
 #### 2.4.34
 

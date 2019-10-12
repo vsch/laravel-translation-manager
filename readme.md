@@ -1,4 +1,4 @@
-# Laravel 5 Translation Manager
+# Laravel Translation Manager
 
 [![GitQ](https://gitq.com/badge.svg)](https://gitq.com/vsch/laravel-translation-manager)
 
@@ -30,6 +30,8 @@ $ php artisan migrate
 
 ![React_UI](../../wiki/images/React_UI.png)
 
+> * For Laravel 6.0 require: `"vsch/laravel-translation-manager": "~6.0"`
+>
 > * For Laravel 5.6 require: `"vsch/laravel-translation-manager": "~2.6"`
 >
 > * For Laravel 5.5 require: `"vsch/laravel-translation-manager": "~2.5"`
