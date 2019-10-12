@@ -1,4 +1,4 @@
-# Laravel 5 Translation Manager
+# Laravel Translation Manager
 
 [![GitQ](https://gitq.com/badge.svg)](https://gitq.com/vsch/laravel-translation-manager)
 
@@ -20,16 +20,10 @@ $ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceP
 $ php artisan migrate
 ```
 
-**Detailed information is now in the [wiki].**
+#### Supported Laravel Versions
 
-[Installation][]  
-[Configuration][]  
-[Version Notes][]
-
-#### 2.6.16 Adds React App UI as an alternative to WebUI 
-
-![React_UI](../../wiki/images/React_UI.png)
-
+> * For Laravel 6.0 require: `"vsch/laravel-translation-manager": "~6.0"`
+>
 > * For Laravel 5.6 require: `"vsch/laravel-translation-manager": "~2.6"`
 >
 > * For Laravel 5.5 require: `"vsch/laravel-translation-manager": "~2.5"`
@@ -52,13 +46,23 @@ $ php artisan migrate
 > :exclamation: If you have made correction to the auto-translated localization and would like
 > to share them with others please do so. It will be greatly appreciated.
 
+**Detailed information is now in the [wiki].**
+
+[Installation][]  
+[Configuration][]  
+[Version Notes][]
+
+#### 2.6.16 Adds React App UI as an alternative to WebUI 
+
+![React_UI](../../wiki/images/React_UI.png)
+
 ### Version 2.6.10 released
 
 React UI added as an option to WebUI.
 
 Code updated for Laravel 5.6 compatibility
 
-Support for JSON translation files added. [Versioninfo.md](versioninfo.md#264) 
+Support for JSON translation files added. [Versioninfo.md](versioninfo.md#264)
 
 ### Version 2.5.6 released
 
@@ -68,7 +72,7 @@ Code updated for Laravel 5.5 compatibility
 
 ### Version 2.4.36 released
 
-Support for JSON translation files added.  [Versioninfo.md](versioninfo.md#2436)
+Support for JSON translation files added. [Versioninfo.md](versioninfo.md#2436)
 
 Important LTM Translator method changes to restore compatibility with Laravel 5.4 API. These
 changes affect the order of arguments to the LTM Translator implementation. If you were using
@@ -139,6 +143,8 @@ specifically change that through the web UI, see [User Admin] or by populating t
 [Features]: ../../wiki/#features
 [Installation]: ../../wiki/Installation
 [Installation: Publishing And Running Migrations]: ../../wiki/Installation#publishing-and-running-migrations
+[MysqlTranslatorRepository.php]: https://github.com/vsch/laravel-translation-manager/blob/master/src/Repositories/MysqlTranslatorRepository.php
+[PostgresTranslatorRepository.php]: https://github.com/vsch/laravel-translation-manager/blob/master/src/Repositories/PostgresTranslatorRepository.php
 [Removing dependency on UserPrivilegeMapper from facade alias array]: ../../wiki/Installation#removing-dependency-on-userprivilegemapper-from-facade-alias-array
 [Removing dependency on UserPrivilegeMapper from service providers array]: ../../wiki/Installation#removing-dependency-on-userprivilegemapper-from-service-providers-array
 [Screen Shot Show Source Refs]: https://raw.githubusercontent.com/wiki/vsch/laravel-translation-manager/images/ScreenShot_ShowSourceRefs.png
@@ -148,6 +154,4 @@ specifically change that through the web UI, see [User Admin] or by populating t
 [Version Notes]: versioninfo.md
 [Web Interface: Source References]: ../../wiki/Web-Interface#source-references
 [wiki]: ../../wiki
-[MysqlTranslatorRepository.php]: https://github.com/vsch/laravel-translation-manager/blob/master/src/Repositories/MysqlTranslatorRepository.php
-[PostgresTranslatorRepository.php]: https://github.com/vsch/laravel-translation-manager/blob/master/src/Repositories/PostgresTranslatorRepository.php
 
