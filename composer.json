@@ -1,55 +1,62 @@
 {
-    "name": "vsch/laravel-translation-manager",
-    "description": "Enhanced Laravel Translation Manager",
-    "keywords": [
-        "laravel",
-        "translations",
-        "translator"
+  "name": "codetec-info/laravel-translation-manager",
+  "description": "Enhanced Laravel Translation Manager",
+  "keywords": [
+    "laravel",
+    "translations",
+    "translator"
+  ],
+  "homepage": "https://github.com/codetec-info/laravel-translation-manager",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Hassan Saad",
+      "email": "hassan.saad@codetec.info",
+      "role": "Developer"
+    }
+  ],
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/codetec-info/laravel-translation-manager"
+    }
+  ],
+  "require": {
+    "php": ">=7.1.3",
+    "illuminate/support": "^5.0|^6.0|^7.0|^8.0",
+    "laravelcollective/html": "^5.0|^6.0",
+    "illuminate/translation": "^5.0|^6.0|^7.0|^8.0",
+    "doctrine/dbal": "~2.6",
+    "symfony/finder": "^4.0|^5.0",
+    "vsch/laravel-translation-manager": "dev-master"
+  },
+  "require-dev": {
+    "phpspec/phpspec": "~7.0.1",
+    "fzaninotto/faker": "v1.9.2",
+    "mockery/mockery": "1.4.3",
+    "phpunit/phpunit": "~9.5.4"
+  },
+  "autoload": {
+    "classmap": [
+      "src/Classes"
     ],
-    "homepage": "https://github.com/vsch/laravel-translation-manager",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Vladimir Schneider",
-            "email": "vladimir.schneider@gmail.com",
-            "role": "Developer"
-        }
+    "files": [
+      "src/Support/helpers.php"
     ],
-    "require": {
-        "php": ">=7.1.3",
-        "illuminate/support": "^5.6",
-        "laravelcollective/html": "^5.6",
-        "illuminate/translation": "^5.6",
-        "doctrine/dbal": "~2.6",
-        "symfony/finder": "~4.0"
-    },
-    "require-dev": {
-        "phpspec/phpspec": "~3.0",
-        "fzaninotto/faker": "~1.4",
-        "mockery/mockery": "0.9.*",
-        "phpunit/phpunit": "~7.0"
-    },
-    "autoload": {
-        "classmap": [
-            "src/Classes"
-        ],
-        "files": [
-            "src/Support/helpers.php"
-        ],
-        "psr-4": {
-            "Vsch\\TranslationManager\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "classmap": [
-            "tests/"
-        ],
-        "psr-4": {
-        }
-    },
-    "scripts": {
-        "post-update-cmd": [
-        ]
-    },
-    "minimum-stability": "stable"
+    "psr-4": {
+      "Vsch\\TranslationManager\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "classmap": [
+      "tests/"
+    ],
+    "psr-4": {
+    }
+  },
+  "scripts": {
+    "post-update-cmd": [
+    ]
+  },
+  "minimum-stability": "stable"
 }
