@@ -89,6 +89,7 @@
       <excludeFolder url="file://$MODULE_DIR$/vendor/illuminate/bus" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/illuminate/collections" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/psr/event-dispatcher" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/vsch/laravel-translation-manager" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
