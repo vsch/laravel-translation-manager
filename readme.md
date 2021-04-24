@@ -10,37 +10,6 @@ system with a ton of practical functionality. [Features]
 database only requires additional repository interface implementations following the examples of
 [MysqlTranslatorRepository.php] or [PostgresTranslatorRepository.php].
 
-#### :warning: **Version 2.6.10 has a new migration** 
-
-When upgrading from earlier versions run:
-
-```bash
-$ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=public --force
-$ php artisan vendor:publish --provider="Vsch\TranslationManager\ManagerServiceProvider" --tag=migrations
-$ php artisan migrate
-```
-
-#### Supported Laravel Versions
-
-> * For Laravel 6.0 require: `"vsch/laravel-translation-manager": "~6.0"`
->
-> * For Laravel 5.6 require: `"vsch/laravel-translation-manager": "~2.6"`
->
-> * For Laravel 5.5 require: `"vsch/laravel-translation-manager": "~2.5"`
->
-> * For Laravel 5.4 require: `"vsch/laravel-translation-manager": "~2.4"`
->
-> * For Laravel 5.3 require: `"vsch/laravel-translation-manager": "~2.3"`
->   
->   [Upgrading from LTM 2.0 or 2.1 to 2.3](../../wiki/Upgrade-2.0-to-2.3)
->
-> * For Laravel 5.2 require: `"vsch/laravel-translation-manager": "~2.1"`
->
-> #### Laravel version 4.2 is no longer supported.
->
-> You can still get access to the last updated version. Use the `laravel4` branch, or require:
-> `"vsch/laravel-translation-manager": "~1.0"`
-> 
 > #### Initial Localizations Added
 >
 > :exclamation: If you have made correction to the auto-translated localization and would like
