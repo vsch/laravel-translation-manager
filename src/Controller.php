@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
+use Str;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Vsch\TranslationManager\Classes\TranslationLocales;
 use Vsch\TranslationManager\Events\TranslationsPublished;
@@ -245,7 +246,7 @@ class Controller extends BaseController
         $packLocales = TranslationLocales::packLocales($this->transLocales->userLocales);
         if (!is_array($locale)) $locale = array($locale);
         foreach ($locale as $item) {
-            if (!str_contains($packLocales, ',' . $item . ',')) return false;
+            if (!Str::contains($packLocales, ',' . $item . ',')) return false;
         }
         return true;
     }
@@ -679,7 +680,7 @@ class Controller extends BaseController
         $prefix = '';
         $gkey = $key;
 
-        if (starts_with($key, 'vnd:') || starts_with($key, 'wbn:')) {
+        if (Str::startsWith($key, 'vnd:') || Str::startsWith($key, 'wbn:')) {
             // these have vendor with . afterwards in the group
             $parts = explode('.', $key, 2);
 

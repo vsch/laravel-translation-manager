@@ -13,8 +13,7 @@ database only requires additional repository interface implementations following
 **Detailed information is now in the [wiki].**
 
 [Installation][]  
-[Configuration][]  
-[Version Notes][]
+[Configuration][]
 
 #### 8.x
 
@@ -41,10 +40,10 @@ specifically change that through the web UI, see [User Admin] or by populating t
 \* This package was originally based on Barry vd. Heuvel's excellent [barryvdh] package.
 
 [barryvdh]: https://github.com/barryvdh/laravel-translation-manager
-[Configuration]: ../../wiki/Configuration
+[Configuration]: https://github.com/vsch/laravel-translation-manager/wiki/Configuration
 [Enabling per locale user access control]: ../../wiki/Configuration#enabling-per-locale-user-access-control
 [Features]: ../../wiki/#features
-[Installation]: ../../wiki/Installation
+[Installation]: https://github.com/vsch/laravel-translation-manager/wiki/Installation
 [Installation: Publishing And Running Migrations]: ../../wiki/Installation#publishing-and-running-migrations
 [MysqlTranslatorRepository.php]: https://github.com/vsch/laravel-translation-manager/blob/master/src/Repositories/MysqlTranslatorRepository.php
 [PostgresTranslatorRepository.php]: https://github.com/vsch/laravel-translation-manager/blob/master/src/Repositories/PostgresTranslatorRepository.php
@@ -56,5 +55,5 @@ specifically change that through the web UI, see [User Admin] or by populating t
 [User Admin]: ../../wiki/Web-Interface#user-admin
 [Version Notes]: versioninfo.md
 [Web Interface: Source References]: ../../wiki/Web-Interface#source-references
-[wiki]: ../../wiki
+[wiki]: https://github.com/vsch/laravel-translation-manager/wiki
 
