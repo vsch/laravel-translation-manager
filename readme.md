@@ -23,8 +23,6 @@ database only requires additional repository interface implementations following
 
 #### 2.6.16 Adds React App UI as an alternative to WebUI 
 
-![React_UI](../../wiki/images/React_UI.png)
-
 ### Version 2.6.10 released
 
 React UI added as an option to WebUI.
