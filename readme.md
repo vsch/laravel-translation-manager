@@ -10,79 +10,15 @@ system with a ton of practical functionality. [Features]
 database only requires additional repository interface implementations following the examples of
 [MysqlTranslatorRepository.php] or [PostgresTranslatorRepository.php].
 
-> #### Initial Localizations Added
->
-> :exclamation: If you have made correction to the auto-translated localization and would like
-> to share them with others please do so. It will be greatly appreciated.
-
 **Detailed information is now in the [wiki].**
 
 [Installation][]  
 [Configuration][]  
 [Version Notes][]
 
-#### 2.6.16 Adds React App UI as an alternative to WebUI 
+#### 8.x
 
-### Version 2.6.10 released
-
-React UI added as an option to WebUI.
-
-Code updated for Laravel 5.6 compatibility
-
-Support for JSON translation files added. [Versioninfo.md](versioninfo.md#264)
-
-### Version 2.5.6 released
-
-Support for JSON translation files added. [Versioninfo.md](versioninfo.md#256)
-
-Code updated for Laravel 5.5 compatibility
-
-### Version 2.4.36 released
-
-Support for JSON translation files added. [Versioninfo.md](versioninfo.md#2436)
-
-Important LTM Translator method changes to restore compatibility with Laravel 5.4 API. These
-changes affect the order of arguments to the LTM Translator implementation. If you were using
-these methods based on previous LTM implementation then you will need to make changes in your
-code:
-
-From `transChoice($id, $number, array $parameters = array(), $domain = 'messages', $locale =
-null, $useDB = null)` to `transChoice($id, $number, array $parameters = array(), $locale = null,
-$domain = 'messages', $useDB = null)`
-
-From `trans($id, array $parameters = array(), $domain = 'messages', $locale = null, $useDB =
-null)` to `trans($id, array $parameters = array(), $locale = null, $domain = 'messages', $useDB
-= null)`
-
-From `get($key, array $replace = array(), $locale = null, $useDB = null)` to `get($key, array
-$replace = array(), $locale = null, $fallback = true, $useDB = null)`
-
-### Version 2.4.0 released
-
-Laravel 5.4 compatible release. No API changes only internal implementation changes.
-
-### Version 2.3.3 released
-
-Laravel 5.3 compatible release. For upgrade instructions see
-[Upgrading 2.0, 2.1 to 2.3](../../wiki/Upgrade-2.0-to-2.3)
-
-Now using Laravel 5 authorization API to handle all LTM related authorizations.
-
-Find Translations now update source references for translation keys and add new keys with
-cleanup of dynamic keys. Need to publish and run migrations for this update
-[Installation: Publishing And Running Migrations]
-
-Now you can view source file and line number references for translations. See
-[Web Interface: Source References]
-
-![Screen Shot Show Source Refs]
-
-**If you are upgrading from version 2.0.x of LTM** you need to:
-
-1. Remove the dependency to `UserPrivilegeMapper` from your application:
-   [Removing dependency on UserPrivilegeMapper from service providers array] and
-   [Removing dependency on UserPrivilegeMapper from facade alias array]
-2. Define the abilities used by LTM: [Setting up user authorization]
+Support Laravel 8
 
 ### Per Locale User Access Control
 
