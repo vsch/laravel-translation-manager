@@ -1,24 +1,18 @@
 {
-  "name": "codetec-info/laravel-translation-manager",
+  "name": "vsch/laravel-translation-manager",
   "description": "Enhanced Laravel Translation Manager",
   "keywords": [
     "laravel",
     "translations",
     "translator"
   ],
-  "homepage": "https://github.com/codetec-info/laravel-translation-manager",
+  "homepage": "https://github.com/vsch/laravel-translation-manager",
   "license": "MIT",
   "authors": [
     {
       "name": "Vladimir Schneider",
       "email": "vladimir.schneider@gmail.com",
       "role": "Developer"
-    }
-  ],
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/codetec-info/laravel-translation-manager"
     }
   ],
   "require": {
