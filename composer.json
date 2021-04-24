@@ -27,8 +27,7 @@
     "laravelcollective/html": "^5.0|^6.0",
     "illuminate/translation": "^5.0|^6.0|^7.0|^8.0",
     "doctrine/dbal": "~2.6",
-    "symfony/finder": "^4.0|^5.0",
-    "vsch/laravel-translation-manager": "dev-l8"
+    "symfony/finder": "^4.0|^5.0"
   },
   "require-dev": {
     "phpspec/phpspec": "~7.0.1",
