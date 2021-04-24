@@ -391,7 +391,7 @@ class Manager
             $this->augmentedGroupReverseList = [];
 
             foreach ($groupList as $group) {
-                if (starts_with($group, ["vnd:", "wbn:"])) {
+                if (\Str::startsWith($group, ["vnd:", "wbn:"])) {
                     // we need this one
                     $parts = explode('.', $group, 2);
                     if (count($parts) === 2) {
@@ -657,7 +657,7 @@ class Manager
             $localePrefix = "$locale:";
             $prefixLen = strlen($localePrefix);
             foreach ($values as $key => $translation) {
-                if (str_starts_with($key, $localePrefix)) {
+                if (Str::startsWith($key, $localePrefix)) {
                     $transKey = substr($key, $prefixLen);
                     $translations[$transKey] = $translation;
                 }
