@@ -15,7 +15,7 @@ class AddSrcReferenceColumnToTranslations extends Migration
     {
         Schema::table('ltm_translations', function (Blueprint $table) {
             $table->string('source', 256)->nullable();
-            $table->unique(['locale', 'group', 'key'], 'ixk_ltm_translations_locale_group_key');
+            $table->unique(['locale', 'group'], 'ixk_ltm_translations_locale_group_key');
         });
     }
 

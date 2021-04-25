@@ -89,19 +89,31 @@ function translateYandex(fromLoc, fromText, toLoc, onTranslate) {
             501: 'The specified translation direction is not supported.'
         };
 
-    var jqxhr = $.getJSON("https://translate.yandex.net/api/v1.5/tr.json/translate", {
-            key: YANDEX_TRANSLATOR_KEY,
-            lang: fromLoc + '-' + toLoc,
-            text: fromText
-        },
+    var jqxhr = $.getJSON("https://api.mymemory.translated.net/get?q=" + fromText + "&langpair=" + fromLoc + "|" + toLoc, {},
         function (json) {
-            if (json.code === ERR_OK) {
-                onTranslate(json.text.join("\n"));
-            }
-            else {
-                window.console.log("Yandex API: " + json.code + ': ' + errCodes[json.code] + "\n");
+            // console.log(json)
+            if (json.responseStatus === ERR_OK) {
+                onTranslate(json.responseData.translatedText + "\n");
+            } else if (json.quotaFinished) {
+                alert('Daily quota is reached. Please try after 24 hours')
+            } else {
+                console.log("Yandex API: " + json.code + ': ' + errCodes[json.code] + "\n");
             }
         });
+
+    // var jqxhr = $.getJSON("https://translate.yandex.net/api/v1.5/tr.json/translate", {
+    //         key: YANDEX_TRANSLATOR_KEY,
+    //         lang: fromLoc + '-' + toLoc,
+    //         text: fromText
+    //     },
+    //     function (json) {
+    //         if (json.code === ERR_OK) {
+    //             onTranslate(json.text.join("\n"));
+    //         }
+    //         else {
+    //             window.console.log("Yandex API: " + json.code + ': ' + errCodes[json.code] + "\n");
+    //         }
+    //     });
 
     jqxhr.done(function () {
     });

@@ -5,86 +5,105 @@ return array(
     /**
      * Specify the locale that is used for creating the initial translation strings. This locale is considered
      * to be the driver of all other translations.
-     * 
-     * For exported JSON translations that were newly created, it is this locale's database value that will be used  
-     * as the JSON translation key for all locales, and if no translation for primary locale is set then the key will be used as the translation 
+     *
+     * For exported JSON translations that were newly created, it is this locale's database value that will be used
+     * as the JSON translation key for all locales, and if no translation for primary locale is set then the key will be used as the translation
      *
      * @type string
      */
-    'primary_locale' => 'en',
+        'primary_locale' => 'en',
+
+    /**
+     * Specify the maximum translation key length to generate for JSON translation keys
+     *
+     * @type integer
+     */
+        'max_key_length' => 190,
+
     /**
      * Specify the maximum translation key length to generate for JSON translation keys
      * it will be the smaller of 120 and this value. These are keys in the database, not JSON translation files
      * making them too long will makes the WebUI waste more space displaying keys
-     * 
+     *
      * @type integer
      */
-    'json_dbkey_length' => 32,
+        'json_dbkey_length' => 32,
+
     /**
      * Specify any additional locales that you want to be shown even if they have no translation files or translations in the database
      *
      * @type array of strings
      */
-    'locales' => [
-        'en',
-    ],
+        'locales' => [
+                'en',
+        ],
+
     /**
      * Disable React-UI link in WebUI and route to UI
      *
      * @type boolean
      */
-    'disable-react-ui' => false,
+        'disable-react-ui' => false,
+
     /**
      * Disable React-UI link only
      *
      * @type boolean
      */
-    'disable-react-ui-link' => false,
+        'disable-react-ui-link' => false,
+
     /**
      * Set to true to have newly created JSON group entries get primary locale translation string as their key
      * false for having new keys default on export to ltm key. true by default
      *
      * @type boolean
      */
-    'new-json-keys-primary-locale' => true,
+        'new-json-keys-primary-locale' => true,
+
     /**
      * What character to use for separating words in json generated keys. Only first char is used.
      *
-     * @type string 
+     * @type string
      */
-    'new-json-keys-separator' => '-',
+        'new-json-keys-separator' => '-',
+
     /**
      * Specify locales that you want to show in the web interface, if empty or not provided then all locales in the database
      * will be shown
      *
      * @type array of strings
      */
-    'show_locales' => [
-    ],
+        'show_locales' => [
+        ],
+
     /**
      * Specify the prefix used for all cookies, session data and cache persistence.
      *
      * @type string
      */
-    'persistent_prefix' => 'g2Lu2pyz8QcVrxhL32eN',
+        'persistent_prefix' => 'g2Lu2pyz8QcVrxhL32eN',
+
     /**
      * Enable management of translations beyond just editing and command line manipulations
      *
      * @type boolean
      */
-    'admin_enabled' => true,
+        'admin_enabled' => true,
+
     /**
      * use cookies to store user locale
      *
      * @type boolean
      */
-    'use_cookies' => false,
+        'use_cookies' => false,
+
     /**
      *  Inplace edit mode
      *  1 - Using trans(), noEditTrans(), ifEditTrans() in all templates
      *  2 - Only by modifying application template (disables ifEditTrans and reverts trans() to default functionality)
      */
-    'inplace_edit_mode' => 2,
+        'inplace_edit_mode' => 2,
+
     /**
      * Enable management of translations for editors by locales
      *
@@ -95,7 +114,8 @@ return array(
      *
      * @type boolean
      */
-    'user_locales_enabled' => false,
+        'user_locales_enabled' => false,
+
     /**
      * Enable markdown translation to html on the fly
      *
@@ -122,7 +142,7 @@ return array(
      *
      * @type string
      */
-    'markdown_key_suffix' => '',
+        'markdown_key_suffix' => '',
     /**
      * No Longer used. Must implement 'ltm-editors-list' ability that will return true
      * if the user can manage per locale access with an array of objects with: id, email,
@@ -142,54 +162,54 @@ return array(
      *
      * @type string | array
      */
-    'export_format' => array(
-        'PRESERVE_EMPTY_ARRAYS',
-        //'USE_QUOTES',
-        'USE_HEREDOC',
-        'USE_SHORT_ARRAY',
-        'SORT_KEYS',
-    ),
+        'export_format' => array(
+                'PRESERVE_EMPTY_ARRAYS',
+            //'USE_QUOTES',
+                'USE_HEREDOC',
+                'USE_SHORT_ARRAY',
+                'SORT_KEYS',
+        ),
     /**
      * Enable mismatch dashboard
      *
      * @type boolean
      */
-    'mismatch_enabled' => false,
+        'mismatch_enabled' => false,
     /**
      * Exclude specific groups from Laravel Translation Manager.
      * This is useful if, for example, you want to avoid editing the official Laravel language files.
      *
      * @type array
      */
-    'exclude_groups' => array(
-        //'pagination',
-        //'reminders',
-        //'validation',
-    ),
+        'exclude_groups' => array(
+            //'pagination',
+            //'reminders',
+            //'validation',
+        ),
     /**
      * Exclude specific groups from Laravel Translation Manager in page edit mode.
      * This is useful for groups that are used exclusively for non-display strings like page titles and emails
      *
      * @type array
      */
-    'exclude_page_edit_groups' => array(
-        //'page-titles',
-        //'reminders',
-        //'validation',
-    ),
+        'exclude_page_edit_groups' => array(
+            //'page-titles',
+            //'reminders',
+            //'validation',
+        ),
     /**
      * determines whether missing keys are logged
      *
      * @type boolean
      */
-    'log_missing_keys' => false,
+        'log_missing_keys' => false,
 
     /**
      * determines whether usage of keys is logged, requires missing keys to be logged too
      *
      * @type boolean
      */
-    'log_key_usage_info' => false,
+        'log_key_usage_info' => false,
 
     /**
      * determines one out of how many user sessions will have a chance to log missing keys
@@ -204,7 +224,7 @@ return array(
      * 1000 ....
      *
      */
-    'missing_keys_lottery' => 100, // 1 in 100 of users will have the missing translation keys logged.
+        'missing_keys_lottery' => 100, // 1 in 100 of users will have the missing translation keys logged.
 
     /**
      * @type int        0 - as usual, write out files and set status for translations to SAVED,
@@ -221,7 +241,7 @@ return array(
      *                  to be used by clustered systems where the translation files are determined at deployment and publishing
      *                  on one system does no good to the rest of the cluster.
      */
-    'indatabase_publish' => 0,
+        'indatabase_publish' => 0,
 
     /**
      * @type array      list of alternate database connections and their properties indexed by app()->environment() value,
@@ -241,14 +261,14 @@ return array(
      *                      useful for publishing to files while leaving all flags in the database as
      *                      they would be after publishing only to cache.
      */
-    'db_connections' => array(
-        //'local' => array(
-        //    'mysql_prd' => array(
-        //        'description' => 'production',
-        //        'indatabase_publish' => 2,
-        //    ),
-        //),
-    ),
+        'db_connections' => array(
+            //'local' => array(
+            //    'mysql_prd' => array(
+            //        'description' => 'production',
+            //        'indatabase_publish' => 2,
+            //    ),
+            //),
+        ),
 
     /**
      * used to provide an alternate default connection name for translation
@@ -260,10 +280,11 @@ return array(
      *
      */
 
-    'default_connection' => null,
+        'default_connection' => null,
 
     /**
      * used to provide the Yandex key for use in automatic Yandex translations
+     * add xx to use https://mymemory.translated.net/doc/spec.php
      *
      * @type string     Yandex translation key
      *
@@ -271,7 +292,7 @@ return array(
      *
      */
 
-    'yandex_translator_key' => '',
+        'yandex_translator_key' => 'xx',
     /**
      * used to provide configuration on where the translation files are stored and where to write them out.
      *
@@ -365,21 +386,21 @@ return array(
      *
      * Please read above before changing.
      */
-    'language_dirs' => array(
-        'lang' => '/resources/lang/{locale}/{group}',
-        'packages' => '/resources/lang/vendor/{package}/{locale}/{group}',
-        'workbench' => [
-            'include' => '*/*',
-            'root' => '/workbench/{vendor}/{package}',
-            'files' => 'resources/lang/{locale}/{group}',
-        ],
-        'vendor' => [
-            'include' => [],
-            'root' => '/vendor/{vendor}/{package}',
-            'files' => 'resources/lang/{locale}/{group}',
-        ],
+        'language_dirs' => array(
+                'lang' => '/resources/lang/{locale}/{group}',
+                'packages' => '/resources/lang/vendor/{package}/{locale}/{group}',
+                'workbench' => [
+                        'include' => '*/*',
+                        'root' => '/workbench/{vendor}/{package}',
+                        'files' => 'resources/lang/{locale}/{group}',
+                ],
+                'vendor' => [
+                        'include' => [],
+                        'root' => '/vendor/{vendor}/{package}',
+                        'files' => 'resources/lang/{locale}/{group}',
+                ],
 
-        // this will make LTM translation importable as wbn:vsch.laravel-translation-manager.messages
+            // this will make LTM translation importable as wbn:vsch.laravel-translation-manager.messages
 //        'vendor' => [
 //            'include' => ['vsch/laravel-translation-manager'],
 //            'root' => '/vendor/{vendor}/{package}',
@@ -390,41 +411,41 @@ return array(
 //            '__merge' => ['workbench', 'vendor',],
 //            'db_group' => 'wbn:{vendor}.{package}::{group}',
 //        ],
-    
-        /*
-        * add packages that need special mapping to their language files because they don't use the standard Laravel
-        * layout for the version that you are using or just plain not Laravel layout. Add '__merge' key with names of
-        * sections where the package should be attempted to be merged.
-        *
-        * These will be merged with vendor or workbench type to get the rest of the config information.
-        * The sections will be checked in the order listed in the __merge entry. The first section whose include
-        * accepts the vendor/package used here, will be used. All the other sections, listed in __merge, will be ignored.
-        *
-        * Since vendor section requires opt-in, it is listed first, if this package is included then
-        * it will be a vendor type.
-        *
-        * NOTE: Regardless of whether the directory exists or not under vendor if the vendor section includes this
-        * package, then it will be expected to be in the vendor directory. If it is not then no language files will be
-        * loaded for it. Therefore only include in vendor section if it is not actually located in workbench.
-        */
-        'caouecs/laravel-lang' => [
-            '__merge' => ['vendor', 'workbench',],
-            'files' => 'src/{locale}/{group}',
-        ],
-        /*
-         * This one requires a very different definition. The file names are the locale.php, therefore more guts are
-         * exposed when defining the mapping of this one. Including a hard-coded value for the {group} since the only
-         * other option is to replace Lang dir with {group}, but then the group will be called Lang, seems a bit out of
-         * place from the rest of the packages. So there is a way to just hard code the group to any string.
-         */
-        'nesbot/carbon' => [
-            '__merge' => ['vendor', 'workbench',],
-            'files' => 'src/Carbon/Lang/{locale}',
-            'vars' => [
-                '{group}' => 'carbon',
-            ],
-        ],
-    ),
+
+            /*
+            * add packages that need special mapping to their language files because they don't use the standard Laravel
+            * layout for the version that you are using or just plain not Laravel layout. Add '__merge' key with names of
+            * sections where the package should be attempted to be merged.
+            *
+            * These will be merged with vendor or workbench type to get the rest of the config information.
+            * The sections will be checked in the order listed in the __merge entry. The first section whose include
+            * accepts the vendor/package used here, will be used. All the other sections, listed in __merge, will be ignored.
+            *
+            * Since vendor section requires opt-in, it is listed first, if this package is included then
+            * it will be a vendor type.
+            *
+            * NOTE: Regardless of whether the directory exists or not under vendor if the vendor section includes this
+            * package, then it will be expected to be in the vendor directory. If it is not then no language files will be
+            * loaded for it. Therefore only include in vendor section if it is not actually located in workbench.
+            */
+                'caouecs/laravel-lang' => [
+                        '__merge' => ['vendor', 'workbench',],
+                        'files' => 'src/{locale}/{group}',
+                ],
+            /*
+             * This one requires a very different definition. The file names are the locale.php, therefore more guts are
+             * exposed when defining the mapping of this one. Including a hard-coded value for the {group} since the only
+             * other option is to replace Lang dir with {group}, but then the group will be called Lang, seems a bit out of
+             * place from the rest of the packages. So there is a way to just hard code the group to any string.
+             */
+                'nesbot/carbon' => [
+                        '__merge' => ['vendor', 'workbench',],
+                        'files' => 'src/Carbon/Lang/{locale}',
+                        'vars' => [
+                                '{group}' => 'carbon',
+                        ],
+                ],
+        ),
     /**
      *
      * Provide the prefix for the root of the zip file
@@ -433,36 +454,36 @@ return array(
      * / means application root.
      *
      */
-    'zip_root' => '/resources',
-    
-    'find' => [
-        'functions' => ($functions = [
-            'trans',
-            'trans_choice',
-            'noEditTrans',
-            'ifEditTrans',
-            'Lang::get',
-            'Lang::choice',
-            'Lang::trans',
-            'Lang::transChoice',
-            '@lang',
-            '@choice',
-            '__',
-        ]),
-        'pattern' => [                              // See http://regexr.com/392hu
-            '(' . implode('|', $functions) . ')',   // Must start with one of the functions
-            '\\(',                                  // Match opening parentheses
-            "(['\"])",                              // Match " or '
-            '(',                                    // Start a new group to match:
-            '[a-zA-Z0-9_-]+',                       // Must start with group
-            "([.][^\1)]+)+",                        // Be followed by one or more items/keys
-            ')',                                    // Close group
-            "['\"]",                                // Closing quote
-            '[\\),]',                                // Close parentheses or new parameter
+        'zip_root' => '/resources',
+
+        'find' => [
+                'functions' => ($functions = [
+                        'trans',
+                        'trans_choice',
+                        'noEditTrans',
+                        'ifEditTrans',
+                        'Lang::get',
+                        'Lang::choice',
+                        'Lang::trans',
+                        'Lang::transChoice',
+                        '@lang',
+                        '@choice',
+                        '__',
+                ]),
+                'pattern' => [                              // See http://regexr.com/392hu
+                        '(' . implode('|', $functions) . ')',   // Must start with one of the functions
+                        '\\(',                                  // Match opening parentheses
+                        "(['\"])",                              // Match " or '
+                        '(',                                    // Start a new group to match:
+                        '[a-zA-Z0-9_-]+',                       // Must start with group
+                        "([.][^\1)]+)+",                        // Be followed by one or more items/keys
+                        ')',                                    // Close group
+                        "['\"]",                                // Closing quote
+                        '[\\),]',                                // Close parentheses or new parameter
+                ],
+                'files' => [
+                        'php',
+                        'twig',
+                ],
         ],
-        'files' => [
-            'php',
-            'twig',
-        ],
-    ],
 );
