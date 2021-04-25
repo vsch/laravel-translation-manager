@@ -34,7 +34,7 @@ class Translator extends LaravelTranslator
 
     // Storage used for used translation keys
     protected $usedKeys = array();
-    
+
     protected $customPostProcessor = null;
 
     /**
@@ -121,7 +121,7 @@ class Translator extends LaravelTranslator
             $queuedCookieLocale = \Cookie::queued($key, null);
             $locale = getSupportedLocale($queuedCookieLocale != null ? $queuedCookieLocale->getValue() : \Cookie::get($key, ''));
             parent::setLocale($locale);
-            
+
             // load unpublished translation flag at the same time
             $this->getShowUnpublished();
             $this->cookiesLoaded = true;
@@ -132,7 +132,7 @@ class Translator extends LaravelTranslator
     /**
      * Set the default locale.
      *
-     * @param  string $locale
+     * @param string $locale
      *
      * @return void
      */
@@ -174,7 +174,7 @@ class Translator extends LaravelTranslator
     /**
      * Set the default showUnpublished.
      *
-     * @param  string $showUnpublished
+     * @param string $showUnpublished
      *
      * @return void
      */
@@ -207,7 +207,7 @@ class Translator extends LaravelTranslator
     /**
      * Set the fallback locale being used.
      *
-     * @param  string $fallback
+     * @param string $fallback
      *
      * @return void
      */
@@ -316,14 +316,14 @@ class Translator extends LaravelTranslator
                 $action = URL::action(ManagerServiceProvider::CONTROLLER_PREFIX . 'Vsch\TranslationManager\Controller@postEdit', array($t->group));
 
                 $result = '<a href="#edit" class="vsch_editable status-' . ($t->status ?: 0)
-                    . ' locale-' . $t->locale
-                    . '" data-locale="' . $t->locale . '" '
-                    . 'data-name="' . $t->locale . '|' . $t->key
-                    . '" id="' . $t->locale . "-" . str_replace('.', '-', $t->key)
-                    . '"  data-type="textarea" data-pk="' . ($t->id ?: 0) . '" '
-                    . 'data-url="' . $action
-                    . '" ' . 'data-inputclass="editable-input" data-saved_value="' . htmlentities($t->saved_value, ENT_QUOTES, 'UTF-8', false) . '" '
-                    . 'data-title="' . $title . ': [' . $t->locale . '] ' . $t->group . '.' . $t->key . '">' . (htmlentities($t->value, ENT_QUOTES, 'UTF-8', false)) . '</a> ' . ($t->diff ? " [$t->diff]" : '');
+                        . ' locale-' . $t->locale
+                        . '" data-locale="' . $t->locale . '" '
+                        . 'data-name="' . $t->locale . '|' . $t->key
+                        . '" id="' . $t->locale . "-" . str_replace('.', '-', $t->key)
+                        . '"  data-type="textarea" data-pk="' . ($t->id ?: 0) . '" '
+                        . 'data-url="' . $action
+                        . '" ' . 'data-inputclass="editable-input" data-saved_value="' . htmlentities($t->saved_value, ENT_QUOTES, 'UTF-8', false) . '" '
+                        . 'data-title="' . $title . ': [' . $t->locale . '] ' . $t->group . '.' . $t->key . '">' . (htmlentities($t->value, ENT_QUOTES, 'UTF-8', false)) . '</a> ' . ($t->diff ? " [$t->diff]" : '');
                 return $result;
             }
 
@@ -346,7 +346,7 @@ class Translator extends LaravelTranslator
                 return call_user_func($this->customPostProcessor, $replaced);
             } else {
                 return $this->makeReplacements($line, $replace);
-            } 
+            }
         }
         return $line;
     }
@@ -370,10 +370,10 @@ class Translator extends LaravelTranslator
     /**
      * Get the translation for a given key from the JSON translation files.
      *
-     * @param  string $key
-     * @param  array $replace
-     * @param  string $locale
-     * @param  int $useDB null - check usedb field which is set to 1 by default,
+     * @param string $key
+     * @param array $replace
+     * @param string $locale
+     * @param int $useDB null - check usedb field which is set to 1 by default,
      *                       0 - don't use,
      *                       1 - only if key is missing in files or saved in the translator cache, use saved_value
      *                       fallback on $key,
@@ -383,6 +383,8 @@ class Translator extends LaravelTranslator
      */
     public function getFromJson($key, array $replace = [], $locale = null, $useDB = null)
     {
+        $key = count_chars($key) <= $this->manager->config('max_key_length') ? $key : \Str::substr($key, 0, $this->manager->config('max_key_length'));
+
         // see if json key and can be translated to ltm key
         $this->load('*', '*', 'json');
         // see if have it in the cache
@@ -412,7 +414,9 @@ class Translator extends LaravelTranslator
                 $t = $this->manager->missingKey($namespace, $group, $item, $locale, $this->isUseLottery(), true);
                 if ($t) {
                     $result = $t->value ?: $key;
-                    if ($t->isDirty()) $t->save();
+                    if ($t->isDirty()) {
+                        $t->save();
+                    }
                     $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
                     return $this->processResult($result, $replace);
                 }
@@ -436,7 +440,9 @@ class Translator extends LaravelTranslator
                     $t = $this->manager->missingKey($namespace, $group, $item, $locale, $this->isUseLottery(), true);
                     if ($t) {
                         $result = $t->saved_value ?: $key;
-                        if ($t->isDirty()) $t->save();
+                        if ($t->isDirty()) {
+                            $t->save();
+                        }
 
                         // save in cache even if it has no value to prevent hitting the database every time just to figure it out
                         $this->manager->cacheTranslation($namespace, $group, $item, $result, $locale ?: $this->getLocale());
@@ -457,11 +463,11 @@ class Translator extends LaravelTranslator
     /**
      * Get the translation for the given key.
      *
-     * @param  string $key
-     * @param  array $replace
-     * @param  string $locale
+     * @param string $key
+     * @param array $replace
+     * @param string $locale
      * @param bool $fallback
-     * @param  int $useDB null - check usedb field which is set to 1 by default,
+     * @param int $useDB null - check usedb field which is set to 1 by default,
      *                       0 - don't use,
      *                       1 - only if key is missing in files or saved in the translator cache, use saved_value
      *                       fallback on $key,
@@ -471,6 +477,8 @@ class Translator extends LaravelTranslator
      */
     public function get($key, array $replace = array(), $locale = null, $fallback = true, $useDB = null)
     {
+        $key = count_chars($key) <= $this->manager->config('max_key_length') ? $key : \Str::substr($key, 0, $this->manager->config('max_key_length'));
+
         $inplaceEditMode = $this->manager->config('inplace_edit_mode');
         list($namespace, $group, $item) = $this->parseKey($key);
 
@@ -659,11 +667,11 @@ HTML;
     /**
      * Get a translation according to an integer value.
      *
-     * @param  string $id
-     * @param  int $number
-     * @param  array $parameters
-     * @param  string $locale
-     * @param  string $domain
+     * @param string $id
+     * @param int $number
+     * @param array $parameters
+     * @param string $locale
+     * @param string $domain
      * @param null $useDB
      *
      * @return string
@@ -676,10 +684,10 @@ HTML;
     /**
      * Get the translation for a given key.
      *
-     * @param  string $id
-     * @param  array $parameters
-     * @param  string $locale
-     * @param  string $domain
+     * @param string $id
+     * @param array $parameters
+     * @param string $locale
+     * @param string $domain
      * @param null $useDB
      *
      * @return string
@@ -692,10 +700,10 @@ HTML;
     /**
      * Get a translation according to an integer value.
      *
-     * @param  string $key
-     * @param  int $number
-     * @param  array $replace
-     * @param  string $locale
+     * @param string $key
+     * @param int $number
+     * @param array $replace
+     * @param string $locale
      *
      * @return string
      */
