@@ -89,8 +89,26 @@ function translateYandex(fromLoc, fromText, toLoc, onTranslate) {
             501: 'The specified translation direction is not supported.'
         };
 
-    var jqxhr = $.getJSON("https://api.mymemory.translated.net/get?q=" + fromText + "&langpair=" + fromLoc + "|" + toLoc, {},
-        function (json) {
+    var jqxhr = ''
+
+    if (YANDEX_TRANSLATOR_KEY === 'xx') {
+        jqxhr = $.getJSON("https://api.mymemory.translated.net/get?q=" + fromText + "&langpair=" + fromLoc + "|" + toLoc, {},
+            function (json) {
+                // console.log(json)
+                if (json.responseStatus === ERR_OK) {
+                    onTranslate(json.responseData.translatedText + "\n");
+                } else if (json.quotaFinished) {
+                    alert('Daily quota is reached. Please try after 24 hours')
+                } else {
+                    console.log("Yandex API: " + json.code + ': ' + errCodes[json.code] + "\n");
+                }
+            });
+    } else {
+        jqxhr = $.getJSON("https://translate.yandex.net/api/v1.5/tr.json/translate", {
+            key: YANDEX_TRANSLATOR_KEY,
+            lang: fromLoc + '-' + toLoc,
+            text: fromText
+        }, function (json) {
             // console.log(json)
             if (json.responseStatus === ERR_OK) {
                 onTranslate(json.responseData.translatedText + "\n");
@@ -100,20 +118,7 @@ function translateYandex(fromLoc, fromText, toLoc, onTranslate) {
                 console.log("Yandex API: " + json.code + ': ' + errCodes[json.code] + "\n");
             }
         });
-
-    // var jqxhr = $.getJSON("https://translate.yandex.net/api/v1.5/tr.json/translate", {
-    //         key: YANDEX_TRANSLATOR_KEY,
-    //         lang: fromLoc + '-' + toLoc,
-    //         text: fromText
-    //     },
-    //     function (json) {
-    //         if (json.code === ERR_OK) {
-    //             onTranslate(json.text.join("\n"));
-    //         }
-    //         else {
-    //             window.console.log("Yandex API: " + json.code + ': ' + errCodes[json.code] + "\n");
-    //         }
-    //     });
+    }
 
     jqxhr.done(function () {
     });
@@ -218,8 +223,7 @@ xtranslateText = function (translator, srcLoc, srcText, dstLoc, processText) {
             if (dstLoc === 'ru') {
                 plural2 = extractPluralForm(pluralForms, 2);
                 text = singlePrefix + single + '|' + pluralPrefix + plural + '|' + pluralPrefix + plural2;
-            }
-            else {
+            } else {
                 // TODO: have to handle other plural forms for complex locales
                 text = singlePrefix + single + '|' + pluralPrefix + plural;
             }
@@ -399,9 +403,8 @@ $(document).ready(function () {
             return function () {
                 var sel = textAreaSelectedText(dstElem[0]);
                 if (sel) {
-                    dstElem.selection('replace', { text: editOp.apply(sel, params) });
-                }
-                else {
+                    dstElem.selection('replace', {text: editOp.apply(sel, params)});
+                } else {
                     dstElem.val(editOp.apply(dstElem.val(), params));
                 }
                 dstElem.focus();
@@ -411,9 +414,8 @@ $(document).ready(function () {
             return function () {
                 var sel = textAreaSelectedText(dstElem[0]);
                 if (sel) {
-                    dstElem.selection('replace', { text: editOp.apply(sel, params) });
-                }
-                else {
+                    dstElem.selection('replace', {text: editOp.apply(sel, params)});
+                } else {
                     var pluralForms;
 
                     if (dstElem.val().indexOf('|') !== -1) {
@@ -423,8 +425,7 @@ $(document).ready(function () {
                         });
 
                         dstElem.val(pluralForms.join('|'));
-                    }
-                    else {
+                    } else {
                         dstElem.val(editOp.apply(dstElem.val(), params));
                     }
                 }
@@ -447,10 +448,9 @@ $(document).ready(function () {
             var top = elem.offset().top;
 
             if (top < 300) {
-                elem.editable({ placement: 'bottom' });
-            }
-            else {
-                elem.editable({ placement: 'top' });
+                elem.editable({placement: 'bottom'});
+            } else {
+                elem.editable({placement: 'top'});
             }
 
             elem.editable().off('hidden');
@@ -632,8 +632,7 @@ $(document).ready(function () {
                                         case 'en' :
                                             if (PRIMARY_LOCALE === 'en') {
                                                 val = value.singularize() + '|' + ':count ' + value.pluralize();
-                                            }
-                                            else {
+                                            } else {
                                                 val = val.singularize() + '|' + ':count ' + val.pluralize();
                                             }
                                             break;
@@ -647,15 +646,25 @@ $(document).ready(function () {
                                 } else {
                                     // see if all have count
                                     var parts = val.split('|');
-                                    if (!parts.some(function (part) { return part.match(countRegEx);})) {
+                                    if (!parts.some(function (part) {
+                                        return part.match(countRegEx);
+                                    })) {
                                         // add to all except first
-                                        val = parts.map(function (part) { return part.replace(countRegEx, '');}).join('|:count ');
-                                    } else if (parts.every(function (part) { return part.match(countRegEx);})) {
+                                        val = parts.map(function (part) {
+                                            return part.replace(countRegEx, '');
+                                        }).join('|:count ');
+                                    } else if (parts.every(function (part) {
+                                        return part.match(countRegEx);
+                                    })) {
                                         // remove from all
-                                        val = parts.map(function (part) { return part.replace(countRegEx, '');}).join('|');
+                                        val = parts.map(function (part) {
+                                            return part.replace(countRegEx, '');
+                                        }).join('|');
                                     } else {
                                         // add to all
-                                        val = ':count ' + parts.map(function (part) { return part.replace(countRegEx, '');}).join('|:count ');
+                                        val = ':count ' + parts.map(function (part) {
+                                            return part.replace(countRegEx, '');
+                                        }).join('|:count ');
                                     }
                                 }
                                 return val;

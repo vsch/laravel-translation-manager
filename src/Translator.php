@@ -383,6 +383,8 @@ class Translator extends LaravelTranslator
      */
     public function getFromJson($key, array $replace = [], $locale = null, $useDB = null)
     {
+        $key = count_chars($key) <= $this->manager->config('max_key_length') ? $key : \Str::substr($key, 0, $this->manager->config('max_key_length'));
+
         // see if json key and can be translated to ltm key
         $this->load('*', '*', 'json');
         // see if have it in the cache
@@ -413,7 +415,6 @@ class Translator extends LaravelTranslator
                 if ($t) {
                     $result = $t->value ?: $key;
                     if ($t->isDirty()) {
-                        $t->key = count_chars($t->key) <= $this->manager->config('max_key_length') ? $t->key : \Str::substr($t->key, 0, $this->manager->config('max_key_length'));
                         $t->save();
                     }
                     $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
@@ -440,7 +441,6 @@ class Translator extends LaravelTranslator
                     if ($t) {
                         $result = $t->saved_value ?: $key;
                         if ($t->isDirty()) {
-                            $t->key = count_chars($t->key) <= $this->manager->config('max_key_length') ? $t->key : \Str::substr($t->key, 0, $this->manager->config('max_key_length'));
                             $t->save();
                         }
 
@@ -477,6 +477,8 @@ class Translator extends LaravelTranslator
      */
     public function get($key, array $replace = array(), $locale = null, $fallback = true, $useDB = null)
     {
+        $key = count_chars($key) <= $this->manager->config('max_key_length') ? $key : \Str::substr($key, 0, $this->manager->config('max_key_length'));
+
         $inplaceEditMode = $this->manager->config('inplace_edit_mode');
         list($namespace, $group, $item) = $this->parseKey($key);
 
@@ -509,7 +511,6 @@ class Translator extends LaravelTranslator
                     $result = $t->value ?: $key;
                     if ($t->isDirty()) {
                         unset($t->diff); // remove value added by inplaceedit link
-                        $t->key = count_chars($t->key) <= $this->manager->config('max_key_length') ? $t->key : \Str::substr($t->key, 0, $this->manager->config('max_key_length'));
                         $t->save();
                     }
                     $this->notifyUsingGroupItem($namespace, $group, $item, $locale);
@@ -527,7 +528,6 @@ class Translator extends LaravelTranslator
                         $result = $t->saved_value ?: $key;
                         if ($t->isDirty()) {
                             unset($t->diff); // remove value added by inplaceedit link
-                            $t->key = count_chars($t->key) <= $this->manager->config('max_key_length') ? $t->key : \Str::substr($t->key, 0, $this->manager->config('max_key_length'));
                             $t->save();
                         }
 
